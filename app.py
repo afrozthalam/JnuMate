@@ -1,4 +1,5 @@
 import os
+import json
 import random
 import datetime
 import smtplib
@@ -10,28 +11,43 @@ from database import get_db, init_db, is_postgres
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "hackmate_liquid_glass_2026")
 
-# Initialize database (Supabase Postgres or local SQLite)
+# Initialize database
 try:
     init_db()
 except Exception as e:
     print(f"Database init notice: {e}")
 
+# Load all_profiles_public.json into memory for instant Zero-Config fallback lookup
+PROFILES_JSON_PATH = os.path.join(os.path.dirname(__file__), "all_profiles_public.json")
+STUDENT_PROFILES_MAP = {}
+
+def load_json_profiles():
+    global STUDENT_PROFILES_MAP
+    if os.path.exists(PROFILES_JSON_PATH):
+        try:
+            with open(PROFILES_JSON_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                for item in data:
+                    r_id = item.get("id")
+                    if r_id:
+                        STUDENT_PROFILES_MAP[r_id.strip().upper()] = item
+            print(f"[JSON PROFILES LOADED] Successfully cached {len(STUDENT_PROFILES_MAP)} profiles into memory.")
+        except Exception as e:
+            print(f"[JSON LOAD ERROR] {e}")
+
+load_json_profiles()
+
 # BREVO & SMTP CONFIGURATION
-# Brevo (Sendinblue) Free Tier SMTP settings:
-# Server: smtp-relay.brevo.com | Port: 587
 SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp-relay.brevo.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
-SMTP_USER = os.environ.get("SMTP_USER", "")  # Your Brevo login email
-SMTP_PASS = os.environ.get("SMTP_PASS", "")  # Your Brevo SMTP API Key
+SMTP_USER = os.environ.get("SMTP_USER", "")
+SMTP_PASS = os.environ.get("SMTP_PASS", "")
 SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER or "noreply@hackmate.edu")
 
 def get_placeholder():
     return "%s" if is_postgres() else "?"
 
 def send_real_email_otp(target_email, r_id, otp_code):
-    """
-    Dispatches a real OTP code to the student's email via Brevo SMTP / standard SMTP.
-    """
     subject = f"{otp_code} is your HackMate Verification Code"
     
     html_body = f"""<!DOCTYPE html>
@@ -39,7 +55,7 @@ def send_real_email_otp(target_email, r_id, otp_code):
 <head><meta charset="utf-8"></head>
 <body style="background-color: #F8F9FA; color: #202124; font-family: 'Google Sans', Roboto, sans-serif; padding: 40px 20px; margin: 0;">
     <div style="max-width: 420px; margin: 0 auto; background: #FFFFFF; border: 1px solid #DADCE0; border-radius: 20px; padding: 32px; box-shadow: 0 1px 3px rgba(60,64,67,0.15);">
-        <div style="font-[#1A73E8]; font-size: 20px; font-weight: 700; margin-bottom: 16px;">
+        <div style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">
             <span style="color:#1A73E8;">Hack</span><span style="color:#EA4335;">M</span><span style="color:#FBBC04;">a</span><span style="color:#34A853;">t</span><span style="color:#EA4335;">e</span>
         </div>
         <div style="font-size: 14px; color: #5F6368; margin-bottom: 8px;">Verification Code for Student <b>{r_id}</b></div>
@@ -68,9 +84,8 @@ def send_real_email_otp(target_email, r_id, otp_code):
             print(f"[SMTP ERROR] Failed to send email via {SMTP_SERVER}: {e}")
             return False, f"SMTP Error: {str(e)}"
     else:
-        print(f"[BREVO CONFIG NOTICE] SMTP_USER & SMTP_PASS environment variables not set.")
-        print(f"--> [SIMULATED OTP] To: {target_email} ({r_id}) | Code: {otp_code}")
-        return True, "OTP generated (Configure Brevo SMTP credentials for live delivery)"
+        print(f"[BREVO CONFIG NOTICE] SMTP_USER & SMTP_PASS not set. Simulated OTP Code: {otp_code} for {target_email}")
+        return True, "OTP generated"
 
 def mask_email(email):
     if not email or "@" not in email:
@@ -80,6 +95,47 @@ def mask_email(email):
     domain = parts[1]
     masked = name[0] + "•••" + (name[-1] if len(name) > 1 else "")
     return f"{masked}@{domain}"
+
+def auto_import_student_from_json(r_id, conn, cursor):
+    """
+    On-Demand lookup from all_profiles_public.json if student isn't in DB yet.
+    """
+    p = get_placeholder()
+    item = STUDENT_PROFILES_MAP.get(r_id.upper())
+    if not item:
+        return None
+
+    name = (item.get("name") or "Unknown Student").strip()
+    personal = item.get("personal_details", {}) or {}
+    
+    email = (personal.get("EmailID") or f"{r_id}@student.edu").strip()
+    phone = (personal.get("Mobile No") or "").strip()
+    gender = personal.get("Gender") or "Not Specified"
+    
+    gender_clean = gender.strip().capitalize() if gender else "Unspecified"
+    if "Female" in gender_clean or "F" == gender_clean:
+        gender_clean = "Female"
+    elif "Male" in gender_clean or "M" == gender_clean:
+        gender_clean = "Male"
+    else:
+        gender_clean = "Other"
+
+    image_urls = item.get("image_urls") or []
+    avatar_url = image_urls[0] if image_urls else ""
+    if "demo/avatars/1.jpg" in avatar_url or not avatar_url:
+        avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
+
+    try:
+        cursor.execute(f"""
+            INSERT INTO students (r_id, name, email, phone, gender, avatar_url, is_registered)
+            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, 0)
+        """, (r_id.upper(), name, email, phone, gender_clean, avatar_url))
+        conn.commit()
+    except Exception as e:
+        pass
+
+    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id.upper(),))
+    return cursor.fetchone()
 
 @app.route("/")
 def index():
@@ -101,6 +157,10 @@ def auth_send_otp():
     cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
     student = cursor.fetchone()
 
+    # On-demand JSON fallback if not found in database table
+    if not student:
+        student = auto_import_student_from_json(r_id, conn, cursor)
+
     if not student:
         conn.close()
         return jsonify({"success": False, "message": "R-ID not found in college database"}), 404
@@ -111,7 +171,6 @@ def auth_send_otp():
     otp_code = f"{random.randint(100000, 999999)}"
     expires_at = datetime.datetime.now() + datetime.timedelta(minutes=10)
 
-    # Invalidate previous unused OTPs
     cursor.execute(f"UPDATE email_otps SET used = 1 WHERE UPPER(r_id) = {p}", (r_id,))
     
     cursor.execute(f"""
@@ -143,6 +202,9 @@ def auth_verify_otp():
     cursor = conn.cursor()
     cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
     student = cursor.fetchone()
+
+    if not student:
+        student = auto_import_student_from_json(r_id, conn, cursor)
 
     if not student:
         conn.close()
@@ -222,22 +284,48 @@ def auth_register():
 
 @app.route("/api/students/search", methods=["GET"])
 def student_search():
-    query = request.args.get("q", "").strip()
+    query = request.args.get("q", "").strip().upper()
     p = get_placeholder()
     if len(query) < 2:
         return jsonify({"students": []})
 
+    results_map = {}
+
+    # First search JSON map in memory
+    for r_id_key, item in STUDENT_PROFILES_MAP.items():
+        name = item.get("name", "")
+        if query in r_id_key or query in name.upper():
+            personal = item.get("personal_details", {}) or {}
+            gender = personal.get("Gender") or "Other"
+            gender_clean = "Female" if "Female" in gender or "F" == gender else ("Male" if "Male" in gender or "M" == gender else "Other")
+            image_urls = item.get("image_urls") or []
+            avatar_url = image_urls[0] if image_urls else f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id_key}"
+
+            results_map[r_id_key] = {
+                "r_id": r_id_key,
+                "name": name.strip(),
+                "gender": gender_clean,
+                "avatar_url": avatar_url
+            }
+            if len(results_map) >= 6:
+                break
+
+    # Also search DB table
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(f"""
         SELECT r_id, name, gender, avatar_url FROM students
-        WHERE r_id LIKE {p} OR name LIKE {p}
+        WHERE UPPER(r_id) LIKE {p} OR UPPER(name) LIKE {p}
         LIMIT 6
     """, (f"%{query}%", f"%{query}%"))
-    rows = cursor.fetchall()
+    db_rows = cursor.fetchall()
     conn.close()
 
-    return jsonify({"students": [dict(r) for r in rows]})
+    for r in db_rows:
+        d = dict(r)
+        results_map[d["r_id"].upper()] = d
+
+    return jsonify({"students": list(results_map.values())[:6]})
 
 # --- TEAM MANAGEMENT ---
 
@@ -340,7 +428,11 @@ def create_team():
     cursor = conn.cursor()
 
     cursor.execute(f"SELECT r_id FROM students WHERE UPPER(r_id) = {p}", (leader_r_id,))
-    if not cursor.fetchone():
+    s_leader = cursor.fetchone()
+    if not s_leader:
+        s_leader = auto_import_student_from_json(leader_r_id, conn, cursor)
+
+    if not s_leader:
         conn.close()
         return jsonify({"success": False, "message": "Leader R-ID not found"}), 404
 
@@ -358,6 +450,8 @@ def create_team():
     for f_id in unique_friends:
         cursor.execute(f"SELECT r_id FROM students WHERE UPPER(r_id) = {p}", (f_id,))
         s = cursor.fetchone()
+        if not s:
+            s = auto_import_student_from_json(f_id, conn, cursor)
         if not s:
             continue
         cursor.execute(f"SELECT team_id FROM team_members WHERE UPPER(student_r_id) = {p}", (f_id,))
