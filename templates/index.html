@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>HackMate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Google+Sans:wght@400;500;700&display=swap');
+    
+    * {
+      font-family: 'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background-color: #F8F9FA;
+      color: #202124;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Material 3 Floating Cards */
+    .m3-card {
+      background: #FFFFFF;
+      border: 1px solid #DADCE0;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.1), 0 1px 3px 1px rgba(60, 64, 67, 0.05);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .m3-card:hover {
+      box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.2), 0 4px 8px 3px rgba(60, 64, 67, 0.1);
+      border-color: #BDC1C6;
+    }
+
+    /* Google Filled Button (Primary Google Blue #1A73E8) */
+    .btn-g-filled {
+      background: #1A73E8;
+      color: #FFFFFF;
+      font-family: 'Google Sans', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      height: 40px;
+      padding: 0 20px;
+      border-radius: 20px;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .btn-g-filled:hover {
+      background: #1765CC;
+      box-shadow: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+    }
+
+    .btn-g-filled:active {
+      transform: scale(0.98);
+      background: #1557B0;
+    }
+
+    /* Google Tonal / Outlined Buttons */
+    .btn-g-outlined {
+      background: #FFFFFF;
+      color: #1A73E8;
+      font-family: 'Google Sans', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      height: 40px;
+      padding: 0 20px;
+      border-radius: 20px;
+      border: 1px solid #DADCE0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .btn-g-outlined:hover {
+      background: #F8F9FA;
+      border-color: #1A73E8;
+    }
+
+    .btn-g-outlined:active {
+      transform: scale(0.98);
+      background: #E8F0FE;
+    }
+
+    /* Material 3 Filter Chips */
+    .m3-chip {
+      height: 32px;
+      padding: 0 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #5F6368;
+      background: #FFFFFF;
+      border: 1px solid #DADCE0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .m3-chip.active {
+      background: #E8F0FE;
+      color: #1A73E8;
+      border-color: #D2E3FC;
+      font-weight: 700;
+    }
+
+    /* Material Modal Surface */
+    .m3-dialog {
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    }
+    .m3-dialog.hidden-dialog {
+      transform: translateY(20px) scale(0.96);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .m3-dialog.visible-dialog {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col pb-20 md:pb-8">
+
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toastContainer" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-[88%] max-w-xs pointer-events-none"></div>
+
+  <!-- GOOGLE HEADER NAVBAR -->
+  <header class="sticky top-0 z-40 bg-white border-b border-[#DADCE0] h-16 flex items-center px-4 sm:px-8">
+    <div class="max-w-6xl w-full mx-auto flex items-center justify-between">
+      
+      <!-- Google Styled Title Logo -->
+      <div class="flex items-center gap-1 cursor-pointer" onclick="window.location.reload()">
+        <span class="font-bold text-xl text-[#1A73E8] tracking-tight">Hack</span>
+        <span class="font-bold text-xl text-[#EA4335] tracking-tight">M</span>
+        <span class="font-bold text-xl text-[#FBBC04] tracking-tight">a</span>
+        <span class="font-bold text-xl text-[#34A853] tracking-tight">t</span>
+        <span class="font-bold text-xl text-[#EA4335] tracking-tight">e</span>
+      </div>
+
+      <!-- Right Nav Area -->
+      <div id="navUserArea" class="flex items-center gap-3">
+        <!-- Rendered via JS -->
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="max-w-6xl w-full mx-auto px-4 sm:px-8 pt-6 flex-1">
+
+    <!-- GOOGLE MATERIAL SEARCH & FILTER BAR -->
+    <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-6">
+      
+      <!-- Google Material Search Bar -->
+      <div class="relative flex-1">
+        <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-[#5F6368]"></i>
+        <input type="text" id="searchInput" placeholder="Search teams by name..."
+               class="w-full h-12 pl-12 pr-4 bg-white border border-[#DADCE0] rounded-full text-sm text-[#202124] placeholder-[#5F6368] focus:outline-none focus:border-[#1A73E8] focus:ring-1 focus:ring-[#1A73E8] shadow-xs"
+               onkeyup="debounceSearch()">
+      </div>
+
+      <!-- Material Chips & Desktop Action CTA -->
+      <div class="flex items-center justify-between md:justify-end gap-3">
+        <div class="flex items-center gap-2">
+          <button onclick="setFilter('all')" id="btnFilterAll" class="m3-chip active">All Teams</button>
+          <button onclick="setFilter('open')" id="btnFilterOpen" class="m3-chip">Open Slots</button>
+        </div>
+
+        <button onclick="openCreateTeamModal()" class="hidden md:inline-flex btn-g-filled">
+          + Create Team
+        </button>
+      </div>
+    </div>
+
+    <!-- TEAMS GRID (Responsive Material 3 Cards Grid) -->
+    <div id="teamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+    <!-- EMPTY STATE -->
+    <div id="emptyState" class="hidden text-center py-16 m3-card mt-4">
+      <div class="w-12 h-12 rounded-full bg-[#E8F0FE] text-[#1A73E8] flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="users" class="w-6 h-6"></i>
+      </div>
+      <p class="text-[#5F6368] text-sm font-medium">No teams found</p>
+      <button onclick="openCreateTeamModal()" class="mt-4 btn-g-filled">
+        + Create Team
+      </button>
+    </div>
+
+  </main>
+
+  <!-- MOBILE BOTTOM BAR (Google Material 3 Mobile Navigation Bar) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#DADCE0] h-16 px-8 flex items-center justify-between">
+    <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="text-[#1A73E8] p-2">
+      <i data-lucide="compass" class="w-6 h-6"></i>
+    </button>
+    
+    <button onclick="openCreateTeamModal()" class="w-12 h-12 rounded-2xl bg-[#1A73E8] text-white flex items-center justify-center -mt-6 shadow-md">
+      <i data-lucide="plus" class="w-6 h-6 font-bold"></i>
+    </button>
+
+    <button onclick="handleMobileWorkspaceClick()" class="text-[#5F6368] hover:text-[#202124] p-2">
+      <i data-lucide="user" class="w-6 h-6"></i>
+    </button>
+  </nav>
+
+  <!-- MATERIAL DIALOG: EMAIL OTP AUTH -->
+  <div id="authSheet" class="m3-dialog hidden-dialog fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/32 backdrop-blur-xs">
+    <div class="m3-card w-full max-w-sm p-6 relative max-h-[85vh] overflow-y-auto">
+      
+      <button onclick="closeAuthSheet()" class="absolute right-5 top-5 text-[#5F6368] hover:text-[#202124] p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="mb-5">
+        <h2 class="text-lg font-bold text-[#202124]">Sign in with R-ID</h2>
+        <p class="text-xs text-[#5F6368] mt-1">Verification code will be sent to your college email.</p>
+      </div>
+
+      <!-- Step 1: Input R-ID -->
+      <div id="authStep1" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-[#5F6368] uppercase tracking-wider mb-1.5">College R-ID</label>
+          <input type="text" id="authRidInput" placeholder="e.g. R15006"
+                 class="w-full h-11 px-4 bg-white border border-[#DADCE0] rounded-xl text-sm text-[#202124] uppercase placeholder-[#5F6368] focus:outline-none focus:border-[#1A73E8]">
+        </div>
+
+        <button onclick="sendEmailOtpCode()" class="w-full btn-g-filled">
+          Send Code ➔
+        </button>
+
+        <div class="text-center pt-1">
+          <button onclick="showManualRegister()" class="text-xs text-[#1A73E8] hover:underline font-medium">
+            Unlisted R-ID? Register ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Input 6-Digit Email OTP -->
+      <div id="authStep2" class="hidden space-y-4">
+        <div class="p-3 bg-[#E8F0FE] border border-[#D2E3FC] rounded-xl">
+          <p class="text-xs text-[#1A73E8] text-center">Code sent to:<br><span id="targetEmailMask" class="font-bold text-[#202124]"></span></p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-[#5F6368] uppercase tracking-wider mb-1.5 text-center">Enter 6-Digit Code</label>
+          <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6"
+                 class="w-full h-12 px-4 bg-white border border-[#1A73E8] rounded-xl text-center text-2xl font-mono tracking-widest text-[#202124] focus:outline-none">
+        </div>
+
+        <button onclick="verifyEmailOtpCode()" class="w-full btn-g-filled">
+          Verify & Sign In ➔
+        </button>
+
+        <button onclick="showAuthStep(1)" class="w-full text-xs text-[#5F6368] hover:text-[#202124] py-1 font-medium">
+          Back
+        </button>
+      </div>
+
+      <!-- Step 3: Manual Register -->
+      <div id="authStepRegister" class="hidden space-y-3">
+        <input type="text" id="regRid" placeholder="R-ID" class="w-full h-10 px-3.5 bg-white border border-[#DADCE0] rounded-xl text-xs text-[#202124] uppercase">
+        <input type="text" id="regName" placeholder="Full Name" class="w-full h-10 px-3.5 bg-white border border-[#DADCE0] rounded-xl text-xs text-[#202124]">
+        <input type="email" id="regEmail" placeholder="College Email" class="w-full h-10 px-3.5 bg-white border border-[#DADCE0] rounded-xl text-xs text-[#202124]">
+        <select id="regGender" class="w-full h-10 px-3.5 bg-white border border-[#DADCE0] rounded-xl text-xs text-[#202124]">
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        <input type="text" id="regPhone" placeholder="Mobile Number" class="w-full h-10 px-3.5 bg-white border border-[#DADCE0] rounded-xl text-xs text-[#202124]">
+        <button onclick="submitManualRegister()" class="w-full btn-g-filled mt-1">
+          Register & Log In
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATERIAL DIALOG: CREATE TEAM -->
+  <div id="createTeamSheet" class="m3-dialog hidden-dialog fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/32 backdrop-blur-xs">
+    <div class="m3-card w-full max-w-md p-6 relative max-h-[85vh] overflow-y-auto">
+      
+      <button onclick="closeCreateTeamSheet()" class="absolute right-5 top-5 text-[#5F6368] hover:text-[#202124] p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <h2 class="text-base font-bold text-[#202124] mb-4">Create Team</h2>
+
+      <div class="space-y-4">
+        <input type="text" id="teamNameInput" placeholder="Team Name" class="w-full h-11 px-4 bg-white border border-[#DADCE0] rounded-xl text-sm text-[#202124] focus:outline-none focus:border-[#1A73E8]">
+        <textarea id="teamDescInput" rows="2" placeholder="Description" class="w-full p-3.5 bg-white border border-[#DADCE0] rounded-xl text-xs text-[#202124] focus:outline-none focus:border-[#1A73E8]"></textarea>
+        <input type="text" id="teamWhatsappInput" placeholder="WhatsApp Group Link" class="w-full h-11 px-4 bg-white border border-[#DADCE0] rounded-xl text-xs text-[#202124] focus:outline-none font-medium">
+
+        <div class="pt-3 border-t border-[#DADCE0]">
+          <label class="block text-xs font-medium text-[#5F6368] uppercase tracking-wider mb-1.5">Pre-Add Friends by R-ID</label>
+          <div class="relative">
+            <input type="text" id="friendSearchInput" placeholder="Search R-ID or Name..." class="w-full h-10 px-3.5 bg-white border border-[#DADCE0] rounded-xl text-xs text-[#202124] focus:outline-none" onkeyup="searchFriends()">
+            <div id="friendSearchResults" class="absolute left-0 right-0 top-full mt-1 bg-white border border-[#DADCE0] rounded-xl z-30 max-h-36 overflow-y-auto hidden shadow-lg"></div>
+          </div>
+
+          <div id="selectedFriendsList" class="flex flex-wrap gap-1.5 mt-2.5"></div>
+        </div>
+
+        <button onclick="submitCreateTeam()" class="w-full btn-g-filled mt-1">
+          Create Team ➔
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATERIAL DIALOG: REQUEST TO JOIN -->
+  <div id="joinSheet" class="m3-dialog hidden-dialog fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/32 backdrop-blur-xs">
+    <div class="m3-card w-full max-w-sm p-6 relative">
+      
+      <button onclick="closeJoinSheet()" class="absolute right-5 top-5 text-[#5F6368] hover:text-[#202124] p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <h2 class="text-base font-bold text-[#202124] mb-1">Request to Join</h2>
+      <p class="text-xs text-[#1A73E8] font-medium mb-4" id="joinTeamName"></p>
+
+      <textarea id="joinMessageInput" rows="3" placeholder="Message to team leader..." class="w-full p-3.5 bg-white border border-[#DADCE0] rounded-xl text-xs text-[#202124] focus:outline-none mb-4"></textarea>
+
+      <button onclick="submitJoinRequest()" class="w-full btn-g-filled">
+        Send Request ➔
+      </button>
+    </div>
+  </div>
+
+  <!-- MATERIAL DIALOG: MY TEAM WORKSPACE -->
+  <div id="myTeamSheet" class="m3-dialog hidden-dialog fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/32 backdrop-blur-xs">
+    <div class="m3-card w-full max-w-md p-6 relative max-h-[85vh] overflow-y-auto">
+      
+      <button onclick="closeMyTeamSheet()" class="absolute right-5 top-5 text-[#5F6368] hover:text-[#202124] p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div id="myTeamContent"></div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    let currentUser = null;
+    let currentFilter = 'all';
+    let selectedFriends = [];
+    let targetTeamIdToJoin = null;
+    let tempAuthRid = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      loadUserFromSession();
+      fetchTeams();
+    });
+
+    function showToast(msg) {
+      const c = document.getElementById("toastContainer");
+      const t = document.createElement("div");
+      t.className = `pointer-events-auto px-5 py-3 rounded-full text-xs font-medium shadow-lg bg-[#202124] text-white text-center transition-all transform -translate-y-2 opacity-0`;
+      t.innerHTML = `<span>${msg}</span>`;
+      c.appendChild(t);
+
+      setTimeout(() => t.classList.remove('-translate-y-2', 'opacity-0'), 20);
+      setTimeout(() => {
+        t.classList.add('opacity-0');
+        setTimeout(() => t.remove(), 250);
+      }, 2500);
+    }
+
+    function loadUserFromSession() {
+      const saved = localStorage.getItem("hackmate_user");
+      if (saved) {
+        try { currentUser = JSON.parse(saved); } catch(e){}
+      }
+      renderNavUser();
+    }
+
+    function saveUserSession(user) {
+      currentUser = user;
+      localStorage.setItem("hackmate_user", JSON.stringify(user));
+      renderNavUser();
+      fetchTeams();
+    }
+
+    function logoutUser() {
+      currentUser = null;
+      localStorage.removeItem("hackmate_user");
+      renderNavUser();
+      fetchTeams();
+      showToast("Signed out");
+    }
+
+    function renderNavUser() {
+      const area = document.getElementById("navUserArea");
+      if (currentUser) {
+        area.innerHTML = `
+          <button onclick="openMyTeamSheet()" class="btn-g-outlined text-xs">
+            Workspace
+          </button>
+          <div class="flex items-center gap-2 bg-[#F1F3F4] px-3 py-1.5 rounded-full border border-[#DADCE0]">
+            <span class="text-xs text-[#202124] font-medium">${escapeHtml(currentUser.name.split(' ')[0])}</span>
+            <button onclick="logoutUser()" class="text-[#5F6368] hover:text-[#202124] ml-0.5">
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      } else {
+        area.innerHTML = `
+          <button onclick="openAuthSheet()" class="btn-g-filled text-xs">
+            Sign In
+          </button>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    function handleMobileWorkspaceClick() {
+      if (!currentUser) openAuthSheet();
+      else openMyTeamSheet();
+    }
+
+    function openAuthSheet() {
+      document.getElementById("authSheet").classList.remove("hidden-dialog");
+      document.getElementById("authSheet").classList.add("visible-dialog");
+      showAuthStep(1);
+    }
+
+    function closeAuthSheet() {
+      document.getElementById("authSheet").classList.remove("visible-dialog");
+      document.getElementById("authSheet").classList.add("hidden-dialog");
+    }
+
+    function showAuthStep(step) {
+      document.getElementById("authStep1").classList.add("hidden");
+      document.getElementById("authStep2").classList.add("hidden");
+      document.getElementById("authStepRegister").classList.add("hidden");
+
+      if (step === 1) document.getElementById("authStep1").classList.remove("hidden");
+      if (step === 2) document.getElementById("authStep2").classList.remove("hidden");
+      if (step === 'register') document.getElementById("authStepRegister").classList.remove("hidden");
+    }
+
+    async function sendEmailOtpCode() {
+      const rid = document.getElementById("authRidInput").value.trim();
+      if (!rid) return showToast("Enter R-ID");
+
+      tempAuthRid = rid;
+
+      try {
+        const res = await fetch("/api/auth/send-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ r_id: rid })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById("targetEmailMask").innerText = data.masked_email;
+          showToast(data.message);
+          showAuthStep(2);
+        } else {
+          showToast(data.message);
+        }
+      } catch(err) { showToast("Failed to send code"); }
+    }
+
+    async function verifyEmailOtpCode() {
+      const code = document.getElementById("otpCodeInput").value.trim();
+      if (!code || code.length < 6) return showToast("Enter 6-digit code");
+
+      try {
+        const res = await fetch("/api/auth/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ r_id: tempAuthRid, otp: code })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast("Signed in");
+          saveUserSession(data.student);
+          closeAuthSheet();
+        } else {
+          showToast(data.message);
+        }
+      } catch(err) { showToast("Verification error"); }
+    }
+
+    function showManualRegister() { showAuthStep('register'); }
+
+    async function submitManualRegister() {
+      const rid = document.getElementById("regRid").value.trim();
+      const name = document.getElementById("regName").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
+      const gender = document.getElementById("regGender").value;
+      const phone = document.getElementById("regPhone").value.trim();
+
+      if (!rid || !name || !email) return showToast("R-ID, Name, and Email required");
+
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ r_id: rid, name: name, email: email, gender: gender, phone: phone })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast("Registered");
+          saveUserSession(data.student);
+          closeAuthSheet();
+        } else {
+          showToast(data.message);
+        }
+      } catch(e) { showToast("Registration error"); }
+    }
+
+    let searchDebounce = null;
+    function debounceSearch() {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => fetchTeams(), 300);
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.getElementById("btnFilterAll").className = filter === 'all' ? "m3-chip active" : "m3-chip";
+      document.getElementById("btnFilterOpen").className = filter === 'open' ? "m3-chip active" : "m3-chip";
+      fetchTeams();
+    }
+
+    async function fetchTeams() {
+      const search = document.getElementById("searchInput").value.trim();
+      const r_id = currentUser ? currentUser.r_id : '';
+      const url = `/api/teams?r_id=${encodeURIComponent(r_id)}&search=${encodeURIComponent(search)}&filter=${currentFilter}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        renderTeams(data.teams);
+      } catch(e) { console.error(e); }
+    }
+
+    function renderTeams(teams) {
+      const grid = document.getElementById("teamsGrid");
+      const empty = document.getElementById("emptyState");
+      grid.innerHTML = "";
+
+      if (!teams || teams.length === 0) {
+        empty.classList.remove("hidden");
+        return;
+      }
+      empty.classList.add("hidden");
+
+      teams.forEach(t => {
+        const card = document.createElement("div");
+        card.className = "m3-card flex flex-col justify-between";
+
+        let membersHtml = t.members.map(m => `
+          <div class="relative" title="${escapeHtml(m.name)} (${m.gender})">
+            <img src="${m.avatar_url}" class="w-8 h-8 rounded-full border-2 border-white bg-[#F1F3F4] shadow-xs">
+          </div>
+        `).join('');
+
+        let actionBtn = "";
+        if (!currentUser) {
+          actionBtn = `<button onclick="openAuthSheet()" class="w-full btn-g-outlined justify-center">Sign In to Request</button>`;
+        } else if (t.user_status === 'leader' || t.user_status === 'member') {
+          actionBtn = `
+            <div class="flex gap-2">
+              <button onclick="openMyTeamSheet()" class="flex-1 btn-g-outlined justify-center">Workspace</button>
+              ${t.whatsapp_link ? `<a href="${t.whatsapp_link}" target="_blank" class="btn-g-filled justify-center">WhatsApp</a>` : ''}
+            </div>
+          `;
+        } else if (t.user_status === 'pending') {
+          actionBtn = `<button disabled class="w-full btn-g-outlined justify-center opacity-60 cursor-not-allowed">Pending ⏳</button>`;
+        } else if (t.is_full) {
+          actionBtn = `<button disabled class="w-full btn-g-outlined justify-center opacity-50 cursor-not-allowed">Full (6/6)</button>`;
+        } else {
+          actionBtn = `<button onclick="openJoinSheet(${t.id}, '${escapeHtml(t.name)}')" class="w-full btn-g-filled justify-center">Request to Join ➔</button>`;
+        }
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-1.5">
+              <h3 class="font-bold text-[#202124] text-base leading-snug">${escapeHtml(t.name)}</h3>
+              <span class="text-xs font-bold text-[#1A73E8] bg-[#E8F0FE] border border-[#D2E3FC] px-2.5 py-0.5 rounded-full">${t.member_count}/6</span>
+            </div>
+
+            <p class="text-[#5F6368] text-xs line-clamp-2 mb-4 leading-relaxed">${escapeHtml(t.description || 'No description.')}</p>
+
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center -space-x-1.5">
+                ${membersHtml}
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-[#DADCE0]/60">
+            ${actionBtn}
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    function openCreateTeamSheet() {
+      if (!currentUser) return openAuthSheet();
+      selectedFriends = [];
+      renderSelectedFriends();
+      document.getElementById("createTeamSheet").classList.remove("hidden-dialog");
+      document.getElementById("createTeamSheet").classList.add("visible-dialog");
+    }
+    function openCreateTeamModal() { openCreateTeamSheet(); }
+    function closeCreateTeamSheet() {
+      document.getElementById("createTeamSheet").classList.remove("visible-dialog");
+      document.getElementById("createTeamSheet").classList.add("hidden-dialog");
+    }
+
+    async function searchFriends() {
+      const q = document.getElementById("friendSearchInput").value.trim();
+      const resultsDiv = document.getElementById("friendSearchResults");
+      if (q.length < 2) {
+        resultsDiv.classList.add("hidden");
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/students/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        resultsDiv.innerHTML = "";
+
+        const filtered = data.students.filter(s => 
+          s.r_id.toUpperCase() !== currentUser.r_id.toUpperCase() && 
+          !selectedFriends.some(sf => sf.r_id === s.r_id)
+        );
+
+        if (filtered.length === 0) {
+          resultsDiv.innerHTML = `<div class="p-3 text-xs text-[#5F6368] text-center">No students found</div>`;
+        } else {
+          filtered.forEach(s => {
+            const item = document.createElement("div");
+            item.className = "p-2.5 hover:bg-[#F8F9FA] flex items-center justify-between cursor-pointer border-b border-[#DADCE0] last:border-0";
+            item.onclick = () => addFriendToTeam(s);
+            item.innerHTML = `
+              <div class="text-xs text-[#202124] font-medium">${escapeHtml(s.name)} (${s.r_id})</div>
+              <span class="text-xs text-[#1A73E8] font-bold">+ Add</span>
+            `;
+            resultsDiv.appendChild(item);
+          });
+        }
+        resultsDiv.classList.remove("hidden");
+      } catch(e){}
+    }
+
+    function addFriendToTeam(student) {
+      if (selectedFriends.length >= 5) return showToast("Max 5 friends");
+      selectedFriends.push(student);
+      document.getElementById("friendSearchInput").value = "";
+      document.getElementById("friendSearchResults").classList.add("hidden");
+      renderSelectedFriends();
+    }
+
+    function removeFriend(rid) {
+      selectedFriends = selectedFriends.filter(sf => sf.r_id !== rid);
+      renderSelectedFriends();
+    }
+
+    function renderSelectedFriends() {
+      const container = document.getElementById("selectedFriendsList");
+      container.innerHTML = "";
+
+      selectedFriends.forEach(sf => {
+        const tag = document.createElement("div");
+        tag.className = "bg-[#E8F0FE] text-[#1A73E8] border border-[#D2E3FC] text-xs px-2.5 py-1 rounded-full flex items-center gap-1.5 font-medium";
+        tag.innerHTML = `
+          <span>${escapeHtml(sf.name)}</span>
+          <button onclick="removeFriend('${sf.r_id}')" class="text-[#1A73E8] font-bold">×</button>
+        `;
+        container.appendChild(tag);
+      });
+    }
+
+    async function submitCreateTeam() {
+      const name = document.getElementById("teamNameInput").value.trim();
+      const desc = document.getElementById("teamDescInput").value.trim();
+      const whatsapp = document.getElementById("teamWhatsappInput").value.trim();
+
+      if (!name) return showToast("Team name required");
+
+      const payload = {
+        leader_r_id: currentUser.r_id,
+        name: name,
+        description: desc,
+        whatsapp_link: whatsapp,
+        friend_r_ids: selectedFriends.map(f => f.r_id)
+      };
+
+      try {
+        const res = await fetch("/api/teams/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          closeCreateTeamSheet();
+          fetchTeams();
+        } else {
+          showToast(data.message);
+        }
+      } catch(e) { showToast("Error creating team"); }
+    }
+
+    function openJoinSheet(teamId, teamName) {
+      if (!currentUser) return openAuthSheet();
+      targetTeamIdToJoin = teamId;
+      document.getElementById("joinTeamName").innerText = teamName;
+      document.getElementById("joinMessageInput").value = "";
+      document.getElementById("joinSheet").classList.remove("hidden-dialog");
+      document.getElementById("joinSheet").classList.add("visible-dialog");
+    }
+    function closeJoinSheet() {
+      document.getElementById("joinSheet").classList.remove("visible-dialog");
+      document.getElementById("joinSheet").classList.add("hidden-dialog");
+    }
+
+    async function submitJoinRequest() {
+      const msg = document.getElementById("joinMessageInput").value.trim();
+      try {
+        const res = await fetch(`/api/teams/${targetTeamIdToJoin}/request`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ student_r_id: currentUser.r_id, message: msg })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          closeJoinSheet();
+          fetchTeams();
+        } else {
+          showToast(data.message);
+        }
+      } catch(e) { showToast("Error sending request"); }
+    }
+
+    async function openMyTeamSheet() {
+      if (!currentUser) return openAuthSheet();
+      const contentDiv = document.getElementById("myTeamContent");
+      contentDiv.innerHTML = `<div class="p-6 text-center text-[#5F6368] text-xs font-medium">Loading...</div>`;
+      document.getElementById("myTeamSheet").classList.remove("hidden-dialog");
+      document.getElementById("myTeamSheet").classList.add("visible-dialog");
+
+      try {
+        const res = await fetch(`/api/my-team?r_id=${encodeURIComponent(currentUser.r_id)}`);
+        const data = await res.json();
+
+        if (!data.team) {
+          contentDiv.innerHTML = `
+            <div class="text-center py-5">
+              <p class="text-[#5F6368] text-xs font-medium mb-3">Not in a team yet</p>
+              <button onclick="closeMyTeamSheet(); openCreateTeamSheet();" class="btn-g-filled">
+                + Create Team
+              </button>
+            </div>
+          `;
+          lucide.createIcons();
+          return;
+        }
+
+        const t = data.team;
+        const isLeader = t.user_status === 'leader';
+
+        const rosterHtml = t.members.map(m => `
+          <div class="flex items-center justify-between p-2.5 bg-[#F8F9FA] rounded-xl border border-[#DADCE0]">
+            <div class="text-xs text-[#202124]">
+              <span class="font-bold">${escapeHtml(m.name)}</span>
+              <span class="text-[#5F6368] text-[10px] ml-1">${m.r_id} • ${m.gender}</span>
+            </div>
+            <a href="mailto:${m.email}" class="text-xs text-[#1A73E8] font-bold underline">Email</a>
+          </div>
+        `).join('');
+
+        let requestsHtml = "";
+        if (isLeader) {
+          const reqRes = await fetch(`/api/teams/${t.id}/requests?leader_r_id=${encodeURIComponent(currentUser.r_id)}`);
+          const reqData = await reqRes.json();
+          const reqs = reqData.requests || [];
+
+          if (reqs.length === 0) {
+            requestsHtml = `<div class="text-xs text-[#5F6368] italic py-1">No pending requests</div>`;
+          } else {
+            requestsHtml = reqs.map(r => `
+              <div class="p-2.5 bg-[#F8F9FA] border border-[#DADCE0] rounded-xl flex items-center justify-between gap-2">
+                <div class="text-xs text-[#202124]">
+                  <div class="font-bold">${escapeHtml(r.name)} (${r.r_id})</div>
+                  <div class="text-[10px] text-[#5F6368]">"${escapeHtml(r.message || 'No note')}"</div>
+                </div>
+                <div class="flex gap-1.5">
+                  <button onclick="actionRequest(${t.id}, ${r.request_id}, 'accept')" class="btn-g-filled text-xs h-7 px-3">Accept</button>
+                  <button onclick="actionRequest(${t.id}, ${r.request_id}, 'reject')" class="btn-g-outlined text-xs h-7 px-3">Decline</button>
+                </div>
+              </div>
+            `).join('');
+          }
+        }
+
+        contentDiv.innerHTML = `
+          <div class="space-y-4">
+            <div>
+              <h2 class="text-base font-bold text-[#202124]">${escapeHtml(t.name)}</h2>
+              <p class="text-[#5F6368] text-xs mt-0.5">${escapeHtml(t.description || 'No description.')}</p>
+            </div>
+
+            <div class="p-3 bg-[#E8F0FE] border border-[#D2E3FC] rounded-xl flex items-center justify-between">
+              <div>
+                <div class="text-xs font-bold text-[#1A73E8]">Official WhatsApp Group</div>
+                <p class="text-[10px] text-[#5F6368]">Primary team chat link</p>
+              </div>
+              ${t.whatsapp_link 
+                ? `<a href="${t.whatsapp_link}" target="_blank" class="btn-g-filled text-xs h-8 px-3.5">Open ➔</a>`
+                : `<span class="text-xs text-[#5F6368]">No link set</span>`
+              }
+            </div>
+
+            ${isLeader ? `
+              <div class="flex gap-2">
+                <input type="text" id="updateWhatsappInput" value="${t.whatsapp_link || ''}" placeholder="WhatsApp Group Link..." class="flex-1 h-9 px-3.5 bg-white border border-[#DADCE0] rounded-full text-xs text-[#202124] outline-none">
+                <button onclick="updateWhatsappLink(${t.id})" class="btn-g-filled text-xs h-9 px-3.5">Save</button>
+              </div>
+            ` : ''}
+
+            <div>
+              <h3 class="text-[10px] font-bold text-[#5F6368] uppercase tracking-wider mb-1.5">Roster (${t.member_count}/6)</h3>
+              <div class="space-y-1.5">${rosterHtml}</div>
+            </div>
+
+            ${isLeader ? `
+              <div class="pt-3 border-t border-[#DADCE0]">
+                <h3 class="text-[10px] font-bold text-[#5F6368] uppercase tracking-wider mb-1.5">Join Requests</h3>
+                <div class="space-y-1.5">${requestsHtml}</div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+
+        lucide.createIcons();
+      } catch(e){ console.error(e); }
+    }
+
+    function closeMyTeamSheet() {
+      document.getElementById("myTeamSheet").classList.remove("visible-dialog");
+      document.getElementById("myTeamSheet").classList.add("hidden-dialog");
+    }
+
+    async function actionRequest(teamId, reqId, action) {
+      try {
+        const res = await fetch(`/api/teams/${teamId}/requests/${reqId}/action`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leader_r_id: currentUser.r_id, action: action })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        openMyTeamSheet();
+        fetchTeams();
+      } catch(e) { showToast("Error handling request"); }
+    }
+
+    async function updateWhatsappLink(teamId) {
+      const link = document.getElementById("updateWhatsappInput").value.trim();
+      try {
+        const res = await fetch(`/api/teams/${teamId}/whatsapp`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leader_r_id: currentUser.r_id, whatsapp_link: link })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        openMyTeamSheet();
+        fetchTeams();
+      } catch(e) { showToast("Error updating link"); }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
