@@ -12,7 +12,14 @@ def get_db():
     if is_postgres():
         import psycopg2
         import psycopg2.extras
-        conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+        
+        # Ensure sslmode=require for cloud serverless connections
+        db_url = DATABASE_URL
+        if "sslmode=" not in db_url:
+            separator = "&" if "?" in db_url else "?"
+            db_url = f"{db_url}{separator}sslmode=require"
+
+        conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
         return conn
     else:
         conn = sqlite3.connect(LOCAL_DB_PATH)
@@ -22,7 +29,13 @@ def get_db():
 def init_db():
     if is_postgres():
         import psycopg2
-        conn = psycopg2.connect(DATABASE_URL)
+        
+        db_url = DATABASE_URL
+        if "sslmode=" not in db_url:
+            separator = "&" if "?" in db_url else "?"
+            db_url = f"{db_url}{separator}sslmode=require"
+
+        conn = psycopg2.connect(db_url)
         cursor = conn.cursor()
 
         # Postgres Schema
