@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   1. CLIENT-SIDE SPA ROUTER & PREFETCHER
+   1. CLIENT-SIDE SPA ROUTER & LINK PREFETCHER
    ========================================================================== */
 function setupRouter() {
   document.addEventListener("click", (e) => {
@@ -106,7 +106,6 @@ function handleCurrentRoute() {
 function highlightActiveNavLinks() {
   const path = window.location.pathname;
   
-  // Desktop header links
   document.querySelectorAll(".nav-link-glass").forEach(link => {
     const href = link.getAttribute("href");
     if (href === path || (href !== "/" && path.startsWith(href))) {
@@ -116,7 +115,6 @@ function highlightActiveNavLinks() {
     }
   });
 
-  // Mobile bottom dock links
   document.querySelectorAll(".dock-item").forEach(item => {
     const href = item.getAttribute("href");
     if (href === path || (href !== "/" && path.startsWith(href))) {
@@ -154,21 +152,21 @@ function renderNavUserSlots() {
 
   if (currentUser) {
     const userHtml = `
-      <div style="display:flex; align-items:center; gap:10px;">
-        <a href="/profile" style="display:flex; align-items:center; gap:8px; text-decoration:none;">
-          <div style="width:30px; height:30px; border-radius:50%; background:var(--accent-blue-bg); color:var(--g-blue); font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--g-blue);">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <a href="/profile" style="display:flex; align-items:center; gap:6px; text-decoration:none;">
+          <div style="width:28px; height:28px; border-radius:50%; background:var(--accent-blue-bg); color:var(--g-blue); font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--g-blue);">
             ${currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
           </div>
           <span style="font-size:0.8125rem; font-weight:700; color:var(--text-primary);">${currentUser.name || currentUser.id}</span>
         </a>
-        <button onclick="logoutUser()" class="btn-glass-secondary" style="height:32px; padding:0 12px; font-size:0.75rem;">Sign Out</button>
+        <button onclick="logoutUser()" class="btn-secondary" style="height:30px; padding:0 10px; font-size:0.75rem;">Sign Out</button>
       </div>
     `;
     if (dtSlot) dtSlot.innerHTML = userHtml;
     if (mbSlot) mbSlot.innerHTML = userHtml;
   } else {
     const loginHtml = `
-      <a href="/login" class="btn-glass-primary" style="height:34px; padding:0 14px; font-size:0.8125rem;">Sign In</a>
+      <a href="/login" class="btn-primary" style="height:32px; padding:0 12px; font-size:0.75rem;">Sign In</a>
     `;
     if (dtSlot) dtSlot.innerHTML = loginHtml;
     if (mbSlot) mbSlot.innerHTML = loginHtml;
@@ -318,20 +316,19 @@ function loadLoginView() {
 }
 
 /* ==========================================================================
-   3. DISCOVER TEAMS VIEW ENGINE
+   3. DISCOVER TEAMS VIEW ENGINE (COMPACT 2-COLUMN MOBILE CARDS)
    ========================================================================== */
 function loadDiscoverView() {
-  // If cache exists, render immediately
   if (clientCache.teamsList) {
     renderTeamsGrid(clientCache.teamsList);
   } else {
     renderTeamsSkeleton();
   }
 
-  // Refresh in background
   fetch("/api/teams")
     .then(res => res.json())
-    .then(teams => {
+    .then(data => {
+      const teams = data.teams || data;
       clientCache.teamsList = teams;
       renderTeamsGrid(teams);
     })
@@ -344,7 +341,7 @@ function renderTeamsSkeleton() {
 
   let skeletonHtml = "";
   for (let i = 0; i < 6; i++) {
-    skeletonHtml += `<div class="glass-card glass-skeleton" style="height:180px;"></div>`;
+    skeletonHtml += `<div class="glass-card-compact glass-skeleton" style="height:150px;"></div>`;
   }
   container.innerHTML = skeletonHtml;
 }
@@ -355,10 +352,13 @@ function renderTeamsGrid(teams) {
   if (!container) return;
 
   let filtered = teams.filter(t => {
+    const title = t.title || t.name || "";
+    const desc = t.description || "";
     const matchesSearch = !discoverSearchTerm || 
-      t.title.toLowerCase().includes(discoverSearchTerm) || 
-      (t.description && t.description.toLowerCase().includes(discoverSearchTerm));
-    const matchesFilter = discoverFilter === "all" || (t.members.length < 6);
+      title.toLowerCase().includes(discoverSearchTerm) || 
+      desc.toLowerCase().includes(discoverSearchTerm);
+    const memberCount = t.members ? t.members.length : (t.member_count || 1);
+    const matchesFilter = discoverFilter === "all" || (memberCount < 6);
     return matchesSearch && matchesFilter;
   });
 
@@ -374,42 +374,42 @@ function renderTeamsGrid(teams) {
   const isMobile = window.innerWidth <= 767;
 
   container.innerHTML = filtered.map(t => {
-    const memberCount = t.members ? t.members.length : 1;
+    const title = t.title || t.name || "Untitled Team";
+    const desc = t.description || "No pitch provided.";
+    const memberCount = t.members ? t.members.length : (t.member_count || 1);
     const isFull = memberCount >= 6;
     const openSlots = 6 - memberCount;
     const percent = Math.min(100, Math.round((memberCount / 6) * 100));
 
-    // Avatar stack
     let avatarsHtml = "";
     if (t.members && t.members.length > 0) {
-      avatarsHtml = t.members.slice(0, 4).map(m => `
-        <div class="avatar-stack-item" title="${m.name || m.student_id}">
+      avatarsHtml = t.members.slice(0, 3).map(m => `
+        <div class="avatar-stack-item" title="${m.name || m.student_id || m.r_id}">
           ${m.name ? m.name.charAt(0).toUpperCase() : "U"}
         </div>
       `).join("");
-      if (t.members.length > 4) {
-        avatarsHtml += `<div class="avatar-stack-item">+${t.members.length - 4}</div>`;
+      if (t.members.length > 3) {
+        avatarsHtml += `<div class="avatar-stack-item">+${t.members.length - 3}</div>`;
       }
     }
 
     if (isMobile) {
-      // Compact 2-column mobile card layout
       return `
-        <a href="/team/${t.id}" class="glass-card glass-card-interactive mobile-team-card" style="text-decoration:none;">
+        <a href="/team/${t.id}" class="glass-card-compact glass-card-interactive mobile-team-card" style="text-decoration:none;">
           <div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
-              <span class="glass-pill ${isFull ? 'glass-pill-full' : 'glass-pill-open'}" style="font-size:0.5625rem; padding:2px 6px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+              <span class="glass-pill ${isFull ? 'glass-pill-full' : 'glass-pill-open'}" style="font-size:0.5rem; padding:1px 5px;">
                 ${isFull ? 'FULL' : openSlots + ' OPEN'}
               </span>
               <div class="avatar-stack">${avatarsHtml}</div>
             </div>
 
-            <h3 class="mobile-team-title">${escapeHtml(t.title)}</h3>
-            <p class="mobile-team-pitch">${escapeHtml(t.description || "No pitch details provided.")}</p>
+            <h3 class="mobile-team-title">${escapeHtml(title)}</h3>
+            <p class="mobile-team-pitch">${escapeHtml(desc)}</p>
           </div>
 
           <div>
-            <div style="display:flex; justify-content:space-between; font-size:0.625rem; color:var(--text-tertiary); font-weight:700; margin-bottom:4px;">
+            <div style="display:flex; justify-content:space-between; font-size:0.625rem; color:var(--text-tertiary); font-weight:700; margin-bottom:3px;">
               <span>SEATS</span>
               <span>${memberCount}/6</span>
             </div>
@@ -421,25 +421,24 @@ function renderTeamsGrid(teams) {
       `;
     }
 
-    // Standard Desktop Card Layout
     return `
-      <a href="/team/${t.id}" class="glass-card glass-card-interactive" style="text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; height:100%;">
+      <a href="/team/${t.id}" class="glass-card-compact glass-card-interactive" style="text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; height:100%;">
         <div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
             <span class="glass-pill ${isFull ? 'glass-pill-full' : 'glass-pill-open'}">
               ${isFull ? 'Team Full (6/6)' : openSlots + ' Open Seats'}
             </span>
             <div class="avatar-stack">${avatarsHtml}</div>
           </div>
 
-          <h3 style="font-size:1.125rem; font-weight:800; color:var(--text-primary); margin-bottom:6px; letter-spacing:-0.01em;">${escapeHtml(t.title)}</h3>
-          <p style="font-size:0.8125rem; color:var(--text-secondary); line-height:1.45; margin-bottom:16px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">
-            ${escapeHtml(t.description || "No pitch provided.")}
+          <h3 class="card-title" style="margin-bottom:4px;">${escapeHtml(title)}</h3>
+          <p class="secondary-text" style="line-height:1.4; margin-bottom:14px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">
+            ${escapeHtml(desc)}
           </p>
         </div>
 
         <div>
-          <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.6875rem; font-weight:700; color:var(--text-tertiary); margin-bottom:6px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.6875rem; font-weight:700; color:var(--text-tertiary); margin-bottom:5px;">
             <span>TEAM SEATS RECORD</span>
             <span>${memberCount} of 6 Filled</span>
           </div>
@@ -470,8 +469,8 @@ function setDiscoverFilter(type) {
   const btnAll = document.getElementById("btnFilterAll");
   const btnOpen = document.getElementById("btnFilterOpen");
 
-  if (btnAll) btnAll.className = type === "all" ? "nav-link-glass active" : "nav-link-glass";
-  if (btnOpen) btnOpen.className = type === "open" ? "nav-link-glass active" : "nav-link-glass";
+  if (btnAll) btnAll.className = type === "all" ? "segmented-item active" : "segmented-item";
+  if (btnOpen) btnOpen.className = type === "open" ? "segmented-item active" : "segmented-item";
 
   if (clientCache.teamsList) {
     renderTeamsGrid(clientCache.teamsList);
@@ -485,19 +484,20 @@ function loadTeamDetailView(teamId) {
   const container = document.getElementById("teamDetailViewContainer");
   if (!container) return;
 
-  container.innerHTML = `<div class="glass-card glass-skeleton" style="height:320px;"></div>`;
+  container.innerHTML = `<div class="glass-surface-primary glass-skeleton" style="height:300px;"></div>`;
 
   fetch(`/api/teams/${teamId}`)
     .then(res => res.json())
-    .then(team => {
-      if (team.error) {
-        container.innerHTML = `<div class="glass-card" style="text-align:center; padding:40px;"><h3 style="color:var(--accent-red);">Team Not Found</h3></div>`;
+    .then(data => {
+      const team = data.team || data;
+      if (data.error || !team || team.error) {
+        container.innerHTML = `<div class="glass-surface-primary" style="text-align:center; padding:36px;"><h3 style="color:var(--accent-red);">Team Not Found</h3></div>`;
         return;
       }
       renderTeamDetail(team);
     })
     .catch(err => {
-      container.innerHTML = `<div class="glass-card" style="text-align:center; padding:40px;"><h3>Error loading team details</h3></div>`;
+      container.innerHTML = `<div class="glass-surface-primary" style="text-align:center; padding:36px;"><h3>Error loading team details</h3></div>`;
     });
 }
 
@@ -505,33 +505,35 @@ function renderTeamDetail(team) {
   const container = document.getElementById("teamDetailViewContainer");
   if (!container) return;
 
-  const isLeader = currentUser && currentUser.id === team.leader_id;
-  const isMember = currentUser && team.members.some(m => m.student_id === currentUser.id);
+  const title = team.title || team.name || "Untitled Team";
+  const leaderId = team.leader_id || team.leader_r_id;
+  const isLeader = currentUser && currentUser.id === leaderId;
+  const isMember = currentUser && team.members.some(m => (m.student_id || m.r_id) === currentUser.id);
   const isFull = team.members.length >= 6;
 
-  // Build 6 visual seats
   let seatsHtml = "";
   for (let i = 0; i < 6; i++) {
     const member = team.members[i];
     if (member) {
-      const isTeamLeader = member.student_id === team.leader_id;
+      const mId = member.student_id || member.r_id;
+      const isTeamLeader = mId === leaderId;
       seatsHtml += `
-        <div class="glass-card" style="padding:14px; display:flex; align-items:center; justify-content:space-between;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:38px; height:38px; border-radius:50%; background:var(--accent-blue-bg); color:var(--g-blue); font-size:0.875rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--g-blue);">
+        <div class="glass-card-compact" style="padding:12px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:34px; height:34px; border-radius:50%; background:var(--accent-blue-bg); color:var(--g-blue); font-size:0.8125rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--g-blue);">
               ${member.name ? member.name.charAt(0).toUpperCase() : "U"}
             </div>
             <div>
-              <div style="font-size:0.875rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
-                ${escapeHtml(member.name || member.student_id)}
-                ${isTeamLeader ? `<span class="glass-pill glass-pill-user" style="font-size:0.5625rem; padding:1px 6px;">LEADER</span>` : ""}
+              <div style="font-size:0.8125rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                ${escapeHtml(member.name || mId)}
+                ${isTeamLeader ? `<span class="glass-pill glass-pill-user" style="font-size:0.5rem; padding:1px 5px;">LEADER</span>` : ""}
               </div>
-              <div style="font-size:0.75rem; color:var(--text-tertiary);">${escapeHtml(member.student_id)} • ${escapeHtml(member.gender || "Student")}</div>
+              <div class="caption-text">${escapeHtml(mId)} • ${escapeHtml(member.gender || "Student")}</div>
             </div>
           </div>
 
           ${isLeader && !isTeamLeader ? `
-            <button onclick="confirmRemoveMember('${team.id}', '${member.student_id}', '${escapeHtml(member.name || member.student_id)}')" class="btn-glass-danger" style="height:30px; padding:0 10px; font-size:0.6875rem;">
+            <button onclick="confirmRemoveMember('${team.id}', '${mId}', '${escapeHtml(member.name || mId)}')" class="btn-danger" style="height:28px; padding:0 8px; font-size:0.6875rem;">
               Remove
             </button>
           ` : ""}
@@ -539,42 +541,41 @@ function renderTeamDetail(team) {
       `;
     } else {
       seatsHtml += `
-        <div class="glass-card" style="padding:14px; border:1.5px dashed var(--glass-border-subtle); background:transparent; display:flex; align-items:center; gap:12px; opacity:0.6;">
-          <div style="width:38px; height:38px; border-radius:50%; border:1.5px dashed var(--text-tertiary); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:0.75rem; font-weight:700;">
+        <div class="glass-card-compact" style="padding:12px; border:1.5px dashed var(--glass-t3-border); background:transparent; display:flex; align-items:center; gap:10px; opacity:0.6;">
+          <div style="width:34px; height:34px; border-radius:50%; border:1.5px dashed var(--text-tertiary); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:0.75rem; font-weight:700;">
             +
           </div>
-          <div style="font-size:0.8125rem; font-weight:600; color:var(--text-tertiary);">Open Seat ${i + 1}</div>
+          <div class="secondary-text" style="font-weight:600;">Open Seat ${i + 1}</div>
         </div>
       `;
     }
   }
 
-  // Join Action Panel
   let actionPanelHtml = "";
   if (currentUser) {
     if (isLeader) {
       actionPanelHtml = `
-        <div style="display:flex; gap:10px; margin-top:20px;">
-          <button onclick="confirmDisbandTeam('${team.id}')" class="btn-glass-danger" style="height:42px;">
+        <div style="display:flex; gap:10px; margin-top:16px;">
+          <button onclick="confirmDisbandTeam('${team.id}')" class="btn-danger" style="height:38px;">
             Disband Team
           </button>
         </div>
       `;
     } else if (isMember) {
       actionPanelHtml = `
-        <div style="margin-top:20px;">
-          <button onclick="confirmLeaveTeam('${team.id}')" class="btn-glass-danger" style="height:42px;">
+        <div style="margin-top:16px;">
+          <button onclick="confirmLeaveTeam('${team.id}')" class="btn-danger" style="height:38px;">
             Leave Team
           </button>
         </div>
       `;
     } else if (!isFull) {
       actionPanelHtml = `
-        <div class="glass-card" style="margin-top:24px; padding:20px; background:rgba(255,255,255,0.9);">
-          <h4 style="font-size:0.9375rem; font-weight:800; color:var(--text-primary); margin-bottom:6px;">Request to Join Team</h4>
-          <p style="font-size:0.8125rem; color:var(--text-secondary); margin-bottom:14px;">Send a note to the team leader explaining your skills or interest.</p>
-          <textarea id="joinMessageInput" rows="2" placeholder="e.g. Hi, I excel at Frontend & React!" class="glass-textarea" style="margin-bottom:12px;"></textarea>
-          <button onclick="submitJoinRequest('${team.id}')" class="btn-glass-primary" style="height:42px; width:100%;">
+        <div class="glass-card-compact" style="margin-top:20px; padding:16px; background:#FFFFFF;">
+          <h4 class="section-title" style="font-size:0.875rem; margin-bottom:4px;">Request to Join Team</h4>
+          <p class="secondary-text" style="margin-bottom:10px;">Send a note to the team leader explaining your skills or interest.</p>
+          <textarea id="joinMessageInput" rows="2" placeholder="e.g. Hi, I excel at Frontend & React!" class="glass-textarea" style="margin-bottom:10px;"></textarea>
+          <button onclick="submitJoinRequest('${team.id}')" class="btn-primary" style="height:38px; width:100%;">
             Send Join Request
           </button>
         </div>
@@ -582,23 +583,22 @@ function renderTeamDetail(team) {
     }
   } else {
     actionPanelHtml = `
-      <div class="glass-card" style="margin-top:24px; text-align:center; padding:20px;">
-        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:12px;">Sign in with your R-ID to request to join this team.</p>
-        <a href="/login" class="btn-glass-primary" style="display:inline-flex;">Sign In to Request</a>
+      <div class="glass-card-compact" style="margin-top:20px; text-align:center; padding:16px;">
+        <p class="secondary-text" style="margin-bottom:10px;">Sign in with your R-ID to request to join this team.</p>
+        <a href="/login" class="btn-primary" style="display:inline-flex;">Sign In to Request</a>
       </div>
     `;
   }
 
-  // WhatsApp Group Banner
   let whatsappBannerHtml = "";
   if (team.whatsapp_link && (isMember || isLeader)) {
     whatsappBannerHtml = `
-      <div style="padding:14px 18px; background:rgba(54, 168, 83, 0.1); border:1px solid rgba(54, 168, 83, 0.3); border-radius:var(--r-md); margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <div style="padding:12px 16px; background:rgba(54, 168, 83, 0.08); border:1px solid rgba(54, 168, 83, 0.25); border-radius:var(--r-md); margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
         <div>
-          <div style="font-size:0.875rem; font-weight:800; color:#2E7D32;">WhatsApp Group Link Active</div>
-          <div style="font-size:0.75rem; color:var(--text-secondary);">Official team channel for hackathon coordination</div>
+          <div style="font-size:0.8125rem; font-weight:800; color:#2E7D32;">WhatsApp Group Link Active</div>
+          <div class="caption-text">Official team channel for hackathon coordination</div>
         </div>
-        <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-glass-primary" style="background:#34A853; border-color:rgba(255,255,255,0.4); height:36px; padding:0 14px; font-size:0.75rem;">
+        <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-primary" style="background:#34A853; border-color:rgba(255,255,255,0.4); height:32px; padding:0 12px; font-size:0.75rem;">
           Join WhatsApp ➔
         </a>
       </div>
@@ -606,26 +606,26 @@ function renderTeamDetail(team) {
   }
 
   container.innerHTML = `
-    <div class="glass-card" style="margin-bottom:20px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+    <div class="glass-surface-primary" style="margin-bottom:16px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
         <span class="glass-pill ${isFull ? 'glass-pill-full' : 'glass-pill-open'}">
           ${isFull ? 'Team Full (6/6)' : (6 - team.members.length) + ' Open Seats'}
         </span>
-        <span style="font-size:0.75rem; font-weight:700; color:var(--text-tertiary);">Team ID: ${team.id}</span>
+        <span class="caption-text">Team ID: ${team.id}</span>
       </div>
 
-      <h1 class="page-title" style="font-size:1.625rem; margin-bottom:8px;">${escapeHtml(team.title)}</h1>
-      <p style="font-size:0.9375rem; color:var(--text-secondary); line-height:1.5; margin-bottom:20px;">
+      <h1 class="page-title" style="font-size:1.5rem; margin-bottom:6px;">${escapeHtml(title)}</h1>
+      <p class="body-text" style="margin-bottom:18px;">
         ${escapeHtml(team.description || "No pitch provided.")}
       </p>
 
       ${whatsappBannerHtml}
 
-      <h3 style="font-size:0.875rem; font-weight:800; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:12px;">
+      <h3 class="caption-text" style="text-transform:uppercase; letter-spacing:0.03em; margin-bottom:10px;">
         Team Roster (${team.members.length} / 6)
       </h3>
 
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; margin-bottom:12px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin-bottom:10px;">
         ${seatsHtml}
       </div>
 
@@ -749,9 +749,9 @@ function renderCreateTeamSeats() {
   if (!container) return;
 
   let html = `
-    <div class="glass-card" style="padding:12px; background:var(--accent-blue-bg); border-color:rgba(0,122,255,0.3);">
-      <div style="font-size:0.6875rem; font-weight:800; color:var(--g-blue); text-transform:uppercase;">Seat 1 (Leader)</div>
-      <div style="font-size:0.875rem; font-weight:800; color:var(--text-primary); margin-top:2px;">
+    <div class="glass-card-compact" style="padding:10px; background:var(--accent-blue-bg); border-color:rgba(0,122,255,0.25);">
+      <div class="caption-text" style="color:var(--g-blue); text-transform:uppercase;">Seat 1 (Leader)</div>
+      <div style="font-size:0.8125rem; font-weight:800; color:var(--text-primary); margin-top:2px;">
         ${currentUser ? escapeHtml(currentUser.name || currentUser.id) : "You (Leader)"}
       </div>
     </div>
@@ -761,19 +761,19 @@ function renderCreateTeamSeats() {
     const friend = selectedFriends[i];
     if (friend) {
       html += `
-        <div class="glass-card" style="padding:12px; display:flex; align-items:center; justify-content:space-between;">
+        <div class="glass-card-compact" style="padding:10px; display:flex; align-items:center; justify-content:space-between;">
           <div>
-            <div style="font-size:0.6875rem; font-weight:800; color:var(--text-tertiary); text-transform:uppercase;">Seat ${i + 2}</div>
-            <div style="font-size:0.8125rem; font-weight:800; color:var(--text-primary); margin-top:2px;">${escapeHtml(friend.name || friend.id)}</div>
+            <div class="caption-text" style="text-transform:uppercase;">Seat ${i + 2}</div>
+            <div style="font-size:0.75rem; font-weight:800; color:var(--text-primary); margin-top:2px;">${escapeHtml(friend.name || friend.id)}</div>
           </div>
-          <button onclick="removeFriendFromTeam('${friend.id}')" style="background:none; border:none; color:var(--accent-red); font-size:1.125rem; font-weight:800; cursor:pointer;">×</button>
+          <button onclick="removeFriendFromTeam('${friend.id}')" style="background:none; border:none; color:var(--accent-red); font-size:1rem; font-weight:800; cursor:pointer;">×</button>
         </div>
       `;
     } else {
       html += `
-        <div class="glass-card" style="padding:12px; border:1px dashed var(--glass-border-subtle); background:transparent; opacity:0.6;">
-          <div style="font-size:0.6875rem; font-weight:700; color:var(--text-tertiary); text-transform:uppercase;">Seat ${i + 2}</div>
-          <div style="font-size:0.75rem; color:var(--text-tertiary); margin-top:2px;">Open Seat</div>
+        <div class="glass-card-compact" style="padding:10px; border:1px dashed var(--glass-t3-border); background:transparent; opacity:0.6;">
+          <div class="caption-text" style="text-transform:uppercase;">Seat ${i + 2}</div>
+          <div class="caption-text" style="margin-top:2px;">Open Seat</div>
         </div>
       `;
     }
@@ -800,22 +800,26 @@ function searchFriends() {
 
   fetch(`/api/students/search?q=${encodeURIComponent(query)}`, { signal: friendSearchAbortController.signal })
     .then(res => res.json())
-    .then(students => {
+    .then(data => {
+      const students = data.students || data;
       if (!students || students.length === 0) {
-        resultsDiv.innerHTML = `<div style="padding:12px; font-size:0.8125rem; color:var(--text-tertiary); text-align:center;">No matching students found</div>`;
+        resultsDiv.innerHTML = `<div class="caption-text" style="padding:10px; text-align:center;">No matching students found</div>`;
         resultsDiv.style.display = "block";
         return;
       }
 
-      resultsDiv.innerHTML = students.map(s => `
-        <div onclick="addFriendToTeam('${s.id}', '${escapeHtml(s.name)}', '${s.gender}')" style="padding:10px 14px; border-bottom:1px solid var(--glass-border-subtle); cursor:pointer; display:flex; align-items:center; justify-content:space-between;" onmouseover="this.style.background='rgba(0,0,0,0.03)'" onmouseout="this.style.background='transparent'">
-          <div>
-            <div style="font-size:0.8125rem; font-weight:800; color:var(--text-primary);">${escapeHtml(s.name)}</div>
-            <div style="font-size:0.6875rem; color:var(--text-tertiary);">${s.id} • ${s.gender}</div>
+      resultsDiv.innerHTML = students.map(s => {
+        const sId = s.id || s.r_id;
+        return `
+          <div onclick="addFriendToTeam('${sId}', '${escapeHtml(s.name)}', '${s.gender}')" style="padding:8px 12px; border-bottom:1px solid var(--glass-t3-border); cursor:pointer; display:flex; align-items:center; justify-content:space-between;" onmouseover="this.style.background='rgba(0,0,0,0.03)'" onmouseout="this.style.background='transparent'">
+            <div>
+              <div style="font-size:0.8125rem; font-weight:800; color:var(--text-primary);">${escapeHtml(s.name)}</div>
+              <div class="caption-text">${sId} • ${s.gender}</div>
+            </div>
+            <span style="font-size:0.75rem; font-weight:700; color:var(--g-blue);">+ Add</span>
           </div>
-          <span style="font-size:0.75rem; font-weight:700; color:var(--g-blue);">+ Add</span>
-        </div>
-      `).join("");
+        `;
+      }).join("");
       resultsDiv.style.display = "block";
     })
     .catch(err => {
@@ -895,7 +899,7 @@ function submitCreateTeam() {
       if (data.success) {
         showToast("Team created successfully!", "success");
         clientCache.teamsList = null;
-        navigateTo(`/team/${data.team.id}`);
+        navigateTo(`/team/${data.team_id || data.team.id}`);
       } else {
         showToast(data.message || "Failed to create team", "error");
       }
@@ -908,7 +912,7 @@ function submitCreateTeam() {
 }
 
 /* ==========================================================================
-   6. USER PROFILE VIEW ENGINE
+   6. USER PROFILE VIEW ENGINE (PROFILE HERO & MY TEAMS GRID)
    ========================================================================== */
 function loadProfileView() {
   const container = document.getElementById("profileViewContainer");
@@ -916,65 +920,69 @@ function loadProfileView() {
 
   if (!currentUser) {
     container.innerHTML = `
-      <div class="glass-card" style="text-align:center; padding:40px;">
-        <h2 class="page-title" style="font-size:1.35rem; margin-bottom:8px;">User Session Required</h2>
-        <p style="font-size:0.875rem; color:var(--text-secondary); margin-bottom:20px;">Please sign in with your R-ID to view your profile and manage teams.</p>
-        <a href="/login" class="btn-glass-primary" style="display:inline-flex;">Sign In with R-ID</a>
+      <div class="glass-surface-primary" style="text-align:center; padding:36px;">
+        <h2 class="page-title" style="font-size:1.25rem; margin-bottom:6px;">User Session Required</h2>
+        <p class="secondary-text" style="margin-bottom:16px;">Please sign in with your R-ID to view your profile and manage teams.</p>
+        <a href="/login" class="btn-primary" style="display:inline-flex;">Sign In with R-ID</a>
       </div>
     `;
     return;
   }
 
   container.innerHTML = `
-    <div class="glass-card" style="margin-bottom:20px;">
-      <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
-        <div style="width:56px; height:56px; border-radius:50%; background:var(--accent-blue-bg); color:var(--g-blue); font-size:1.5rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:2px solid var(--g-blue);">
+    <div class="glass-surface-primary" style="margin-bottom:16px;">
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
+        <div style="width:52px; height:52px; border-radius:50%; background:var(--accent-blue-bg); color:var(--g-blue); font-size:1.35rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:2px solid var(--g-blue);">
           ${currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
         </div>
         <div>
-          <h1 class="page-title" style="font-size:1.5rem; margin-bottom:2px;">${escapeHtml(currentUser.name || "College Student")}</h1>
-          <div style="font-size:0.8125rem; font-weight:700; color:var(--text-secondary);">${escapeHtml(currentUser.id)} • ${escapeHtml(currentUser.gender || "Student")}</div>
-          <div style="font-size:0.75rem; color:var(--text-tertiary); margin-top:2px;">${escapeHtml(currentUser.email || "")}</div>
+          <h1 class="page-title" style="font-size:1.35rem; margin-bottom:2px;">${escapeHtml(currentUser.name || "College Student")}</h1>
+          <div class="secondary-text" style="font-weight:700;">${escapeHtml(currentUser.id)} • ${escapeHtml(currentUser.gender || "Student")}</div>
+          <div class="caption-text">${escapeHtml(currentUser.email || "")}</div>
         </div>
       </div>
 
       <div style="display:flex; gap:10px;">
-        <button onclick="logoutUser()" class="btn-glass-danger" style="height:36px; font-size:0.75rem;">
+        <button onclick="logoutUser()" class="btn-danger" style="height:34px; font-size:0.75rem;">
           Sign Out of HackMate
         </button>
       </div>
     </div>
 
-    <div class="glass-card">
-      <h3 style="font-size:0.9375rem; font-weight:800; color:var(--text-primary); margin-bottom:12px;">My Teams</h3>
+    <div class="glass-surface-primary">
+      <h3 class="section-title" style="font-size:0.9375rem; margin-bottom:12px;">My Teams</h3>
       <div id="profileUserTeamsContainer">
-        <div class="glass-skeleton" style="height:80px;"></div>
+        <div class="glass-skeleton" style="height:70px;"></div>
       </div>
     </div>
   `;
 
-  // Fetch user's teams
   fetch("/api/teams")
     .then(res => res.json())
-    .then(teams => {
-      const userTeams = teams.filter(t => t.members.some(m => m.student_id === currentUser.id));
+    .then(data => {
+      const teams = data.teams || data;
+      const userTeams = teams.filter(t => t.members.some(m => (m.student_id || m.r_id) === currentUser.id));
       const div = document.getElementById("profileUserTeamsContainer");
       if (!div) return;
 
       if (userTeams.length === 0) {
-        div.innerHTML = `<p style="font-size:0.8125rem; color:var(--text-tertiary);">You are not currently in any hackathon team.</p>`;
+        div.innerHTML = `<p class="caption-text">You are not currently in any hackathon team.</p>`;
         return;
       }
 
-      div.innerHTML = userTeams.map(t => `
-        <a href="/team/${t.id}" class="glass-card glass-card-interactive" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; margin-bottom:8px; text-decoration:none;">
-          <div>
-            <div style="font-size:0.875rem; font-weight:800; color:var(--text-primary);">${escapeHtml(t.title)}</div>
-            <div style="font-size:0.75rem; color:var(--text-tertiary);">${t.members.length}/6 Members • ${t.leader_id === currentUser.id ? 'Leader' : 'Member'}</div>
-          </div>
-          <span style="font-size:0.75rem; font-weight:700; color:var(--g-blue);">View Team ➔</span>
-        </a>
-      `).join("");
+      div.innerHTML = userTeams.map(t => {
+        const title = t.title || t.name || "Untitled Team";
+        const leaderId = t.leader_id || t.leader_r_id;
+        return `
+          <a href="/team/${t.id}" class="glass-card-compact glass-card-interactive" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; margin-bottom:8px; text-decoration:none;">
+            <div>
+              <div style="font-size:0.875rem; font-weight:800; color:var(--text-primary);">${escapeHtml(title)}</div>
+              <div class="caption-text">${t.members.length}/6 Members • ${leaderId === currentUser.id ? 'Leader' : 'Member'}</div>
+            </div>
+            <span style="font-size:0.75rem; font-weight:700; color:var(--g-blue);">View Team ➔</span>
+          </a>
+        `;
+      }).join("");
     });
 }
 
@@ -985,7 +993,7 @@ function loadStudentsView() {
   const input = document.getElementById("dirSearchInput");
   if (input) input.value = "";
   const results = document.getElementById("dirSearchResults");
-  if (results) results.innerHTML = `<div style="font-size:0.875rem; color:var(--text-tertiary); text-align:center; padding:36px;">Type student R-ID or name above to search</div>`;
+  if (results) results.innerHTML = `<div class="caption-text" style="text-align:center; padding:28px;">Type student R-ID or name above to search</div>`;
 }
 
 function searchStudentDirectory() {
@@ -995,7 +1003,7 @@ function searchStudentDirectory() {
 
   const query = input.value.trim();
   if (query.length < 2) {
-    resultsDiv.innerHTML = `<div style="font-size:0.875rem; color:var(--text-tertiary); text-align:center; padding:36px;">Type student R-ID or name above to search</div>`;
+    resultsDiv.innerHTML = `<div class="caption-text" style="text-align:center; padding:28px;">Type student R-ID or name above to search</div>`;
     return;
   }
 
@@ -1006,23 +1014,27 @@ function searchStudentDirectory() {
 
   fetch(`/api/students/search?q=${encodeURIComponent(query)}`, { signal: currentSearchAbortController.signal })
     .then(res => res.json())
-    .then(students => {
+    .then(data => {
+      const students = data.students || data;
       if (!students || students.length === 0) {
-        resultsDiv.innerHTML = `<div style="font-size:0.875rem; color:var(--text-tertiary); text-align:center; padding:36px;">No students found matching "${escapeHtml(query)}"</div>`;
+        resultsDiv.innerHTML = `<div class="caption-text" style="text-align:center; padding:28px;">No students found matching "${escapeHtml(query)}"</div>`;
         return;
       }
 
-      resultsDiv.innerHTML = students.map(s => `
-        <div class="glass-card" style="padding:14px; display:flex; align-items:center; justify-content:space-between;">
-          <div>
-            <div style="font-size:0.9375rem; font-weight:800; color:var(--text-primary);">${escapeHtml(s.name)}</div>
-            <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;">R-ID: ${s.id} • ${s.gender}</div>
+      resultsDiv.innerHTML = students.map(s => {
+        const sId = s.id || s.r_id;
+        return `
+          <div class="glass-card-compact" style="padding:12px; display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <div style="font-size:0.875rem; font-weight:800; color:var(--text-primary);">${escapeHtml(s.name)}</div>
+              <div class="caption-text" style="margin-top:2px;">R-ID: ${sId} • ${s.gender}</div>
+            </div>
+            <button onclick="copyStudentRid('${sId}')" class="btn-secondary" style="height:30px; font-size:0.6875rem; padding:0 8px;">
+              Copy R-ID
+            </button>
           </div>
-          <button onclick="copyStudentRid('${s.id}')" class="btn-glass-secondary" style="height:32px; font-size:0.6875rem; padding:0 10px;">
-            Copy R-ID
-          </button>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     })
     .catch(err => {
       if (err.name !== "AbortError") {
@@ -1038,7 +1050,7 @@ function copyStudentRid(rid) {
 }
 
 /* ==========================================================================
-   8. CUSTOM GLASS MODAL SHEET & TOAST UTILITIES
+   8. CUSTOM GLASS CONFIRMATION MODAL SHEET & TOAST UTILITIES
    ========================================================================== */
 function showGlassModal({ title, message, confirmText = "Confirm", cancelText = "Cancel", onConfirm, isDanger = false }) {
   const overlay = document.getElementById("glassModalOverlay");
@@ -1046,11 +1058,11 @@ function showGlassModal({ title, message, confirmText = "Confirm", cancelText = 
   if (!overlay || !sheet) return;
 
   sheet.innerHTML = `
-    <h3 style="font-size:1.125rem; font-weight:800; color:var(--text-primary); margin-bottom:8px;">${escapeHtml(title)}</h3>
-    <p style="font-size:0.875rem; color:var(--text-secondary); line-height:1.45; margin-bottom:20px;">${escapeHtml(message)}</p>
-    <div style="display:flex; align-items:center; justify-content:flex-end; gap:10px;">
-      <button onclick="closeGlassModal()" class="btn-glass-secondary" style="height:38px;">${escapeHtml(cancelText)}</button>
-      <button id="btnModalConfirm" class="${isDanger ? 'btn-glass-danger' : 'btn-glass-primary'}" style="height:38px;">${escapeHtml(confirmText)}</button>
+    <h3 class="section-title" style="margin-bottom:6px;">${escapeHtml(title)}</h3>
+    <p class="body-text" style="margin-bottom:16px;">${escapeHtml(message)}</p>
+    <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+      <button onclick="closeGlassModal()" class="btn-secondary" style="height:36px;">${escapeHtml(cancelText)}</button>
+      <button id="btnModalConfirm" class="${isDanger ? 'btn-danger' : 'btn-primary'}" style="height:36px;">${escapeHtml(confirmText)}</button>
     </div>
   `;
 
@@ -1072,21 +1084,21 @@ function showToast(message, type = "info") {
   if (!container) return;
 
   const toast = document.createElement("div");
-  const bgColor = type === "error" ? "rgba(255, 59, 48, 0.9)" : type === "success" ? "rgba(52, 199, 89, 0.9)" : "rgba(0, 122, 255, 0.9)";
+  const bgColor = type === "error" ? "rgba(255, 59, 48, 0.92)" : type === "success" ? "rgba(52, 199, 89, 0.92)" : "rgba(0, 122, 255, 0.92)";
 
   toast.style.cssText = `
-    padding: 10px 16px;
+    padding: 8px 14px;
     background: ${bgColor};
     color: #FFFFFF;
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 700;
     border-radius: var(--r-full);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     text-align: center;
     pointer-events: auto;
     opacity: 0;
-    transform: translateY(-8px);
-    transition: all 0.2s var(--spring-ease);
+    transform: translateY(-6px);
+    transition: all 0.18s var(--spring-ease);
   `;
   toast.innerText = message;
 
@@ -1099,9 +1111,9 @@ function showToast(message, type = "info") {
 
   setTimeout(() => {
     toast.style.opacity = "0";
-    toast.style.transform = "translateY(-8px)";
-    setTimeout(() => toast.remove(), 200);
-  }, 2500);
+    toast.style.transform = "translateY(-6px)";
+    setTimeout(() => toast.remove(), 180);
+  }, 2200);
 }
 
 function escapeHtml(str) {

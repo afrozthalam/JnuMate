@@ -9,9 +9,9 @@
 <body>
 
   <!-- TOAST CONTAINER -->
-  <div id="toastContainer" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99; display:flex; flex-direction:column; gap:8px; width:90%; max-width:380px; pointer-events:none;"></div>
+  <div id="toastContainer" style="position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:99; display:flex; flex-direction:column; gap:8px; width:90%; max-width:360px; pointer-events:none;"></div>
 
-  <!-- SINGLE UNIFIED FLOATING GLASS HEADER (NO DOUBLE HEADER BUG) -->
+  <!-- SINGLE UNIFIED FLOATING GLASS HEADER (MATERIAL 1) -->
   <header class="glass-header-desktop">
     <!-- GOOGLE-STYLED TEXT LOGO -->
     <a href="/" class="brand-google-logo">
@@ -35,35 +35,38 @@
 
     <!-- VIEW 1: DISCOVER TEAMS PAGE -->
     <section id="viewDiscover" class="view-page-panel active">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px;">
         <div>
           <h1 class="page-title">Discover Teams</h1>
-          <p class="page-subtitle" style="margin-bottom:0;">Find teammates or join an open hackathon team.</p>
+          <p class="secondary-text">Find teammates or join an open hackathon team.</p>
         </div>
 
-        <a href="/create-team" class="btn-glass-primary">
+        <a href="/create-team" class="btn-primary">
           + Create Team
         </a>
       </div>
 
-      <!-- SEARCH & FILTERS -->
-      <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:24px;">
-        <input type="text" id="searchInput" placeholder="Search teams by title or pitch..." class="glass-input" style="max-width:380px;" onkeyup="debounceDiscoverSearch()">
+      <!-- SEARCH FIELD & SEGMENTED FILTER CONTROL -->
+      <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px;">
+        <div class="ios-search-wrapper">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          <input type="text" id="searchInput" placeholder="Search teams by title or pitch..." class="glass-input ios-search-input" onkeyup="debounceDiscoverSearch()">
+        </div>
         
-        <div style="display:flex; gap:8px;">
-          <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="nav-link-glass active">All Teams</button>
-          <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="nav-link-glass">Open Slots Only</button>
+        <div class="segmented-control">
+          <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="segmented-item active">All Teams</button>
+          <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="segmented-item">Open Slots Only</button>
         </div>
       </div>
 
       <!-- TEAMS GRID (2-column grid on mobile) -->
-      <div id="teamsGridContainer" class="teams-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px;"></div>
+      <div id="teamsGridContainer" class="teams-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:16px;"></div>
 
       <!-- EMPTY STATE -->
-      <div id="emptyStateContainer" class="glass-card" style="display:none; text-align:center; padding:60px 20px; margin-top:20px;">
-        <h3 style="font-size:1.125rem; font-weight:800; color:var(--text-primary);">No teams found</h3>
-        <p style="font-size:0.875rem; color:var(--text-secondary); margin-top:4px;">Be the first to build a team for the hackathon!</p>
-        <a href="/create-team" class="btn-glass-primary" style="margin-top:20px; display:inline-flex;">
+      <div id="emptyStateContainer" class="glass-surface-primary" style="display:none; text-align:center; padding:48px 20px; margin-top:16px;">
+        <h3 class="section-title">No teams found</h3>
+        <p class="secondary-text" style="margin-top:4px;">Be the first to build a team for the hackathon!</p>
+        <a href="/create-team" class="btn-primary" style="margin-top:16px; display:inline-flex;">
           + Create Team
         </a>
       </div>
@@ -71,7 +74,7 @@
 
     <!-- VIEW 2: TEAM DETAIL PAGE -->
     <section id="viewTeamDetail" class="view-page-panel">
-      <a href="/" class="btn-glass-secondary" style="margin-bottom:20px; font-size:0.8125rem;">
+      <a href="/" class="btn-secondary" style="margin-bottom:16px; height:34px; font-size:0.75rem;">
         ← Back to Discover Teams
       </a>
       <div id="teamDetailViewContainer"></div>
@@ -79,47 +82,47 @@
 
     <!-- VIEW 3: CREATE TEAM PAGE -->
     <section id="viewCreateTeam" class="view-page-panel">
-      <a href="/" class="btn-glass-secondary" style="margin-bottom:20px; font-size:0.8125rem;">
+      <a href="/" class="btn-secondary" style="margin-bottom:16px; height:34px; font-size:0.75rem;">
         ← Cancel & Back
       </a>
 
-      <div class="glass-card" style="max-width:680px; margin:0 auto;">
+      <div class="glass-surface-primary" style="max-width:640px; margin:0 auto;">
         <h1 class="page-title">Create New Team</h1>
-        <p class="page-subtitle">Build your 6-seat team: pre-add friends or leave seats open for requests.</p>
+        <p class="secondary-text" style="margin-bottom:20px;">Build your 6-seat team: pre-add friends or leave seats open for requests.</p>
 
-        <div style="display:flex; flex-direction:column; gap:18px;">
+        <div style="display:flex; flex-direction:column; gap:16px;">
           <div>
-            <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px;">Team Title *</label>
-            <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, EmeraldSquad" class="glass-input" style="font-weight:700;">
+            <label class="caption-text" style="display:block; text-transform:uppercase; margin-bottom:6px;">Team Title *</label>
+            <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, EmeraldSquad" class="glass-input">
           </div>
 
           <div>
-            <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px;">Project Pitch</label>
+            <label class="caption-text" style="display:block; text-transform:uppercase; margin-bottom:6px;">Project Pitch</label>
             <textarea id="teamDescInput" rows="3" placeholder="Describe your hackathon project pitch or required skills..." class="glass-textarea"></textarea>
           </div>
 
           <div>
-            <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--g-blue); text-transform:uppercase; margin-bottom:6px;">WhatsApp Group Link (Optional)</label>
+            <label class="caption-text" style="display:block; color:var(--g-blue); text-transform:uppercase; margin-bottom:6px;">WhatsApp Group Link (Optional)</label>
             <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="glass-input">
           </div>
 
           <!-- SEARCH & PRE-ADD FRIENDS -->
-          <div style="padding-top:16px; border-top:1px solid var(--glass-border-subtle);">
-            <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:8px;">Search & Pre-Add Teammates Directly</label>
+          <div style="padding-top:14px; border-top:1px solid var(--glass-t3-border);">
+            <label class="caption-text" style="display:block; text-transform:uppercase; margin-bottom:8px;">Search & Pre-Add Teammates Directly</label>
             <div style="position:relative;">
               <input type="text" id="friendSearchInput" placeholder="Type student R-ID or Name..." class="glass-input" onkeyup="searchFriends()">
               
-              <div id="friendSearchResults" style="display:none; position:absolute; left:0; right:0; top:100%; margin-top:4px; background:#FFFFFF; border:1px solid var(--glass-border); border-radius:var(--r-md); z-index:30; max-height:220px; overflow-y:auto; box-shadow:var(--glass-shadow-lg);"></div>
+              <div id="friendSearchResults" style="display:none; position:absolute; left:0; right:0; top:100%; margin-top:4px; background:#FFFFFF; border:1px solid var(--glass-t3-border); border-radius:var(--r-md); z-index:30; max-height:200px; overflow-y:auto; box-shadow:var(--glass-t4-shadow);"></div>
             </div>
           </div>
 
-          <!-- VISUAL 6 SEATS PREVIEW -->
+          <!-- COMPACT 2x3 VISUAL 6-SEAT PREVIEW -->
           <div>
-            <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:8px;">Visual 6-Seat Preview</label>
-            <div id="createTeamSeatsContainer" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px;"></div>
+            <label class="caption-text" style="display:block; text-transform:uppercase; margin-bottom:8px;">Visual 6-Seat Preview</label>
+            <div id="createTeamSeatsContainer" style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px;"></div>
           </div>
 
-          <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-glass-primary" style="height:46px; width:100%; margin-top:8px;">
+          <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-primary" style="height:44px; width:100%; margin-top:6px;">
             Create & Publish Team
           </button>
         </div>
@@ -128,28 +131,28 @@
 
     <!-- VIEW 4: USER PROFILE PAGE -->
     <section id="viewProfile" class="view-page-panel">
-      <div id="profileViewContainer" style="max-width:720px; margin:0 auto;"></div>
+      <div id="profileViewContainer" style="max-width:700px; margin:0 auto;"></div>
     </section>
 
     <!-- VIEW 5: LOGIN PAGE -->
     <section id="viewLogin" class="view-page-panel">
-      <div class="glass-card" style="max-width:440px; margin:20px auto 0; padding:28px;">
-        <h1 class="page-title" style="font-size:1.5rem; margin-bottom:4px;">Sign In with R-ID</h1>
-        <p class="page-subtitle" style="margin-bottom:20px;">Enter your College R-ID to receive a verification code on your email.</p>
+      <div class="glass-surface-primary" style="max-width:420px; margin:20px auto 0; padding:24px;">
+        <h1 class="page-title" style="font-size:1.375rem; margin-bottom:4px;">Sign In with R-ID</h1>
+        <p class="secondary-text" style="margin-bottom:18px;">Enter your College R-ID to receive a verification code on your email.</p>
 
         <!-- Step 1: Input R-ID -->
         <div id="authStep1" style="display:block;">
-          <div style="margin-bottom:18px;">
-            <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; margin-bottom:6px;">College R-ID</label>
-            <input type="text" id="authRidInput" placeholder="e.g. R15006" class="glass-input" style="font-weight:700; text-transform:uppercase; height:46px; font-size:1rem;">
+          <div style="margin-bottom:16px;">
+            <label class="caption-text" style="display:block; text-transform:uppercase; margin-bottom:6px;">College R-ID</label>
+            <input type="text" id="authRidInput" placeholder="e.g. R15006" class="glass-input" style="font-weight:700; text-transform:uppercase; height:44px; font-size:0.9375rem;">
           </div>
 
-          <button onclick="sendEmailOtpCode()" id="btnSendOtp" class="btn-glass-primary" style="width:100%; height:46px;">
+          <button onclick="sendEmailOtpCode()" id="btnSendOtp" class="btn-primary" style="width:100%; height:44px;">
             Send Verification Code
           </button>
 
-          <div style="text-align:center; margin-top:16px;">
-            <button onclick="showManualRegister()" style="font-size:0.8125rem; color:var(--g-blue); font-weight:700; background:none; border:none; cursor:pointer;">
+          <div style="text-align:center; margin-top:14px;">
+            <button onclick="showManualRegister()" style="font-size:0.75rem; color:var(--g-blue); font-weight:700; background:none; border:none; cursor:pointer;">
               Unlisted R-ID? Register Account ➔
             </button>
           </div>
@@ -157,28 +160,28 @@
 
         <!-- Step 2: Input OTP -->
         <div id="authStep2" style="display:none;">
-          <div style="padding:14px; background:var(--accent-blue-bg); border:1px solid rgba(0, 122, 255, 0.2); border-radius:var(--r-md); margin-bottom:18px;">
-            <div style="font-size:0.75rem; font-weight:600; color:var(--text-secondary);">Verification code sent to:</div>
-            <div id="targetEmailDisplay" style="font-size:0.875rem; font-weight:800; color:var(--g-blue); word-break:break-all; margin-top:2px;"></div>
+          <div style="padding:12px; background:var(--accent-blue-bg); border:1px solid rgba(0, 122, 255, 0.18); border-radius:var(--r-md); margin-bottom:16px;">
+            <div class="caption-text">Verification code sent to:</div>
+            <div id="targetEmailDisplay" style="font-size:0.8125rem; font-weight:800; color:var(--g-blue); word-break:break-all; margin-top:2px;"></div>
           </div>
 
-          <div style="margin-bottom:18px;">
-            <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; text-align:center; margin-bottom:6px;">Enter 6-Digit Code</label>
-            <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" style="width:100%; height:52px; padding:0 16px; background:#FFFFFF; border:2px solid var(--g-blue); border-radius:var(--r-md); font-size:1.5rem; font-weight:800; text-align:center; letter-spacing:0.2em; outline:none; color:var(--text-primary);">
+          <div style="margin-bottom:16px;">
+            <label class="caption-text" style="display:block; text-transform:uppercase; text-align:center; margin-bottom:6px;">Enter 6-Digit Code</label>
+            <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" style="width:100%; height:48px; padding:0 16px; background:#FFFFFF; border:2px solid var(--g-blue); border-radius:var(--r-md); font-size:1.35rem; font-weight:800; text-align:center; letter-spacing:0.2em; outline:none; color:var(--text-primary);">
           </div>
 
-          <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-glass-primary" style="width:100%; height:46px;">
+          <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-primary" style="width:100%; height:44px;">
             Verify & Sign In
           </button>
 
-          <button onclick="showAuthStep(1)" style="width:100%; text-align:center; margin-top:14px; font-size:0.8125rem; color:var(--text-tertiary); font-weight:600; background:none; border:none; cursor:pointer;">
+          <button onclick="showAuthStep(1)" style="width:100%; text-align:center; margin-top:12px; font-size:0.75rem; color:var(--text-tertiary); font-weight:600; background:none; border:none; cursor:pointer;">
             ← Back to R-ID Input
           </button>
         </div>
 
         <!-- Step 3: Manual Register -->
         <div id="authStepRegister" style="display:none;">
-          <div style="display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; flex-direction:column; gap:10px;">
             <input type="text" id="regRid" placeholder="College R-ID (e.g. R15006)" class="glass-input" style="font-weight:700; text-transform:uppercase;">
             <input type="text" id="regName" placeholder="Full Name" class="glass-input">
             <input type="email" id="regEmail" placeholder="College Email Address" class="glass-input">
@@ -188,7 +191,7 @@
               <option value="Other">Other</option>
             </select>
             <input type="text" id="regDob" placeholder="Date of Birth (e.g. 12 Nov 2002)" class="glass-input">
-            <button onclick="submitManualRegister()" class="btn-glass-primary" style="height:46px; margin-top:6px;">
+            <button onclick="submitManualRegister()" class="btn-primary" style="height:44px; margin-top:4px;">
               Register & Sign In
             </button>
           </div>
@@ -198,21 +201,24 @@
 
     <!-- VIEW 6: STUDENT DIRECTORY SEARCH PAGE -->
     <section id="viewStudents" class="view-page-panel">
-      <div class="glass-card" style="max-width:720px; margin:0 auto;">
+      <div class="glass-surface-primary" style="max-width:700px; margin:0 auto;">
         <h1 class="page-title">Student Directory</h1>
-        <p class="page-subtitle">Search college student database by R-ID or Name.</p>
+        <p class="secondary-text" style="margin-bottom:16px;">Search college student database by R-ID or Name.</p>
 
-        <input type="text" id="dirSearchInput" placeholder="Type student R-ID or Name (e.g. R15006, Rahul)..." class="glass-input" style="margin-bottom:20px;" onkeyup="searchStudentDirectory()">
+        <div class="ios-search-wrapper" style="max-width:100%; margin-bottom:16px;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          <input type="text" id="dirSearchInput" placeholder="Type student R-ID or Name (e.g. R15006, Rahul)..." class="glass-input ios-search-input" onkeyup="searchStudentDirectory()">
+        </div>
 
-        <div id="dirSearchResults" style="display:flex; flex-direction:column; gap:10px;">
-          <div style="font-size:0.875rem; color:var(--text-tertiary); text-align:center; padding:36px;">Type student R-ID or name above to search</div>
+        <div id="dirSearchResults" style="display:flex; flex-direction:column; gap:8px;">
+          <div class="caption-text" style="text-align:center; padding:28px;">Type student R-ID or name above to search</div>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- FLOATING IOS LIQUID GLASS MOBILE BOTTOM DOCK BAR -->
+  <!-- FLOATING IOS LIQUID GLASS MOBILE BOTTOM DOCK (MATERIAL 1) -->
   <nav class="liquid-glass-dock">
     <a href="/" class="dock-item active">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
@@ -230,12 +236,12 @@
     </a>
   </nav>
 
-  <!-- GLASS MODAL ROOT FOR CUSTOM CONFIRMATION SHEETS -->
+  <!-- OVERLAY MODAL ROOT (MATERIAL 4) -->
   <div id="glassModalOverlay" class="glass-modal-overlay">
     <div class="glass-modal-sheet" id="glassModalSheet"></div>
   </div>
 
-  <!-- JS ENGINE -->
+  <!-- JS SPA ENGINE -->
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
