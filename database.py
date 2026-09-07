@@ -52,6 +52,13 @@ def init_db():
             );
         """)
 
+        # Migration check for dob column in existing Postgres DB
+        try:
+            cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS dob VARCHAR(50);")
+            conn.commit()
+        except Exception as e:
+            print(f"Postgres dob migration note: {e}")
+
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS email_otps (
                 id SERIAL PRIMARY KEY,
