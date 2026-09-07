@@ -136,28 +136,14 @@ def auto_import_student_from_json(r_id, conn, cursor):
     return cursor.fetchone()
 
 @app.route("/")
-def index():
+@app.route("/team/<int:team_id>")
+@app.route("/create-team")
+@app.route("/profile")
+@app.route("/login")
+@app.route("/students")
+def index(team_id=None):
     return render_template("index.html")
 
-@app.route("/team/<int:team_id>")
-def team_detail_page(team_id):
-    return render_template("team_detail.html", team_id=team_id)
-
-@app.route("/create-team")
-def create_team_page():
-    return render_template("create_team.html")
-
-@app.route("/profile")
-def profile_page():
-    return render_template("profile.html")
-
-@app.route("/login")
-def login_page():
-    return render_template("login.html")
-
-@app.route("/students")
-def students_page():
-    return render_template("students.html")
 
 
 # --- AUTH ENDPOINTS ---
