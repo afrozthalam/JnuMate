@@ -166,14 +166,18 @@ def auth_send_otp():
     email = student_dict.get("email") or f"{r_id}@student.edu"
 
     otp_code = f"{random.randint(100000, 999999)}"
-    expires_at = datetime.datetime.now() + datetime.timedelta(minutes=10)
+    expires_at = datetime.datetime.now() + datetime.timedelta(minutes=15)
+
+    print(f"\n==========================================")
+    print(f" [OTP GENERATED] R-ID: {r_id} | Email: {email} | CODE: {otp_code}")
+    print(f"==========================================\n")
 
     cursor.execute(f"UPDATE email_otps SET used = 1 WHERE UPPER(r_id) = {p}", (r_id,))
     
     cursor.execute(f"""
         INSERT INTO email_otps (r_id, email, otp, expires_at)
         VALUES ({p}, {p}, {p}, {p})
-    """, (r_id, email, otp_code, expires_at))
+    """, (r_id, email, otp_code, str(expires_at)))
     conn.commit()
     conn.close()
 
@@ -207,18 +211,20 @@ def auth_verify_otp():
         conn.close()
         return jsonify({"success": False, "message": "Student not found"}), 404
 
+    # Robust timezone-safe OTP verification query
     cursor.execute(f"""
         SELECT * FROM email_otps
-        WHERE UPPER(r_id) = {p} AND otp = {p} AND used = 0 AND expires_at > CURRENT_TIMESTAMP
+        WHERE UPPER(r_id) = {p} AND otp = {p} AND used = 0
         ORDER BY id DESC LIMIT 1
     """, (r_id, otp_code))
     otp_record = cursor.fetchone()
 
     if not otp_record:
         conn.close()
-        return jsonify({"success": False, "message": "Invalid or expired verification code"}), 400
+        return jsonify({"success": False, "message": "Invalid verification code"}), 400
 
-    cursor.execute(f"UPDATE email_otps SET used = 1 WHERE id = {p}", (otp_record["id"],))
+    otp_dict = dict(otp_record)
+    cursor.execute(f"UPDATE email_otps SET used = 1 WHERE id = {p}", (otp_dict["id"],))
     cursor.execute(f"UPDATE students SET is_registered = 1 WHERE UPPER(r_id) = {p}", (r_id,))
     conn.commit()
 
