@@ -1,5 +1,6 @@
 /**
- * HackMate — iOS 27 Liquid Glass SPA Engine & Performance Architecture
+ * HackMate — iOS 27 Liquid Glass SPA Engine
+ * Genuine Liquid Glass physics, complete information preservation, and high performance.
  */
 
 let currentUser = null;
@@ -10,7 +11,7 @@ let discoverFilter = 'all';
 let discoverSearchTerm = '';
 let discoverSearchDebounce = null;
 
-// In-Memory Client Cache (0ms Instant Renders)
+// In-Memory Client Cache for immediate rendering
 const clientCache = {
   teamsList: null,
   teamsMap: {},
@@ -126,7 +127,7 @@ function highlightActiveNavLinks() {
 }
 
 /* ==========================================================================
-   2. AUTHENTICATION & USER SESSION ENGINE
+   2. AUTHENTICATION & SESSION MANAGEMENT
    ========================================================================== */
 function loadUserFromSession() {
   fetch("/api/auth/me")
@@ -140,7 +141,7 @@ function loadUserFromSession() {
       renderNavUserSlots();
     })
     .catch(err => {
-      console.error("Session check error:", err);
+      console.warn("Session check error:", err);
       currentUser = null;
       renderNavUserSlots();
     });
@@ -151,22 +152,28 @@ function renderNavUserSlots() {
   const mbSlot = document.getElementById("navUserSlotMobile");
 
   if (currentUser) {
+    const avatarImg = currentUser.avatar_url ? `
+      <img src="${escapeHtml(currentUser.avatar_url)}" class="student-avatar" style="width:26px; height:26px;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent('${currentUser.id}');">
+    ` : `
+      <div class="student-avatar-fallback" style="width:26px; height:26px; font-size:0.6875rem;">
+        ${currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
+      </div>
+    `;
+
     const userHtml = `
-      <div style="display:flex; align-items:center; gap:8px;">
+      <div style="display:flex; align-items:center; gap:6px;">
         <a href="/profile" style="display:flex; align-items:center; gap:6px; text-decoration:none;">
-          <div style="width:28px; height:28px; border-radius:50%; background:var(--accent-blue-bg); color:var(--g-blue); font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--g-blue);">
-            ${currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
-          </div>
-          <span style="font-size:0.8125rem; font-weight:700; color:var(--text-primary);">${currentUser.name || currentUser.id}</span>
+          ${avatarImg}
+          <span style="font-size:0.8125rem; font-weight:700; color:var(--text-primary);">${escapeHtml(currentUser.name || currentUser.id)}</span>
         </a>
-        <button onclick="logoutUser()" class="btn-secondary" style="height:30px; padding:0 10px; font-size:0.75rem;">Sign Out</button>
+        <button onclick="logoutUser()" class="btn-secondary" style="height:28px; padding:0 8px; font-size:0.6875rem;">Sign Out</button>
       </div>
     `;
     if (dtSlot) dtSlot.innerHTML = userHtml;
     if (mbSlot) mbSlot.innerHTML = userHtml;
   } else {
     const loginHtml = `
-      <a href="/login" class="btn-primary" style="height:32px; padding:0 12px; font-size:0.75rem;">Sign In</a>
+      <a href="/login" class="btn-primary" style="height:30px; padding:0 10px; font-size:0.75rem;">Sign In</a>
     `;
     if (dtSlot) dtSlot.innerHTML = loginHtml;
     if (mbSlot) mbSlot.innerHTML = loginHtml;
@@ -205,7 +212,7 @@ function sendEmailOtpCode() {
     .catch(err => {
       btn.disabled = false;
       btn.innerText = "Send Verification Code";
-      showToast("Network error during request", "error");
+      showToast("Network error requesting verification code", "error");
     });
 }
 
@@ -237,7 +244,7 @@ function verifyEmailOtpCode() {
       if (data.success) {
         currentUser = data.user;
         renderNavUserSlots();
-        showToast("Successfully authenticated!", "success");
+        showToast("Signed in successfully!", "success");
         navigateTo("/");
       } else {
         showToast(data.message || "Invalid verification code", "error");
@@ -304,6 +311,11 @@ function logoutUser() {
       renderNavUserSlots();
       showToast("Signed out", "info");
       navigateTo("/");
+    })
+    .catch(err => {
+      currentUser = null;
+      renderNavUserSlots();
+      navigateTo("/");
     });
 }
 
@@ -316,7 +328,7 @@ function loadLoginView() {
 }
 
 /* ==========================================================================
-   3. DISCOVER TEAMS VIEW ENGINE (COMPACT 2-COLUMN MOBILE CARDS)
+   3. DISCOVER TEAMS VIEW (CONTENT-DRIVEN 2-COLUMN MOBILE CARDS)
    ========================================================================== */
 function loadDiscoverView() {
   if (clientCache.teamsList) {
@@ -341,7 +353,7 @@ function renderTeamsSkeleton() {
 
   let skeletonHtml = "";
   for (let i = 0; i < 6; i++) {
-    skeletonHtml += `<div class="glass-card-compact glass-skeleton" style="height:150px;"></div>`;
+    skeletonHtml += `<div class="glass-card-compact glass-skeleton" style="height:130px;"></div>`;
   }
   container.innerHTML = skeletonHtml;
 }
@@ -373,82 +385,85 @@ function renderTeamsGrid(teams) {
 
   const isMobile = window.innerWidth <= 767;
 
-  container.innerHTML = filtered.map(t => {
-    const title = t.title || t.name || "Untitled Team";
-    const desc = t.description || "No pitch provided.";
-    const memberCount = t.members ? t.members.length : (t.member_count || 1);
-    const isFull = memberCount >= 6;
-    const openSlots = 6 - memberCount;
-    const percent = Math.min(100, Math.round((memberCount / 6) * 100));
+  container.innerHTML = filtered.map(t => renderSingleTeamCard(t, isMobile)).join("");
+}
 
-    let avatarsHtml = "";
-    if (t.members && t.members.length > 0) {
-      avatarsHtml = t.members.slice(0, 3).map(m => `
-        <div class="avatar-stack-item" title="${m.name || m.student_id || m.r_id}">
-          ${m.name ? m.name.charAt(0).toUpperCase() : "U"}
-        </div>
-      `).join("");
-      if (t.members.length > 3) {
-        avatarsHtml += `<div class="avatar-stack-item">+${t.members.length - 3}</div>`;
-      }
-    }
+/**
+ * Single Unified Team Card Component
+ * Shared between Discover and Profile pages for complete visual consistency.
+ */
+function renderSingleTeamCard(t, isMobile) {
+  const title = t.title || t.name || "Untitled Team";
+  const desc = t.description || "No pitch details provided.";
+  const memberCount = t.members ? t.members.length : (t.member_count || 1);
+  const isFull = memberCount >= 6;
+  const openSlots = 6 - memberCount;
 
-    if (isMobile) {
+  // Actual Avatar Images in Stack
+  let avatarsHtml = "";
+  if (t.members && t.members.length > 0) {
+    avatarsHtml = t.members.slice(0, 3).map(m => {
+      const mId = m.student_id || m.r_id || "U";
+      const mName = m.name || mId;
+      const avatarSrc = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mId)}`;
       return `
-        <a href="/team/${t.id}" class="glass-card-compact glass-card-interactive mobile-team-card" style="text-decoration:none;">
-          <div>
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-              <span class="glass-pill ${isFull ? 'glass-pill-full' : 'glass-pill-open'}" style="font-size:0.5rem; padding:1px 5px;">
-                ${isFull ? 'FULL' : openSlots + ' OPEN'}
-              </span>
-              <div class="avatar-stack">${avatarsHtml}</div>
-            </div>
-
-            <h3 class="mobile-team-title">${escapeHtml(title)}</h3>
-            <p class="mobile-team-pitch">${escapeHtml(desc)}</p>
-          </div>
-
-          <div>
-            <div style="display:flex; justify-content:space-between; font-size:0.625rem; color:var(--text-tertiary); font-weight:700; margin-bottom:3px;">
-              <span>SEATS</span>
-              <span>${memberCount}/6</span>
-            </div>
-            <div class="seat-meter-bar">
-              <div class="seat-meter-fill" style="width:${percent}%;"></div>
-            </div>
-          </div>
-        </a>
+        <div class="avatar-stack-item" title="${escapeHtml(mName)}">
+          <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(mName)}" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent('${mId}');">
+        </div>
       `;
+    }).join("");
+    if (t.members.length > 3) {
+      avatarsHtml += `<div class="avatar-stack-item">+${t.members.length - 3}</div>`;
     }
+  }
 
+  if (isMobile) {
+    // Content-driven compact 2-column mobile card
     return `
-      <a href="/team/${t.id}" class="glass-card-compact glass-card-interactive" style="text-decoration:none; display:flex; flex-direction:column; justify-content:space-between; height:100%;">
+      <a href="/team/${t.id}" class="glass-card-compact glass-card-interactive mobile-team-card">
         <div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-            <span class="glass-pill ${isFull ? 'glass-pill-full' : 'glass-pill-open'}">
-              ${isFull ? 'Team Full (6/6)' : openSlots + ' Open Seats'}
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+            <span class="glass-pill ${isFull ? 'glass-pill-full' : 'glass-pill-open'}" style="font-size:0.5rem; padding:1px 5px;">
+              ${isFull ? 'FULL' : openSlots + ' OPEN'}
             </span>
             <div class="avatar-stack">${avatarsHtml}</div>
           </div>
 
-          <h3 class="card-title" style="margin-bottom:4px;">${escapeHtml(title)}</h3>
-          <p class="secondary-text" style="line-height:1.4; margin-bottom:14px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">
-            ${escapeHtml(desc)}
-          </p>
+          <h3 class="mobile-team-title">${escapeHtml(title)}</h3>
+          <p class="mobile-team-pitch">${escapeHtml(desc)}</p>
         </div>
 
-        <div>
-          <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.6875rem; font-weight:700; color:var(--text-tertiary); margin-bottom:5px;">
-            <span>TEAM SEATS RECORD</span>
-            <span>${memberCount} of 6 Filled</span>
-          </div>
-          <div class="seat-meter-bar">
-            <div class="seat-meter-fill" style="width:${percent}%;"></div>
-          </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:4px;">
+          <span class="caption-text" style="font-size:0.625rem; font-weight:700;">${memberCount}/6 members</span>
+          <span style="font-size:0.6875rem; color:var(--accent-blue); font-weight:700;">View ➔</span>
         </div>
       </a>
     `;
-  }).join("");
+  }
+
+  // Desktop Card
+  return `
+    <a href="/team/${t.id}" class="glass-card-compact glass-card-interactive">
+      <div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+          <span class="glass-pill ${isFull ? 'glass-pill-full' : 'glass-pill-open'}">
+            ${isFull ? 'Team Full (6/6)' : openSlots + ' Open Seats'}
+          </span>
+          <div class="avatar-stack">${avatarsHtml}</div>
+        </div>
+
+        <h3 class="card-title" style="margin-bottom:4px;">${escapeHtml(title)}</h3>
+        <p class="secondary-text" style="line-height:1.4; margin-bottom:12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+          ${escapeHtml(desc)}
+        </p>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--glass-t3-border); padding-top:8px; margin-top:4px;">
+        <span class="caption-text">${memberCount} of 6 Seats Filled</span>
+        <span style="font-size:0.75rem; font-weight:700; color:var(--accent-blue);">View Team ➔</span>
+      </div>
+    </a>
+  `;
 }
 
 function debounceDiscoverSearch() {
@@ -478,26 +493,27 @@ function setDiscoverFilter(type) {
 }
 
 /* ==========================================================================
-   4. TEAM DETAIL VIEW ENGINE
+   4. TEAM DETAIL VIEW (PRESERVING COMPLETE STUDENT INFORMATION ARCHITECTURE)
    ========================================================================== */
 function loadTeamDetailView(teamId) {
   const container = document.getElementById("teamDetailViewContainer");
   if (!container) return;
 
-  container.innerHTML = `<div class="glass-surface-primary glass-skeleton" style="height:300px;"></div>`;
+  container.innerHTML = `<div class="glass-surface-primary glass-skeleton" style="height:280px;"></div>`;
 
-  fetch(`/api/teams/${teamId}`)
+  const r_id = currentUser ? currentUser.id : "";
+  fetch(`/api/teams/${teamId}?r_id=${encodeURIComponent(r_id)}`)
     .then(res => res.json())
     .then(data => {
       const team = data.team || data;
       if (data.error || !team || team.error) {
-        container.innerHTML = `<div class="glass-surface-primary" style="text-align:center; padding:36px;"><h3 style="color:var(--accent-red);">Team Not Found</h3></div>`;
+        container.innerHTML = `<div class="glass-surface-primary" style="text-align:center; padding:32px;"><h3 style="color:var(--accent-red);">Team Not Found</h3></div>`;
         return;
       }
       renderTeamDetail(team);
     })
     .catch(err => {
-      container.innerHTML = `<div class="glass-surface-primary" style="text-align:center; padding:36px;"><h3>Error loading team details</h3></div>`;
+      container.innerHTML = `<div class="glass-surface-primary" style="text-align:center; padding:32px;"><h3 style="color:var(--accent-red);">Error loading team details</h3></div>`;
     });
 }
 
@@ -506,57 +522,86 @@ function renderTeamDetail(team) {
   if (!container) return;
 
   const title = team.title || team.name || "Untitled Team";
-  const leaderId = team.leader_id || team.leader_r_id;
-  const isLeader = currentUser && currentUser.id === leaderId;
-  const isMember = currentUser && team.members.some(m => (m.student_id || m.r_id) === currentUser.id);
+  const leaderId = (team.leader_id || team.leader_r_id || "").toUpperCase();
+  const currentUserId = currentUser ? currentUser.id.toUpperCase() : null;
+  const isLeader = currentUserId && currentUserId === leaderId;
+  const isMember = currentUserId && team.members.some(m => ((m.student_id || m.r_id || "").toUpperCase()) === currentUserId);
   const isFull = team.members.length >= 6;
 
+  // Complete Student Information Member Cards
   let seatsHtml = "";
   for (let i = 0; i < 6; i++) {
     const member = team.members[i];
     if (member) {
-      const mId = member.student_id || member.r_id;
-      const isTeamLeader = mId === leaderId;
+      const mId = member.student_id || member.r_id || "U";
+      const mName = member.name || mId;
+      const mRole = (member.role || "member").toLowerCase();
+      const isTeamLeader = mRole === "leader" || mId.toUpperCase() === leaderId;
+      const isMe = currentUserId && mId.toUpperCase() === currentUserId;
+      const canRemove = isLeader && !isTeamLeader;
+
+      const avatarSrc = member.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mId)}`;
+
       seatsHtml += `
-        <div class="glass-card-compact" style="padding:12px; display:flex; align-items:center; justify-content:space-between;">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:34px; height:34px; border-radius:50%; background:var(--accent-blue-bg); color:var(--g-blue); font-size:0.8125rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--g-blue);">
-              ${member.name ? member.name.charAt(0).toUpperCase() : "U"}
-            </div>
-            <div>
-              <div style="font-size:0.8125rem; font-weight:800; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
-                ${escapeHtml(member.name || mId)}
-                ${isTeamLeader ? `<span class="glass-pill glass-pill-user" style="font-size:0.5rem; padding:1px 5px;">LEADER</span>` : ""}
+        <div class="member-card">
+          <div class="member-info-col">
+            <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(mName)}" class="student-avatar" style="width:36px; height:36px;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent('${mId}');">
+            
+            <div class="member-details">
+              <!-- Primary: Name & Role -->
+              <div class="member-name-row">
+                <span style="font-size:0.875rem; font-weight:700; color:var(--text-primary);">${escapeHtml(mName)}</span>
+                ${isMe ? `<span class="glass-pill glass-pill-user">(You)</span>` : ""}
+                <span class="glass-pill ${isTeamLeader ? 'glass-pill-leader' : 'glass-pill-full'}">${isTeamLeader ? 'Leader' : 'Member'}</span>
               </div>
-              <div class="caption-text">${escapeHtml(mId)} • ${escapeHtml(member.gender || "Student")}</div>
+
+              <!-- Essential Metadata: R-ID & Gender -->
+              <div class="member-meta-row">
+                <span class="caption-text">${escapeHtml(mId)} • ${escapeHtml(member.gender || 'Student')}</span>
+              </div>
+
+              <!-- Secondary Information: Email & DOB -->
+              <div class="member-meta-row" style="margin-top:2px;">
+                ${member.email ? `<a href="mailto:${escapeHtml(member.email)}" class="caption-text" style="color:var(--accent-blue); text-decoration:none;">${escapeHtml(member.email)}</a>` : ""}
+                ${member.dob && member.dob !== 'N/A' ? `<span class="caption-text">• DOB: ${escapeHtml(member.dob)}</span>` : ""}
+              </div>
             </div>
           </div>
 
-          ${isLeader && !isTeamLeader ? `
-            <button onclick="confirmRemoveMember('${team.id}', '${mId}', '${escapeHtml(member.name || mId)}')" class="btn-danger" style="height:28px; padding:0 8px; font-size:0.6875rem;">
-              Remove
-            </button>
+          <!-- Leader Action: Remove -->
+          ${canRemove ? `
+            <div class="member-action-col">
+              <button onclick="confirmRemoveMember('${team.id}', '${mId}', '${escapeHtml(mName)}')" class="btn-danger" style="height:28px; padding:0 8px; font-size:0.6875rem;">
+                Remove
+              </button>
+            </div>
           ` : ""}
         </div>
       `;
     } else {
       seatsHtml += `
-        <div class="glass-card-compact" style="padding:12px; border:1.5px dashed var(--glass-t3-border); background:transparent; display:flex; align-items:center; gap:10px; opacity:0.6;">
-          <div style="width:34px; height:34px; border-radius:50%; border:1.5px dashed var(--text-tertiary); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:0.75rem; font-weight:700;">
-            +
+        <div class="member-card" style="border:1px dashed var(--glass-t3-border); background:transparent; opacity:0.65;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:32px; height:32px; border-radius:50%; border:1.5px dashed var(--text-tertiary); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); font-size:0.75rem; font-weight:700;">
+              +
+            </div>
+            <div>
+              <div class="secondary-text" style="font-weight:700;">Seat ${i + 1} Open</div>
+              <div class="caption-text">Available for join requests</div>
+            </div>
           </div>
-          <div class="secondary-text" style="font-weight:600;">Open Seat ${i + 1}</div>
         </div>
       `;
     }
   }
 
+  // Join Action Panel
   let actionPanelHtml = "";
   if (currentUser) {
     if (isLeader) {
       actionPanelHtml = `
         <div style="display:flex; gap:10px; margin-top:16px;">
-          <button onclick="confirmDisbandTeam('${team.id}')" class="btn-danger" style="height:38px;">
+          <button onclick="confirmDisbandTeam('${team.id}')" class="btn-danger">
             Disband Team
           </button>
         </div>
@@ -564,18 +609,18 @@ function renderTeamDetail(team) {
     } else if (isMember) {
       actionPanelHtml = `
         <div style="margin-top:16px;">
-          <button onclick="confirmLeaveTeam('${team.id}')" class="btn-danger" style="height:38px;">
+          <button onclick="confirmLeaveTeam('${team.id}')" class="btn-danger">
             Leave Team
           </button>
         </div>
       `;
     } else if (!isFull) {
       actionPanelHtml = `
-        <div class="glass-card-compact" style="margin-top:20px; padding:16px; background:#FFFFFF;">
+        <div class="glass-card-compact" style="margin-top:18px; padding:14px; background:rgba(255,255,255,0.85);">
           <h4 class="section-title" style="font-size:0.875rem; margin-bottom:4px;">Request to Join Team</h4>
-          <p class="secondary-text" style="margin-bottom:10px;">Send a note to the team leader explaining your skills or interest.</p>
-          <textarea id="joinMessageInput" rows="2" placeholder="e.g. Hi, I excel at Frontend & React!" class="glass-textarea" style="margin-bottom:10px;"></textarea>
-          <button onclick="submitJoinRequest('${team.id}')" class="btn-primary" style="height:38px; width:100%;">
+          <p class="secondary-text" style="margin-bottom:8px;">Send a short note to the team leader explaining your skills or interest.</p>
+          <textarea id="joinMessageInput" rows="2" placeholder="e.g. Hi, I excel at Frontend & React!" class="glass-textarea" style="margin-bottom:8px;"></textarea>
+          <button onclick="submitJoinRequest('${team.id}')" class="btn-primary" style="height:36px; width:100%;">
             Send Join Request
           </button>
         </div>
@@ -583,55 +628,158 @@ function renderTeamDetail(team) {
     }
   } else {
     actionPanelHtml = `
-      <div class="glass-card-compact" style="margin-top:20px; text-align:center; padding:16px;">
-        <p class="secondary-text" style="margin-bottom:10px;">Sign in with your R-ID to request to join this team.</p>
+      <div class="glass-card-compact" style="margin-top:18px; text-align:center; padding:14px;">
+        <p class="secondary-text" style="margin-bottom:8px;">Sign in with your R-ID to request to join this team.</p>
         <a href="/login" class="btn-primary" style="display:inline-flex;">Sign In to Request</a>
       </div>
     `;
   }
 
+  // WhatsApp Banner
   let whatsappBannerHtml = "";
   if (team.whatsapp_link && (isMember || isLeader)) {
     whatsappBannerHtml = `
-      <div style="padding:12px 16px; background:rgba(54, 168, 83, 0.08); border:1px solid rgba(54, 168, 83, 0.25); border-radius:var(--r-md); margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div style="padding:10px 14px; background:var(--accent-green-bg); border:1px solid rgba(52, 199, 89, 0.2); border-radius:var(--r-control); margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
         <div>
-          <div style="font-size:0.8125rem; font-weight:800; color:#2E7D32;">WhatsApp Group Link Active</div>
-          <div class="caption-text">Official team channel for hackathon coordination</div>
+          <div style="font-size:0.8125rem; font-weight:700; color:#2E7D32;">Official WhatsApp Group Link</div>
+          <div class="caption-text">Collaborate with your hackathon teammates</div>
         </div>
-        <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-primary" style="background:#34A853; border-color:rgba(255,255,255,0.4); height:32px; padding:0 12px; font-size:0.75rem;">
+        <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-primary" style="background:#34A853; border-color:rgba(255,255,255,0.3); height:30px; padding:0 10px; font-size:0.75rem;">
           Join WhatsApp ➔
         </a>
       </div>
     `;
   }
 
+  // Leader Pending Requests Section
+  let leaderRequestsHtml = "";
+  if (isLeader) {
+    leaderRequestsHtml = `
+      <div id="leaderPendingRequestsWrapper" style="margin-top:20px; border-top:1px solid var(--glass-t3-border); padding-top:16px;">
+        <h3 class="section-title" style="font-size:0.875rem;">Pending Join Requests</h3>
+        <div id="teamPendingRequestsList">
+          <div class="caption-text">Checking for pending requests...</div>
+        </div>
+      </div>
+    `;
+  }
+
   container.innerHTML = `
-    <div class="glass-surface-primary" style="margin-bottom:16px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+    <div class="glass-surface-primary">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
         <span class="glass-pill ${isFull ? 'glass-pill-full' : 'glass-pill-open'}">
           ${isFull ? 'Team Full (6/6)' : (6 - team.members.length) + ' Open Seats'}
         </span>
-        <span class="caption-text">Team ID: ${team.id}</span>
+        <span class="caption-text">Team #${team.id}</span>
       </div>
 
-      <h1 class="page-title" style="font-size:1.5rem; margin-bottom:6px;">${escapeHtml(title)}</h1>
-      <p class="body-text" style="margin-bottom:18px;">
-        ${escapeHtml(team.description || "No pitch provided.")}
+      <h1 class="page-title">${escapeHtml(title)}</h1>
+      <p class="body-text" style="margin-bottom:16px;">
+        ${escapeHtml(team.description || "No project pitch provided.")}
       </p>
 
       ${whatsappBannerHtml}
 
-      <h3 class="caption-text" style="text-transform:uppercase; letter-spacing:0.03em; margin-bottom:10px;">
-        Team Roster (${team.members.length} / 6)
+      <h3 class="caption-text" style="text-transform:uppercase; letter-spacing:0.03em; margin-bottom:8px;">
+        Team Roster (${team.members.length} / 6 Members)
       </h3>
 
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px; margin-bottom:10px;">
+      <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;">
         ${seatsHtml}
       </div>
 
       ${actionPanelHtml}
+      ${leaderRequestsHtml}
     </div>
   `;
+
+  if (isLeader) {
+    fetchTeamJoinRequests(team.id);
+  }
+}
+
+function fetchTeamJoinRequests(teamId) {
+  const reqContainer = document.getElementById("teamPendingRequestsList");
+  if (!reqContainer) return;
+
+  const leaderRid = currentUser ? currentUser.id : "";
+  fetch(`/api/teams/${teamId}/requests?leader_r_id=${encodeURIComponent(leaderRid)}`)
+    .then(res => res.json())
+    .then(data => {
+      const requests = data.requests || [];
+      if (requests.length === 0) {
+        reqContainer.innerHTML = `<div class="caption-text">No pending join requests.</div>`;
+        return;
+      }
+
+      reqContainer.innerHTML = requests.map(r => {
+        const avatarSrc = r.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(r.r_id)}`;
+        return `
+          <div id="requestRow_${r.request_id}" class="member-card" style="padding:10px 12px; margin-top:6px;">
+            <div class="member-info-col">
+              <img src="${escapeHtml(avatarSrc)}" class="student-avatar" style="width:32px; height:32px;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent('${r.r_id}');">
+              <div class="member-details">
+                <div class="member-name-row">
+                  <span style="font-size:0.8125rem; font-weight:700; color:var(--text-primary);">${escapeHtml(r.name || r.r_id)}</span>
+                  <span class="caption-text">${r.r_id} • ${r.gender || 'Student'}</span>
+                </div>
+                ${r.message ? `<div class="caption-text" style="color:var(--text-secondary); margin-top:2px;">"${escapeHtml(r.message)}"</div>` : ""}
+              </div>
+            </div>
+
+            <div style="display:flex; gap:6px;">
+              <button onclick="handleRequestAction('${teamId}', '${r.request_id}', 'accept')" class="btn-tonal" style="height:28px; padding:0 8px; font-size:0.6875rem;">
+                Accept
+              </button>
+              <button onclick="handleRequestAction('${teamId}', '${r.request_id}', 'reject')" class="btn-danger" style="height:28px; padding:0 8px; font-size:0.6875rem;">
+                Decline
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    })
+    .catch(err => {
+      reqContainer.innerHTML = `<div class="caption-text" style="color:var(--accent-red);">Failed to load requests.</div>`;
+    });
+}
+
+function handleRequestAction(teamId, reqId, action) {
+  const row = document.getElementById(`requestRow_${reqId}`);
+  if (row) {
+    row.style.opacity = "0.5";
+    row.style.pointerEvents = "none";
+  }
+
+  fetch(`/api/teams/${teamId}/requests/${reqId}/action`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      leader_r_id: currentUser ? currentUser.id : "",
+      action: action
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast(action === 'accept' ? "Teammate accepted!" : "Request declined", "info");
+        // Targeted refresh of team view
+        loadTeamDetailView(teamId);
+      } else {
+        if (row) {
+          row.style.opacity = "1";
+          row.style.pointerEvents = "auto";
+        }
+        showToast(data.message || "Failed to process request", "error");
+      }
+    })
+    .catch(err => {
+      if (row) {
+        row.style.opacity = "1";
+        row.style.pointerEvents = "auto";
+      }
+      showToast("Network error processing request", "error");
+    });
 }
 
 function submitJoinRequest(teamId) {
@@ -641,7 +789,10 @@ function submitJoinRequest(teamId) {
   fetch(`/api/teams/${teamId}/request`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: msg })
+    body: JSON.stringify({
+      student_r_id: currentUser ? currentUser.id : "",
+      message: msg
+    })
   })
     .then(res => res.json())
     .then(data => {
@@ -664,7 +815,11 @@ function confirmLeaveTeam(teamId) {
     confirmText: "Leave Team",
     isDanger: true,
     onConfirm: () => {
-      fetch(`/api/teams/${teamId}/leave`, { method: "POST" })
+      fetch(`/api/teams/${teamId}/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_r_id: currentUser ? currentUser.id : "" })
+      })
         .then(res => res.json())
         .then(data => {
           if (data.success) {
@@ -674,7 +829,8 @@ function confirmLeaveTeam(teamId) {
           } else {
             showToast(data.message || "Failed to leave team", "error");
           }
-        });
+        })
+        .catch(err => showToast("Network error leaving team", "error"));
     }
   });
 }
@@ -686,7 +842,11 @@ function confirmDisbandTeam(teamId) {
     confirmText: "Disband Team",
     isDanger: true,
     onConfirm: () => {
-      fetch(`/api/teams/${teamId}/disband`, { method: "POST" })
+      fetch(`/api/teams/${teamId}/disband`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leader_r_id: currentUser ? currentUser.id : "" })
+      })
         .then(res => res.json())
         .then(data => {
           if (data.success) {
@@ -696,7 +856,8 @@ function confirmDisbandTeam(teamId) {
           } else {
             showToast(data.message || "Failed to disband team", "error");
           }
-        });
+        })
+        .catch(err => showToast("Network error disbanding team", "error"));
     }
   });
 }
@@ -711,7 +872,10 @@ function confirmRemoveMember(teamId, studentId, studentName) {
       fetch(`/api/teams/${teamId}/remove-member`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student_id: studentId })
+        body: JSON.stringify({
+          leader_r_id: currentUser ? currentUser.id : "",
+          student_id: studentId
+        })
       })
         .then(res => res.json())
         .then(data => {
@@ -721,13 +885,14 @@ function confirmRemoveMember(teamId, studentId, studentName) {
           } else {
             showToast(data.message || "Failed to remove member", "error");
           }
-        });
+        })
+        .catch(err => showToast("Network error removing member", "error"));
     }
   });
 }
 
 /* ==========================================================================
-   5. CREATE TEAM VIEW ENGINE & PRE-ADD FRIENDS SEARCH
+   5. CREATE TEAM VIEW (5-STEP STRUCTURED FLOW & 2x3 PREVIEW)
    ========================================================================== */
 function loadCreateTeamView() {
   selectedFriends = [];
@@ -748,11 +913,22 @@ function renderCreateTeamSeats() {
   const container = document.getElementById("createTeamSeatsContainer");
   if (!container) return;
 
+  const leaderAvatar = currentUser && currentUser.avatar_url ? `
+    <img src="${escapeHtml(currentUser.avatar_url)}" class="student-avatar" style="width:24px; height:24px;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent('${currentUser.id}');">
+  ` : `
+    <div class="student-avatar-fallback" style="width:24px; height:24px; font-size:0.625rem;">
+      ${currentUser && currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
+    </div>
+  `;
+
   let html = `
-    <div class="glass-card-compact" style="padding:10px; background:var(--accent-blue-bg); border-color:rgba(0,122,255,0.25);">
-      <div class="caption-text" style="color:var(--g-blue); text-transform:uppercase;">Seat 1 (Leader)</div>
-      <div style="font-size:0.8125rem; font-weight:800; color:var(--text-primary); margin-top:2px;">
-        ${currentUser ? escapeHtml(currentUser.name || currentUser.id) : "You (Leader)"}
+    <div class="glass-card-compact" style="padding:8px 10px; background:var(--accent-blue-bg); border-color:rgba(0,122,255,0.2);">
+      <div class="caption-text" style="color:var(--accent-blue); font-size:0.5625rem; text-transform:uppercase;">Seat 1 (Leader)</div>
+      <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+        ${leaderAvatar}
+        <span style="font-size:0.75rem; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          ${currentUser ? escapeHtml(currentUser.name || currentUser.id) : "You"}
+        </span>
       </div>
     </div>
   `;
@@ -760,20 +936,33 @@ function renderCreateTeamSeats() {
   for (let i = 0; i < 5; i++) {
     const friend = selectedFriends[i];
     if (friend) {
+      const fAvatar = friend.avatar_url ? `
+        <img src="${escapeHtml(friend.avatar_url)}" class="student-avatar" style="width:24px; height:24px;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent('${friend.id}');">
+      ` : `
+        <div class="student-avatar-fallback" style="width:24px; height:24px; font-size:0.625rem;">
+          ${friend.name ? friend.name.charAt(0).toUpperCase() : "U"}
+        </div>
+      `;
+
       html += `
-        <div class="glass-card-compact" style="padding:10px; display:flex; align-items:center; justify-content:space-between;">
-          <div>
-            <div class="caption-text" style="text-transform:uppercase;">Seat ${i + 2}</div>
-            <div style="font-size:0.75rem; font-weight:800; color:var(--text-primary); margin-top:2px;">${escapeHtml(friend.name || friend.id)}</div>
+        <div class="glass-card-compact" style="padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span class="caption-text" style="font-size:0.5625rem; text-transform:uppercase;">Seat ${i + 2}</span>
+            <button onclick="removeFriendFromTeam('${friend.id}')" style="background:none; border:none; color:var(--accent-red); font-size:0.875rem; font-weight:800; cursor:pointer; line-height:1;">×</button>
           </div>
-          <button onclick="removeFriendFromTeam('${friend.id}')" style="background:none; border:none; color:var(--accent-red); font-size:1rem; font-weight:800; cursor:pointer;">×</button>
+          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+            ${fAvatar}
+            <span style="font-size:0.75rem; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${escapeHtml(friend.name || friend.id)}
+            </span>
+          </div>
         </div>
       `;
     } else {
       html += `
-        <div class="glass-card-compact" style="padding:10px; border:1px dashed var(--glass-t3-border); background:transparent; opacity:0.6;">
-          <div class="caption-text" style="text-transform:uppercase;">Seat ${i + 2}</div>
-          <div class="caption-text" style="margin-top:2px;">Open Seat</div>
+        <div class="glass-card-compact" style="padding:8px 10px; border:1px dashed var(--glass-t3-border); background:transparent; opacity:0.6;">
+          <div class="caption-text" style="font-size:0.5625rem; text-transform:uppercase;">Seat ${i + 2}</div>
+          <div class="caption-text" style="margin-top:6px;">Open Seat</div>
         </div>
       `;
     }
@@ -803,20 +992,24 @@ function searchFriends() {
     .then(data => {
       const students = data.students || data;
       if (!students || students.length === 0) {
-        resultsDiv.innerHTML = `<div class="caption-text" style="padding:10px; text-align:center;">No matching students found</div>`;
+        resultsDiv.innerHTML = `<div class="caption-text" style="padding:8px; text-align:center;">No matching students found</div>`;
         resultsDiv.style.display = "block";
         return;
       }
 
       resultsDiv.innerHTML = students.map(s => {
         const sId = s.id || s.r_id;
+        const avatarSrc = s.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sId)}`;
         return `
-          <div onclick="addFriendToTeam('${sId}', '${escapeHtml(s.name)}', '${s.gender}')" style="padding:8px 12px; border-bottom:1px solid var(--glass-t3-border); cursor:pointer; display:flex; align-items:center; justify-content:space-between;" onmouseover="this.style.background='rgba(0,0,0,0.03)'" onmouseout="this.style.background='transparent'">
-            <div>
-              <div style="font-size:0.8125rem; font-weight:800; color:var(--text-primary);">${escapeHtml(s.name)}</div>
-              <div class="caption-text">${sId} • ${s.gender}</div>
+          <div onclick="addFriendToTeam('${sId}', '${escapeHtml(s.name)}', '${s.gender}', '${escapeHtml(avatarSrc)}')" style="padding:8px 10px; border-bottom:1px solid var(--glass-t3-border); cursor:pointer; display:flex; align-items:center; justify-content:space-between;" onmouseover="this.style.background='rgba(0,0,0,0.02)'" onmouseout="this.style.background='transparent'">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <img src="${escapeHtml(avatarSrc)}" class="student-avatar" style="width:26px; height:26px;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent('${sId}');">
+              <div>
+                <div style="font-size:0.8125rem; font-weight:700; color:var(--text-primary);">${escapeHtml(s.name)}</div>
+                <div class="caption-text">${sId} • ${s.gender}</div>
+              </div>
             </div>
-            <span style="font-size:0.75rem; font-weight:700; color:var(--g-blue);">+ Add</span>
+            <span style="font-size:0.75rem; font-weight:700; color:var(--accent-blue);">+ Add</span>
           </div>
         `;
       }).join("");
@@ -824,14 +1017,14 @@ function searchFriends() {
     })
     .catch(err => {
       if (err.name !== "AbortError") {
-        console.error(err);
+        console.warn("Friend search error:", err);
       }
     });
 }
 
-function addFriendToTeam(id, name, gender) {
+function addFriendToTeam(id, name, gender, avatarUrl) {
   if (selectedFriends.length >= 5) {
-    showToast("Maximum 5 pre-added teammates allowed (6 total seats)", "error");
+    showToast("Maximum 5 pre-added teammates (6 seats total)", "error");
     return;
   }
   if (currentUser && currentUser.id === id) {
@@ -843,14 +1036,14 @@ function addFriendToTeam(id, name, gender) {
     return;
   }
 
-  selectedFriends.push({ id: id, name: name, gender: gender });
+  selectedFriends.push({ id: id, name: name, gender: gender, avatar_url: avatarUrl });
   const resultsDiv = document.getElementById("friendSearchResults");
   if (resultsDiv) resultsDiv.style.display = "none";
   const input = document.getElementById("friendSearchInput");
   if (input) input.value = "";
 
   renderCreateTeamSeats();
-  showToast(`Added ${name} to team seats`, "success");
+  showToast(`Added ${name} to team seats`, "info");
 }
 
 function removeFriendFromTeam(id) {
@@ -897,7 +1090,7 @@ function submitCreateTeam() {
       btn.disabled = false;
       btn.innerText = "Create & Publish Team";
       if (data.success) {
-        showToast("Team created successfully!", "success");
+        showToast("Team created successfully!", "info");
         clientCache.teamsList = null;
         navigateTo(`/team/${data.team_id || data.team.id}`);
       } else {
@@ -912,7 +1105,7 @@ function submitCreateTeam() {
 }
 
 /* ==========================================================================
-   6. USER PROFILE VIEW ENGINE (PROFILE HERO & MY TEAMS GRID)
+   6. USER PROFILE VIEW (STRUCTURED IDENTITY HERO, DATABASE GRID, & MY TEAMS)
    ========================================================================== */
 function loadProfileView() {
   const container = document.getElementById("profileViewContainer");
@@ -920,80 +1113,124 @@ function loadProfileView() {
 
   if (!currentUser) {
     container.innerHTML = `
-      <div class="glass-surface-primary" style="text-align:center; padding:36px;">
-        <h2 class="page-title" style="font-size:1.25rem; margin-bottom:6px;">User Session Required</h2>
-        <p class="secondary-text" style="margin-bottom:16px;">Please sign in with your R-ID to view your profile and manage teams.</p>
+      <div class="glass-surface-primary" style="text-align:center; padding:32px;">
+        <h2 class="page-title" style="font-size:1.25rem; margin-bottom:6px;">Sign In Required</h2>
+        <p class="secondary-text" style="margin-bottom:14px;">Sign in with your College R-ID to view your profile and joined teams.</p>
         <a href="/login" class="btn-primary" style="display:inline-flex;">Sign In with R-ID</a>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = `
-    <div class="glass-surface-primary" style="margin-bottom:16px;">
-      <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
-        <div style="width:52px; height:52px; border-radius:50%; background:var(--accent-blue-bg); color:var(--g-blue); font-size:1.35rem; font-weight:800; display:flex; align-items:center; justify-content:center; border:2px solid var(--g-blue);">
-          ${currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
-        </div>
-        <div>
-          <h1 class="page-title" style="font-size:1.35rem; margin-bottom:2px;">${escapeHtml(currentUser.name || "College Student")}</h1>
-          <div class="secondary-text" style="font-weight:700;">${escapeHtml(currentUser.id)} • ${escapeHtml(currentUser.gender || "Student")}</div>
-          <div class="caption-text">${escapeHtml(currentUser.email || "")}</div>
-        </div>
-      </div>
+  container.innerHTML = `<div class="glass-surface-primary glass-skeleton" style="height:260px;"></div>`;
 
-      <div style="display:flex; gap:10px;">
-        <button onclick="logoutUser()" class="btn-danger" style="height:34px; font-size:0.75rem;">
-          Sign Out of HackMate
-        </button>
-      </div>
-    </div>
+  fetch(`/api/user/profile?r_id=${encodeURIComponent(currentUser.id)}`)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) {
+        container.innerHTML = `<div class="glass-surface-primary" style="text-align:center; padding:32px;"><h3 style="color:var(--accent-red);">${escapeHtml(data.message || "Failed to load profile")}</h3></div>`;
+        return;
+      }
+      renderFullProfile(data.profile, data.teams || []);
+    })
+    .catch(err => {
+      container.innerHTML = `<div class="glass-surface-primary" style="text-align:center; padding:32px;"><h3 style="color:var(--accent-red);">Error loading profile</h3></div>`;
+    });
+}
 
+function renderFullProfile(prof, userTeams) {
+  const container = document.getElementById("profileViewContainer");
+  if (!container) return;
+
+  const avatarSrc = prof.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(prof.r_id)}`;
+  const isMobile = window.innerWidth <= 767;
+
+  // 1. Identity Hero
+  const heroHtml = `
     <div class="glass-surface-primary">
-      <h3 class="section-title" style="font-size:0.9375rem; margin-bottom:12px;">My Teams</h3>
-      <div id="profileUserTeamsContainer">
-        <div class="glass-skeleton" style="height:70px;"></div>
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(prof.name)}" class="student-avatar" style="width:52px; height:52px;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent('${prof.r_id}');">
+          <div>
+            <h1 class="page-title" style="font-size:1.35rem; margin-bottom:2px;">${escapeHtml(prof.name)}</h1>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="glass-pill glass-pill-user">${escapeHtml(prof.r_id)}</span>
+              <span class="caption-text">${escapeHtml(prof.gender || "Student")}</span>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="logoutUser()" class="btn-danger" style="height:30px; font-size:0.75rem;">
+          Sign Out
+        </button>
       </div>
     </div>
   `;
 
-  fetch("/api/teams")
-    .then(res => res.json())
-    .then(data => {
-      const teams = data.teams || data;
-      const userTeams = teams.filter(t => t.members.some(m => (m.student_id || m.r_id) === currentUser.id));
-      const div = document.getElementById("profileUserTeamsContainer");
-      if (!div) return;
+  // 2. Complete College Database Record Grid (Email, Phone, DOB, Father's Name, Address)
+  const recordHtml = `
+    <div class="glass-surface-primary">
+      <h3 class="section-title">College Database Record</h3>
+      <div class="profile-record-grid">
+        <div class="profile-record-item">
+          <div class="caption-text" style="text-transform:uppercase;">Email Address</div>
+          <div class="body-text" style="font-weight:700; color:var(--text-primary); word-break:break-all; margin-top:2px;">${escapeHtml(prof.email || "N/A")}</div>
+        </div>
+        <div class="profile-record-item">
+          <div class="caption-text" style="text-transform:uppercase;">Mobile Phone</div>
+          <div class="body-text" style="font-weight:700; color:var(--text-primary); margin-top:2px;">${escapeHtml(prof.phone || "N/A")}</div>
+        </div>
+        <div class="profile-record-item">
+          <div class="caption-text" style="text-transform:uppercase;">Date of Birth</div>
+          <div class="body-text" style="font-weight:700; color:var(--accent-blue); margin-top:2px;">${escapeHtml(prof.dob || "N/A")}</div>
+        </div>
+        <div class="profile-record-item">
+          <div class="caption-text" style="text-transform:uppercase;">Father's Name</div>
+          <div class="body-text" style="font-weight:700; color:var(--text-primary); margin-top:2px;">${escapeHtml(prof.father_name || "N/A")}</div>
+        </div>
+        <div class="profile-record-item" style="grid-column: 1 / -1;">
+          <div class="caption-text" style="text-transform:uppercase;">Address</div>
+          <div class="body-text" style="font-weight:600; color:var(--text-primary); margin-top:2px;">${escapeHtml(prof.address || "N/A")}</div>
+        </div>
+      </div>
+    </div>
+  `;
 
-      if (userTeams.length === 0) {
-        div.innerHTML = `<p class="caption-text">You are not currently in any hackathon team.</p>`;
-        return;
-      }
+  // 3. My Teams Section (Using the exact same redesigned team card as Discover)
+  let teamsGridHtml = "";
+  if (!userTeams || userTeams.length === 0) {
+    teamsGridHtml = `
+      <div class="glass-card-compact" style="text-align:center; padding:24px 16px;">
+        <p class="secondary-text">You are not currently in any hackathon team.</p>
+        <a href="/create-team" class="btn-primary" style="margin-top:10px; display:inline-flex;">Create Team</a>
+      </div>
+    `;
+  } else {
+    teamsGridHtml = `
+      <div class="teams-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px;">
+        ${userTeams.map(t => renderSingleTeamCard(t, isMobile)).join("")}
+      </div>
+    `;
+  }
 
-      div.innerHTML = userTeams.map(t => {
-        const title = t.title || t.name || "Untitled Team";
-        const leaderId = t.leader_id || t.leader_r_id;
-        return `
-          <a href="/team/${t.id}" class="glass-card-compact glass-card-interactive" style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; margin-bottom:8px; text-decoration:none;">
-            <div>
-              <div style="font-size:0.875rem; font-weight:800; color:var(--text-primary);">${escapeHtml(title)}</div>
-              <div class="caption-text">${t.members.length}/6 Members • ${leaderId === currentUser.id ? 'Leader' : 'Member'}</div>
-            </div>
-            <span style="font-size:0.75rem; font-weight:700; color:var(--g-blue);">View Team ➔</span>
-          </a>
-        `;
-      }).join("");
-    });
+  const myTeamsSectionHtml = `
+    <div class="glass-surface-primary">
+      <h3 class="section-title">My Teams (${userTeams.length})</h3>
+      ${teamsGridHtml}
+    </div>
+  `;
+
+  container.innerHTML = heroHtml + recordHtml + myTeamsSectionHtml;
 }
 
 /* ==========================================================================
-   7. STUDENT DIRECTORY VIEW ENGINE
+   7. STUDENT DIRECTORY SEARCH VIEW
    ========================================================================== */
 function loadStudentsView() {
   const input = document.getElementById("dirSearchInput");
   if (input) input.value = "";
   const results = document.getElementById("dirSearchResults");
-  if (results) results.innerHTML = `<div class="caption-text" style="text-align:center; padding:28px;">Type student R-ID or name above to search</div>`;
+  if (results) results.innerHTML = `<div class="caption-text" style="text-align:center; padding:24px;">Type student R-ID or name above to search</div>`;
 }
 
 function searchStudentDirectory() {
@@ -1003,7 +1240,7 @@ function searchStudentDirectory() {
 
   const query = input.value.trim();
   if (query.length < 2) {
-    resultsDiv.innerHTML = `<div class="caption-text" style="text-align:center; padding:28px;">Type student R-ID or name above to search</div>`;
+    resultsDiv.innerHTML = `<div class="caption-text" style="text-align:center; padding:24px;">Type student R-ID or name above to search</div>`;
     return;
   }
 
@@ -1017,19 +1254,23 @@ function searchStudentDirectory() {
     .then(data => {
       const students = data.students || data;
       if (!students || students.length === 0) {
-        resultsDiv.innerHTML = `<div class="caption-text" style="text-align:center; padding:28px;">No students found matching "${escapeHtml(query)}"</div>`;
+        resultsDiv.innerHTML = `<div class="caption-text" style="text-align:center; padding:24px;">No students found matching "${escapeHtml(query)}"</div>`;
         return;
       }
 
       resultsDiv.innerHTML = students.map(s => {
         const sId = s.id || s.r_id;
+        const avatarSrc = s.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sId)}`;
         return `
-          <div class="glass-card-compact" style="padding:12px; display:flex; align-items:center; justify-content:space-between;">
-            <div>
-              <div style="font-size:0.875rem; font-weight:800; color:var(--text-primary);">${escapeHtml(s.name)}</div>
-              <div class="caption-text" style="margin-top:2px;">R-ID: ${sId} • ${s.gender}</div>
+          <div class="member-card" style="padding:10px 12px; margin-bottom:6px;">
+            <div class="member-info-col">
+              <img src="${escapeHtml(avatarSrc)}" class="student-avatar" style="width:32px; height:32px;" onerror="this.onerror=null; this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent('${sId}');">
+              <div class="member-details">
+                <div style="font-size:0.8125rem; font-weight:700; color:var(--text-primary);">${escapeHtml(s.name)}</div>
+                <div class="caption-text">${sId} • ${s.gender}</div>
+              </div>
             </div>
-            <button onclick="copyStudentRid('${sId}')" class="btn-secondary" style="height:30px; font-size:0.6875rem; padding:0 8px;">
+            <button onclick="copyStudentRid('${sId}')" class="btn-secondary" style="height:28px; font-size:0.6875rem; padding:0 8px;">
               Copy R-ID
             </button>
           </div>
@@ -1038,7 +1279,7 @@ function searchStudentDirectory() {
     })
     .catch(err => {
       if (err.name !== "AbortError") {
-        console.error(err);
+        console.warn("Directory search error:", err);
       }
     });
 }
@@ -1046,11 +1287,13 @@ function searchStudentDirectory() {
 function copyStudentRid(rid) {
   navigator.clipboard.writeText(rid).then(() => {
     showToast(`Copied R-ID: ${rid}`, "info");
+  }).catch(() => {
+    showToast(`R-ID: ${rid}`, "info");
   });
 }
 
 /* ==========================================================================
-   8. CUSTOM GLASS CONFIRMATION MODAL SHEET & TOAST UTILITIES
+   8. CUSTOM GLASS CONFIRMATION MODAL SHEET & TOASTS
    ========================================================================== */
 function showGlassModal({ title, message, confirmText = "Confirm", cancelText = "Cancel", onConfirm, isDanger = false }) {
   const overlay = document.getElementById("glassModalOverlay");
@@ -1061,8 +1304,8 @@ function showGlassModal({ title, message, confirmText = "Confirm", cancelText = 
     <h3 class="section-title" style="margin-bottom:6px;">${escapeHtml(title)}</h3>
     <p class="body-text" style="margin-bottom:16px;">${escapeHtml(message)}</p>
     <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
-      <button onclick="closeGlassModal()" class="btn-secondary" style="height:36px;">${escapeHtml(cancelText)}</button>
-      <button id="btnModalConfirm" class="${isDanger ? 'btn-danger' : 'btn-primary'}" style="height:36px;">${escapeHtml(confirmText)}</button>
+      <button onclick="closeGlassModal()" class="btn-secondary">${escapeHtml(cancelText)}</button>
+      <button id="btnModalConfirm" class="${isDanger ? 'btn-danger' : 'btn-primary'}">${escapeHtml(confirmText)}</button>
     </div>
   `;
 
@@ -1084,7 +1327,7 @@ function showToast(message, type = "info") {
   if (!container) return;
 
   const toast = document.createElement("div");
-  const bgColor = type === "error" ? "rgba(255, 59, 48, 0.92)" : type === "success" ? "rgba(52, 199, 89, 0.92)" : "rgba(0, 122, 255, 0.92)";
+  const bgColor = type === "error" ? "rgba(255, 59, 48, 0.94)" : type === "success" ? "rgba(52, 199, 89, 0.94)" : "rgba(0, 122, 255, 0.94)";
 
   toast.style.cssText = `
     padding: 8px 14px;
@@ -1092,13 +1335,13 @@ function showToast(message, type = "info") {
     color: #FFFFFF;
     font-size: 0.75rem;
     font-weight: 700;
-    border-radius: var(--r-full);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    border-radius: var(--r-pill);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     text-align: center;
     pointer-events: auto;
     opacity: 0;
     transform: translateY(-6px);
-    transition: all 0.18s var(--spring-ease);
+    transition: all var(--trans-fast);
   `;
   toast.innerText = message;
 
@@ -1112,7 +1355,7 @@ function showToast(message, type = "info") {
   setTimeout(() => {
     toast.style.opacity = "0";
     toast.style.transform = "translateY(-6px)";
-    setTimeout(() => toast.remove(), 180);
+    setTimeout(() => toast.remove(), 160);
   }, 2200);
 }
 
