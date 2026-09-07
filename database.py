@@ -78,9 +78,17 @@ def init_db():
                 description TEXT,
                 leader_r_id VARCHAR(50) NOT NULL,
                 whatsapp_link TEXT,
+                seat_modes VARCHAR(100) DEFAULT 'request,request,request,request,request',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+
+        # Migration check for seat_modes column in existing Postgres DB
+        try:
+            cursor.execute("ALTER TABLE teams ADD COLUMN IF NOT EXISTS seat_modes VARCHAR(100) DEFAULT 'request,request,request,request,request';")
+            conn.commit()
+        except Exception as e:
+            print(f"Postgres seat_modes migration note: {e}")
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS team_members (
@@ -157,10 +165,20 @@ def init_db():
                 description TEXT,
                 leader_r_id TEXT NOT NULL,
                 whatsapp_link TEXT,
+                seat_modes TEXT DEFAULT 'request,request,request,request,request',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (leader_r_id) REFERENCES students (r_id)
             );
         """)
+
+        # Migration check for seat_modes column in existing SQLite DB
+        cursor.execute("PRAGMA table_info(teams);")
+        team_cols = [c[1] for c in cursor.fetchall()]
+        if "seat_modes" not in team_cols:
+            try:
+                cursor.execute("ALTER TABLE teams ADD COLUMN seat_modes TEXT DEFAULT 'request,request,request,request,request';")
+            except Exception:
+                pass
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS team_members (

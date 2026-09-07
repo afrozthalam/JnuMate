@@ -386,7 +386,12 @@ def format_team_data(team_row, current_r_id=None):
             if req:
                 user_status = req["status"]
 
-    conn.close()
+    raw_seat_modes = team_row["seat_modes"] if (isinstance(team_row, dict) and "seat_modes" in team_row) or (hasattr(team_row, "keys") and "seat_modes" in team_row.keys()) else "request,request,request,request,request"
+    if not raw_seat_modes:
+        raw_seat_modes = "request,request,request,request,request"
+    seat_modes = [s.strip().lower() for s in str(raw_seat_modes).split(",") if s.strip()]
+    while len(seat_modes) < 5:
+        seat_modes.append("request")
 
     return {
         "id": team_row["id"],
@@ -395,6 +400,7 @@ def format_team_data(team_row, current_r_id=None):
         "leader_r_id": team_row["leader_r_id"],
         "whatsapp_link": team_row["whatsapp_link"] if (user_status in ["leader", "member"]) else None,
         "has_whatsapp": bool(team_row["whatsapp_link"]),
+        "seat_modes": seat_modes,
         "created_at": str(team_row["created_at"]),
         "members": members,
         "member_count": member_count,
@@ -916,6 +922,36 @@ def get_user_profile():
         "profile": profile_data,
         "teams": teams_list
     })
+
+@app.route("/api/teams/<int:team_id>/seat-modes", methods=["PUT"])
+def update_team_seat_modes(team_id):
+    data = request.json or {}
+    leader_r_id = data.get("leader_r_id", "").strip().upper()
+    seat_modes = data.get("seat_modes", [])
+    p = get_placeholder()
+
+    if isinstance(seat_modes, list):
+        seat_modes_str = ",".join([str(s).strip().lower() for s in seat_modes])
+    else:
+        seat_modes_str = str(seat_modes).strip().lower()
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT leader_r_id FROM teams WHERE id = {p}", (team_id,))
+    team = cursor.fetchone()
+    if not team or team["leader_r_id"].upper() != leader_r_id:
+        conn.close()
+        return jsonify({"success": False, "message": "Unauthorized: Only team leader can update seat modes"}), 403
+
+    cursor.execute(f"UPDATE teams SET seat_modes = {p} WHERE id = {p}", (seat_modes_str, team_id))
+    conn.commit()
+
+    cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
+    updated_team = format_team_data(cursor.fetchone(), leader_r_id)
+    conn.close()
+
+    return jsonify({"success": True, "message": "Seat modes updated successfully", "team": updated_team})
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
