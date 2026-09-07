@@ -17,7 +17,7 @@ try:
 except Exception as e:
     print(f"Database init notice: {e}")
 
-# Load all_profiles_public.json into memory for instant Zero-Config fallback lookup
+# Load all_profiles_public.json into memory for instant lookup
 PROFILES_JSON_PATH = os.path.join(os.path.dirname(__file__), "all_profiles_public.json")
 STUDENT_PROFILES_MAP = {}
 
@@ -97,9 +97,6 @@ def mask_email(email):
     return f"{masked}@{domain}"
 
 def auto_import_student_from_json(r_id, conn, cursor):
-    """
-    On-Demand lookup from all_profiles_public.json if student isn't in DB yet.
-    """
     p = get_placeholder()
     item = STUDENT_PROFILES_MAP.get(r_id.upper())
     if not item:
@@ -111,6 +108,7 @@ def auto_import_student_from_json(r_id, conn, cursor):
     email = (personal.get("EmailID") or f"{r_id}@student.edu").strip()
     phone = (personal.get("Mobile No") or "").strip()
     gender = personal.get("Gender") or "Not Specified"
+    dob = (personal.get("Date of Birth") or "N/A").strip()
     
     gender_clean = gender.strip().capitalize() if gender else "Unspecified"
     if "Female" in gender_clean or "F" == gender_clean:
@@ -127,9 +125,9 @@ def auto_import_student_from_json(r_id, conn, cursor):
 
     try:
         cursor.execute(f"""
-            INSERT INTO students (r_id, name, email, phone, gender, avatar_url, is_registered)
-            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, 0)
-        """, (r_id.upper(), name, email, phone, gender_clean, avatar_url))
+            INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, is_registered)
+            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, 0)
+        """, (r_id.upper(), name, email, phone, gender_clean, dob, avatar_url))
         conn.commit()
     except Exception as e:
         pass
@@ -157,7 +155,6 @@ def auth_send_otp():
     cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
     student = cursor.fetchone()
 
-    # On-demand JSON fallback if not found in database table
     if not student:
         student = auto_import_student_from_json(r_id, conn, cursor)
 
@@ -225,13 +222,13 @@ def auth_verify_otp():
     cursor.execute(f"UPDATE students SET is_registered = 1 WHERE UPPER(r_id) = {p}", (r_id,))
     conn.commit()
 
-    cursor.execute(f"SELECT r_id, name, email, phone, gender, avatar_url, is_registered FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+    cursor.execute(f"SELECT r_id, name, email, phone, gender, dob, avatar_url, is_registered FROM students WHERE UPPER(r_id) = {p}", (r_id,))
     updated_student = dict(cursor.fetchone())
     conn.close()
 
     return jsonify({
         "success": True,
-        "message": "Signed in",
+        "message": "Signed in successfully",
         "student": updated_student
     })
 
@@ -243,6 +240,7 @@ def auth_register():
     email = data.get("email", "").strip()
     phone = data.get("phone", "").strip()
     gender = data.get("gender", "").strip().capitalize()
+    dob = data.get("dob", "").strip() or "N/A"
     p = get_placeholder()
 
     if not r_id or not name or not gender or not email:
@@ -257,9 +255,9 @@ def auth_register():
     cursor = conn.cursor()
     try:
         cursor.execute(f"""
-            INSERT INTO students (r_id, name, email, phone, gender, avatar_url, is_registered)
-            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, 1)
-        """, (r_id, name, email, phone, gender, avatar_url))
+            INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, is_registered)
+            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, 1)
+        """, (r_id, name, email, phone, gender, dob, avatar_url))
         conn.commit()
         conn.close()
     except Exception:
@@ -275,12 +273,13 @@ def auth_register():
             "email": email,
             "phone": phone,
             "gender": gender,
+            "dob": dob,
             "avatar_url": avatar_url,
             "is_registered": 1
         }
     })
 
-# --- STUDENT SEARCH ---
+# --- STUDENT SEARCH (WITH DOB, EMAIL, PHOTO & DETAILS) ---
 
 @app.route("/api/students/search", methods=["GET"])
 def student_search():
@@ -296,7 +295,11 @@ def student_search():
         name = item.get("name", "")
         if query in r_id_key or query in name.upper():
             personal = item.get("personal_details", {}) or {}
+            email = (personal.get("EmailID") or f"{r_id_key}@student.edu").strip()
+            phone = (personal.get("Mobile No") or "").strip()
             gender = personal.get("Gender") or "Other"
+            dob = (personal.get("Date of Birth") or "N/A").strip()
+            
             gender_clean = "Female" if "Female" in gender or "F" == gender else ("Male" if "Male" in gender or "M" == gender else "Other")
             image_urls = item.get("image_urls") or []
             avatar_url = image_urls[0] if image_urls else f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id_key}"
@@ -304,30 +307,38 @@ def student_search():
             results_map[r_id_key] = {
                 "r_id": r_id_key,
                 "name": name.strip(),
+                "email": email,
+                "phone": phone,
                 "gender": gender_clean,
+                "dob": dob,
                 "avatar_url": avatar_url
             }
-            if len(results_map) >= 6:
+            if len(results_map) >= 8:
                 break
 
     # Also search DB table
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(f"""
-        SELECT r_id, name, gender, avatar_url FROM students
+        SELECT r_id, name, email, phone, gender, dob, avatar_url FROM students
         WHERE UPPER(r_id) LIKE {p} OR UPPER(name) LIKE {p}
-        LIMIT 6
+        LIMIT 8
     """, (f"%{query}%", f"%{query}%"))
     db_rows = cursor.fetchall()
     conn.close()
 
     for r in db_rows:
         d = dict(r)
-        results_map[d["r_id"].upper()] = d
+        d_id = d["r_id"].upper()
+        if d_id not in results_map:
+            results_map[d_id] = d
+        else:
+            if d.get("dob") and d.get("dob") != "N/A":
+                results_map[d_id]["dob"] = d["dob"]
 
-    return jsonify({"students": list(results_map.values())[:6]})
+    return jsonify({"students": list(results_map.values())[:8]})
 
-# --- TEAM MANAGEMENT ---
+# --- TEAM MANAGEMENT & DETAILED PANEL ---
 
 def format_team_data(team_row, current_r_id=None):
     conn = get_db()
@@ -335,7 +346,7 @@ def format_team_data(team_row, current_r_id=None):
     p = get_placeholder()
 
     cursor.execute(f"""
-        SELECT tm.role, s.r_id, s.name, s.gender, s.avatar_url, s.phone, s.email
+        SELECT tm.role, s.r_id, s.name, s.gender, s.dob, s.avatar_url, s.phone, s.email
         FROM team_members tm
         JOIN students s ON tm.student_r_id = s.r_id
         WHERE tm.team_id = {p}
@@ -411,6 +422,22 @@ def get_teams():
 
     return jsonify({"teams": teams_data})
 
+@app.route("/api/teams/<int:team_id>", methods=["GET"])
+def get_team_detail(team_id):
+    current_r_id = request.args.get("r_id", "").strip().upper()
+    p = get_placeholder()
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
+    team_row = cursor.fetchone()
+    conn.close()
+
+    if not team_row:
+        return jsonify({"success": False, "message": "Team not found"}), 404
+
+    return jsonify({"success": True, "team": format_team_data(team_row, current_r_id)})
+
 @app.route("/api/teams/create", methods=["POST"])
 def create_team():
     data = request.json or {}
@@ -439,7 +466,7 @@ def create_team():
     cursor.execute(f"SELECT team_id FROM team_members WHERE UPPER(student_r_id) = {p}", (leader_r_id,))
     if cursor.fetchone():
         conn.close()
-        return jsonify({"success": False, "message": "Already in another team"}), 400
+        return jsonify({"success": False, "message": "You are already in another team"}), 400
 
     unique_friends = list(set([f.strip().upper() for f in friend_r_ids if f.strip().upper() != leader_r_id]))
     if len(unique_friends) + 1 > 6:
@@ -551,7 +578,7 @@ def get_team_requests(team_id):
 
     cursor.execute(f"""
         SELECT jr.id as request_id, jr.status, jr.message, jr.created_at,
-               s.r_id, s.name, s.gender, s.avatar_url, s.phone, s.email
+               s.r_id, s.name, s.gender, s.dob, s.avatar_url, s.phone, s.email
         FROM join_requests jr
         JOIN students s ON jr.student_r_id = s.r_id
         WHERE jr.team_id = {p} AND jr.status = 'pending'

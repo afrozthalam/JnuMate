@@ -13,7 +13,6 @@ def get_db():
         import psycopg2
         import psycopg2.extras
         
-        # Ensure sslmode=require for cloud serverless connections
         db_url = DATABASE_URL
         if "sslmode=" not in db_url:
             separator = "&" if "?" in db_url else "?"
@@ -46,6 +45,7 @@ def init_db():
                 email VARCHAR(150),
                 phone VARCHAR(50),
                 gender VARCHAR(20) NOT NULL,
+                dob VARCHAR(50),
                 avatar_url TEXT,
                 password TEXT,
                 is_registered INT DEFAULT 0
@@ -100,7 +100,7 @@ def init_db():
 
         conn.commit()
         conn.close()
-        print("Supabase PostgreSQL tables initialized successfully!")
+        print("PostgreSQL tables initialized successfully!")
 
     else:
         conn = get_db()
@@ -115,11 +115,21 @@ def init_db():
                 email TEXT,
                 phone TEXT,
                 gender TEXT NOT NULL,
+                dob TEXT,
                 avatar_url TEXT,
                 password TEXT,
                 is_registered INTEGER DEFAULT 0
             );
         """)
+
+        # Migration check for dob column in existing SQLite DB
+        cursor.execute("PRAGMA table_info(students);")
+        cols = [c[1] for c in cursor.fetchall()]
+        if "dob" not in cols:
+            try:
+                cursor.execute("ALTER TABLE students ADD COLUMN dob TEXT;")
+            except Exception:
+                pass
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS email_otps (
@@ -174,7 +184,7 @@ def init_db():
 
         conn.commit()
         conn.close()
-        print("Local SQLite database initialized successfully!")
+        print("SQLite database initialized successfully!")
 
 if __name__ == "__main__":
     init_db()
