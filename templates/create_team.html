@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HackMate — Create Squad</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99; display:flex; flex-direction:column; gap:8px; width:90%; max-width:380px; pointer-events:none;"></div>
+
+  <!-- TOP DESKTOP HEADER -->
+  <header class="nav-header">
+    <a href="/" class="brand-logo">
+      <div class="brand-badge">H</div>
+      <span class="brand-title">HackMate</span>
+    </a>
+
+    <div class="nav-links-desktop">
+      <a href="/" class="nav-link">Discover</a>
+      <a href="/create-team" class="nav-link active">+ Create Squad</a>
+      <a href="/students" class="nav-link">Directory</a>
+      <div id="navUserSlotDesktop"></div>
+    </div>
+  </header>
+
+  <!-- MOBILE TOP HEADER BAR -->
+  <header class="nav-header md:hidden" style="display:flex; justify-content:space-between;">
+    <a href="/" class="brand-logo">
+      <div class="brand-badge" style="width:30px; height:30px; font-size:1rem;">H</div>
+      <span class="brand-title" style="font-size:1.125rem;">HackMate</span>
+    </a>
+    <div id="navUserSlotMobile"></div>
+  </header>
+
+  <!-- MAIN CREATE TEAM CONTENT -->
+  <main class="page-container" style="max-width:680px;">
+    
+    <a href="/" style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:800; color:var(--primary); text-decoration:none; margin-bottom:16px;">
+      ← Cancel & Back to Discover
+    </a>
+
+    <div class="card">
+      <h1 class="page-title">Create New Squad</h1>
+      <p class="page-subtitle">Build your 6-seat squad: pre-add friends or leave seats open for requests.</p>
+
+      <div style="display:flex; flex-direction:column; gap:18px;">
+        <div>
+          <label style="display:block; font-size:0.6875rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Squad Title *</label>
+          <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, EmeraldSquad" class="input-control" style="font-weight:800;">
+        </div>
+
+        <div>
+          <label style="display:block; font-size:0.6875rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Project Pitch</label>
+          <textarea id="teamDescInput" rows="3" placeholder="Describe your hackathon project pitch or required skills..." class="textarea-control"></textarea>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:0.6875rem; font-weight:800; color:var(--primary); text-transform:uppercase; margin-bottom:6px;">WhatsApp Group Link (Optional)</label>
+          <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="input-control">
+        </div>
+
+        <!-- SEARCH & PRE-ADD FRIENDS -->
+        <div style="padding-top:16px; border-top:1px solid var(--border);">
+          <label style="display:block; font-size:0.6875rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Search & Pre-Add Teammates Directly</label>
+          <div style="position:relative;">
+            <input type="text" id="friendSearchInput" placeholder="Type student R-ID or Name..." class="input-control" onkeyup="searchFriends()">
+            
+            <div id="friendSearchResults" style="display:none; position:absolute; left:0; right:0; top:100%; margin-top:4px; background:#FFF; border:1px solid var(--border); border-radius:12px; z-index:30; max-height:220px; overflow-y:auto; box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
+          </div>
+        </div>
+
+        <!-- VISUAL 6 SEATS -->
+        <div>
+          <label style="display:block; font-size:0.6875rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px;">Visual 6-Seat Preview</label>
+          <div id="createTeamSeatsContainer" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px;"></div>
+        </div>
+
+        <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-primary" style="height:48px; justify-content:center; margin-top:8px;">
+          Create & Publish Squad
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MOBILE BOTTOM NAVIGATION -->
+  <nav class="mobile-bottom-nav">
+    <a href="/" class="mobile-nav-btn">
+      <span>Discover</span>
+    </a>
+    <a href="/create-team" class="mobile-nav-btn active">
+      <span>Create</span>
+    </a>
+    <a href="/students" class="mobile-nav-btn">
+      <span>Directory</span>
+    </a>
+    <a href="/profile" class="mobile-nav-btn">
+      <span>Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT ENGINE -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script>
+    let selectedFriends = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (!currentUser) {
+        showToast("Please sign in with your R-ID first");
+        setTimeout(() => window.location.href = "/login", 500);
+      } else {
+        renderCreateTeamSeats();
+      }
+    });
+
+    async function searchFriends() {
+      const q = document.getElementById("friendSearchInput").value.trim();
+      const resultsDiv = document.getElementById("friendSearchResults");
+
+      if (q.length < 2) {
+        if (resultsDiv) resultsDiv.style.display = "none";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/students/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        resultsDiv.innerHTML = "";
+
+        const filtered = data.students.filter(s => 
+          s.r_id.toUpperCase() !== currentUser.r_id.toUpperCase() && 
+          !selectedFriends.some(sf => sf.r_id === s.r_id)
+        );
+
+        if (filtered.length === 0) {
+          resultsDiv.innerHTML = `<div style="padding:16px; font-size:0.75rem; color:var(--text-muted); text-align:center; font-weight:700;">No matching students found</div>`;
+        } else {
+          filtered.forEach(s => {
+            const item = document.createElement("div");
+            item.style.cssText = `padding:12px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s;`;
+            item.onmouseenter = () => item.style.background = "var(--surface-variant)";
+            item.onmouseleave = () => item.style.background = "#FFFFFF";
+            item.onclick = () => addFriendToTeam(s);
+
+            item.innerHTML = `
+              <div style="display:flex; align-items:center; gap:12px;">
+                <img src="${s.avatar_url}" style="width:36px; height:36px; border-radius:9999px; background:var(--surface-variant); border:1px solid var(--border); flex-shrink:0; object-fit:cover;">
+                <div>
+                  <div style="font-size:0.75rem; font-weight:800; color:var(--text-main);">${escapeHtml(s.name)}</div>
+                  <div style="font-size:0.6875rem; color:var(--text-muted);">${s.r_id} • ${s.gender}</div>
+                </div>
+              </div>
+              <span class="badge badge-purple">+ Add</span>
+            `;
+            resultsDiv.appendChild(item);
+          });
+        }
+        resultsDiv.style.display = "block";
+      } catch(e) {}
+    }
+
+    function addFriendToTeam(student) {
+      if (selectedFriends.length >= 5) return showToast("Max 5 friends (Team limit is 6)");
+      selectedFriends.push(student);
+      document.getElementById("friendSearchInput").value = "";
+      document.getElementById("friendSearchResults").style.display = "none";
+      renderCreateTeamSeats();
+    }
+
+    function removeFriend(rid) {
+      selectedFriends = selectedFriends.filter(sf => sf.r_id !== rid);
+      renderCreateTeamSeats();
+    }
+
+    function renderCreateTeamSeats() {
+      const container = document.getElementById("createTeamSeatsContainer");
+      if (!container || !currentUser) return;
+      container.innerHTML = "";
+
+      // Seat 1: Leader
+      container.innerHTML += `
+        <div style="padding:12px; background:var(--surface-variant); border:1px solid var(--border); border-radius:14px; display:flex; align-items:center; gap:12px;">
+          <img src="${currentUser.avatar_url}" style="width:36px; height:36px; border-radius:9999px; object-fit:cover; background:#FFF; border:1px solid var(--border);">
+          <div style="flex:1; min-width:0;">
+            <div style="font-size:0.75rem; font-weight:800; color:var(--text-main);" class="truncate">${escapeHtml(currentUser.name)}</div>
+            <div style="font-size:0.6875rem; font-weight:700; color:var(--primary);">Seat 1 • Leader (You)</div>
+          </div>
+        </div>
+      `;
+
+      // Seats 2-6
+      for (let i = 0; i < 5; i++) {
+        const friend = selectedFriends[i];
+        if (friend) {
+          container.innerHTML += `
+            <div style="padding:12px; background:var(--surface); border:1px solid var(--border); border-radius:14px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+              <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                <img src="${friend.avatar_url}" style="width:36px; height:36px; border-radius:9999px; object-fit:cover; background:#FFF; border:1px solid var(--border);">
+                <div style="min-width:0;">
+                  <div style="font-size:0.75rem; font-weight:800; color:var(--text-main);" class="truncate">${escapeHtml(friend.name)}</div>
+                  <div style="font-size:0.6875rem; color:var(--text-muted);">${friend.r_id} • Added</div>
+                </div>
+              </div>
+              <button onclick="removeFriend('${friend.r_id}')" style="background:none; border:none; color:var(--text-muted); font-size:1.125rem; font-weight:700; cursor:pointer;">×</button>
+            </div>
+          `;
+        } else {
+          container.innerHTML += `
+            <div style="padding:12px; border:2px dashed #D0BCFF; background:var(--primary-container); border-radius:14px; display:flex; align-items:center; gap:10px;">
+              <div style="width:30px; height:30px; border-radius:9999px; background:#FFF; color:var(--primary); font-weight:800; font-size:0.875rem; display:flex; align-items:center; justify-content:center;">+</div>
+              <div>
+                <div style="font-size:0.75rem; font-weight:800; color:var(--text-main);">Seat ${i + 2} Open</div>
+                <div style="font-size:0.6875rem; font-weight:700; color:var(--primary);">Open for Requests</div>
+              </div>
+            </div>
+          `;
+        }
+      }
+    }
+
+    async function submitCreateTeam() {
+      const name = document.getElementById("teamNameInput").value.trim();
+      const desc = document.getElementById("teamDescInput").value.trim();
+      const whatsapp = document.getElementById("teamWhatsappInput").value.trim();
+
+      if (!name) return showToast("Squad title is required");
+
+      const btn = document.getElementById("btnSubmitCreate");
+      btn.innerText = "Creating Squad...";
+      btn.disabled = true;
+
+      const payload = {
+        leader_r_id: currentUser.r_id,
+        name: name,
+        description: desc,
+        whatsapp_link: whatsapp,
+        friend_r_ids: selectedFriends.map(f => f.r_id)
+      };
+
+      try {
+        const res = await fetch("/api/teams/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          setTimeout(() => {
+            window.location.href = `/team/${data.team_id}`;
+          }, 400);
+        } else {
+          showToast(data.message);
+          btn.innerText = "Create & Publish Squad";
+          btn.disabled = false;
+        }
+      } catch(e) {
+        showToast("Error creating squad");
+        btn.innerText = "Create & Publish Squad";
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

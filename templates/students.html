@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HackMate — Student Directory</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99; display:flex; flex-direction:column; gap:8px; width:90%; max-width:380px; pointer-events:none;"></div>
+
+  <!-- TOP DESKTOP HEADER -->
+  <header class="nav-header">
+    <a href="/" class="brand-logo">
+      <div class="brand-badge">H</div>
+      <span class="brand-title">HackMate</span>
+    </a>
+
+    <div class="nav-links-desktop">
+      <a href="/" class="nav-link">Discover</a>
+      <a href="/create-team" class="nav-link">+ Create Squad</a>
+      <a href="/students" class="nav-link active">Directory</a>
+      <div id="navUserSlotDesktop"></div>
+    </div>
+  </header>
+
+  <!-- MOBILE TOP HEADER BAR -->
+  <header class="nav-header md:hidden" style="display:flex; justify-content:space-between;">
+    <a href="/" class="brand-logo">
+      <div class="brand-badge" style="width:30px; height:30px; font-size:1rem;">H</div>
+      <span class="brand-title" style="font-size:1.125rem;">HackMate</span>
+    </a>
+    <div id="navUserSlotMobile"></div>
+  </header>
+
+  <!-- MAIN STUDENTS DIRECTORY CONTENT -->
+  <main class="page-container" style="max-width:720px;">
+    
+    <div class="card">
+      <h1 class="page-title">Student Directory</h1>
+      <p class="page-subtitle">Search college student database by R-ID or Name.</p>
+
+      <input type="text" id="dirSearchInput" placeholder="Type student R-ID or Name (e.g. R15006, Rahul)..." class="input-control" style="margin-bottom:20px;" onkeyup="searchStudentDirectory()">
+
+      <div id="dirSearchResults" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:0.8125rem; color:var(--text-muted); text-align:center; padding:36px;">Type student R-ID or name above to search</div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MOBILE BOTTOM NAVIGATION -->
+  <nav class="mobile-bottom-nav">
+    <a href="/" class="mobile-nav-btn">
+      <span>Discover</span>
+    </a>
+    <a href="/create-team" class="mobile-nav-btn">
+      <span>Create</span>
+    </a>
+    <a href="/students" class="mobile-nav-btn active">
+      <span>Directory</span>
+    </a>
+    <a href="/profile" class="mobile-nav-btn">
+      <span>Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT ENGINE -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script>
+    let searchTimer = null;
+    function searchStudentDirectory() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => executeStudentSearch(), 200);
+    }
+
+    async function executeStudentSearch() {
+      const q = document.getElementById("dirSearchInput").value.trim();
+      const container = document.getElementById("dirSearchResults");
+
+      if (q.length < 2) {
+        container.innerHTML = `<div style="font-size:0.8125rem; color:var(--text-muted); text-align:center; padding:36px;">Type student R-ID or name above to search</div>`;
+        return;
+      }
+
+      container.innerHTML = `<div style="font-size:0.8125rem; color:var(--text-muted); text-align:center; padding:24px;">Searching college database...</div>`;
+
+      try {
+        const res = await fetch(`/api/students/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        
+        if (!data.students || data.students.length === 0) {
+          container.innerHTML = `<div style="font-size:0.8125rem; color:var(--text-muted); text-align:center; padding:36px; font-weight:700;">No students found matching "${escapeHtml(q)}"</div>`;
+          return;
+        }
+
+        container.innerHTML = data.students.map(s => `
+          <div style="padding:14px 18px; background:var(--surface-variant); border:1px solid var(--border); border-radius:16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <img src="${s.avatar_url}" style="width:44px; height:44px; border-radius:9999px; background:#FFF; border:1px solid var(--border); object-fit:cover; flex-shrink:0;">
+              <div>
+                <div style="font-size:0.875rem; font-weight:800; color:var(--text-main);">${escapeHtml(s.name)}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">${s.r_id} • ${s.gender}</div>
+                <div style="font-size:0.6875rem; color:var(--primary); font-weight:700; margin-top:2px;">${escapeHtml(s.email)} • DOB: ${escapeHtml(s.dob || 'N/A')}</div>
+              </div>
+            </div>
+            <span class="badge badge-purple">${s.r_id}</span>
+          </div>
+        `).join('');
+      } catch(e) {
+        container.innerHTML = `<div style="font-size:0.8125rem; color:#B3261E; text-align:center; padding:24px; font-weight:700;">Error searching database</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

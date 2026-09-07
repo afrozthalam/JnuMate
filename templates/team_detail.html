@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HackMate — Squad Details</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99; display:flex; flex-direction:column; gap:8px; width:90%; max-width:380px; pointer-events:none;"></div>
+
+  <!-- TOP DESKTOP HEADER -->
+  <header class="nav-header">
+    <a href="/" class="brand-logo">
+      <div class="brand-badge">H</div>
+      <span class="brand-title">HackMate</span>
+    </a>
+
+    <div class="nav-links-desktop">
+      <a href="/" class="nav-link">Discover</a>
+      <a href="/create-team" class="nav-link">+ Create Squad</a>
+      <a href="/students" class="nav-link">Directory</a>
+      <div id="navUserSlotDesktop"></div>
+    </div>
+  </header>
+
+  <!-- MOBILE TOP HEADER BAR -->
+  <header class="nav-header md:hidden" style="display:flex; justify-content:space-between;">
+    <a href="/" class="brand-logo">
+      <div class="brand-badge" style="width:30px; height:30px; font-size:1rem;">H</div>
+      <span class="brand-title" style="font-size:1.125rem;">HackMate</span>
+    </a>
+    <div id="navUserSlotMobile"></div>
+  </header>
+
+  <!-- MAIN TEAM DETAIL PAGE -->
+  <main class="page-container">
+    
+    <a href="/" style="display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:800; color:var(--primary); text-decoration:none; margin-bottom:16px;">
+      ← Back to Discover Squads
+    </a>
+
+    <div id="teamDetailContent" class="card" style="padding:32px;">
+      <div style="text-align:center; padding:48px 0;">
+        <p style="font-size:0.8125rem; color:var(--text-muted); font-weight:700;">Loading squad details...</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MOBILE BOTTOM NAVIGATION -->
+  <nav class="mobile-bottom-nav">
+    <a href="/" class="mobile-nav-btn active">
+      <span>Discover</span>
+    </a>
+    <a href="/create-team" class="mobile-nav-btn">
+      <span>Create</span>
+    </a>
+    <a href="/students" class="mobile-nav-btn">
+      <span>Directory</span>
+    </a>
+    <a href="/profile" class="mobile-nav-btn">
+      <span>Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT ENGINE -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script>
+    const teamId = {{ team_id }};
+
+    async function loadTeamDetails() {
+      const content = document.getElementById("teamDetailContent");
+      try {
+        const r_id = currentUser ? currentUser.r_id : '';
+        const res = await fetch(`/api/teams/${teamId}?r_id=${encodeURIComponent(r_id)}`);
+        const data = await res.json();
+
+        if (!data.success) {
+          content.innerHTML = `<div style="text-align:center; padding:36px; font-weight:800; color:#B3261E;">${escapeHtml(data.message)}</div>`;
+          return;
+        }
+
+        renderTeamPage(data.team);
+      } catch(e) {
+        content.innerHTML = `<div style="text-align:center; padding:36px; font-weight:800; color:#B3261E;">Failed to load team details</div>`;
+      }
+    }
+
+    function renderTeamPage(team) {
+      const content = document.getElementById("teamDetailContent");
+      const isLeader = team.user_status === 'leader';
+      const isMember = team.user_status === 'member';
+
+      let seatsHtml = "";
+      for (let i = 0; i < 6; i++) {
+        const member = team.members[i];
+        if (member) {
+          const isMe = currentUser && currentUser.r_id.toUpperCase() === member.r_id.toUpperCase();
+          const canRemove = isLeader && member.role !== 'leader';
+
+          seatsHtml += `
+            <div style="padding:14px; background:var(--surface-variant); border:1px solid var(--border); border-radius:16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                <img src="${member.avatar_url}" style="width:42px; height:42px; border-radius:9999px; background:#FFF; border:1px solid var(--border); object-fit:cover; flex-shrink:0;">
+                <div style="min-width:0;">
+                  <div style="font-size:0.875rem; font-weight:800; color:var(--text-main); display:flex; align-items:center; gap:6px;">
+                    ${escapeHtml(member.name)} ${isMe ? '<span style="font-size:0.625rem; color:var(--primary); background:var(--primary-container); padding:1px 6px; border-radius:9999px; font-weight:800;">(You)</span>' : ''}
+                  </div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">${member.r_id} • ${member.gender}</div>
+                  <div style="font-size:0.6875rem; color:var(--primary); font-weight:700; margin-top:2px;">${escapeHtml(member.email)} • DOB: ${escapeHtml(member.dob || 'N/A')}</div>
+                </div>
+              </div>
+
+              <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                <span class="badge ${member.role === 'leader' ? 'badge-purple' : ''}" style="text-transform:uppercase; border:1px solid var(--border);">
+                  ${member.role}
+                </span>
+
+                ${canRemove ? `
+                  <button onclick="removeMemberFromTeam('${member.r_id}')" class="btn-danger" style="height:32px; padding:0 10px; font-size:0.6875rem;">
+                    Remove
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        } else {
+          seatsHtml += `
+            <div style="padding:14px; border:2px dashed #D0BCFF; background:var(--primary-container); border-radius:16px; display:flex; align-items:center; justify-content:space-between;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:36px; height:36px; border-radius:9999px; background:#FFF; color:var(--primary); font-weight:800; font-size:1.125rem; display:flex; align-items:center; justify-content:center;">+</div>
+                <div>
+                  <div style="font-size:0.75rem; font-weight:800; color:var(--text-main);">Seat ${i + 1} Open</div>
+                  <div style="font-size:0.6875rem; font-weight:700; color:var(--primary);">Open for Join Requests</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      let whatsappBanner = "";
+      if (team.has_whatsapp && (isLeader || isMember)) {
+        whatsappBanner = `
+          <div style="padding:16px; background:var(--green-bg); border:1px solid #A5D6A7; border-radius:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px;">
+            <div>
+              <div style="font-size:0.8125rem; font-weight:800; color:var(--green-text);">Official WhatsApp Group Link</div>
+              <div style="font-size:0.75rem; color:#1E4620;">Join official squad chat for hackathon collaboration</div>
+            </div>
+            <a href="${team.whatsapp_link}" target="_blank" class="btn-primary" style="background:#2E7D32;">
+              Open WhatsApp Group ➔
+            </a>
+          </div>
+        `;
+      }
+
+      let joinRequestForm = "";
+      if (!isLeader && !isMember && team.user_status === 'none' && !team.is_full) {
+        joinRequestForm = `
+          <div style="padding:20px; background:var(--surface-variant); border:1px solid var(--border); border-radius:20px; margin-top:24px;">
+            <h4 style="font-size:0.875rem; font-weight:800; color:var(--text-main); margin-bottom:6px;">Request to Join this Squad</h4>
+            <textarea id="joinMessageInput" rows="2" placeholder="Write a short message to the team leader..." class="textarea-control" style="margin-bottom:12px;"></textarea>
+            <button onclick="submitJoinRequest()" id="btnSubmitJoin" class="btn-primary">
+              Send Join Request
+            </button>
+          </div>
+        `;
+      }
+
+      let leaderRequestsSection = "";
+      if (isLeader) {
+        leaderRequestsSection = `
+          <div style="padding-top:20px; border-top:1px solid var(--border); margin-top:24px;">
+            <h4 style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Pending Join Requests</h4>
+            <div id="pendingRequestsContainer" style="display:flex; flex-direction:column; gap:8px;">
+              <div style="font-size:0.75rem; color:var(--text-muted);">Loading requests...</div>
+            </div>
+          </div>
+        `;
+      }
+
+      content.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <!-- Team Header -->
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+            <div>
+              <h1 class="page-title" style="margin-bottom:4px;">${escapeHtml(team.name)}</h1>
+              <p style="font-size:0.875rem; color:var(--text-muted); leading-relaxed;">${escapeHtml(team.description || 'No project pitch provided.')}</p>
+            </div>
+            <span class="badge badge-purple" style="font-size:0.8125rem; padding:6px 14px;">${team.member_count}/6 Seats Filled</span>
+          </div>
+
+          ${whatsappBanner}
+
+          ${isLeader ? `
+            <div style="padding:16px; background:var(--surface-variant); border:1px solid var(--border); border-radius:16px;">
+              <label style="display:block; font-size:0.6875rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Leader Controls — WhatsApp Link</label>
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="panelWhatsappInput" value="${team.whatsapp_link || ''}" placeholder="https://chat.whatsapp.com/..." class="input-control" style="height:40px; font-size:0.75rem;">
+                <button onclick="updateWhatsappLink()" class="btn-primary" style="height:40px; font-size:0.75rem;">Save Link</button>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- 6 Squad Seats Grid -->
+          <div>
+            <h3 style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Squad Members (6 Seats)</h3>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
+              ${seatsHtml}
+            </div>
+          </div>
+
+          ${joinRequestForm}
+          ${leaderRequestsSection}
+
+          <!-- Leader Action Buttons -->
+          ${isLeader ? `
+            <div style="padding-top:20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
+              <button onclick="disbandTeam()" class="btn-danger">
+                Disband Squad
+              </button>
+            </div>
+          ` : isMember ? `
+            <div style="padding-top:20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
+              <button onclick="leaveTeam()" class="btn-danger">
+                Leave Squad
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      if (isLeader) {
+        fetchPendingRequests();
+      }
+    }
+
+    async function submitJoinRequest() {
+      if (!currentUser) return window.location.href = "/login";
+      const msg = document.getElementById("joinMessageInput").value.trim();
+      const btn = document.getElementById("btnSubmitJoin");
+      btn.innerText = "Sending...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`/api/teams/${teamId}/request`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ student_r_id: currentUser.r_id, message: msg })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        if (data.success) {
+          loadTeamDetails();
+        }
+      } catch(e) {
+        showToast("Error sending request");
+      } finally {
+        btn.innerText = "Send Join Request";
+        btn.disabled = false;
+      }
+    }
+
+    async function fetchPendingRequests() {
+      const container = document.getElementById("pendingRequestsContainer");
+      if (!container || !currentUser) return;
+
+      try {
+        const res = await fetch(`/api/teams/${teamId}/requests?leader_r_id=${encodeURIComponent(currentUser.r_id)}`);
+        const data = await res.json();
+        const reqs = data.requests || [];
+
+        if (reqs.length === 0) {
+          container.innerHTML = `<div style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">No pending requests</div>`;
+          return;
+        }
+
+        container.innerHTML = reqs.map(r => `
+          <div style="padding:12px; background:var(--surface-variant); border:1px solid var(--border); border-radius:12px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <img src="${r.avatar_url}" style="width:36px; height:36px; border-radius:9999px; background:#FFF; border:1px solid var(--border); object-fit:cover;">
+              <div>
+                <div style="font-size:0.75rem; font-weight:800; color:var(--text-main);">${escapeHtml(r.name)} (${r.r_id})</div>
+                <div style="font-size:0.6875rem; color:var(--text-muted);">"${escapeHtml(r.message || 'No note')}"</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:6px;">
+              <button onclick="actionRequest(${r.request_id}, 'accept')" class="btn-primary" style="height:32px; padding:0 12px; font-size:0.6875rem;">Accept</button>
+              <button onclick="actionRequest(${r.request_id}, 'reject')" class="btn-outlined" style="height:32px; padding:0 12px; font-size:0.6875rem;">Decline</button>
+            </div>
+          </div>
+        `).join('');
+      } catch(e) {}
+    }
+
+    async function actionRequest(reqId, action) {
+      try {
+        const res = await fetch(`/api/teams/${teamId}/requests/${reqId}/action`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leader_r_id: currentUser.r_id, action: action })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        loadTeamDetails();
+      } catch(e) {}
+    }
+
+    async function removeMemberFromTeam(targetRid) {
+      if (!confirm(`Are you sure you want to remove ${targetRid}?`)) return;
+      try {
+        const res = await fetch(`/api/teams/${teamId}/members/remove`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leader_r_id: currentUser.r_id, target_r_id: targetRid })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        loadTeamDetails();
+      } catch(e) {}
+    }
+
+    async function updateWhatsappLink() {
+      const link = document.getElementById("panelWhatsappInput").value.trim();
+      try {
+        const res = await fetch(`/api/teams/${teamId}/whatsapp`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leader_r_id: currentUser.r_id, whatsapp_link: link })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        loadTeamDetails();
+      } catch(e) {}
+    }
+
+    async function disbandTeam() {
+      if (!confirm("Are you sure you want to disband this squad?")) return;
+      try {
+        const res = await fetch(`/api/teams/${teamId}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leader_r_id: currentUser.r_id })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        if (data.success) window.location.href = "/";
+      } catch(e) {}
+    }
+
+    async function leaveTeam() {
+      if (!confirm("Are you sure you want to leave this squad?")) return;
+      try {
+        const res = await fetch(`/api/teams/${teamId}/leave`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ student_r_id: currentUser.r_id })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        if (data.success) window.location.href = "/";
+      } catch(e) {}
+    }
+
+    document.addEventListener("DOMContentLoaded", () => loadTeamDetails());
+  </script>
+</body>
+</html>

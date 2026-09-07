@@ -3,348 +3,178 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>HackMate — Modern Squad Matching Dashboard</title>
-  
-  <!-- Zero-Lag Custom CSS Design System -->
+  <title>HackMate — Discover Teams</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
 
-  <!-- TOAST NOTIFICATION STACK -->
+  <!-- TOAST CONTAINER -->
   <div id="toastContainer" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99; display:flex; flex-direction:column; gap:8px; width:90%; max-width:380px; pointer-events:none;"></div>
 
-  <!-- APP SHELL LAYOUT -->
-  <div class="app-shell">
+  <!-- TOP DESKTOP HEADER -->
+  <header class="nav-header">
+    <a href="/" class="brand-logo">
+      <div class="brand-badge">H</div>
+      <span class="brand-title">HackMate</span>
+    </a>
 
-    <!-- DESKTOP LEFT SIDEBAR -->
-    <aside class="app-sidebar">
+    <div class="nav-links-desktop">
+      <a href="/" class="nav-link active">Discover</a>
+      <a href="/create-team" class="nav-link">+ Create Squad</a>
+      <a href="/students" class="nav-link">Directory</a>
+      <div id="navUserSlotDesktop"></div>
+    </div>
+  </header>
+
+  <!-- MOBILE TOP HEADER BAR -->
+  <header class="nav-header md:hidden" style="display:flex; justify-content:space-between;">
+    <a href="/" class="brand-logo">
+      <div class="brand-badge" style="width:30px; height:30px; font-size:1rem;">H</div>
+      <span class="brand-title" style="font-size:1.125rem;">HackMate</span>
+    </a>
+    <div id="navUserSlotMobile"></div>
+  </header>
+
+  <!-- MAIN DISCOVER PAGE CONTENT -->
+  <main class="page-container">
+    
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px;">
       <div>
-        <!-- Brand Title -->
-        <div class="sidebar-brand" onclick="window.location.reload()">
-          <div class="brand-icon">H</div>
-          <div class="brand-text">HackMate</div>
-        </div>
-
-        <!-- Desktop Navigation Items -->
-        <nav class="sidebar-nav">
-          <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="nav-item-desktop active">
-            <span class="nav-item-icon">
-              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
-            </span>
-            <span>Discover Squads</span>
-          </button>
-
-          <button onclick="openMyTeamWorkspace()" class="nav-item-desktop">
-            <span class="nav-item-icon">
-              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
-            </span>
-            <span>My Squad</span>
-          </button>
-
-          <button onclick="handleMainCreateTeamClick()" class="nav-item-desktop">
-            <span class="nav-item-icon">
-              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            </span>
-            <span>Create New Team</span>
-          </button>
-        </nav>
+        <h1 class="page-title">Discover Squads</h1>
+        <p class="page-subtitle" style="margin-bottom:0;">Find teammates or join an open hackathon squad.</p>
       </div>
 
-      <!-- User Card Slot in Sidebar -->
-      <div id="sidebarUserCard">
-        <!-- Rendered dynamically by app.js -->
+      <a href="/create-team" class="btn-primary">
+        + Create Squad
+      </a>
+    </div>
+
+    <!-- SEARCH & FILTERS -->
+    <div style="display:flex; flex-wrap:wrap; items-center; justify-content:space-between; gap:12px; margin-bottom:28px;">
+      <input type="text" id="searchInput" placeholder="Search squads by title or pitch..." class="input-control" style="max-width:380px;" onkeyup="debounceSearch()">
+      
+      <div style="display:flex; gap:8px;">
+        <button onclick="setFilter('all')" id="btnFilterAll" class="nav-link active" style="border:1px solid var(--border); cursor:pointer;">All Squads</button>
+        <button onclick="setFilter('open')" id="btnFilterOpen" class="nav-link" style="border:1px solid var(--border); cursor:pointer;">Open Slots Only</button>
       </div>
-    </aside>
+    </div>
 
-    <!-- MOBILE TOP BAR -->
-    <header class="mobile-top-bar">
-      <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="window.location.reload()">
-        <div style="width:32px; height:32px; border-radius:10px; background:linear-gradient(135deg, #6750A4 0%, #7C4DFF 100%); color:#FFF; font-family:'Outfit',sans-serif; font-weight:800; font-size:1.125rem; display:flex; align-items:center; justify-content:center;">H</div>
-        <span style="font-family:'Outfit',sans-serif; font-weight:800; font-size:1.125rem; color:#6750A4;">HackMate</span>
-      </div>
+    <!-- TEAMS GRID FEED -->
+    <div id="teamsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px;"></div>
 
-      <div id="mobileHeaderUserSlot">
-        <!-- Rendered dynamically -->
-      </div>
-    </header>
+    <!-- EMPTY STATE -->
+    <div id="emptyState" style="display:none; text-align:center; padding:60px 20px; background:#FFF; border:1px solid var(--border); border-radius:24px;">
+      <h3 style="font-size:1.125rem; font-weight:800; color:var(--text-main);">No squads found</h3>
+      <p style="font-size:0.8125rem; color:var(--text-muted); margin-top:4px;">Be the first to build a team for the hackathon!</p>
+      <a href="/create-team" class="btn-primary" style="margin-top:20px; display:inline-flex;">
+        + Create Squad
+      </a>
+    </div>
 
-    <!-- MAIN WORKSPACE CONTENT AREA -->
-    <main class="app-main-content">
+  </main>
 
-      <!-- DESKTOP TOP WORKSPACE HEADER -->
-      <div class="workspace-top-bar">
-        <div class="workspace-search-box">
-          <span class="search-icon-pos">
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-          </span>
-          <input type="text" id="searchInput" placeholder="Search squads by title, pitch, or skills... (Ctrl + K)" class="workspace-search-input" onkeyup="debounceSearch()">
-        </div>
-
-        <button onclick="handleMainCreateTeamClick()" class="btn-primary">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          + Create Team
-        </button>
-      </div>
-
-      <!-- DASHBOARD METRIC STATS WIDGETS -->
-      <div class="dashboard-stats-grid">
-        <div class="stat-widget stat-widget-purple">
-          <div class="stat-icon-container" style="color:#6750A4;">
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
-          </div>
-          <div>
-            <div id="statTotalSquads" class="stat-number">0</div>
-            <div class="stat-label">Active Squads</div>
-          </div>
-        </div>
-
-        <div class="stat-widget stat-widget-green">
-          <div class="stat-icon-container" style="color:#2E7D32;">
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a5.97 5.97 0 00-.942 3.197M12 10.5a3 3 0 100-6 3 3 0 000 6z"/></svg>
-          </div>
-          <div>
-            <div id="statOpenSeats" class="stat-number">0</div>
-            <div class="stat-label">Open Seats Available</div>
-          </div>
-        </div>
-
-        <div class="stat-widget stat-widget-pink">
-          <div class="stat-icon-container" style="color:#B3261E;">
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-          </div>
-          <div>
-            <div id="statBalancedSquads" class="stat-number">0</div>
-            <div class="stat-label">Gender Balanced Squads</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TOOLBAR & FILTER SECTION -->
-      <div class="toolbar-section">
-        <div class="filter-chips-row">
-          <button onclick="setFilter('all')" id="btnFilterAll" class="chip-btn active">All Squads</button>
-          <button onclick="setFilter('open')" id="btnFilterOpen" class="chip-btn">Open Seats Only</button>
-        </div>
-      </div>
-
-      <!-- SQUADS GRID -->
-      <div id="teamsGrid" class="squads-grid"></div>
-
-      <!-- EMPTY STATE -->
-      <div id="emptyState" style="display:none; text-align:center; padding:60px 20px; background:#FFF; border:1px solid #E7E0EC; border-radius:24px; margin-top:20px;">
-        <div style="width:56px; height:56px; border-radius:9999px; background:#E8DEF8; color:#6750A4; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
-          <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
-        </div>
-        <h3 style="font-size:1.125rem; font-weight:800; color:#1D1B20;">No squads match your filter</h3>
-        <p style="font-size:0.75rem; color:#49454F; margin-top:4px;">Be the first to create a team and start recruiting squad members!</p>
-        <button onclick="handleMainCreateTeamClick()" class="btn-primary" style="margin-top:20px;">
-          + Create Team
-        </button>
-      </div>
-
-    </main>
-  </div>
-
-  <!-- MOBILE FLOATING ACTION BUTTON (FAB) -->
-  <button onclick="handleMainCreateTeamClick()" class="mobile-fab" title="Create Team">
-    <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-  </button>
-
-  <!-- MOBILE BOTTOM NAVIGATION BAR -->
+  <!-- MOBILE BOTTOM NAVIGATION -->
   <nav class="mobile-bottom-nav">
-    <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="mobile-nav-btn active">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 100-18 9 9 0 000 18z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.82 8.18L13.5 13.5l-5.32 2.32 2.32-5.32 5.32-2.32z"/></svg>
+    <a href="/" class="mobile-nav-btn active">
       <span>Discover</span>
-    </button>
-
-    <button onclick="openMyTeamWorkspace()" class="mobile-nav-btn">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
-      <span>My Squad</span>
-    </button>
-
-    <button onclick="openUserProfileModal()" class="mobile-nav-btn">
-      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+    </a>
+    <a href="/create-team" class="mobile-nav-btn">
+      <span>Create</span>
+    </a>
+    <a href="/students" class="mobile-nav-btn">
+      <span>Directory</span>
+    </a>
+    <a href="/profile" class="mobile-nav-btn">
       <span>Profile</span>
-    </button>
+    </a>
   </nav>
 
-  <!-- ==================== FAST MATERIAL 3 MODALS & BOTTOM SHEETS ==================== -->
-
-  <!-- MODAL 1: AUTHENTICATION MODAL -->
-  <div id="authSheet" class="overlay-backdrop">
-    <div class="modal-container" style="max-width:440px; padding:28px; position:relative;">
-      <button onclick="closeAuthSheet()" style="position:absolute; right:20px; top:20px; background:none; border:none; color:#79747E; cursor:pointer; font-size:1.25rem;">×</button>
-
-      <div style="margin-bottom:24px;">
-        <h2 style="font-size:1.25rem; font-weight:800; color:#1D1B20;">Sign in with R-ID</h2>
-        <p style="font-size:0.75rem; color:#49454F; margin-top:4px;">Enter your College R-ID to receive a verification code on your email.</p>
-      </div>
-
-      <!-- Step 1: Input R-ID -->
-      <div id="authStep1" style="display:block;">
-        <div style="margin-bottom:16px;">
-          <label style="display:block; font-size:0.6875rem; font-weight:800; color:#49454F; text-transform:uppercase; margin-bottom:6px;">College R-ID</label>
-          <input type="text" id="authRidInput" placeholder="e.g. R15006" style="width:100%; height:46px; padding:0 16px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.9375rem; font-weight:800; text-transform:uppercase; outline:none;">
-        </div>
-
-        <button onclick="sendEmailOtpCode()" id="btnSendOtp" class="btn-primary" style="width:100%; justify-content:center;">
-          <span>Send Verification Code</span>
-        </button>
-
-        <div style="text-align:center; margin-top:14px;">
-          <button onclick="showManualRegister()" style="font-size:0.75rem; color:#6750A4; font-weight:800; background:none; border:none; cursor:pointer; text-decoration:underline;">
-            Unlisted R-ID? Register Account ➔
-          </button>
-        </div>
-      </div>
-
-      <!-- Step 2: Input OTP -->
-      <div id="authStep2" style="display:none;">
-        <div style="padding:14px; background:#F3EDF7; border:1px solid #D0BCFF; border-radius:12px; margin-bottom:16px;">
-          <div style="font-size:0.6875rem; font-weight:700; color:#49454F;">Verification code sent to:</div>
-          <div id="targetEmailDisplay" style="font-size:0.8125rem; font-weight:800; color:#6750A4; word-break:break-all; margin-top:2px;"></div>
-        </div>
-
-        <div style="margin-bottom:16px;">
-          <label style="display:block; font-size:0.6875rem; font-weight:800; color:#49454F; text-transform:uppercase; text-align:center; margin-bottom:6px;">Enter 6-Digit Code</label>
-          <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" style="width:100%; height:52px; padding:0 16px; background:#FFF; border:2px solid #6750A4; border-radius:12px; font-size:1.5rem; font-weight:800; text-align:center; letter-spacing:0.2em; outline:none;">
-        </div>
-
-        <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-primary" style="width:100%; justify-content:center;">
-          <span>Verify & Sign In</span>
-        </button>
-
-        <button onclick="showAuthStep(1)" style="width:100%; text-align:center; margin-top:12px; font-size:0.75rem; color:#79747E; font-weight:700; background:none; border:none; cursor:pointer;">
-          ← Back to R-ID Input
-        </button>
-      </div>
-
-      <!-- Step 3: Manual Register -->
-      <div id="authStepRegister" style="display:none;">
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <input type="text" id="regRid" placeholder="College R-ID (e.g. R15006)" style="height:42px; padding:0 14px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.75rem; font-weight:800; text-transform:uppercase; outline:none;">
-          <input type="text" id="regName" placeholder="Full Name" style="height:42px; padding:0 14px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.75rem; outline:none;">
-          <input type="email" id="regEmail" placeholder="College Email Address" style="height:42px; padding:0 14px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.75rem; outline:none;">
-          <select id="regGender" style="height:42px; padding:0 14px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.75rem; font-weight:700; outline:none;">
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-          <input type="text" id="regDob" placeholder="Date of Birth (e.g. 12 Nov 2002)" style="height:42px; padding:0 14px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.75rem; outline:none;">
-          <button onclick="submitManualRegister()" class="btn-primary" style="margin-top:6px; justify-content:center;">
-            Register & Sign In
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 2: USER PROFILE MODAL -->
-  <div id="userProfileSheet" class="overlay-backdrop">
-    <div class="modal-container" style="max-width:640px; padding:28px; position:relative; overflow-y:auto;">
-      <button onclick="closeUserProfileModal()" style="position:absolute; right:20px; top:20px; background:none; border:none; color:#79747E; cursor:pointer; font-size:1.25rem; z-index:10;">×</button>
-
-      <div id="userProfileContent">
-        <div style="padding:48px 0; text-align:center;">
-          <div class="ios-spinner" style="margin:0 auto 12px;"></div>
-          <p style="font-size:0.75rem; color:#79747E; font-weight:700;">Loading profile...</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 3: CREATE TEAM MODAL -->
-  <div id="createTeamSheet" class="overlay-backdrop">
-    <div class="modal-container" style="max-width:640px; padding:28px; position:relative; overflow-y:auto;">
-      <button onclick="closeCreateTeamSheet()" style="position:absolute; right:20px; top:20px; background:none; border:none; color:#79747E; cursor:pointer; font-size:1.25rem; z-index:10;">×</button>
-
-      <h2 style="font-size:1.25rem; font-weight:800; color:#1D1B20; margin-bottom:4px;">Create Team</h2>
-      <p style="font-size:0.75rem; color:#49454F; margin-bottom:20px;">Build your 6-seat squad: pre-add friends or leave seats open for requests.</p>
-
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <div>
-          <label style="display:block; font-size:0.6875rem; font-weight:800; color:#49454F; text-transform:uppercase; margin-bottom:6px;">Team Title *</label>
-          <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, EmeraldSquad" style="width:100%; height:44px; padding:0 14px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.875rem; font-weight:800; outline:none;">
-        </div>
-
-        <div>
-          <label style="display:block; font-size:0.6875rem; font-weight:800; color:#49454F; text-transform:uppercase; margin-bottom:6px;">Project Pitch</label>
-          <textarea id="teamDescInput" rows="2" placeholder="Describe your hackathon project pitch or required skills..." style="width:100%; padding:12px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.75rem; outline:none; resize:none;"></textarea>
-        </div>
-
-        <div>
-          <label style="display:block; font-size:0.6875rem; font-weight:800; color:#6750A4; text-transform:uppercase; margin-bottom:6px;">WhatsApp Group Link (Optional)</label>
-          <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." style="width:100%; height:40px; padding:0 14px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.75rem; outline:none;">
-        </div>
-
-        <!-- SEARCH & PRE-ADD FRIENDS -->
-        <div style="padding-top:12px; border-top:1px solid #E7E0EC;">
-          <label style="display:block; font-size:0.6875rem; font-weight:800; color:#49454F; text-transform:uppercase; margin-bottom:8px;">Search & Pre-Add Teammates directly</label>
-          <div style="position:relative;">
-            <input type="text" id="friendSearchInput" placeholder="Type student R-ID or Name..." style="width:100%; height:40px; padding:0 14px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.75rem; outline:none;" onkeyup="searchFriends()">
-            
-            <!-- SEARCH RESULTS -->
-            <div id="friendSearchResults" style="display:none; position:absolute; left:0; right:0; top:100%; margin-top:4px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; z-index:30; max-height:220px; overflow-y:auto; box-shadow:0 8px 24px rgba(0,0,0,0.12);"></div>
-          </div>
-        </div>
-
-        <!-- VISUAL 6 SEATS -->
-        <div>
-          <label style="display:block; font-size:0.6875rem; font-weight:800; color:#49454F; text-transform:uppercase; margin-bottom:8px;">Visual 6-Seat Preview</label>
-          <div id="createTeamSeatsContainer" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px;"></div>
-        </div>
-
-        <button onclick="submitCreateTeam()" id="btnSubmitCreateTeam" class="btn-primary" style="width:100%; justify-content:center; height:46px; margin-top:8px;">
-          <span>Create & Publish Team</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 4: DETAILED TEAM PANEL -->
-  <div id="teamDetailSheet" class="overlay-backdrop">
-    <div class="modal-container" style="max-width:720px; padding:28px; position:relative; overflow-y:auto;">
-      <button onclick="closeTeamDetailSheet()" style="position:absolute; right:20px; top:20px; background:none; border:none; color:#79747E; cursor:pointer; font-size:1.25rem; z-index:10;">×</button>
-
-      <div id="teamDetailContent">
-        <!-- Rendered instantly via JS cache -->
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 5: DIRECT ADD SEARCH MODAL FOR LEADER -->
-  <div id="addTeammateModal" class="overlay-backdrop">
-    <div class="modal-container" style="max-width:500px; padding:24px; position:relative;">
-      <button onclick="closeAddTeammateModal()" style="position:absolute; right:20px; top:20px; background:none; border:none; color:#79747E; cursor:pointer; font-size:1.25rem; z-index:10;">×</button>
-
-      <h3 style="font-size:1.125rem; font-weight:800; color:#1D1B20; margin-bottom:4px;">Add Teammate Directly</h3>
-      <p style="font-size:0.75rem; color:#49454F; margin-bottom:16px;">Search student database by R-ID or Name to add directly to your squad.</p>
-
-      <input type="text" id="directAddSearchInput" placeholder="Search R-ID or Name..." style="width:100%; height:42px; padding:0 14px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.75rem; outline:none; margin-bottom:12px;" onkeyup="searchDirectAddCandidate()">
-
-      <div id="directAddSearchResults" style="max-height:240px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
-        <div style="font-size:0.75rem; color:#79747E; text-align:center; padding:24px;">Type student R-ID or name above</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 6: REQUEST TO JOIN MODAL -->
-  <div id="joinSheet" class="overlay-backdrop">
-    <div class="modal-container" style="max-width:440px; padding:24px; position:relative;">
-      <button onclick="closeJoinSheet()" style="position:absolute; right:20px; top:20px; background:none; border:none; color:#79747E; cursor:pointer; font-size:1.25rem; z-index:10;">×</button>
-
-      <h2 style="font-size:1.125rem; font-weight:800; color:#1D1B20; margin-bottom:2px;">Request to Join Team</h2>
-      <p id="joinTeamName" style="font-size:0.875rem; font-weight:800; color:#6750A4; margin-bottom:14px;"></p>
-
-      <textarea id="joinMessageInput" rows="3" placeholder="Write a short message to the team leader..." style="width:100%; padding:12px; background:#FFF; border:1px solid #E7E0EC; border-radius:12px; font-size:0.75rem; outline:none; resize:none; margin-bottom:16px;"></textarea>
-
-      <button onclick="submitJoinRequest()" id="btnSubmitJoinRequest" class="btn-primary" style="width:100%; justify-content:center;">
-        <span>Send Join Request</span>
-      </button>
-    </div>
-  </div>
-
-  <!-- FAST ZERO-LAG JS ENGINE -->
+  <!-- JAVASCRIPT ENGINE -->
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script>
+    let currentFilter = 'all';
+    let searchDebounce = null;
+
+    function debounceSearch() {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => fetchTeams(), 200);
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.getElementById("btnFilterAll").className = filter === 'all' ? "nav-link active" : "nav-link";
+      document.getElementById("btnFilterOpen").className = filter === 'open' ? "nav-link active" : "nav-link";
+      fetchTeams();
+    }
+
+    async function fetchTeams() {
+      const search = document.getElementById("searchInput").value.trim();
+      const r_id = currentUser ? currentUser.r_id : '';
+      const url = `/api/teams?r_id=${encodeURIComponent(r_id)}&search=${encodeURIComponent(search)}&filter=${currentFilter}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        renderTeams(data.teams);
+      } catch(e) {}
+    }
+
+    function renderTeams(teams) {
+      const grid = document.getElementById("teamsGrid");
+      const empty = document.getElementById("emptyState");
+
+      if (!teams || teams.length === 0) {
+        grid.innerHTML = "";
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+
+      let html = "";
+      teams.forEach(t => {
+        let avatarsHtml = "";
+        for (let i = 0; i < 6; i++) {
+          const m = t.members[i];
+          if (m) {
+            avatarsHtml += `<img src="${m.avatar_url}" class="avatar-stack-img" title="${escapeHtml(m.name)}">`;
+          } else {
+            avatarsHtml += `<div class="avatar-stack-open">+</div>`;
+          }
+        }
+
+        const tagBadge = t.has_female 
+          ? `<span class="badge badge-green">✓ Gender Balanced</span>` 
+          : `<span class="badge badge-pink">⚡ Needs Female</span>`;
+
+        html += `
+          <a href="/team/${t.id}" class="card card-clickable" style="display:flex; flex-direction:column; justify-content:space-between; height:100%;">
+            <div>
+              <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px;">
+                <h3 style="font-size:1.0625rem; font-weight:800; color:var(--text-main); leading-tight;">${escapeHtml(t.name)}</h3>
+                <span class="badge badge-purple" style="flex-shrink:0;">${t.member_count}/6 Seats</span>
+              </div>
+
+              <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.5; margin-bottom:14px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(t.description || 'No pitch provided.')}</p>
+
+              <div style="margin-bottom:14px;">
+                ${tagBadge}
+              </div>
+            </div>
+
+            <div style="padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; margin-top:14px;">
+              <div class="avatar-stack">
+                ${avatarsHtml}
+              </div>
+              <span style="font-size:0.75rem; font-weight:800; color:var(--primary);">View Team ➔</span>
+            </div>
+          </a>
+        `;
+      });
+
+      grid.innerHTML = html;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => fetchTeams());
+  </script>
 </body>
 </html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HackMate — Student Profile</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99; display:flex; flex-direction:column; gap:8px; width:90%; max-width:380px; pointer-events:none;"></div>
+
+  <!-- TOP DESKTOP HEADER -->
+  <header class="nav-header">
+    <a href="/" class="brand-logo">
+      <div class="brand-badge">H</div>
+      <span class="brand-title">HackMate</span>
+    </a>
+
+    <div class="nav-links-desktop">
+      <a href="/" class="nav-link">Discover</a>
+      <a href="/create-team" class="nav-link">+ Create Squad</a>
+      <a href="/students" class="nav-link">Directory</a>
+      <div id="navUserSlotDesktop"></div>
+    </div>
+  </header>
+
+  <!-- MOBILE TOP HEADER BAR -->
+  <header class="nav-header md:hidden" style="display:flex; justify-content:space-between;">
+    <a href="/" class="brand-logo">
+      <div class="brand-badge" style="width:30px; height:30px; font-size:1rem;">H</div>
+      <span class="brand-title" style="font-size:1.125rem;">HackMate</span>
+    </a>
+    <div id="navUserSlotMobile"></div>
+  </header>
+
+  <!-- MAIN PROFILE CONTENT -->
+  <main class="page-container" style="max-width:720px;">
+    
+    <div class="card">
+      <div id="profileContent">
+        <div style="text-align:center; padding:48px 0;">
+          <p style="font-size:0.8125rem; color:var(--text-muted); font-weight:700;">Loading student profile...</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MOBILE BOTTOM NAVIGATION -->
+  <nav class="mobile-bottom-nav">
+    <a href="/" class="mobile-nav-btn">
+      <span>Discover</span>
+    </a>
+    <a href="/create-team" class="mobile-nav-btn">
+      <span>Create</span>
+    </a>
+    <a href="/students" class="mobile-nav-btn">
+      <span>Directory</span>
+    </a>
+    <a href="/profile" class="mobile-nav-btn active">
+      <span>Profile</span>
+    </a>
+  </nav>
+
+  <!-- JAVASCRIPT ENGINE -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script>
+    async function loadProfilePage() {
+      if (!currentUser) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const content = document.getElementById("profileContent");
+      try {
+        const res = await fetch(`/api/user/profile?r_id=${encodeURIComponent(currentUser.r_id)}`);
+        const data = await res.json();
+
+        if (!data.success) {
+          content.innerHTML = `<div style="text-align:center; padding:36px; font-weight:800; color:#B3261E;">${escapeHtml(data.message)}</div>`;
+          return;
+        }
+
+        renderProfileView(data.profile, data.teams);
+      } catch(e) {
+        content.innerHTML = `<div style="text-align:center; padding:36px; font-weight:800; color:#B3261E;">Failed to load profile details</div>`;
+      }
+    }
+
+    function renderProfileView(prof, userTeams) {
+      const content = document.getElementById("profileContent");
+
+      let teamsListHtml = "";
+      if (!userTeams || userTeams.length === 0) {
+        teamsListHtml = `<div style="padding:16px; background:var(--surface-variant); border:1px solid var(--border); border-radius:14px; font-size:0.75rem; color:var(--text-muted); text-align:center; font-weight:700;">You are not currently in any hackathon squad.</div>`;
+      } else {
+        teamsListHtml = userTeams.map(t => `
+          <div style="padding:14px 18px; background:var(--primary-container); border:1px solid #D0BCFF; border-radius:16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+            <div>
+              <div style="font-size:0.875rem; font-weight:800; color:var(--text-main);">${escapeHtml(t.name)}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; margin-top:2px;">Role: <span style="font-weight:800; color:var(--primary); text-transform:uppercase;">${t.user_status}</span> • ${t.member_count}/6 Members</div>
+            </div>
+            <a href="/team/${t.id}" class="btn-tonal" style="height:36px; font-size:0.75rem;">
+              Open Squad ➔
+            </a>
+          </div>
+        `).join('');
+      }
+
+      content.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <!-- Header -->
+          <div style="padding:20px; background:linear-gradient(135deg, #F3EDF7 0%, #E8DEF8 100%); border:1px solid #D0BCFF; border-radius:24px; display:flex; align-items:center; gap:20px;">
+            <img src="${prof.avatar_url}" style="width:72px; height:72px; border-radius:9999px; border:3px solid #FFF; background:#FFF; object-fit:cover; flex-shrink:0;">
+            <div>
+              <h1 style="font-family:'Outfit',sans-serif; font-size:1.5rem; font-weight:800; color:var(--text-main); leading-tight;">${escapeHtml(prof.name)}</h1>
+              <div style="display:inline-flex; align-items:center; gap:8px; margin-top:6px;">
+                <span class="badge badge-purple">${prof.r_id}</span>
+                <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">${prof.gender}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Record Info -->
+          <div>
+            <h3 style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">College Database Record</h3>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+              <div style="padding:14px; background:var(--surface-variant); border:1px solid var(--border); border-radius:14px;">
+                <div style="font-size:0.6875rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Email Address</div>
+                <div style="font-size:0.75rem; font-weight:800; color:var(--text-main); word-break:break-all; margin-top:2px;">${escapeHtml(prof.email)}</div>
+              </div>
+              <div style="padding:14px; background:var(--surface-variant); border:1px solid var(--border); border-radius:14px;">
+                <div style="font-size:0.6875rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Mobile Phone</div>
+                <div style="font-size:0.75rem; font-weight:800; color:var(--text-main); margin-top:2px;">${escapeHtml(prof.phone || 'N/A')}</div>
+              </div>
+              <div style="padding:14px; background:var(--surface-variant); border:1px solid var(--border); border-radius:14px;">
+                <div style="font-size:0.6875rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Date of Birth</div>
+                <div style="font-size:0.75rem; font-weight:800; color:var(--primary); margin-top:2px;">${escapeHtml(prof.dob || 'N/A')}</div>
+              </div>
+              <div style="padding:14px; background:var(--surface-variant); border:1px solid var(--border); border-radius:14px;">
+                <div style="font-size:0.6875rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Father's Name</div>
+                <div style="font-size:0.75rem; font-weight:800; color:var(--text-main); margin-top:2px;">${escapeHtml(prof.father_name || 'N/A')}</div>
+              </div>
+              <div style="padding:14px; background:var(--surface-variant); border:1px solid var(--border); border-radius:14px; grid-column: 1 / -1;">
+                <div style="font-size:0.6875rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Address</div>
+                <div style="font-size:0.75rem; font-weight:800; color:var(--text-main); margin-top:2px; line-height:1.4;">${escapeHtml(prof.address)}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- My Squads -->
+          <div>
+            <h3 style="font-size:0.75rem; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">My Squads</h3>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              ${teamsListHtml}
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div style="padding-top:16px; border-top:1px solid var(--border); display:flex; justify-content:flex-end;">
+            <button onclick="logoutUser()" class="btn-danger">
+              Sign Out
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    document.addEventListener("DOMContentLoaded", () => loadProfilePage());
+  </script>
+</body>
+</html>
