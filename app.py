@@ -149,9 +149,10 @@ def index(team_id=None):
 # --- AUTH ENDPOINTS ---
 
 @app.route("/api/auth/send-otp", methods=["POST"])
+@app.route("/api/auth/request-otp", methods=["POST"])
 def auth_send_otp():
     data = request.json or {}
-    r_id = data.get("r_id", "").strip().upper()
+    r_id = (data.get("rid") or data.get("r_id") or "").strip().upper()
     p = get_placeholder()
 
     if not r_id:
@@ -194,13 +195,13 @@ def auth_send_otp():
         "success": True,
         "message": f"Code sent to {email}",
         "email": email,
-        "masked_email": email
+        "masked_email": mask_email(email)
     })
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
 def auth_verify_otp():
     data = request.json or {}
-    r_id = data.get("r_id", "").strip().upper()
+    r_id = (data.get("rid") or data.get("r_id") or "").strip().upper()
     otp_code = str(data.get("otp", "")).strip()
     p = get_placeholder()
 
@@ -245,16 +246,29 @@ def auth_verify_otp():
     updated_student = dict(cursor.fetchone())
     conn.close()
 
+    session["user_rid"] = r_id
+
+    user_payload = {
+        "id": updated_student["r_id"],
+        "name": updated_student["name"],
+        "email": updated_student["email"],
+        "gender": updated_student["gender"],
+        "dob": updated_student["dob"],
+        "avatar_url": updated_student["avatar_url"]
+    }
+
     return jsonify({
         "success": True,
         "message": "Signed in successfully",
+        "user": user_payload,
         "student": updated_student
     })
 
 @app.route("/api/auth/register", methods=["POST"])
+@app.route("/api/auth/register-unlisted", methods=["POST"])
 def auth_register():
     data = request.json or {}
-    r_id = data.get("r_id", "").strip().upper()
+    r_id = (data.get("id") or data.get("r_id") or "").strip().upper()
     name = data.get("name", "").strip()
     email = data.get("email", "").strip()
     phone = data.get("phone", "").strip()
@@ -283,9 +297,21 @@ def auth_register():
         conn.close()
         return jsonify({"success": False, "message": "R-ID already registered"}), 400
 
+    session["user_rid"] = r_id
+
+    user_payload = {
+        "id": r_id,
+        "name": name,
+        "email": email,
+        "gender": gender,
+        "dob": dob,
+        "avatar_url": avatar_url
+    }
+
     return jsonify({
         "success": True,
         "message": "Account created",
+        "user": user_payload,
         "student": {
             "r_id": r_id,
             "name": name,
@@ -297,6 +323,44 @@ def auth_register():
             "is_registered": 1
         }
     })
+
+@app.route("/api/auth/me", methods=["GET"])
+def auth_me():
+    user_rid = session.get("user_rid") or request.args.get("r_id", "").strip().upper()
+    if not user_rid:
+        return jsonify({"authenticated": False})
+
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (user_rid,))
+    student = cursor.fetchone()
+
+    if not student:
+        student = auto_import_student_from_json(user_rid, conn, cursor)
+
+    conn.close()
+
+    if not student:
+        return jsonify({"authenticated": False})
+
+    s_dict = dict(student)
+    return jsonify({
+        "authenticated": True,
+        "user": {
+            "id": s_dict["r_id"],
+            "name": s_dict["name"],
+            "email": s_dict["email"],
+            "gender": s_dict["gender"],
+            "dob": s_dict["dob"],
+            "avatar_url": s_dict["avatar_url"]
+        }
+    })
+
+@app.route("/api/auth/logout", methods=["POST"])
+def auth_logout():
+    session.clear()
+    return jsonify({"success": True, "message": "Logged out successfully"})
 
 # --- STUDENT SEARCH (WITH DOB, EMAIL, PHOTO & DETAILS) ---
 
@@ -466,15 +530,18 @@ def get_team_detail(team_id):
 @app.route("/api/teams/create", methods=["POST"])
 def create_team():
     data = request.json or {}
-    leader_r_id = data.get("leader_r_id", "").strip().upper()
-    team_name = data.get("name", "").strip()
+    leader_r_id = (data.get("leader_r_id") or session.get("user_rid") or "").strip().upper()
+    team_name = (data.get("title") or data.get("name") or "").strip()
     description = data.get("description", "").strip()
     whatsapp_link = data.get("whatsapp_link", "").strip()
-    friend_r_ids = data.get("friend_r_ids", [])
+    friend_r_ids = data.get("initial_members") or data.get("friend_r_ids") or []
     p = get_placeholder()
 
-    if not leader_r_id or not team_name:
-        return jsonify({"success": False, "message": "Team name required"}), 400
+    if not leader_r_id:
+        return jsonify({"success": False, "message": "Leader session required to create team"}), 401
+
+    if not team_name:
+        return jsonify({"success": False, "message": "Team title is required"}), 400
 
     conn = get_db()
     cursor = conn.cursor()
@@ -535,23 +602,28 @@ def create_team():
         """, (team_id, f_id))
 
     conn.commit()
+
+    cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
+    t_row = cursor.fetchone()
+    team_obj = format_team_data(t_row, leader_r_id)
     conn.close()
 
     return jsonify({
         "success": True,
         "message": f"Team created with {1 + len(valid_friends)} members",
-        "team_id": team_id
+        "team_id": team_id,
+        "team": team_obj
     })
 
 @app.route("/api/teams/<int:team_id>/request", methods=["POST"])
 def request_join_team(team_id):
     data = request.json or {}
-    student_r_id = data.get("student_r_id", "").strip().upper()
+    student_r_id = (data.get("student_r_id") or data.get("student_id") or session.get("user_rid") or "").strip().upper()
     message = data.get("message", "").strip()
     p = get_placeholder()
 
     if not student_r_id:
-        return jsonify({"success": False, "message": "Student R-ID required"}), 400
+        return jsonify({"success": False, "message": "Sign in with R-ID required to join team"}), 401
 
     conn = get_db()
     cursor = conn.cursor()
@@ -769,10 +841,11 @@ def add_team_member(team_id):
     return jsonify({"success": True, "message": "Teammate added successfully", "team": updated_team})
 
 @app.route("/api/teams/<int:team_id>/members/remove", methods=["POST"])
+@app.route("/api/teams/<int:team_id>/remove-member", methods=["POST"])
 def remove_team_member(team_id):
     data = request.json or {}
-    leader_r_id = data.get("leader_r_id", "").strip().upper()
-    target_r_id = data.get("target_r_id", "").strip().upper()
+    leader_r_id = (data.get("leader_r_id") or session.get("user_rid") or "").strip().upper()
+    target_r_id = (data.get("student_id") or data.get("target_r_id") or data.get("student_r_id") or "").strip().upper()
     p = get_placeholder()
 
     if not leader_r_id or not target_r_id:
@@ -794,7 +867,8 @@ def remove_team_member(team_id):
     conn.commit()
 
     cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
-    updated_team = format_team_data(cursor.fetchone(), leader_r_id)
+    t_row = cursor.fetchone()
+    updated_team = format_team_data(t_row, leader_r_id) if t_row else None
     conn.close()
 
     return jsonify({"success": True, "message": "Member removed from team", "team": updated_team})
@@ -802,7 +876,7 @@ def remove_team_member(team_id):
 @app.route("/api/teams/<int:team_id>/leave", methods=["POST"])
 def leave_team(team_id):
     data = request.json or {}
-    student_r_id = data.get("student_r_id", "").strip().upper()
+    student_r_id = (data.get("student_r_id") or session.get("user_rid") or "").strip().upper()
     p = get_placeholder()
 
     if not student_r_id:
@@ -835,9 +909,10 @@ def leave_team(team_id):
     return jsonify({"success": True, "message": "Left team successfully"})
 
 @app.route("/api/teams/<int:team_id>", methods=["DELETE"])
+@app.route("/api/teams/<int:team_id>/disband", methods=["POST"])
 def delete_team(team_id):
     data = request.json or {}
-    leader_r_id = data.get("leader_r_id", "").strip().upper()
+    leader_r_id = (data.get("leader_r_id") or session.get("user_rid") or "").strip().upper()
     p = get_placeholder()
 
     if not leader_r_id:
@@ -848,7 +923,7 @@ def delete_team(team_id):
 
     cursor.execute(f"SELECT leader_r_id FROM teams WHERE id = {p}", (team_id,))
     team = cursor.fetchone()
-    if not team or team["leader_r_id"].upper() != leader_r_id:
+    if not team or (leader_r_id and team["leader_r_id"].upper() != leader_r_id):
         conn.close()
         return jsonify({"success": False, "message": "Unauthorized: Only team leader can disband team"}), 403
 
