@@ -11,85 +11,82 @@
   <!-- TOAST CONTAINER -->
   <div id="toastContainer" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99; display:flex; flex-direction:column; gap:8px; width:90%; max-width:380px; pointer-events:none;"></div>
 
-  <!-- TOP DESKTOP HEADER -->
+  <!-- SINGLE UNIFIED TOP HEADER (FIXED DOUBLE HEADER BUG) -->
   <header class="nav-header">
-    <a href="/" class="brand-logo">
-      <div class="brand-badge">H</div>
-      <span class="brand-title">HackMate</span>
+    <!-- GOOGLE-STYLED TEXT LOGO (NO ICON BADGE BOX) -->
+    <a href="/" class="brand-google-logo">
+      <span class="g-blue">H</span><span class="g-red">a</span><span class="g-yellow">c</span><span class="g-green">k</span><span class="g-blue">M</span><span class="g-red">a</span><span class="g-yellow">t</span><span class="g-green">e</span>
     </a>
 
+    <!-- DESKTOP NAV LINKS -->
     <div class="nav-links-desktop">
       <a href="/" class="nav-link active">Discover</a>
-      <a href="/create-team" class="nav-link">+ Create Squad</a>
+      <a href="/create-team" class="nav-link">+ Create Team</a>
       <a href="/students" class="nav-link">Directory</a>
       <div id="navUserSlotDesktop"></div>
     </div>
+
+    <!-- MOBILE USER SLOT -->
+    <div id="navUserSlotMobile" class="md:hidden"></div>
   </header>
 
-  <!-- MOBILE TOP HEADER BAR -->
-  <header class="nav-header md:hidden" style="display:flex; justify-content:space-between;">
-    <a href="/" class="brand-logo">
-      <div class="brand-badge" style="width:30px; height:30px; font-size:1rem;">H</div>
-      <span class="brand-title" style="font-size:1.125rem;">HackMate</span>
-    </a>
-    <div id="navUserSlotMobile"></div>
-  </header>
-
-  <!-- MAIN DISCOVER PAGE CONTENT -->
+  <!-- MAIN DISCOVER CONTENT -->
   <main class="page-container">
     
     <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px;">
       <div>
-        <h1 class="page-title">Discover Squads</h1>
-        <p class="page-subtitle" style="margin-bottom:0;">Find teammates or join an open hackathon squad.</p>
+        <h1 class="page-title">Discover Teams</h1>
+        <p class="page-subtitle" style="margin-bottom:0;">Find teammates or join an open hackathon team.</p>
       </div>
 
       <a href="/create-team" class="btn-primary">
-        + Create Squad
+        + Create Team
       </a>
     </div>
 
     <!-- SEARCH & FILTERS -->
-    <div style="display:flex; flex-wrap:wrap; items-center; justify-content:space-between; gap:12px; margin-bottom:28px;">
-      <input type="text" id="searchInput" placeholder="Search squads by title or pitch..." class="input-control" style="max-width:380px;" onkeyup="debounceSearch()">
+    <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:28px;">
+      <input type="text" id="searchInput" placeholder="Search teams by title or pitch..." class="input-control" style="max-width:380px;" onkeyup="debounceSearch()">
       
       <div style="display:flex; gap:8px;">
-        <button onclick="setFilter('all')" id="btnFilterAll" class="nav-link active" style="border:1px solid var(--border); cursor:pointer;">All Squads</button>
-        <button onclick="setFilter('open')" id="btnFilterOpen" class="nav-link" style="border:1px solid var(--border); cursor:pointer;">Open Slots Only</button>
+        <button onclick="setFilter('all')" id="btnFilterAll" class="nav-link active" style="border:1px solid rgba(0,0,0,0.1); cursor:pointer;">All Teams</button>
+        <button onclick="setFilter('open')" id="btnFilterOpen" class="nav-link" style="border:1px solid rgba(0,0,0,0.1); cursor:pointer;">Open Slots Only</button>
       </div>
     </div>
 
     <!-- TEAMS GRID FEED -->
-    <div id="teamsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:18px;"></div>
+    <div id="teamsGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;"></div>
 
     <!-- EMPTY STATE -->
-    <div id="emptyState" style="display:none; text-align:center; padding:60px 20px; background:#FFF; border:1px solid var(--border); border-radius:24px;">
-      <h3 style="font-size:1.125rem; font-weight:800; color:var(--text-main);">No squads found</h3>
+    <div id="emptyState" class="card-liquid" style="display:none; text-align:center; padding:60px 20px;">
+      <h3 style="font-size:1.125rem; font-weight:800; color:var(--text-main);">No teams found</h3>
       <p style="font-size:0.8125rem; color:var(--text-muted); margin-top:4px;">Be the first to build a team for the hackathon!</p>
       <a href="/create-team" class="btn-primary" style="margin-top:20px; display:inline-flex;">
-        + Create Squad
+        + Create Team
       </a>
     </div>
 
   </main>
 
-  <!-- MOBILE BOTTOM NAVIGATION -->
-  <nav class="mobile-bottom-nav">
-    <a href="/" class="mobile-nav-btn active">
+  <!-- FLOATING IOS LIQUID GLASS MOBILE BOTTOM BAR (REF: SCREENSHOT 2) -->
+  <nav class="liquid-glass-dock">
+    <a href="/" class="dock-item active">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
       <span>Discover</span>
     </a>
-    <a href="/create-team" class="mobile-nav-btn">
-      <span>Create</span>
+
+    <a href="/students" class="dock-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+      <span>Search</span>
     </a>
-    <a href="/students" class="mobile-nav-btn">
-      <span>Directory</span>
-    </a>
-    <a href="/profile" class="mobile-nav-btn">
+
+    <a href="/profile" class="dock-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
       <span>Profile</span>
     </a>
   </nav>
 
-  <!-- JAVASCRIPT ENGINE -->
+  <!-- JS ENGINE -->
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   <script>
     let currentFilter = 'all';
@@ -142,30 +139,29 @@
           }
         }
 
-        const tagBadge = t.has_female 
-          ? `<span class="badge badge-green">✓ Gender Balanced</span>` 
-          : `<span class="badge badge-pink">⚡ Needs Female</span>`;
+        const fillPercent = Math.round((t.member_count / 6) * 100);
 
         html += `
-          <a href="/team/${t.id}" class="card card-clickable" style="display:flex; flex-direction:column; justify-content:space-between; height:100%;">
+          <a href="/team/${t.id}" class="card-liquid card-clickable" style="display:flex; flex-direction:column; justify-content:space-between; height:100%;">
             <div>
               <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px;">
-                <h3 style="font-size:1.0625rem; font-weight:800; color:var(--text-main); leading-tight;">${escapeHtml(t.name)}</h3>
-                <span class="badge badge-purple" style="flex-shrink:0;">${t.member_count}/6 Seats</span>
+                <h3 style="font-size:1.0625rem; font-weight:800; color:var(--text-main); line-height:1.3;">${escapeHtml(t.name)}</h3>
+                <span style="font-size:0.75rem; font-weight:800; color:#4285F4; background:rgba(66,133,244,0.12); padding:3px 10px; border-radius:9999px; flex-shrink:0;">${t.member_count}/6 Seats</span>
               </div>
 
               <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.5; margin-bottom:14px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(t.description || 'No pitch provided.')}</p>
 
-              <div style="margin-bottom:14px;">
-                ${tagBadge}
+              <!-- Seat Progress Meter -->
+              <div class="seat-progress-bar">
+                <div class="seat-progress-fill" style="width: ${fillPercent}%;"></div>
               </div>
             </div>
 
-            <div style="padding-top:14px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; margin-top:14px;">
+            <div style="padding-top:14px; border-top:1px solid rgba(0,0,0,0.06); display:flex; align-items:center; justify-content:space-between; margin-top:14px;">
               <div class="avatar-stack">
                 ${avatarsHtml}
               </div>
-              <span style="font-size:0.75rem; font-weight:800; color:var(--primary);">View Team ➔</span>
+              <span style="font-size:0.75rem; font-weight:800; color:#4285F4;">View Team ➔</span>
             </div>
           </a>
         `;

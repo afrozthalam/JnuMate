@@ -1,5 +1,5 @@
 /**
- * HackMate — Fast Zero-Lag Multi-Page Frontend Engine
+ * HackMate — Fast iOS Liquid Glass Engine
  */
 
 let currentUser = null;
@@ -41,14 +41,14 @@ function renderNavUserSlot() {
 
   if (currentUser) {
     const desktopHtml = `
-      <a href="/profile" class="nav-link flex items-center gap-2" style="display:inline-flex; align-items:center; gap:8px;">
-        <img src="${currentUser.avatar_url}" style="width:28px; height:28px; border-radius:9999px; object-fit:cover; border:1px solid #E7E0EC;">
+      <a href="/profile" class="nav-link" style="display:inline-flex; align-items:center; gap:8px;">
+        <img src="${currentUser.avatar_url}" style="width:28px; height:28px; border-radius:9999px; object-fit:cover; border:1px solid rgba(255,255,255,0.8);">
         <span>${escapeHtml(currentUser.name.split(' ')[0])}</span>
       </a>
     `;
 
     const mobileHtml = `
-      <a href="/profile" style="display:block; width:32px; height:32px; border-radius:9999px; overflow:hidden; border:1px solid #E7E0EC;">
+      <a href="/profile" style="display:block; width:32px; height:32px; border-radius:9999px; overflow:hidden; border:1.5px solid #4285F4;">
         <img src="${currentUser.avatar_url}" style="width:100%; height:100%; object-fit:cover;">
       </a>
     `;
@@ -75,7 +75,7 @@ function renderNavUserSlot() {
 
 function highlightActiveNavLinks() {
   const path = window.location.pathname;
-  const links = document.querySelectorAll(".nav-link, .mobile-nav-btn");
+  const links = document.querySelectorAll(".nav-link, .dock-item");
   links.forEach(link => {
     const href = link.getAttribute("href");
     if (href === path || (path.startsWith("/team/") && href === "/")) {
@@ -92,7 +92,7 @@ function showToast(msg) {
   if (!container) return;
 
   const toast = document.createElement("div");
-  toast.style.cssText = `pointer-events: auto; padding: 12px 20px; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; background: #1D1B20; color: #FFFFFF; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.18); transition: all 0.25s ease; opacity: 0; transform: translateY(10px);`;
+  toast.style.cssText = `pointer-events: auto; padding: 12px 22px; border-radius: 9999px; font-size: 0.75rem; font-weight: 800; background: rgba(30, 30, 35, 0.9); color: #FFFFFF; text-align: center; box-shadow: 0 12px 32px rgba(0,0,0,0.3); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.2); transition: all 0.25s ease; opacity: 0; transform: translateY(10px);`;
   
   toast.innerText = msg;
   container.appendChild(toast);
