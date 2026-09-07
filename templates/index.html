@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>HackMate</title>
+  <title>HackMate — College Hackathon Team Matching</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -42,10 +42,10 @@
     .m3-card {
       background: #FFFFFF;
       border: 1px solid #E5E7EB;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(60, 64, 67, 0.05);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 2px 10px rgba(60, 64, 67, 0.04);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .m3-card-clickable {
@@ -53,8 +53,8 @@
     }
 
     .m3-card-clickable:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(60, 64, 67, 0.1);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(60, 64, 67, 0.1);
       border-color: #1A73E8;
     }
 
@@ -68,22 +68,22 @@
       color: #FFFFFF;
       font-weight: 700;
       font-size: 15px;
-      height: 48px;
-      padding: 0 24px;
-      border-radius: 24px;
+      height: 50px;
+      padding: 0 26px;
+      border-radius: 25px;
       border: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 10px;
-      box-shadow: 0 2px 8px rgba(26, 115, 232, 0.3);
+      box-shadow: 0 3px 10px rgba(26, 115, 232, 0.28);
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
     }
 
     .btn-g-filled:hover {
       background: #1765CC;
-      box-shadow: 0 4px 12px rgba(26, 115, 232, 0.4);
+      box-shadow: 0 6px 16px rgba(26, 115, 232, 0.38);
     }
 
     .btn-g-filled:active {
@@ -96,9 +96,9 @@
       color: #1A73E8;
       font-weight: 700;
       font-size: 14px;
-      height: 44px;
-      padding: 0 20px;
-      border-radius: 22px;
+      height: 46px;
+      padding: 0 22px;
+      border-radius: 23px;
       border: 1.5px solid #DADCE0;
       display: inline-flex;
       align-items: center;
@@ -113,40 +113,63 @@
       border-color: #1A73E8;
     }
 
-    /* Seat Card styling */
+    .btn-g-danger {
+      background: #FEF2F2;
+      color: #DC2626;
+      font-weight: 700;
+      font-size: 13px;
+      height: 40px;
+      padding: 0 18px;
+      border-radius: 20px;
+      border: 1px solid #FCA5A5;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-g-danger:hover {
+      background: #FEE2E2;
+      border-color: #EF4444;
+    }
+
+    /* Seat Cards */
     .seat-card-filled {
-      background: #F8F9FA;
+      background: #FFFFFF;
       border: 1px solid #E5E7EB;
-      border-radius: 16px;
-      padding: 14px;
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
 
     .seat-card-open {
-      background: #FFFFFF;
-      border: 2px dashed #CBD5E1;
-      border-radius: 16px;
-      padding: 14px;
+      background: #FAF5FF;
+      border: 2px dashed #D8B4FE;
+      border-radius: 18px;
+      padding: 16px;
       transition: all 0.2s ease;
     }
 
     .seat-card-open:hover {
-      border-color: #1A73E8;
-      background: #F0F6FE;
+      border-color: #9333EA;
+      background: #F3E8FF;
     }
 
     /* Material Filter Chips */
     .m3-chip {
-      height: 38px;
-      padding: 0 18px;
-      border-radius: 19px;
-      font-size: 13px;
+      height: 42px;
+      padding: 0 20px;
+      border-radius: 21px;
+      font-size: 14px;
       font-weight: 600;
       color: #5F6368;
       background: #FFFFFF;
       border: 1px solid #DADCE0;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       transition: all 0.2s ease;
       cursor: pointer;
     }
@@ -158,7 +181,7 @@
       font-weight: 700;
     }
 
-    /* Modal Sheet */
+    /* Modal Sheet animation */
     .sheet-modal {
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
     }
@@ -169,7 +192,7 @@
     }
     @media (min-width: 768px) {
       .sheet-modal.hidden-sheet {
-        transform: translateY(20px) scale(0.96);
+        transform: translateY(24px) scale(0.96);
       }
     }
     .sheet-modal.visible-sheet {
@@ -179,274 +202,317 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col pb-20 md:pb-8">
+<body class="min-h-screen flex flex-col pb-24 md:pb-12">
 
   <!-- TOAST ALERTS -->
-  <div id="toastContainer" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-[88%] max-w-xs pointer-events-none"></div>
+  <div id="toastContainer" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-[90%] max-w-sm pointer-events-none"></div>
 
-  <!-- CLEAN HOMEPAGE HEADER -->
-  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 h-16 flex items-center px-4 sm:px-8">
-    <div class="max-w-5xl w-full mx-auto flex items-center justify-between">
+  <!-- CLEAN HEADER -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 h-18 py-3 px-4 sm:px-8">
+    <div class="max-w-6xl w-full mx-auto flex items-center justify-between">
       
-      <!-- Clean Title Logo -->
-      <div class="flex items-center gap-1 cursor-pointer" onclick="window.location.reload()">
-        <span class="font-extrabold text-2xl text-[#1A73E8] tracking-tight">Hack</span>
-        <span class="font-extrabold text-2xl text-[#EA4335] tracking-tight">M</span>
-        <span class="font-extrabold text-2xl text-[#FBBC04] tracking-tight">a</span>
-        <span class="font-extrabold text-2xl text-[#34A853] tracking-tight">t</span>
-        <span class="font-extrabold text-2xl text-[#EA4335] tracking-tight">e</span>
+      <!-- Clean HackMate Brand -->
+      <div class="flex items-center gap-1.5 cursor-pointer" onclick="window.location.reload()">
+        <span class="font-extrabold text-2xl sm:text-3xl text-[#1A73E8] tracking-tight">Hack</span>
+        <span class="font-extrabold text-2xl sm:text-3xl text-[#EA4335] tracking-tight">M</span>
+        <span class="font-extrabold text-2xl sm:text-3xl text-[#FBBC04] tracking-tight">a</span>
+        <span class="font-extrabold text-2xl sm:text-3xl text-[#34A853] tracking-tight">t</span>
+        <span class="font-extrabold text-2xl sm:text-3xl text-[#EA4335] tracking-tight">e</span>
       </div>
 
-      <!-- User Avatar / Sign Out (Minimalist & Clean) -->
+      <!-- User Avatar / Sign In Header Slot -->
       <div id="headerUserSlot" class="flex items-center gap-3">
-        <!-- Rendered via JS -->
+        <!-- Rendered dynamically -->
       </div>
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
-  <main class="max-w-5xl w-full mx-auto px-4 sm:px-8 pt-6 flex-1">
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="max-w-6xl w-full mx-auto px-4 sm:px-8 pt-8 flex-1">
 
-    <!-- HERO CREATE TEAM CTA SECTION -->
-    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl p-6 sm:p-8 mb-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">College Hackathon Team Finder</h1>
-        <p class="text-sm text-gray-600 mt-1 leading-relaxed">Form a 6-member squad, add teammates directly, or leave seats open for requests.</p>
+    <!-- HERO CTA BANNER -->
+    <div class="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-8 sm:p-10 mb-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div class="relative z-10 max-w-2xl">
+        <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-bold text-white mb-3">
+          <i data-lucide="zap" class="w-4 h-4 text-amber-300"></i> Official College Hackathon Platform
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">Find Teammates & Build Your 6-Member Squad</h1>
+        <p class="text-sm sm:text-base text-blue-100 mt-2 leading-relaxed">Search student directory by R-ID, pre-add friends directly, or publish open seats for join requests.</p>
       </div>
 
-      <button onclick="handleMainCreateTeamClick()" class="btn-g-filled w-full sm:w-auto shrink-0 shadow-md">
+      <button onclick="handleMainCreateTeamClick()" class="btn-g-filled bg-white text-[#1A73E8] hover:bg-gray-100 hover:text-[#1557B0] w-full md:w-auto shrink-0 shadow-lg font-bold text-base h-13 px-8">
         <i data-lucide="plus-circle" class="w-5 h-5"></i> + Create Team
       </button>
     </div>
 
-    <!-- SEARCH & CATEGORY CHIPS BAR -->
-    <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-6">
+    <!-- SEARCH & FILTERS TOOLBAR -->
+    <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-8">
       
-      <!-- Search Input Bar -->
+      <!-- Search Input -->
       <div class="relative flex-1">
         <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-        <input type="text" id="searchInput" placeholder="Search teams by name..."
-               class="w-full h-12 pl-12 pr-4 bg-white border border-gray-300 rounded-full text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1A73E8] focus:ring-1 focus:ring-[#1A73E8] shadow-xs"
+        <input type="text" id="searchInput" placeholder="Search teams by name or description..."
+               class="w-full h-13 pl-12 pr-4 bg-white border border-gray-300 rounded-2xl text-base text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/20 shadow-xs"
                onkeyup="debounceSearch()">
       </div>
 
-      <!-- Category Filter Chips -->
-      <div class="flex items-center gap-2">
+      <!-- Filter Chips -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
         <button onclick="setFilter('all')" id="btnFilterAll" class="m3-chip active">All Teams</button>
         <button onclick="setFilter('open')" id="btnFilterOpen" class="m3-chip">Open Slots</button>
       </div>
     </div>
 
-    <!-- TEAMS GRID (Clickable Team Cards) -->
-    <div id="teamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    <!-- TEAMS GRID -->
+    <div id="teamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
     <!-- EMPTY STATE -->
-    <div id="emptyState" class="hidden text-center py-16 m3-card mt-4">
-      <div class="w-14 h-14 rounded-full bg-blue-50 text-[#1A73E8] flex items-center justify-center mx-auto mb-3">
-        <i data-lucide="users" class="w-7 h-7"></i>
+    <div id="emptyState" class="hidden text-center py-20 m3-card mt-6">
+      <div class="w-16 h-16 rounded-full bg-blue-50 text-[#1A73E8] flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="users" class="w-8 h-8"></i>
       </div>
-      <p class="text-gray-500 text-sm font-bold">No teams found</p>
-      <button onclick="handleMainCreateTeamClick()" class="mt-4 btn-g-filled">
+      <h3 class="text-base font-bold text-gray-900">No teams found</h3>
+      <p class="text-sm text-gray-500 mt-1 max-w-sm mx-auto">Be the first to build a squad for the upcoming hackathon!</p>
+      <button onclick="handleMainCreateTeamClick()" class="mt-5 btn-g-filled">
         + Create Team
       </button>
     </div>
 
   </main>
 
-  <!-- MOBILE BOTTOM BAR NAVIGATION -->
+  <!-- MOBILE BOTTOM BAR -->
   <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 h-16 px-8 flex items-center justify-between">
-    <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="text-[#1A73E8] p-2">
+    <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="text-[#1A73E8] p-2 flex flex-col items-center gap-0.5">
       <i data-lucide="compass" class="w-6 h-6"></i>
+      <span class="text-[10px] font-bold">Discover</span>
     </button>
     
     <button onclick="handleMainCreateTeamClick()" class="w-12 h-12 rounded-2xl bg-[#1A73E8] text-white flex items-center justify-center -mt-6 shadow-lg shadow-blue-500/30">
       <i data-lucide="plus" class="w-6 h-6 font-bold"></i>
     </button>
 
-    <button onclick="handleMyWorkspaceClick()" class="text-gray-400 hover:text-gray-900 p-2">
+    <button onclick="openUserProfileModal()" class="text-gray-400 hover:text-gray-900 p-2 flex flex-col items-center gap-0.5">
       <i data-lucide="user" class="w-6 h-6"></i>
+      <span class="text-[10px] font-bold">Profile</span>
     </button>
   </nav>
 
-  <!-- MODAL 1: AUTHENTICATION SHEET (R-ID + EMAIL OTP) -->
-  <div id="authSheet" class="sheet-modal hidden-sheet fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/40 backdrop-blur-xs">
-    <div class="m3-card rounded-t-[28px] md:rounded-[28px] w-full max-w-sm p-6 relative max-h-[85vh] overflow-y-auto">
+  <!-- MODAL 1: AUTHENTICATION SHEET (UNCENSORED EMAIL) -->
+  <div id="authSheet" class="sheet-modal hidden-sheet fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/50 backdrop-blur-xs">
+    <div class="m3-card rounded-t-[32px] md:rounded-[32px] w-full max-w-md p-7 relative max-h-[85vh] overflow-y-auto">
       
-      <div class="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4 md:hidden"></div>
+      <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-5 md:hidden"></div>
 
-      <button onclick="closeAuthSheet()" class="absolute right-5 top-5 text-gray-400 hover:text-gray-900 p-1">
-        <i data-lucide="x" class="w-5 h-5"></i>
+      <button onclick="closeAuthSheet()" class="absolute right-6 top-6 text-gray-400 hover:text-gray-900 p-1">
+        <i data-lucide="x" class="w-6 h-6"></i>
       </button>
 
-      <div class="mb-5">
-        <h2 class="text-lg font-bold text-gray-900">Sign in with R-ID</h2>
-        <p class="text-xs text-gray-500 mt-1">Enter your R-ID to receive a verification code on your email.</p>
+      <div class="mb-6">
+        <h2 class="text-xl font-extrabold text-gray-900">Sign in with R-ID</h2>
+        <p class="text-xs sm:text-sm text-gray-500 mt-1">Enter your College R-ID to receive a verification code on your email.</p>
       </div>
 
       <!-- Step 1: Input R-ID -->
       <div id="authStep1" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">College R-ID</label>
+          <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">College R-ID</label>
           <input type="text" id="authRidInput" placeholder="e.g. R15006"
-                 class="w-full h-12 px-4 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 uppercase placeholder-gray-400 focus:outline-none focus:border-[#1A73E8]">
+                 class="w-full h-13 px-4 bg-white border border-gray-300 rounded-2xl text-base text-gray-900 uppercase placeholder-gray-400 focus:outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/20 font-bold tracking-wider">
         </div>
 
-        <button onclick="sendEmailOtpCode()" id="btnSendOtp" class="w-full btn-g-filled">
-          <span>Send Verification Code</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        <button onclick="sendEmailOtpCode()" id="btnSendOtp" class="w-full btn-g-filled text-base">
+          <span>Send Verification Code</span> <i data-lucide="arrow-right" class="w-5 h-5"></i>
         </button>
 
-        <div class="text-center pt-1">
+        <div class="text-center pt-2">
           <button onclick="showManualRegister()" class="text-xs text-[#1A73E8] hover:underline font-bold">
             Unlisted R-ID? Register Account ➔
           </button>
         </div>
       </div>
 
-      <!-- Step 2: Input 6-Digit Email OTP -->
+      <!-- Step 2: Input 6-Digit Email OTP (Uncensored Email Display) -->
       <div id="authStep2" class="hidden space-y-4">
-        <div class="p-3 bg-blue-50 border border-blue-100 rounded-xl">
-          <p class="text-xs text-blue-900 text-center">Code sent to:<br><span id="targetEmailMask" class="font-bold text-[#1A73E8]"></span></p>
+        <div class="p-4 bg-blue-50 border border-blue-100 rounded-2xl">
+          <div class="text-xs font-bold text-gray-600 mb-1">Verification code dispatched to:</div>
+          <div id="targetEmailDisplay" class="font-extrabold text-sm text-[#1A73E8] break-all"></div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5 text-center">Enter 6-Digit Code</label>
+          <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 text-center">Enter 6-Digit Code</label>
           <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6"
-                 class="w-full h-12 px-4 bg-white border border-[#1A73E8] rounded-xl text-center text-2xl font-mono tracking-widest text-gray-900 focus:outline-none">
+                 class="w-full h-14 px-4 bg-white border-2 border-[#1A73E8] rounded-2xl text-center text-3xl font-mono tracking-widest text-gray-900 focus:outline-none shadow-xs">
         </div>
 
-        <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="w-full btn-g-filled">
-          <span>Verify & Log In</span> <i data-lucide="check" class="w-4 h-4"></i>
+        <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="w-full btn-g-filled text-base">
+          <span>Verify & Sign In</span> <i data-lucide="check" class="w-5 h-5"></i>
         </button>
 
-        <button onclick="showAuthStep(1)" class="w-full text-xs text-gray-400 hover:text-gray-900 py-1 font-semibold">
+        <button onclick="showAuthStep(1)" class="w-full text-xs text-gray-500 hover:text-gray-900 py-2 font-bold">
           ← Back to R-ID Input
         </button>
       </div>
 
       <!-- Step 3: Manual Register -->
-      <div id="authStepRegister" class="hidden space-y-3">
-        <input type="text" id="regRid" placeholder="R-ID" class="w-full h-11 px-4 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 uppercase">
-        <input type="text" id="regName" placeholder="Full Name" class="w-full h-11 px-4 bg-white border border-gray-300 rounded-xl text-xs text-gray-900">
-        <input type="email" id="regEmail" placeholder="College Email" class="w-full h-11 px-4 bg-white border border-gray-300 rounded-xl text-xs text-gray-900">
-        <select id="regGender" class="w-full h-11 px-4 bg-white border border-gray-300 rounded-xl text-xs text-gray-900">
+      <div id="authStepRegister" class="hidden space-y-3.5">
+        <input type="text" id="regRid" placeholder="College R-ID (e.g. R15006)" class="w-full h-12 px-4 bg-white border border-gray-300 rounded-2xl text-sm text-gray-900 uppercase font-bold">
+        <input type="text" id="regName" placeholder="Full Name" class="w-full h-12 px-4 bg-white border border-gray-300 rounded-2xl text-sm text-gray-900">
+        <input type="email" id="regEmail" placeholder="College Email Address" class="w-full h-12 px-4 bg-white border border-gray-300 rounded-2xl text-sm text-gray-900">
+        <select id="regGender" class="w-full h-12 px-4 bg-white border border-gray-300 rounded-2xl text-sm text-gray-900 font-medium">
           <option value="Male">Male</option>
           <option value="Female">Female</option>
           <option value="Other">Other</option>
         </select>
-        <input type="text" id="regDob" placeholder="Date of Birth (e.g. 12 Nov 1998)" class="w-full h-11 px-4 bg-white border border-gray-300 rounded-xl text-xs text-gray-900">
-        <button onclick="submitManualRegister()" class="w-full btn-g-filled mt-1">
-          Register & Log In
+        <input type="text" id="regDob" placeholder="Date of Birth (e.g. 12 Nov 2002)" class="w-full h-12 px-4 bg-white border border-gray-300 rounded-2xl text-sm text-gray-900">
+        <button onclick="submitManualRegister()" class="w-full btn-g-filled mt-2 text-base">
+          Register & Sign In
         </button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 2: TEAM CREATION SHEET (EXPLICIT SEAT CONFIGURATION) -->
-  <div id="createTeamSheet" class="sheet-modal hidden-sheet fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/40 backdrop-blur-xs">
-    <div class="m3-card rounded-t-[28px] md:rounded-[28px] w-full max-w-lg p-6 relative max-h-[88vh] overflow-y-auto">
+  <!-- MODAL 2: USER PROFILE DRAWER / MODAL -->
+  <div id="userProfileSheet" class="sheet-modal hidden-sheet fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/50 backdrop-blur-xs">
+    <div class="m3-card rounded-t-[32px] md:rounded-[32px] w-full max-w-xl p-7 relative max-h-[90vh] overflow-y-auto">
       
-      <div class="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4 md:hidden"></div>
+      <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-5 md:hidden"></div>
 
-      <button onclick="closeCreateTeamSheet()" class="absolute right-5 top-5 text-gray-400 hover:text-gray-900 p-1">
-        <i data-lucide="x" class="w-5 h-5"></i>
+      <button onclick="closeUserProfileModal()" class="absolute right-6 top-6 text-gray-400 hover:text-gray-900 p-1">
+        <i data-lucide="x" class="w-6 h-6"></i>
       </button>
 
-      <h2 class="text-lg font-bold text-gray-900 mb-1">Create Hackathon Team</h2>
-      <p class="text-xs text-gray-500 mb-5">Configure your 6 team seats: add friends directly or leave seats open for requests.</p>
+      <div id="userProfileContent">
+        <div class="py-12 text-center">
+          <div class="ios-spinner mx-auto mb-3"></div>
+          <p class="text-xs text-gray-500 font-bold">Loading profile details...</p>
+        </div>
+      </div>
+    </div>
+  </div>
 
-      <div class="space-y-4">
+  <!-- MODAL 3: CREATE TEAM SHEET -->
+  <div id="createTeamSheet" class="sheet-modal hidden-sheet fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/50 backdrop-blur-xs">
+    <div class="m3-card rounded-t-[32px] md:rounded-[32px] w-full max-w-xl p-7 relative max-h-[90vh] overflow-y-auto">
+      
+      <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-5 md:hidden"></div>
+
+      <button onclick="closeCreateTeamSheet()" class="absolute right-6 top-6 text-gray-400 hover:text-gray-900 p-1">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+
+      <h2 class="text-xl font-extrabold text-gray-900 mb-1">Create Hackathon Team</h2>
+      <p class="text-xs sm:text-sm text-gray-500 mb-6">Build your 6-seat squad: add friends directly or leave seats open for candidates.</p>
+
+      <div class="space-y-5">
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">Team Name *</label>
-          <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, EmeraldSquad" class="w-full h-12 px-4 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#1A73E8]">
+          <label class="block text-xs font-bold text-gray-700 mb-1.5">Team Name *</label>
+          <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, EmeraldSquad" class="w-full h-13 px-4 bg-white border border-gray-300 rounded-2xl text-base text-gray-900 focus:outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/20 font-bold">
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">Description / Pitch</label>
-          <textarea id="teamDescInput" rows="2" placeholder="Describe your hackathon project goal..." class="w-full p-3.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 focus:outline-none focus:border-[#1A73E8]"></textarea>
+          <label class="block text-xs font-bold text-gray-700 mb-1.5">Project Description / Pitch</label>
+          <textarea id="teamDescInput" rows="2.5" placeholder="Describe your team idea, goals, or required skills..." class="w-full p-4 bg-white border border-gray-300 rounded-2xl text-sm text-gray-900 focus:outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/20"></textarea>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-[#1A73E8] mb-1 flex items-center gap-1">
+          <label class="block text-xs font-bold text-[#1A73E8] mb-1.5 flex items-center gap-1.5">
             <i data-lucide="message-circle" class="w-4 h-4"></i> WhatsApp Group Link (Optional)
           </label>
-          <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="w-full h-11 px-4 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 focus:outline-none font-medium">
+          <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="w-full h-12 px-4 bg-white border border-gray-300 rounded-2xl text-sm text-gray-900 focus:outline-none font-medium">
         </div>
 
-        <!-- SEARCH & PRE-ADD FRIENDS SECTION -->
-        <div class="pt-3 border-t border-gray-200">
-          <label class="block text-xs font-bold text-gray-700 mb-1">Search & Pre-Add Teammates by R-ID</label>
+        <!-- SEARCH & PRE-ADD FRIENDS -->
+        <div class="pt-4 border-t border-gray-200">
+          <label class="block text-xs font-bold text-gray-700 mb-2">Search & Pre-Add Teammates directly by R-ID / Name</label>
           <div class="relative">
-            <i data-lucide="user-plus" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <input type="text" id="friendSearchInput" placeholder="Search R-ID or Name..." class="w-full h-11 pl-10 pr-4 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 focus:outline-none focus:border-[#1A73E8]" onkeyup="searchFriends()">
+            <i data-lucide="user-plus" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="friendSearchInput" placeholder="Type R-ID or Name..." class="w-full h-12 pl-12 pr-4 bg-white border border-gray-300 rounded-2xl text-sm text-gray-900 focus:outline-none focus:border-[#1A73E8]" onkeyup="searchFriends()">
             
-            <div id="friendSearchLoading" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2">
+            <div id="friendSearchLoading" class="hidden absolute right-4 top-1/2 -translate-y-1/2">
               <div class="ios-spinner"></div>
             </div>
 
-            <!-- SEARCH RESULTS LIST WITH PHOTO, NAME, R-ID, EMAIL & DOB -->
-            <div id="friendSearchResults" class="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-2xl z-30 max-h-56 overflow-y-auto hidden shadow-xl"></div>
+            <!-- SEARCH RESULTS -->
+            <div id="friendSearchResults" class="absolute left-0 right-0 top-full mt-2 bg-white border border-gray-200 rounded-2xl z-30 max-h-60 overflow-y-auto hidden shadow-2xl"></div>
           </div>
         </div>
 
-        <!-- VISUAL 6 SEATS CONFIGURATION GRID -->
+        <!-- VISUAL 6 SEATS -->
         <div>
-          <label class="block text-xs font-bold text-gray-700 mb-2">Team Seats Breakdown (6 Seats)</label>
-          <div id="createTeamSeatsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <!-- Rendered dynamically -->
-          </div>
+          <label class="block text-xs font-bold text-gray-700 mb-3 uppercase tracking-wider">Visual 6-Seat Allocation</label>
+          <div id="createTeamSeatsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
         </div>
 
-        <button onclick="submitCreateTeam()" id="btnSubmitCreateTeam" class="w-full btn-g-filled mt-2">
-          <span>Create & Publish Team</span> <i data-lucide="rocket" class="w-4 h-4"></i>
+        <button onclick="submitCreateTeam()" id="btnSubmitCreateTeam" class="w-full btn-g-filled text-base mt-3">
+          <span>Create & Publish Team</span> <i data-lucide="rocket" class="w-5 h-5"></i>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 3: DETAILED TEAM PANEL MODAL (ALL 6 SEATS VISUALIZED) -->
-  <div id="teamDetailSheet" class="sheet-modal hidden-sheet fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/40 backdrop-blur-xs">
-    <div class="m3-card rounded-t-[28px] md:rounded-[28px] w-full max-w-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+  <!-- MODAL 4: DETAILED TEAM PANEL MODAL (WITH MEMBER REMOVAL & DIRECT ADD) -->
+  <div id="teamDetailSheet" class="sheet-modal hidden-sheet fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/50 backdrop-blur-xs">
+    <div class="m3-card rounded-t-[32px] md:rounded-[32px] w-full max-w-3xl p-7 relative max-h-[90vh] overflow-y-auto">
       
-      <div class="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4 md:hidden"></div>
+      <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-5 md:hidden"></div>
 
-      <button onclick="closeTeamDetailSheet()" class="absolute right-5 top-5 text-gray-400 hover:text-gray-900 p-1">
-        <i data-lucide="x" class="w-5 h-5"></i>
+      <button onclick="closeTeamDetailSheet()" class="absolute right-6 top-6 text-gray-400 hover:text-gray-900 p-1">
+        <i data-lucide="x" class="w-6 h-6"></i>
       </button>
 
       <div id="teamDetailContent">
-        <!-- Rendered via JS -->
+        <!-- Rendered dynamically -->
       </div>
     </div>
   </div>
 
-  <!-- MODAL 4: REQUEST TO JOIN MODAL -->
-  <div id="joinSheet" class="sheet-modal hidden-sheet fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/40 backdrop-blur-xs">
-    <div class="m3-card rounded-t-[28px] md:rounded-[28px] w-full max-w-sm p-6 relative">
-      
-      <div class="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-4 md:hidden"></div>
+  <!-- MODAL 5: LEADER ADD TEAMMATE DIRECT SEARCH MODAL -->
+  <div id="addTeammateModal" class="sheet-modal hidden-sheet fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/50 backdrop-blur-xs">
+    <div class="m3-card rounded-t-[32px] md:rounded-[32px] w-full max-w-lg p-6 relative">
+      <button onclick="closeAddTeammateModal()" class="absolute right-5 top-5 text-gray-400 hover:text-gray-900 p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
 
+      <h3 class="text-lg font-bold text-gray-900 mb-1">Add Teammate Directly</h3>
+      <p class="text-xs text-gray-500 mb-4">Search student database by R-ID or Name to add directly to your team.</p>
+
+      <div class="relative mb-4">
+        <i data-lucide="search" class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        <input type="text" id="directAddSearchInput" placeholder="Search R-ID or Name..." class="w-full h-12 pl-11 pr-4 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:border-[#1A73E8]" onkeyup="searchDirectAddCandidate()">
+      </div>
+
+      <div id="directAddSearchResults" class="max-h-64 overflow-y-auto space-y-2">
+        <div class="text-xs text-gray-400 text-center py-6">Type student R-ID or name above</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: REQUEST TO JOIN MODAL -->
+  <div id="joinSheet" class="sheet-modal hidden-sheet fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/50 backdrop-blur-xs">
+    <div class="m3-card rounded-t-[32px] md:rounded-[32px] w-full max-w-md p-6 relative">
       <button onclick="closeJoinSheet()" class="absolute right-5 top-5 text-gray-400 hover:text-gray-900 p-1">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
-      <h2 class="text-base font-bold text-gray-900 mb-1">Request to Join</h2>
-      <p class="text-xs text-[#1A73E8] font-bold mb-4" id="joinTeamName"></p>
+      <h2 class="text-lg font-bold text-gray-900 mb-1">Request to Join Team</h2>
+      <p class="text-sm font-bold text-[#1A73E8] mb-4" id="joinTeamName"></p>
 
-      <textarea id="joinMessageInput" rows="3" placeholder="Write a short message to the team leader..." class="w-full p-3.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 focus:outline-none mb-4"></textarea>
+      <textarea id="joinMessageInput" rows="3" placeholder="Introduce yourself or describe your skills to the team leader..." class="w-full p-4 bg-white border border-gray-300 rounded-xl text-sm text-gray-900 focus:outline-none focus:border-[#1A73E8] mb-4"></textarea>
 
-      <button onclick="submitJoinRequest()" id="btnSubmitJoinRequest" class="w-full btn-g-filled">
-        <span>Send Join Request</span> <i data-lucide="send" class="w-4 h-4"></i>
+      <button onclick="submitJoinRequest()" id="btnSubmitJoinRequest" class="w-full btn-g-filled text-base">
+        <span>Send Join Request</span> <i data-lucide="send" class="w-5 h-5"></i>
       </button>
     </div>
   </div>
 
-  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <!-- JAVASCRIPT APP LOGIC -->
   <script>
     let currentUser = null;
     let currentFilter = 'all';
     let selectedFriends = [];
     let targetTeamIdToJoin = null;
     let tempAuthRid = null;
+    let activeTeamIdForDirectAdd = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
@@ -457,7 +523,7 @@
     function showToast(msg) {
       const c = document.getElementById("toastContainer");
       const t = document.createElement("div");
-      t.className = `pointer-events-auto px-5 py-3 rounded-full text-xs font-bold shadow-lg bg-[#202124] text-white text-center transition-all transform -translate-y-2 opacity-0`;
+      t.className = `pointer-events-auto px-6 py-3.5 rounded-full text-xs font-bold shadow-xl bg-[#202124] text-white text-center transition-all transform -translate-y-2 opacity-0 border border-gray-700`;
       t.innerHTML = `<span>${msg}</span>`;
       c.appendChild(t);
 
@@ -465,7 +531,7 @@
       setTimeout(() => {
         t.classList.add('opacity-0');
         setTimeout(() => t.remove(), 250);
-      }, 3000);
+      }, 3200);
     }
 
     function loadUserFromSession() {
@@ -488,28 +554,26 @@
       localStorage.removeItem("hackmate_user");
       renderHeaderUser();
       fetchTeams();
-      showToast("Signed out");
+      showToast("Signed out successfully");
     }
 
     function renderHeaderUser() {
       const slot = document.getElementById("headerUserSlot");
       if (currentUser) {
         slot.innerHTML = `
-          <button onclick="openMyTeamWorkspace()" class="btn-g-outlined text-xs h-9 px-3.5">
-            My Team
+          <button onclick="openMyTeamWorkspace()" class="btn-g-outlined text-xs h-10 px-4 rounded-full font-bold">
+            <i data-lucide="users" class="w-4 h-4 text-[#1A73E8]"></i> My Team
           </button>
-          <div class="flex items-center gap-2 bg-gray-100 border border-gray-200 px-3 py-1 rounded-full">
-            <img src="${currentUser.avatar_url}" class="w-6 h-6 rounded-full bg-white">
-            <span class="text-xs text-gray-900 font-bold">${escapeHtml(currentUser.name.split(' ')[0])}</span>
-            <button onclick="logoutUser()" title="Sign Out" class="text-gray-400 hover:text-gray-900 ml-1">
-              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-            </button>
-          </div>
+          
+          <button onclick="openUserProfileModal()" class="flex items-center gap-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 px-3 py-1.5 rounded-full transition-all cursor-pointer">
+            <img src="${currentUser.avatar_url}" class="w-7 h-7 rounded-full bg-white border border-gray-200 object-cover">
+            <span class="text-xs text-gray-900 font-extrabold pr-1">${escapeHtml(currentUser.name.split(' ')[0])}</span>
+          </button>
         `;
       } else {
         slot.innerHTML = `
-          <button onclick="openAuthSheet()" class="btn-g-outlined text-xs h-9 px-4">
-            Sign In
+          <button onclick="openAuthSheet()" class="btn-g-filled text-xs h-10 px-5">
+            Sign In with R-ID
           </button>
         `;
       }
@@ -525,12 +589,132 @@
       }
     }
 
-    function handleMyWorkspaceClick() {
-      if (!currentUser) openAuthSheet();
-      else openMyTeamWorkspace();
+    /* --- USER PROFILE MODAL FLOW --- */
+
+    async function openUserProfileModal() {
+      if (!currentUser) return openAuthSheet();
+
+      const modal = document.getElementById("userProfileSheet");
+      const content = document.getElementById("userProfileContent");
+      
+      content.innerHTML = `
+        <div class="py-12 text-center">
+          <div class="ios-spinner mx-auto mb-3"></div>
+          <p class="text-xs text-gray-500 font-bold">Fetching profile from college database...</p>
+        </div>
+      `;
+
+      modal.classList.remove("hidden-sheet");
+      modal.classList.add("visible-sheet");
+
+      try {
+        const res = await fetch(`/api/user/profile?r_id=${encodeURIComponent(currentUser.r_id)}`);
+        const data = await res.json();
+        
+        if (!data.success) {
+          content.innerHTML = `<div class="p-6 text-center text-xs text-red-500 font-bold">${data.message}</div>`;
+          return;
+        }
+
+        renderUserProfileContent(data.profile, data.teams);
+      } catch(e) {
+        content.innerHTML = `<div class="p-6 text-center text-xs text-red-500 font-bold">Failed to load profile details</div>`;
+      }
     }
 
-    /* --- AUTHENTICATION FLOW --- */
+    function closeUserProfileModal() {
+      const modal = document.getElementById("userProfileSheet");
+      modal.classList.remove("visible-sheet");
+      modal.classList.add("hidden-sheet");
+    }
+
+    function renderUserProfileContent(prof, userTeams) {
+      const content = document.getElementById("userProfileContent");
+
+      let teamsListHtml = "";
+      if (!userTeams || userTeams.length === 0) {
+        teamsListHtml = `<div class="p-4 bg-gray-50 rounded-2xl text-xs text-gray-500 text-center font-bold">You are not currently in any hackathon team.</div>`;
+      } else {
+        teamsListHtml = userTeams.map(t => `
+          <div class="p-4 bg-blue-50/60 border border-blue-100 rounded-2xl flex items-center justify-between gap-3">
+            <div>
+              <div class="text-sm font-extrabold text-gray-900">${escapeHtml(t.name)}</div>
+              <div class="text-xs text-gray-500 font-medium">Role: <span class="font-bold text-[#1A73E8] uppercase">${t.user_status}</span> • ${t.member_count}/6 Members</div>
+            </div>
+            <button onclick="closeUserProfileModal(); openTeamDetailSheet(${t.id});" class="btn-g-filled text-xs h-9 px-4">
+              Open Panel ➔
+            </button>
+          </div>
+        `).join('');
+      }
+
+      content.innerHTML = `
+        <div class="space-y-6">
+          
+          <!-- Avatar & Top Info Header -->
+          <div class="flex items-center gap-5 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-3xl">
+            <img src="${prof.avatar_url}" class="w-20 h-20 rounded-full border-4 border-white shadow-md bg-white object-cover shrink-0">
+            <div>
+              <h2 class="text-xl font-extrabold text-gray-900">${escapeHtml(prof.name)}</h2>
+              <div class="inline-flex items-center gap-2 mt-1">
+                <span class="bg-[#1A73E8] text-white text-xs font-extrabold px-3 py-0.5 rounded-full">${prof.r_id}</span>
+                <span class="text-xs font-bold text-gray-600">${prof.gender}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Personal Information Grid -->
+          <div>
+            <h3 class="text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-3">College Record Details</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="p-3.5 bg-gray-50 border border-gray-200 rounded-2xl">
+                <div class="text-[11px] font-bold text-gray-400 uppercase">Email Address</div>
+                <div class="text-xs font-bold text-gray-900 break-all mt-0.5">${escapeHtml(prof.email)}</div>
+              </div>
+
+              <div class="p-3.5 bg-gray-50 border border-gray-200 rounded-2xl">
+                <div class="text-[11px] font-bold text-gray-400 uppercase">Phone Number</div>
+                <div class="text-xs font-bold text-gray-900 mt-0.5">${escapeHtml(prof.phone || 'N/A')}</div>
+              </div>
+
+              <div class="p-3.5 bg-gray-50 border border-gray-200 rounded-2xl">
+                <div class="text-[11px] font-bold text-gray-400 uppercase">Date of Birth</div>
+                <div class="text-xs font-bold text-blue-600 mt-0.5">${escapeHtml(prof.dob || 'N/A')}</div>
+              </div>
+
+              <div class="p-3.5 bg-gray-50 border border-gray-200 rounded-2xl">
+                <div class="text-[11px] font-bold text-gray-400 uppercase">Father's Name</div>
+                <div class="text-xs font-bold text-gray-900 mt-0.5">${escapeHtml(prof.father_name || 'N/A')}</div>
+              </div>
+
+              <div class="p-3.5 bg-gray-50 border border-gray-200 rounded-2xl sm:col-span-2">
+                <div class="text-[11px] font-bold text-gray-400 uppercase">Residential Address</div>
+                <div class="text-xs font-bold text-gray-900 mt-0.5">${escapeHtml(prof.address)}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- My Teams Section -->
+          <div>
+            <h3 class="text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-3">My Squads & Teams</h3>
+            <div class="space-y-2">
+              ${teamsListHtml}
+            </div>
+          </div>
+
+          <!-- Sign Out Action -->
+          <div class="pt-4 border-t border-gray-200 flex justify-end">
+            <button onclick="closeUserProfileModal(); logoutUser();" class="btn-g-danger text-xs h-10 px-5">
+              <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+            </button>
+          </div>
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    /* --- AUTHENTICATION FLOW (UNCENSORED EMAIL) --- */
 
     function openAuthSheet() {
       document.getElementById("authSheet").classList.remove("hidden-sheet");
@@ -556,11 +740,11 @@
     async function sendEmailOtpCode() {
       const ridInput = document.getElementById("authRidInput");
       const rid = (ridInput ? ridInput.value : "").trim();
-      if (!rid) return showToast("Enter your R-ID");
+      if (!rid) return showToast("Enter your College R-ID");
 
       tempAuthRid = rid;
       const btn = document.getElementById("btnSendOtp");
-      btn.innerHTML = `<div class="ios-spinner"></div> Sending...`;
+      btn.innerHTML = `<div class="ios-spinner"></div> Dispatching...`;
       btn.disabled = true;
 
       try {
@@ -571,16 +755,17 @@
         });
         const data = await res.json();
         if (data.success) {
-          document.getElementById("targetEmailMask").innerText = data.masked_email;
+          // Display FULL UNCENSORED EMAIL address
+          document.getElementById("targetEmailDisplay").innerText = data.email || data.masked_email;
           showToast(data.message);
           showAuthStep(2);
         } else {
           showToast(data.message || "Failed to send code");
         }
       } catch(err) {
-        showToast("Failed to send code. Server error.");
+        showToast("Server error sending code");
       } finally {
-        btn.innerHTML = `<span>Send Verification Code</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+        btn.innerHTML = `<span>Send Verification Code</span> <i data-lucide="arrow-right" class="w-5 h-5"></i>`;
         btn.disabled = false;
         lucide.createIcons();
       }
@@ -607,17 +792,16 @@
         });
         const data = await res.json();
         if (data.success) {
-          showToast("Signed in successfully");
+          showToast("Signed in successfully!");
           saveUserSession(data.student);
           closeAuthSheet();
         } else {
-          showToast(data.message || "Invalid verification code");
+          showToast(data.message || "Invalid code");
         }
       } catch(err) {
-        console.error("Verify OTP error:", err);
-        showToast("Server error. Please try again.");
+        showToast("Server error verifying code");
       } finally {
-        btn.innerHTML = `<span>Verify & Log In</span> <i data-lucide="check" class="w-4 h-4"></i>`;
+        btn.innerHTML = `<span>Verify & Sign In</span> <i data-lucide="check" class="w-5 h-5"></i>`;
         btn.disabled = false;
         lucide.createIcons();
       }
@@ -631,7 +815,6 @@
       const email = document.getElementById("regEmail").value.trim();
       const gender = document.getElementById("regGender").value;
       const dob = document.getElementById("regDob").value.trim();
-      const phone = "";
 
       if (!rid || !name || !email) return showToast("R-ID, Name, and Email required");
 
@@ -639,11 +822,11 @@
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ r_id: rid, name: name, email: email, phone: phone, gender: gender, dob: dob })
+          body: JSON.stringify({ r_id: rid, name: name, email: email, phone: "", gender: gender, dob: dob })
         });
         const data = await res.json();
         if (data.success) {
-          showToast("Registered");
+          showToast("Account created");
           saveUserSession(data.student);
           closeAuthSheet();
         } else {
@@ -652,7 +835,7 @@
       } catch(e) { showToast("Registration error"); }
     }
 
-    /* --- TEAMS SEARCH & LISTING --- */
+    /* --- TEAMS LISTING & SEARCH --- */
 
     let searchDebounce = null;
     function debounceSearch() {
@@ -692,35 +875,47 @@
 
       teams.forEach(t => {
         const card = document.createElement("div");
-        card.className = "m3-card m3-card-clickable flex flex-col justify-between";
+        card.className = "m3-card m3-card-clickable flex flex-col justify-between border border-gray-200/80 hover:border-[#1A73E8] transition-all";
         card.onclick = () => openTeamDetailSheet(t.id);
 
-        let membersHtml = t.members.map(m => `
-          <div class="relative" title="${escapeHtml(m.name)} (${m.gender})">
-            <img src="${m.avatar_url}" class="w-8 h-8 rounded-full border-2 border-white bg-gray-100 shadow-xs">
-          </div>
-        `).join('');
+        let seatsAvatarsHtml = "";
+        for (let i = 0; i < 6; i++) {
+          const m = t.members[i];
+          if (m) {
+            seatsAvatarsHtml += `<img src="${m.avatar_url}" class="w-8 h-8 rounded-full border-2 border-white bg-gray-100 object-cover shadow-xs" title="${escapeHtml(m.name)}">`;
+          } else {
+            seatsAvatarsHtml += `<div class="w-8 h-8 rounded-full border-2 border-dashed border-purple-300 bg-purple-50 flex items-center justify-center text-[10px] text-purple-600 font-bold">+</div>`;
+          }
+        }
+
+        const tagColor = t.has_female ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200';
+        const tagText = t.has_female ? '✓ Gender Balanced' : '⚡ Needs Female Teammate';
 
         card.innerHTML = `
           <div>
-            <div class="flex items-start justify-between gap-2 mb-2">
-              <h3 class="font-bold text-gray-900 text-base leading-snug">${escapeHtml(t.name)}</h3>
-              <span class="text-xs font-bold text-[#1A73E8] bg-[#E8F0FE] border border-[#D2E3FC] px-2.5 py-0.5 rounded-full">${t.member_count}/6 Seats</span>
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <h3 class="font-extrabold text-gray-900 text-lg leading-snug">${escapeHtml(t.name)}</h3>
+              <span class="text-xs font-extrabold text-[#1A73E8] bg-blue-50 border border-blue-200 px-3 py-1 rounded-full shrink-0">${t.member_count}/6 Seats</span>
             </div>
 
-            <p class="text-gray-500 text-xs line-clamp-2 mb-4 leading-relaxed">${escapeHtml(t.description || 'No description provided.')}</p>
+            <p class="text-gray-600 text-xs line-clamp-2 mb-4 leading-relaxed">${escapeHtml(t.description || 'No pitch provided.')}</p>
 
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center -space-x-1.5">
-                ${membersHtml}
-              </div>
-              <span class="text-[11px] font-bold text-gray-400">Click to view ➔</span>
+            <!-- Gender Balance Tag -->
+            <div class="mb-4">
+              <span class="text-[11px] font-bold border ${tagColor} px-2.5 py-1 rounded-full inline-flex items-center gap-1">
+                ${tagText}
+              </span>
+            </div>
+
+            <!-- 6 Visual Seats Bar -->
+            <div class="flex items-center gap-1.5 mb-5">
+              ${seatsAvatarsHtml}
             </div>
           </div>
 
-          <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
-            <span class="text-xs font-bold text-gray-600">${t.is_full ? 'Fully Staffed (6/6)' : (6 - t.member_count) + ' Open Seats'}</span>
-            <button class="btn-g-outlined text-xs h-8 px-3">View Panel</button>
+          <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+            <span class="text-xs font-bold text-gray-500">${t.is_full ? 'Fully Staffed (6/6)' : (6 - t.member_count) + ' Open Slots'}</span>
+            <button class="btn-g-outlined text-xs h-9 px-4">View Team Panel ➔</button>
           </div>
         `;
 
@@ -730,7 +925,7 @@
       lucide.createIcons();
     }
 
-    /* --- TEAM CREATION WITH EXPLICIT SEAT BREAKDOWN --- */
+    /* --- TEAM CREATION FLOW --- */
 
     function openCreateTeamModal() {
       if (!currentUser) return openAuthSheet();
@@ -773,12 +968,12 @@
         } else {
           filtered.forEach(s => {
             const item = document.createElement("div");
-            item.className = "p-3 hover:bg-blue-50 flex items-center justify-between cursor-pointer border-b border-gray-100 last:border-0";
+            item.className = "p-3.5 hover:bg-blue-50 flex items-center justify-between cursor-pointer border-b border-gray-100 last:border-0";
             item.onclick = () => addFriendToTeam(s);
 
             item.innerHTML = `
               <div class="flex items-center gap-3">
-                <img src="${s.avatar_url}" class="w-11 h-11 rounded-full bg-gray-100 border border-gray-200 shrink-0">
+                <img src="${s.avatar_url}" class="w-11 h-11 rounded-full bg-gray-100 border border-gray-200 shrink-0 object-cover">
                 <div>
                   <div class="text-xs font-bold text-gray-900">${escapeHtml(s.name)}</div>
                   <div class="text-[11px] text-gray-500 font-medium">${s.r_id} • ${s.gender}</div>
@@ -798,7 +993,7 @@
     }
 
     function addFriendToTeam(student) {
-      if (selectedFriends.length >= 5) return showToast("Max 5 friends (Team size is 6)");
+      if (selectedFriends.length >= 5) return showToast("Max 5 friends (Team limit is 6)");
       selectedFriends.push(student);
       document.getElementById("friendSearchInput").value = "";
       document.getElementById("friendSearchResults").classList.add("hidden");
@@ -814,13 +1009,13 @@
       const container = document.getElementById("createTeamSeatsContainer");
       container.innerHTML = "";
 
-      // Seat 1: Leader (currentUser)
+      // Seat 1: Leader
       container.innerHTML += `
-        <div class="seat-card-filled flex items-center gap-3">
-          <img src="${currentUser.avatar_url}" class="w-9 h-9 rounded-full bg-white shrink-0 border border-gray-200">
+        <div class="seat-card-filled flex items-center gap-3 border-blue-200 bg-blue-50/40">
+          <img src="${currentUser.avatar_url}" class="w-10 h-10 rounded-full bg-white shrink-0 border border-gray-200 object-cover">
           <div class="flex-1 min-w-0">
-            <div class="text-xs font-bold text-gray-900 truncate">${escapeHtml(currentUser.name)}</div>
-            <div class="text-[10px] text-blue-600 font-bold">Seat 1 • Leader (You)</div>
+            <div class="text-xs font-extrabold text-gray-900 truncate">${escapeHtml(currentUser.name)}</div>
+            <div class="text-[11px] text-blue-600 font-bold">Seat 1 • Leader (You)</div>
           </div>
         </div>
       `;
@@ -831,24 +1026,24 @@
         if (friend) {
           container.innerHTML += `
             <div class="seat-card-filled flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <img src="${friend.avatar_url}" class="w-9 h-9 rounded-full bg-white shrink-0 border border-gray-200">
+              <div class="flex items-center gap-3 min-w-0">
+                <img src="${friend.avatar_url}" class="w-10 h-10 rounded-full bg-white shrink-0 border border-gray-200 object-cover">
                 <div class="min-w-0">
                   <div class="text-xs font-bold text-gray-900 truncate">${escapeHtml(friend.name)}</div>
-                  <div class="text-[10px] text-gray-500 font-semibold">${friend.r_id} • Added</div>
+                  <div class="text-[11px] text-gray-500 font-medium">${friend.r_id} • Added</div>
                 </div>
               </div>
-              <button onclick="removeFriend('${friend.r_id}')" class="text-gray-400 hover:text-red-600 font-bold p-1 text-sm">×</button>
+              <button onclick="removeFriend('${friend.r_id}')" class="text-gray-400 hover:text-red-600 font-bold p-1 text-base">×</button>
             </div>
           `;
         } else {
           container.innerHTML += `
             <div class="seat-card-open flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center font-bold text-xs">+</div>
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs">+</div>
                 <div>
-                  <div class="text-xs font-bold text-gray-500">Seat ${i + 2}</div>
-                  <div class="text-[10px] text-emerald-600 font-bold">Open for Join Request</div>
+                  <div class="text-xs font-bold text-gray-700">Seat ${i + 2}</div>
+                  <div class="text-[10px] text-purple-700 font-bold">Open for Join Request</div>
                 </div>
               </div>
             </div>
@@ -893,13 +1088,13 @@
       } catch(e) {
         showToast("Error creating team");
       } finally {
-        btn.innerHTML = `<span>Create & Publish Team</span> <i data-lucide="rocket" class="w-4 h-4"></i>`;
+        btn.innerHTML = `<span>Create & Publish Team</span> <i data-lucide="rocket" class="w-5 h-5"></i>`;
         btn.disabled = false;
         lucide.createIcons();
       }
     }
 
-    /* --- DETAILED TEAM PANEL MODAL (6 SEATS VISUALIZED) --- */
+    /* --- DETAILED TEAM PANEL MODAL (MEMBER REMOVAL & DIRECT ADD) --- */
 
     async function openTeamDetailSheet(teamId) {
       const content = document.getElementById("teamDetailContent");
@@ -943,63 +1138,82 @@
       for (let i = 0; i < 6; i++) {
         const member = team.members[i];
         if (member) {
+          const isMe = currentUser && currentUser.r_id.toUpperCase() === member.r_id.toUpperCase();
+          const canRemove = isLeader && member.role !== 'leader';
+
           seatsHtml += `
             <div class="seat-card-filled flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3">
-                <img src="${member.avatar_url}" class="w-12 h-12 rounded-full bg-white border border-gray-200 shrink-0">
-                <div>
-                  <div class="text-xs font-bold text-gray-900">${escapeHtml(member.name)}</div>
-                  <div class="text-[11px] text-gray-500 font-medium">${member.r_id} • ${member.gender}</div>
-                  <div class="text-[10px] text-blue-600 font-semibold">${escapeHtml(member.email)}</div>
+              <div class="flex items-center gap-3.5 min-w-0">
+                <img src="${member.avatar_url}" class="w-12 h-12 rounded-full bg-white border border-gray-200 shrink-0 object-cover">
+                <div class="min-w-0">
+                  <div class="text-sm font-extrabold text-gray-900 truncate flex items-center gap-1.5">
+                    ${escapeHtml(member.name)} ${isMe ? '<span class="text-[10px] text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-bold">(You)</span>' : ''}
+                  </div>
+                  <div class="text-xs text-gray-500 font-medium">${member.r_id} • ${member.gender}</div>
+                  <div class="text-[11px] text-blue-600 font-semibold truncate">${escapeHtml(member.email)} • DOB: ${escapeHtml(member.dob || 'N/A')}</div>
                 </div>
               </div>
-              <span class="text-[10px] font-bold ${member.role === 'leader' ? 'bg-amber-100 text-amber-800' : 'bg-gray-200 text-gray-700'} px-2.5 py-1 rounded-full uppercase">
-                ${member.role}
-              </span>
+
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-[10px] font-bold ${member.role === 'leader' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-gray-100 text-gray-700 border border-gray-200'} px-2.5 py-1 rounded-full uppercase">
+                  ${member.role}
+                </span>
+
+                ${canRemove ? `
+                  <button onclick="removeMemberFromTeam(${team.id}, '${member.r_id}')" class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-1.5 rounded-lg text-xs font-bold transition-all" title="Remove Teammate">
+                    <i data-lucide="user-minus" class="w-4 h-4"></i>
+                  </button>
+                ` : ''}
+              </div>
             </div>
           `;
         } else {
           seatsHtml += `
-            <div class="seat-card-open flex items-center justify-between p-3.5">
+            <div class="seat-card-open flex items-center justify-between p-4">
               <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-blue-50 text-[#1A73E8] flex items-center justify-center font-bold text-lg">+</div>
+                <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xl">+</div>
                 <div>
-                  <div class="text-xs font-bold text-gray-700">Seat ${i + 1} Available</div>
-                  <div class="text-[11px] text-emerald-600 font-bold">Open for Join Request</div>
+                  <div class="text-xs font-bold text-gray-800">Seat ${i + 1} Open</div>
+                  <div class="text-[11px] text-purple-700 font-bold">Available Slot</div>
                 </div>
               </div>
-              ${(!currentUser || team.user_status === 'none') ? `
-                <button onclick="closeTeamDetailSheet(); openJoinSheet(${team.id}, '${escapeHtml(team.name)}');" class="btn-g-filled text-xs h-9 px-4">
-                  Request to Join
-                </button>
-              ` : ''}
+
+              <div class="flex gap-2">
+                ${isLeader ? `
+                  <button onclick="openDirectAddTeammateModal(${team.id})" class="btn-g-filled text-xs h-9 px-3.5 bg-purple-600 hover:bg-purple-700">
+                    + Add Teammate
+                  </button>
+                ` : (!currentUser || team.user_status === 'none') ? `
+                  <button onclick="closeTeamDetailSheet(); openJoinSheet(${team.id}, '${escapeHtml(team.name)}');" class="btn-g-filled text-xs h-9 px-4">
+                    Request to Join
+                  </button>
+                ` : ''}
+              </div>
             </div>
           `;
         }
       }
 
       let whatsappBanner = "";
-      if (team.has_whatsapp) {
-        if (isLeader || isMember) {
-          whatsappBanner = `
-            <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between">
-              <div>
-                <div class="text-xs font-bold text-emerald-900">Official WhatsApp Group</div>
-                <div class="text-[11px] text-emerald-700 font-medium">Joined team member chat</div>
-              </div>
-              <a href="${team.whatsapp_link}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs">
-                Open WhatsApp ➔
-              </a>
+      if (team.has_whatsapp && (isLeader || isMember)) {
+        whatsappBanner = `
+          <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-4">
+            <div>
+              <div class="text-xs font-bold text-emerald-900">Official WhatsApp Group Link</div>
+              <div class="text-[11px] text-emerald-700 font-medium">Join team chat to collaborate with squad members</div>
             </div>
-          `;
-        }
+            <a href="${team.whatsapp_link}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs shrink-0 flex items-center gap-1.5">
+              <i data-lucide="message-circle" class="w-4 h-4"></i> Open WhatsApp ➔
+            </a>
+          </div>
+        `;
       }
 
       let leaderRequestsSection = "";
       if (isLeader) {
         leaderRequestsSection = `
           <div class="pt-4 border-t border-gray-200">
-            <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Pending Join Requests</h4>
+            <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">Pending Join Requests</h4>
             <div id="panelPendingRequestsContainer" class="space-y-2">
               <div class="text-center py-4"><div class="ios-spinner"></div></div>
             </div>
@@ -1008,32 +1222,60 @@
       }
 
       content.innerHTML = `
-        <div class="space-y-5">
+        <div class="space-y-6">
+          
+          <!-- Header info -->
           <div>
-            <div class="flex items-start justify-between gap-3">
-              <h3 class="text-xl font-bold text-gray-900">${escapeHtml(team.name)}</h3>
-              <span class="text-xs font-bold text-[#1A73E8] bg-[#E8F0FE] border border-[#D2E3FC] px-3 py-1 rounded-full">${team.member_count}/6 Members</span>
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h3 class="text-2xl font-extrabold text-gray-900 leading-tight">${escapeHtml(team.name)}</h3>
+                <p class="text-xs text-gray-500 mt-1 leading-relaxed">${escapeHtml(team.description || 'No pitch provided.')}</p>
+              </div>
+              <span class="text-xs font-extrabold text-[#1A73E8] bg-blue-50 border border-blue-200 px-3.5 py-1.5 rounded-full shrink-0">${team.member_count}/6 Seats Filled</span>
             </div>
-            <p class="text-xs text-gray-500 mt-1 leading-relaxed">${escapeHtml(team.description || 'No description provided.')}</p>
           </div>
 
           ${whatsappBanner}
 
           ${isLeader ? `
-            <div class="flex gap-2">
-              <input type="text" id="panelWhatsappInput" value="${team.whatsapp_link || ''}" placeholder="WhatsApp Group Link..." class="flex-1 h-10 px-3.5 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-[#1A73E8]">
-              <button onclick="updateWhatsappLink(${team.id})" class="btn-g-filled text-xs h-10 px-4">Save Link</button>
+            <div class="p-4 bg-gray-50 border border-gray-200 rounded-2xl space-y-2">
+              <label class="block text-xs font-bold text-gray-700">Team Leader Controls — WhatsApp Group Link</label>
+              <div class="flex gap-2">
+                <input type="text" id="panelWhatsappInput" value="${team.whatsapp_link || ''}" placeholder="https://chat.whatsapp.com/..." class="flex-1 h-11 px-4 bg-white border border-gray-300 rounded-xl text-xs text-gray-900 outline-none focus:border-[#1A73E8]">
+                <button onclick="updateWhatsappLink(${team.id})" class="btn-g-filled text-xs h-11 px-4">Save</button>
+              </div>
             </div>
           ` : ''}
 
+          <!-- 6 Visual Seats Grid -->
           <div>
-            <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3">All 6 Team Seats</h4>
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-xs font-bold text-gray-700 uppercase tracking-wider">All 6 Squad Seats</h4>
+              ${isLeader && !team.is_full ? `
+                <button onclick="openDirectAddTeammateModal(${team.id})" class="text-xs font-bold text-purple-700 hover:underline">+ Add Teammate Directly</button>
+              ` : ''}
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               ${seatsHtml}
             </div>
           </div>
 
           ${leaderRequestsSection}
+
+          <!-- Footer Actions Toolbar -->
+          <div class="pt-4 border-t border-gray-200 flex items-center justify-between">
+            ${isLeader ? `
+              <button onclick="disbandTeam(${team.id})" class="btn-g-danger">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Disband Team
+              </button>
+            ` : isMember ? `
+              <button onclick="leaveTeam(${team.id})" class="btn-g-danger">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Leave Team
+              </button>
+            ` : '<div></div>'}
+
+            <button onclick="closeTeamDetailSheet()" class="btn-g-outlined text-xs h-10 px-5">Close Panel</button>
+          </div>
         </div>
       `;
 
@@ -1044,6 +1286,142 @@
       lucide.createIcons();
     }
 
+    /* --- DIRECT ADD TEAMMATE BY LEADER --- */
+
+    function openDirectAddTeammateModal(teamId) {
+      activeTeamIdForDirectAdd = teamId;
+      document.getElementById("directAddSearchInput").value = "";
+      document.getElementById("directAddSearchResults").innerHTML = `<div class="text-xs text-gray-400 text-center py-6">Type student R-ID or name above</div>`;
+      document.getElementById("addTeammateModal").classList.remove("hidden-sheet");
+      document.getElementById("addTeammateModal").classList.add("visible-sheet");
+    }
+
+    function closeAddTeammateModal() {
+      document.getElementById("addTeammateModal").classList.remove("visible-sheet");
+      document.getElementById("addTeammateModal").classList.add("hidden-sheet");
+    }
+
+    async function searchDirectAddCandidate() {
+      const q = document.getElementById("directAddSearchInput").value.trim();
+      const container = document.getElementById("directAddSearchResults");
+
+      if (q.length < 2) {
+        container.innerHTML = `<div class="text-xs text-gray-400 text-center py-6">Type student R-ID or name above</div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="text-center py-4"><div class="ios-spinner"></div></div>`;
+
+      try {
+        const res = await fetch(`/api/students/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        
+        if (!data.students || data.students.length === 0) {
+          container.innerHTML = `<div class="text-xs text-gray-400 text-center py-6 font-bold">No students found</div>`;
+          return;
+        }
+
+        container.innerHTML = data.students.map(s => `
+          <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <img src="${s.avatar_url}" class="w-10 h-10 rounded-full bg-white border border-gray-200 object-cover">
+              <div>
+                <div class="text-xs font-bold text-gray-900">${escapeHtml(s.name)}</div>
+                <div class="text-[11px] text-gray-500">${s.r_id} • ${s.gender}</div>
+                <div class="text-[10px] text-blue-600 font-semibold">${escapeHtml(s.email)} • DOB: ${escapeHtml(s.dob || 'N/A')}</div>
+              </div>
+            </div>
+            <button onclick="submitDirectAddTeammate('${s.r_id}')" class="btn-g-filled text-xs h-8 px-3">
+              + Add
+            </button>
+          </div>
+        `).join('');
+      } catch(e) {
+        container.innerHTML = `<div class="text-xs text-red-500 text-center py-4 font-bold">Error searching directory</div>`;
+      }
+    }
+
+    async function submitDirectAddTeammate(studentRid) {
+      if (!activeTeamIdForDirectAdd) return;
+
+      try {
+        const res = await fetch(`/api/teams/${activeTeamIdForDirectAdd}/members/add`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leader_r_id: currentUser.r_id, student_r_id: studentRid })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        if (data.success) {
+          closeAddTeammateModal();
+          openTeamDetailSheet(activeTeamIdForDirectAdd);
+          fetchTeams();
+        }
+      } catch(e) {
+        showToast("Error adding teammate");
+      }
+    }
+
+    async function removeMemberFromTeam(teamId, targetRid) {
+      if (!confirm(`Are you sure you want to remove ${targetRid} from the team?`)) return;
+
+      try {
+        const res = await fetch(`/api/teams/${teamId}/members/remove`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leader_r_id: currentUser.r_id, target_r_id: targetRid })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        if (data.success) {
+          openTeamDetailSheet(teamId);
+          fetchTeams();
+        }
+      } catch(e) {
+        showToast("Error removing member");
+      }
+    }
+
+    async function leaveTeam(teamId) {
+      if (!confirm("Are you sure you want to leave this team?")) return;
+
+      try {
+        const res = await fetch(`/api/teams/${teamId}/leave`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ student_r_id: currentUser.r_id })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        if (data.success) {
+          closeTeamDetailSheet();
+          fetchTeams();
+        }
+      } catch(e) {
+        showToast("Error leaving team");
+      }
+    }
+
+    async function disbandTeam(teamId) {
+      if (!confirm("Are you sure you want to disband this team? This action cannot be undone.")) return;
+
+      try {
+        const res = await fetch(`/api/teams/${teamId}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ leader_r_id: currentUser.r_id })
+        });
+        const data = await res.json();
+        showToast(data.message);
+        if (data.success) {
+          closeTeamDetailSheet();
+          fetchTeams();
+        }
+      } catch(e) {
+        showToast("Error disbanding team");
+      }
+    }
+
     async function fetchLeaderPendingRequests(teamId) {
       const container = document.getElementById("panelPendingRequestsContainer");
       try {
@@ -1052,17 +1430,17 @@
         const reqs = data.requests || [];
 
         if (reqs.length === 0) {
-          container.innerHTML = `<div class="text-xs text-gray-400 italic py-2 font-semibold">No pending requests at this time</div>`;
+          container.innerHTML = `<div class="text-xs text-gray-400 italic py-2 font-semibold">No pending requests</div>`;
           return;
         }
 
         container.innerHTML = reqs.map(r => `
           <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between gap-3">
             <div class="flex items-center gap-3">
-              <img src="${r.avatar_url}" class="w-10 h-10 rounded-full bg-white border border-gray-200">
+              <img src="${r.avatar_url}" class="w-10 h-10 rounded-full bg-white border border-gray-200 object-cover">
               <div>
                 <div class="text-xs font-bold text-gray-900">${escapeHtml(r.name)} (${r.r_id})</div>
-                <div class="text-[11px] text-gray-500">"${escapeHtml(r.message || 'No note')}"</div>
+                <div class="text-[11px] text-gray-500 font-medium">"${escapeHtml(r.message || 'No note')}" • DOB: ${escapeHtml(r.dob || 'N/A')}</div>
               </div>
             </div>
             <div class="flex gap-1.5 shrink-0">
@@ -1131,7 +1509,7 @@
       } catch(e) {
         showToast("Error sending request");
       } finally {
-        btn.innerHTML = `<span>Send Join Request</span> <i data-lucide="send" class="w-4 h-4"></i>`;
+        btn.innerHTML = `<span>Send Join Request</span> <i data-lucide="send" class="w-5 h-5"></i>`;
         btn.disabled = false;
         lucide.createIcons();
       }

@@ -185,8 +185,9 @@ def auth_send_otp():
 
     return jsonify({
         "success": True,
-        "message": f"Code sent to {mask_email(email)}",
-        "masked_email": mask_email(email)
+        "message": f"Code sent to {email}",
+        "email": email,
+        "masked_email": email
     })
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
@@ -700,6 +701,221 @@ def get_my_team():
         return jsonify({"team": None})
 
     return jsonify({"team": format_team_data(team_row, r_id)})
+
+@app.route("/api/teams/<int:team_id>/members/add", methods=["POST"])
+def add_team_member(team_id):
+    data = request.json or {}
+    leader_r_id = data.get("leader_r_id", "").strip().upper()
+    student_r_id = data.get("student_r_id", "").strip().upper()
+    p = get_placeholder()
+
+    if not leader_r_id or not student_r_id:
+        return jsonify({"success": False, "message": "Leader R-ID and Student R-ID required"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT leader_r_id FROM teams WHERE id = {p}", (team_id,))
+    team = cursor.fetchone()
+    if not team or team["leader_r_id"].upper() != leader_r_id:
+        conn.close()
+        return jsonify({"success": False, "message": "Unauthorized: Only team leader can add members"}), 403
+
+    cursor.execute(f"SELECT COUNT(*) as cnt FROM team_members WHERE team_id = {p}", (team_id,))
+    cnt_row = cursor.fetchone()
+    cnt = cnt_row["cnt"] if isinstance(cnt_row, dict) or hasattr(cnt_row, '__getitem__') else cnt_row[0]
+    if cnt >= 6:
+        conn.close()
+        return jsonify({"success": False, "message": "Team is already full (6/6)"}), 400
+
+    cursor.execute(f"SELECT r_id FROM students WHERE UPPER(r_id) = {p}", (student_r_id,))
+    s = cursor.fetchone()
+    if not s:
+        s = auto_import_student_from_json(student_r_id, conn, cursor)
+    if not s:
+        conn.close()
+        return jsonify({"success": False, "message": "Student R-ID not found in college database"}), 404
+
+    cursor.execute(f"SELECT team_id FROM team_members WHERE UPPER(student_r_id) = {p}", (student_r_id,))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({"success": False, "message": "Student is already in another team"}), 400
+
+    cursor.execute(f"""
+        INSERT INTO team_members (team_id, student_r_id, role)
+        VALUES ({p}, {p}, 'member')
+    """, (team_id, s["r_id"]))
+
+    cursor.execute(f"UPDATE join_requests SET status = 'accepted' WHERE team_id = {p} AND UPPER(student_r_id) = {p}", (team_id, student_r_id))
+    conn.commit()
+
+    cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
+    updated_team = format_team_data(cursor.fetchone(), leader_r_id)
+    conn.close()
+
+    return jsonify({"success": True, "message": "Teammate added successfully", "team": updated_team})
+
+@app.route("/api/teams/<int:team_id>/members/remove", methods=["POST"])
+def remove_team_member(team_id):
+    data = request.json or {}
+    leader_r_id = data.get("leader_r_id", "").strip().upper()
+    target_r_id = data.get("target_r_id", "").strip().upper()
+    p = get_placeholder()
+
+    if not leader_r_id or not target_r_id:
+        return jsonify({"success": False, "message": "Leader R-ID and Target R-ID required"}), 400
+
+    if leader_r_id == target_r_id:
+        return jsonify({"success": False, "message": "Leader cannot remove self. Use disband team."}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT leader_r_id FROM teams WHERE id = {p}", (team_id,))
+    team = cursor.fetchone()
+    if not team or team["leader_r_id"].upper() != leader_r_id:
+        conn.close()
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    cursor.execute(f"DELETE FROM team_members WHERE team_id = {p} AND UPPER(student_r_id) = {p}", (team_id, target_r_id))
+    conn.commit()
+
+    cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
+    updated_team = format_team_data(cursor.fetchone(), leader_r_id)
+    conn.close()
+
+    return jsonify({"success": True, "message": "Member removed from team", "team": updated_team})
+
+@app.route("/api/teams/<int:team_id>/leave", methods=["POST"])
+def leave_team(team_id):
+    data = request.json or {}
+    student_r_id = data.get("student_r_id", "").strip().upper()
+    p = get_placeholder()
+
+    if not student_r_id:
+        return jsonify({"success": False, "message": "Student R-ID required"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT role FROM team_members WHERE team_id = {p} AND UPPER(student_r_id) = {p}", (team_id, student_r_id))
+    mem = cursor.fetchone()
+    if not mem:
+        conn.close()
+        return jsonify({"success": False, "message": "You are not in this team"}), 400
+
+    role = mem["role"]
+    cursor.execute(f"DELETE FROM team_members WHERE team_id = {p} AND UPPER(student_r_id) = {p}", (team_id, student_r_id))
+
+    if role == "leader":
+        cursor.execute(f"SELECT student_r_id FROM team_members WHERE team_id = {p} ORDER BY joined_at ASC LIMIT 1", (team_id,))
+        next_mem = cursor.fetchone()
+        if next_mem:
+            new_leader = next_mem["student_r_id"]
+            cursor.execute(f"UPDATE team_members SET role = 'leader' WHERE team_id = {p} AND UPPER(student_r_id) = {p}", (team_id, new_leader.upper()))
+            cursor.execute(f"UPDATE teams SET leader_r_id = {p} WHERE id = {p}", (new_leader, team_id))
+        else:
+            cursor.execute(f"DELETE FROM teams WHERE id = {p}", (team_id,))
+
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True, "message": "Left team successfully"})
+
+@app.route("/api/teams/<int:team_id>", methods=["DELETE"])
+def delete_team(team_id):
+    data = request.json or {}
+    leader_r_id = data.get("leader_r_id", "").strip().upper()
+    p = get_placeholder()
+
+    if not leader_r_id:
+        leader_r_id = request.args.get("leader_r_id", "").strip().upper()
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT leader_r_id FROM teams WHERE id = {p}", (team_id,))
+    team = cursor.fetchone()
+    if not team or team["leader_r_id"].upper() != leader_r_id:
+        conn.close()
+        return jsonify({"success": False, "message": "Unauthorized: Only team leader can disband team"}), 403
+
+    cursor.execute(f"DELETE FROM teams WHERE id = {p}", (team_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True, "message": "Team disbanded successfully"})
+
+@app.route("/api/user/profile", methods=["GET"])
+def get_user_profile():
+    r_id = request.args.get("r_id", "").strip().upper()
+    p = get_placeholder()
+
+    if not r_id:
+        return jsonify({"success": False, "message": "R-ID required"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+    db_student = cursor.fetchone()
+
+    if not db_student:
+        db_student = auto_import_student_from_json(r_id, conn, cursor)
+
+    student_dict = dict(db_student) if db_student else {}
+
+    json_item = STUDENT_PROFILES_MAP.get(r_id) or {}
+    personal = json_item.get("personal_details", {}) or {}
+    family = json_item.get("family_details", {}) or {}
+    address_data = json_item.get("address_details", {}) or {}
+
+    addr_parts = []
+    c_addr = address_data.get("Correspondence Address") or address_data.get("Permanent Address")
+    c_city = address_data.get("Correspondence City") or address_data.get("Permanent City")
+    c_state = address_data.get("Correspondence State") or address_data.get("Permanent State")
+    c_pin = address_data.get("Correspondence Pincode") or address_data.get("Permanent Pincode")
+
+    for part in [c_addr, c_city, c_state, c_pin]:
+        if part and str(part).strip() not in ["", "None", "-1", "null"]:
+            addr_parts.append(str(part).strip())
+
+    full_address = ", ".join(addr_parts) if addr_parts else "JNU Campus, Jaipur"
+
+    avatar_url = student_dict.get("avatar_url")
+    if not avatar_url or "demo/avatars/1.jpg" in avatar_url:
+        image_urls = json_item.get("image_urls") or []
+        avatar_url = image_urls[0] if image_urls and "demo/avatars/1.jpg" not in image_urls[0] else f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
+
+    profile_data = {
+        "r_id": r_id,
+        "name": student_dict.get("name") or json_item.get("name") or "Student",
+        "email": student_dict.get("email") or personal.get("EmailID") or f"{r_id}@student.edu",
+        "phone": student_dict.get("phone") or personal.get("Mobile No") or "N/A",
+        "gender": student_dict.get("gender") or personal.get("Gender") or "Unspecified",
+        "dob": student_dict.get("dob") or personal.get("Date of Birth") or "N/A",
+        "avatar_url": avatar_url,
+        "father_name": family.get("Father's Name") or "N/A",
+        "mother_name": family.get("Mother's Name") or "N/A",
+        "religion": personal.get("Religion") or "N/A",
+        "category": personal.get("Category") or "General",
+        "address": full_address
+    }
+
+    cursor.execute(f"""
+        SELECT t.* FROM teams t
+        JOIN team_members tm ON t.id = tm.team_id
+        WHERE UPPER(tm.student_r_id) = {p}
+        ORDER BY t.id DESC
+    """, (r_id,))
+    team_rows = cursor.fetchall()
+    conn.close()
+
+    teams_list = [format_team_data(t, r_id) for t in team_rows]
+
+    return jsonify({
+        "success": True,
+        "profile": profile_data,
+        "teams": teams_list
+    })
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
