@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>HackMate — College Hackathon Team Finder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HackMate — College Hackathon Team Matching</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -26,12 +26,12 @@
     /* Authentic iOS Circular Loading Spinner */
     .ios-spinner {
       display: inline-block;
-      width: 22px;
-      height: 22px;
-      border: 3px solid rgba(79, 70, 229, 0.2);
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(79, 70, 229, 0.2);
       border-radius: 50%;
       border-top-color: #4F46E5;
-      animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      animation: spin 0.7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     }
 
     @keyframes spin {
@@ -39,14 +39,14 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* Modern Minimalist Glass Cards */
+    /* Modern Clean Cards */
     .hm-card {
       background: #FFFFFF;
       border: 1px solid #E2E8F0;
-      border-radius: 24px;
-      padding: 28px;
+      border-radius: 20px;
+      padding: 24px;
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     .hm-card-clickable {
@@ -54,41 +54,36 @@
     }
 
     .hm-card-clickable:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 16px 32px -8px rgba(15, 23, 42, 0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.06);
       border-color: #6366F1;
     }
 
-    .hm-card-clickable:active {
-      transform: scale(0.985);
-    }
-
-    /* Substantial Premium Action Buttons */
+    /* Primary Action Buttons */
     .btn-hm-primary {
       background: #4F46E5;
       color: #FFFFFF;
       font-weight: 700;
-      font-size: 15px;
-      height: 52px;
-      padding: 0 28px;
-      border-radius: 26px;
+      font-size: 14px;
+      height: 48px;
+      padding: 0 24px;
+      border-radius: 24px;
       border: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+      transition: background-color 0.15s ease, transform 0.1s ease;
       cursor: pointer;
     }
 
     .btn-hm-primary:hover {
       background: #4338CA;
-      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
     }
 
     .btn-hm-primary:active {
-      transform: scale(0.97);
+      transform: scale(0.98);
       background: #3730A3;
     }
 
@@ -97,15 +92,15 @@
       color: #4F46E5;
       font-weight: 700;
       font-size: 14px;
-      height: 48px;
-      padding: 0 24px;
-      border-radius: 24px;
+      height: 44px;
+      padding: 0 20px;
+      border-radius: 22px;
       border: 1.5px solid #E2E8F0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: background-color 0.15s ease, border-color 0.15s ease;
       cursor: pointer;
     }
 
@@ -119,67 +114,56 @@
       color: #DC2626;
       font-weight: 700;
       font-size: 13px;
-      height: 44px;
-      padding: 0 20px;
-      border-radius: 22px;
+      height: 40px;
+      padding: 0 18px;
+      border-radius: 20px;
       border: 1px solid #FCA5A5;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
+      gap: 6px;
+      transition: background-color 0.15s ease;
       cursor: pointer;
     }
 
     .btn-hm-danger:hover {
       background: #FEE2E2;
-      border-color: #EF4444;
     }
 
     /* Seat Cards */
     .seat-card-filled {
       background: #FFFFFF;
-      border: 1.5px solid #E2E8F0;
-      border-radius: 20px;
-      padding: 18px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      border: 1px solid #E2E8F0;
+      border-radius: 16px;
+      padding: 16px;
     }
 
-    .seat-card-open-request {
-      background: #F5F3FF;
-      border: 2px dashed #C4B5FD;
-      border-radius: 20px;
-      padding: 18px;
-      transition: all 0.2s ease;
-    }
-
-    .seat-card-open-request:hover {
-      border-color: #7C3AED;
-      background: #EDE9FE;
-    }
-
-    .seat-card-open-direct {
+    .seat-card-open {
       background: #F8FAFC;
       border: 2px dashed #CBD5E1;
-      border-radius: 20px;
-      padding: 18px;
-      transition: all 0.2s ease;
+      border-radius: 16px;
+      padding: 16px;
+      transition: border-color 0.15s ease;
     }
 
-    /* Material Filter Chips */
+    .seat-card-open:hover {
+      border-color: #6366F1;
+    }
+
+    /* Filter Chips */
     .hm-chip {
-      height: 44px;
-      padding: 0 22px;
-      border-radius: 22px;
-      font-size: 14px;
+      height: 40px;
+      padding: 0 20px;
+      border-radius: 20px;
+      font-size: 13px;
       font-weight: 600;
       color: #64748B;
       background: #FFFFFF;
       border: 1px solid #E2E8F0;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      transition: all 0.2s ease;
+      gap: 6px;
+      transition: all 0.15s ease;
       cursor: pointer;
     }
 
@@ -190,21 +174,19 @@
       font-weight: 700;
     }
 
-    /* Smooth Large Overlay Modal Architecture */
+    /* Fast High-Performance Overlay Modals (Zero Lag, No Blur Filters) */
     .overlay-backdrop {
       position: fixed;
       inset: 0;
       z-index: 50;
-      background: rgba(15, 23, 42, 0.65);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.55);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 16px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.15s linear;
       overflow-y: auto;
     }
 
@@ -216,10 +198,10 @@
     .modal-container {
       background: #FFFFFF;
       border: 1px solid #E2E8F0;
-      border-radius: 32px;
-      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
-      transform: translate3d(0, 20px, 0) scale(0.97);
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 28px;
+      box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.2);
+      transform: translate3d(0, 10px, 0);
+      transition: transform 0.15s ease-out;
       width: 100%;
       max-height: 90vh;
       display: flex;
@@ -228,26 +210,26 @@
     }
 
     .overlay-backdrop.active .modal-container {
-      transform: translate3d(0, 0, 0) scale(1);
+      transform: translate3d(0, 0, 0);
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col pb-24 md:pb-12">
+<body class="min-h-screen flex flex-col pb-20 md:pb-10">
 
-  <!-- TOAST ALERTS -->
-  <div id="toastContainer" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2.5 w-[90%] max-w-sm pointer-events-none"></div>
+  <!-- TOAST NOTIFICATIONS -->
+  <div id="toastContainer" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-[90%] max-w-sm pointer-events-none"></div>
 
-  <!-- CLEAN NAVIGATION HEADER -->
-  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 h-20 py-4 px-6 sm:px-10">
-    <div class="max-w-7xl w-full mx-auto flex items-center justify-between">
+  <!-- CLEAN HEADER -->
+  <header class="sticky top-0 z-40 bg-white border-b border-slate-200 h-16 py-3 px-4 sm:px-8">
+    <div class="max-w-6xl w-full mx-auto flex items-center justify-between">
       
       <!-- Brand Logo -->
-      <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.reload()">
-        <span class="font-extrabold text-2xl sm:text-3xl text-[#4F46E8] tracking-tight">Hack</span>
-        <span class="font-extrabold text-2xl sm:text-3xl text-[#EF4444] tracking-tight">M</span>
-        <span class="font-extrabold text-2xl sm:text-3xl text-[#F59E0B] tracking-tight">a</span>
-        <span class="font-extrabold text-2xl sm:text-3xl text-[#10B981] tracking-tight">t</span>
-        <span class="font-extrabold text-2xl sm:text-3xl text-[#EF4444] tracking-tight">e</span>
+      <div class="flex items-center gap-1.5 cursor-pointer" onclick="window.location.reload()">
+        <span class="font-extrabold text-2xl text-[#4F46E8] tracking-tight">Hack</span>
+        <span class="font-extrabold text-2xl text-[#EF4444] tracking-tight">M</span>
+        <span class="font-extrabold text-2xl text-[#F59E0B] tracking-tight">a</span>
+        <span class="font-extrabold text-2xl text-[#10B981] tracking-tight">t</span>
+        <span class="font-extrabold text-2xl text-[#EF4444] tracking-tight">e</span>
       </div>
 
       <!-- Header User Slot -->
@@ -258,52 +240,49 @@
   </header>
 
   <!-- MAIN CONTAINER -->
-  <main class="max-w-7xl w-full mx-auto px-6 sm:px-10 pt-10 flex-1">
+  <main class="max-w-6xl w-full mx-auto px-4 sm:px-8 pt-8 flex-1">
 
-    <!-- HERO HERO BANNER -->
-    <div class="bg-gradient-to-r from-indigo-600 via-indigo-700 to-blue-700 rounded-[32px] p-8 sm:p-12 mb-10 text-white shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-      <div class="relative z-10 max-w-2xl">
-        <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-extrabold text-white mb-4">
-          <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i> College Hackathon Squad Builder
-        </div>
-        <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">Build Your 6-Member Winning Squad</h1>
-        <p class="text-base sm:text-lg text-indigo-100 mt-3 leading-relaxed">Pre-add teammates directly, configure per-seat request controls, or search the verified college student directory.</p>
+    <!-- CLEAN HERO BANNER (NO UNNECESSARY CLUTTER) -->
+    <div class="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-3xl p-6 sm:p-10 mb-8 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+      <div class="max-w-xl">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">Find Teammates & Build Your Squad</h1>
+        <p class="text-sm sm:text-base text-indigo-100 mt-2 leading-relaxed">Search student directory by R-ID, pre-add friends directly, or open seats for join requests.</p>
       </div>
 
-      <button onclick="handleMainCreateTeamClick()" class="btn-hm-primary bg-white text-indigo-700 hover:bg-slate-50 hover:text-indigo-800 w-full md:w-auto shrink-0 font-extrabold text-base h-14 px-9 shadow-xl">
+      <button onclick="handleMainCreateTeamClick()" class="btn-hm-primary bg-white text-indigo-700 hover:bg-slate-50 w-full md:w-auto shrink-0 font-extrabold text-sm h-12 px-7 shadow-md">
         <i data-lucide="plus-circle" class="w-5 h-5"></i> + Create Team
       </button>
     </div>
 
     <!-- SEARCH & FILTER TOOLBAR -->
-    <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-10">
+    <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-8">
       
       <!-- Search Input -->
       <div class="relative flex-1">
-        <i data-lucide="search" class="w-5 h-5 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
         <input type="text" id="searchInput" placeholder="Search teams by title or project pitch..."
-               class="w-full h-14 pl-14 pr-5 bg-white border border-slate-200 rounded-2xl text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20 shadow-xs"
+               class="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 shadow-xs"
                onkeyup="debounceSearch()">
       </div>
 
       <!-- Filter Chips -->
-      <div class="flex items-center gap-3 overflow-x-auto pb-1 md:pb-0">
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
         <button onclick="setFilter('all')" id="btnFilterAll" class="hm-chip active">All Teams</button>
         <button onclick="setFilter('open')" id="btnFilterOpen" class="hm-chip">Open Slots</button>
       </div>
     </div>
 
     <!-- TEAMS GRID -->
-    <div id="teamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+    <div id="teamsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
     <!-- EMPTY STATE -->
-    <div id="emptyState" class="hidden text-center py-24 hm-card mt-8">
-      <div class="w-20 h-20 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4">
-        <i data-lucide="users" class="w-10 h-10"></i>
+    <div id="emptyState" class="hidden text-center py-20 hm-card mt-6">
+      <div class="w-16 h-16 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="users" class="w-8 h-8"></i>
       </div>
-      <h3 class="text-lg font-extrabold text-slate-900">No teams found</h3>
+      <h3 class="text-base font-extrabold text-slate-900">No teams found</h3>
       <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">Create a team to start recruiting squad members!</p>
-      <button onclick="handleMainCreateTeamClick()" class="mt-6 btn-hm-primary">
+      <button onclick="handleMainCreateTeamClick()" class="mt-5 btn-hm-primary">
         + Create Team
       </button>
     </div>
@@ -311,14 +290,14 @@
   </main>
 
   <!-- MOBILE NAVIGATION BAR -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 h-18 px-10 flex items-center justify-between">
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 h-16 px-8 flex items-center justify-between">
     <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="text-indigo-600 p-2 flex flex-col items-center gap-0.5">
       <i data-lucide="compass" class="w-6 h-6"></i>
       <span class="text-[10px] font-bold">Discover</span>
     </button>
     
-    <button onclick="handleMainCreateTeamClick()" class="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center -mt-7 shadow-xl shadow-indigo-600/30">
-      <i data-lucide="plus" class="w-7 h-7 font-bold"></i>
+    <button onclick="handleMainCreateTeamClick()" class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center -mt-6 shadow-lg shadow-indigo-600/30">
+      <i data-lucide="plus" class="w-6 h-6 font-bold"></i>
     </button>
 
     <button onclick="openUserProfileModal()" class="text-slate-400 hover:text-slate-900 p-2 flex flex-col items-center gap-0.5">
@@ -327,33 +306,33 @@
     </button>
   </nav>
 
-  <!-- ==================== MODALS ARCHITECTURE (LARGE / FULL-SCREEN) ==================== -->
+  <!-- ==================== FAST MODALS (NO BLUR FILTERS, INSTANT DATA) ==================== -->
 
   <!-- MODAL 1: AUTHENTICATION MODAL -->
   <div id="authSheet" class="overlay-backdrop">
-    <div class="modal-container max-w-lg p-8 relative">
-      <button onclick="closeAuthSheet()" class="absolute right-6 top-6 text-slate-400 hover:text-slate-900 p-1.5 rounded-full hover:bg-slate-100">
-        <i data-lucide="x" class="w-6 h-6"></i>
+    <div class="modal-container max-w-md p-7 relative">
+      <button onclick="closeAuthSheet()" class="absolute right-5 top-5 text-slate-400 hover:text-slate-900 p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
-      <div class="mb-8">
-        <h2 class="text-2xl font-extrabold text-slate-900">Sign in with R-ID</h2>
-        <p class="text-sm text-slate-500 mt-1">Enter your College R-ID to receive a verification code on your email.</p>
+      <div class="mb-6">
+        <h2 class="text-xl font-extrabold text-slate-900">Sign in with R-ID</h2>
+        <p class="text-xs text-slate-500 mt-1">Enter your College R-ID to receive a verification code on your email.</p>
       </div>
 
       <!-- Step 1: Input R-ID -->
-      <div id="authStep1" class="space-y-5">
+      <div id="authStep1" class="space-y-4">
         <div>
-          <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">College R-ID</label>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">College R-ID</label>
           <input type="text" id="authRidInput" placeholder="e.g. R15006"
-                 class="w-full h-14 px-5 bg-white border border-slate-300 rounded-2xl text-lg text-slate-900 uppercase font-extrabold tracking-wider focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20">
+                 class="w-full h-12 px-4 bg-white border border-slate-300 rounded-xl text-base text-slate-900 uppercase font-extrabold tracking-wider focus:outline-none focus:border-indigo-600">
         </div>
 
-        <button onclick="sendEmailOtpCode()" id="btnSendOtp" class="w-full btn-hm-primary text-base">
-          <span>Send Verification Code</span> <i data-lucide="arrow-right" class="w-5 h-5"></i>
+        <button onclick="sendEmailOtpCode()" id="btnSendOtp" class="w-full btn-hm-primary text-sm">
+          <span>Send Verification Code</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
 
-        <div class="text-center pt-2">
+        <div class="text-center pt-1">
           <button onclick="showManualRegister()" class="text-xs text-indigo-600 hover:underline font-bold">
             Unlisted R-ID? Register Account ➔
           </button>
@@ -361,56 +340,56 @@
       </div>
 
       <!-- Step 2: Input OTP (Uncensored Email Display) -->
-      <div id="authStep2" class="hidden space-y-5">
-        <div class="p-5 bg-indigo-50/70 border border-indigo-100 rounded-2xl">
-          <div class="text-xs font-bold text-slate-600 mb-1">Verification code dispatched to:</div>
-          <div id="targetEmailDisplay" class="font-extrabold text-base text-indigo-700 break-all"></div>
+      <div id="authStep2" class="hidden space-y-4">
+        <div class="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+          <div class="text-xs font-bold text-slate-600 mb-0.5">Verification code sent to:</div>
+          <div id="targetEmailDisplay" class="font-extrabold text-sm text-indigo-700 break-all"></div>
         </div>
 
         <div>
-          <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2 text-center">Enter 6-Digit Code</label>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 text-center">Enter 6-Digit Code</label>
           <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6"
-                 class="w-full h-16 px-4 bg-white border-2 border-indigo-600 rounded-2xl text-center text-3xl font-mono tracking-widest text-slate-900 focus:outline-none shadow-xs">
+                 class="w-full h-14 px-4 bg-white border-2 border-indigo-600 rounded-xl text-center text-2xl font-mono tracking-widest text-slate-900 focus:outline-none">
         </div>
 
-        <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="w-full btn-hm-primary text-base">
-          <span>Verify & Sign In</span> <i data-lucide="check" class="w-5 h-5"></i>
+        <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="w-full btn-hm-primary text-sm">
+          <span>Verify & Sign In</span> <i data-lucide="check" class="w-4 h-4"></i>
         </button>
 
-        <button onclick="showAuthStep(1)" class="w-full text-xs text-slate-500 hover:text-slate-900 py-2 font-bold">
+        <button onclick="showAuthStep(1)" class="w-full text-xs text-slate-500 hover:text-slate-900 py-1 font-bold">
           ← Back to R-ID Input
         </button>
       </div>
 
       <!-- Step 3: Manual Register -->
-      <div id="authStepRegister" class="hidden space-y-4">
-        <input type="text" id="regRid" placeholder="College R-ID (e.g. R15006)" class="w-full h-13 px-4 bg-white border border-slate-300 rounded-2xl text-sm font-extrabold uppercase">
-        <input type="text" id="regName" placeholder="Full Name" class="w-full h-13 px-4 bg-white border border-slate-300 rounded-2xl text-sm">
-        <input type="email" id="regEmail" placeholder="College Email Address" class="w-full h-13 px-4 bg-white border border-slate-300 rounded-2xl text-sm">
-        <select id="regGender" class="w-full h-13 px-4 bg-white border border-slate-300 rounded-2xl text-sm font-medium">
+      <div id="authStepRegister" class="hidden space-y-3">
+        <input type="text" id="regRid" placeholder="College R-ID (e.g. R15006)" class="w-full h-11 px-4 bg-white border border-slate-300 rounded-xl text-xs font-extrabold uppercase">
+        <input type="text" id="regName" placeholder="Full Name" class="w-full h-11 px-4 bg-white border border-slate-300 rounded-xl text-xs">
+        <input type="email" id="regEmail" placeholder="College Email Address" class="w-full h-11 px-4 bg-white border border-slate-300 rounded-xl text-xs">
+        <select id="regGender" class="w-full h-11 px-4 bg-white border border-slate-300 rounded-xl text-xs font-medium">
           <option value="Male">Male</option>
           <option value="Female">Female</option>
           <option value="Other">Other</option>
         </select>
-        <input type="text" id="regDob" placeholder="Date of Birth (e.g. 12 Nov 2002)" class="w-full h-13 px-4 bg-white border border-slate-300 rounded-2xl text-sm">
-        <button onclick="submitManualRegister()" class="w-full btn-hm-primary mt-2 text-base">
+        <input type="text" id="regDob" placeholder="Date of Birth (e.g. 12 Nov 2002)" class="w-full h-11 px-4 bg-white border border-slate-300 rounded-xl text-xs">
+        <button onclick="submitManualRegister()" class="w-full btn-hm-primary mt-1 text-sm">
           Register & Sign In
         </button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 2: USER PROFILE OVERLAY MODAL -->
+  <!-- MODAL 2: USER PROFILE MODAL -->
   <div id="userProfileSheet" class="overlay-backdrop">
-    <div class="modal-container max-w-3xl p-8 sm:p-10 relative overflow-y-auto">
-      <button onclick="closeUserProfileModal()" class="absolute right-6 top-6 text-slate-400 hover:text-slate-900 p-1.5 rounded-full hover:bg-slate-100 z-10">
-        <i data-lucide="x" class="w-6 h-6"></i>
+    <div class="modal-container max-w-2xl p-7 relative overflow-y-auto">
+      <button onclick="closeUserProfileModal()" class="absolute right-5 top-5 text-slate-400 hover:text-slate-900 p-1 z-10">
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
       <div id="userProfileContent">
-        <div class="py-16 text-center">
+        <div class="py-12 text-center">
           <div class="ios-spinner mx-auto mb-3"></div>
-          <p class="text-xs text-slate-500 font-bold">Loading profile details...</p>
+          <p class="text-xs text-slate-500 font-bold">Loading profile...</p>
         </div>
       </div>
     </div>
@@ -418,109 +397,109 @@
 
   <!-- MODAL 3: CREATE TEAM MODAL -->
   <div id="createTeamSheet" class="overlay-backdrop">
-    <div class="modal-container max-w-3xl p-8 sm:p-10 relative overflow-y-auto">
-      <button onclick="closeCreateTeamSheet()" class="absolute right-6 top-6 text-slate-400 hover:text-slate-900 p-1.5 rounded-full hover:bg-slate-100 z-10">
-        <i data-lucide="x" class="w-6 h-6"></i>
+    <div class="modal-container max-w-2xl p-7 relative overflow-y-auto">
+      <button onclick="closeCreateTeamSheet()" class="absolute right-5 top-5 text-slate-400 hover:text-slate-900 p-1 z-10">
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
-      <h2 class="text-2xl font-extrabold text-slate-900 mb-1">Create Hackathon Team</h2>
-      <p class="text-sm text-slate-500 mb-8">Build your 6-seat squad: pre-add teammates or leave seats open for recruitment.</p>
+      <h2 class="text-xl font-extrabold text-slate-900 mb-1">Create Team</h2>
+      <p class="text-xs text-slate-500 mb-6">Build your 6-seat squad: pre-add friends or leave seats open for requests.</p>
 
-      <div class="space-y-6">
+      <div class="space-y-4">
         <div>
-          <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">Team Title *</label>
-          <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, EmeraldSquad" class="w-full h-14 px-5 bg-white border border-slate-300 rounded-2xl text-lg font-bold text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20">
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Team Title *</label>
+          <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, EmeraldSquad" class="w-full h-12 px-4 bg-white border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:border-indigo-600">
         </div>
 
         <div>
-          <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">Project Pitch & Details</label>
-          <textarea id="teamDescInput" rows="3" placeholder="Describe your hackathon project pitch, goals, or required skillsets..." class="w-full p-4 bg-white border border-slate-300 rounded-2xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/20"></textarea>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Project Pitch</label>
+          <textarea id="teamDescInput" rows="2.5" placeholder="Describe your hackathon project pitch or required skills..." class="w-full p-3.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-600"></textarea>
         </div>
 
         <div>
-          <label class="block text-xs font-extrabold text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-2">
-            <i data-lucide="message-circle" class="w-4 h-4"></i> WhatsApp Group Chat Link (Optional)
+          <label class="block text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <i data-lucide="message-circle" class="w-4 h-4"></i> WhatsApp Group Link (Optional)
           </label>
-          <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="w-full h-13 px-4 bg-white border border-slate-300 rounded-2xl text-sm font-medium">
+          <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="w-full h-11 px-4 bg-white border border-slate-300 rounded-xl text-xs font-medium">
         </div>
 
         <!-- SEARCH & PRE-ADD FRIENDS -->
-        <div class="pt-4 border-t border-slate-200">
-          <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-2">Search & Pre-Add Teammates by R-ID / Name</label>
+        <div class="pt-3 border-t border-slate-200">
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Search & Pre-Add Teammates directly</label>
           <div class="relative">
-            <i data-lucide="user-plus" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input type="text" id="friendSearchInput" placeholder="Type student R-ID or Name..." class="w-full h-13 pl-12 pr-4 bg-white border border-slate-300 rounded-2xl text-sm focus:outline-none focus:border-indigo-600" onkeyup="searchFriends()">
+            <i data-lucide="user-plus" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="friendSearchInput" placeholder="Type student R-ID or Name..." class="w-full h-11 pl-10 pr-4 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-indigo-600" onkeyup="searchFriends()">
             
-            <div id="friendSearchLoading" class="hidden absolute right-4 top-1/2 -translate-y-1/2">
+            <div id="friendSearchLoading" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2">
               <div class="ios-spinner"></div>
             </div>
 
             <!-- SEARCH RESULTS -->
-            <div id="friendSearchResults" class="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-2xl z-30 max-h-60 overflow-y-auto hidden shadow-2xl"></div>
+            <div id="friendSearchResults" class="absolute left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl z-30 max-h-56 overflow-y-auto hidden shadow-xl"></div>
           </div>
         </div>
 
         <!-- VISUAL 6 SEATS -->
         <div>
-          <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-3">Visual 6-Seat Preview</label>
-          <div id="createTeamSeatsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Visual 6-Seat Preview</label>
+          <div id="createTeamSeatsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
         </div>
 
-        <button onclick="submitCreateTeam()" id="btnSubmitCreateTeam" class="w-full btn-hm-primary text-base h-14 mt-4">
-          <span>Create & Publish Team</span> <i data-lucide="rocket" class="w-5 h-5"></i>
+        <button onclick="submitCreateTeam()" id="btnSubmitCreateTeam" class="w-full btn-hm-primary text-sm h-12 mt-2">
+          <span>Create & Publish Team</span> <i data-lucide="rocket" class="w-4 h-4"></i>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL 4: DETAILED TEAM PANEL (LARGE SPACIOUS MODAL WITH PER-SEAT TOGGLES) -->
+  <!-- MODAL 4: DETAILED TEAM PANEL (INSTANT LOADING, ZERO LAG) -->
   <div id="teamDetailSheet" class="overlay-backdrop">
-    <div class="modal-container max-w-4xl p-8 sm:p-10 relative overflow-y-auto">
-      <button onclick="closeTeamDetailSheet()" class="absolute right-6 top-6 text-slate-400 hover:text-slate-900 p-1.5 rounded-full hover:bg-slate-100 z-10">
-        <i data-lucide="x" class="w-6 h-6"></i>
+    <div class="modal-container max-w-3xl p-7 relative overflow-y-auto">
+      <button onclick="closeTeamDetailSheet()" class="absolute right-5 top-5 text-slate-400 hover:text-slate-900 p-1 z-10">
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
       <div id="teamDetailContent">
-        <!-- Rendered dynamically -->
+        <!-- Rendered instantly via JS cache -->
       </div>
     </div>
   </div>
 
   <!-- MODAL 5: DIRECT ADD SEARCH MODAL FOR LEADER -->
   <div id="addTeammateModal" class="overlay-backdrop">
-    <div class="modal-container max-w-xl p-8 relative">
-      <button onclick="closeAddTeammateModal()" class="absolute right-6 top-6 text-slate-400 hover:text-slate-900 p-1.5 rounded-full hover:bg-slate-100 z-10">
-        <i data-lucide="x" class="w-6 h-6"></i>
+    <div class="modal-container max-w-lg p-6 relative">
+      <button onclick="closeAddTeammateModal()" class="absolute right-5 top-5 text-slate-400 hover:text-slate-900 p-1 z-10">
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
-      <h3 class="text-xl font-extrabold text-slate-900 mb-1">Add Teammate Directly</h3>
-      <p class="text-xs text-slate-500 mb-6">Search student database by R-ID or Name to add directly to your squad.</p>
+      <h3 class="text-lg font-extrabold text-slate-900 mb-1">Add Teammate Directly</h3>
+      <p class="text-xs text-slate-500 mb-4">Search student database by R-ID or Name to add directly to your squad.</p>
 
-      <div class="relative mb-6">
-        <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-        <input type="text" id="directAddSearchInput" placeholder="Search R-ID or Name..." class="w-full h-13 pl-12 pr-4 bg-white border border-slate-300 rounded-2xl text-sm focus:outline-none focus:border-indigo-600" onkeyup="searchDirectAddCandidate()">
+      <div class="relative mb-4">
+        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input type="text" id="directAddSearchInput" placeholder="Search R-ID or Name..." class="w-full h-11 pl-10 pr-4 bg-white border border-slate-300 rounded-xl text-xs focus:outline-none focus:border-indigo-600" onkeyup="searchDirectAddCandidate()">
       </div>
 
-      <div id="directAddSearchResults" class="max-h-72 overflow-y-auto space-y-3">
-        <div class="text-xs text-slate-400 text-center py-8">Type student R-ID or name above</div>
+      <div id="directAddSearchResults" class="max-h-64 overflow-y-auto space-y-2">
+        <div class="text-xs text-slate-400 text-center py-6">Type student R-ID or name above</div>
       </div>
     </div>
   </div>
 
   <!-- MODAL 6: REQUEST TO JOIN MODAL -->
   <div id="joinSheet" class="overlay-backdrop">
-    <div class="modal-container max-w-lg p-8 relative">
-      <button onclick="closeJoinSheet()" class="absolute right-6 top-6 text-slate-400 hover:text-slate-900 p-1.5 rounded-full hover:bg-slate-100 z-10">
-        <i data-lucide="x" class="w-6 h-6"></i>
+    <div class="modal-container max-w-md p-6 relative">
+      <button onclick="closeJoinSheet()" class="absolute right-5 top-5 text-slate-400 hover:text-slate-900 p-1 z-10">
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
-      <h2 class="text-xl font-extrabold text-slate-900 mb-1">Request to Join Team</h2>
-      <p class="text-base font-extrabold text-indigo-600 mb-6" id="joinTeamName"></p>
+      <h2 class="text-lg font-extrabold text-slate-900 mb-1">Request to Join Team</h2>
+      <p class="text-sm font-bold text-indigo-600 mb-4" id="joinTeamName"></p>
 
-      <textarea id="joinMessageInput" rows="4" placeholder="Introduce yourself or mention your skills to the team leader..." class="w-full p-4 bg-white border border-slate-300 rounded-2xl text-sm text-slate-900 focus:outline-none focus:border-indigo-600 mb-6"></textarea>
+      <textarea id="joinMessageInput" rows="3" placeholder="Write a short message to the team leader..." class="w-full p-3.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-indigo-600 mb-4"></textarea>
 
-      <button onclick="submitJoinRequest()" id="btnSubmitJoinRequest" class="w-full btn-hm-primary text-base">
-        <span>Send Join Request</span> <i data-lucide="send" class="w-5 h-5"></i>
+      <button onclick="submitJoinRequest()" id="btnSubmitJoinRequest" class="w-full btn-hm-primary text-sm">
+        <span>Send Join Request</span> <i data-lucide="send" class="w-4 h-4"></i>
       </button>
     </div>
   </div>
@@ -533,6 +512,9 @@
     let targetTeamIdToJoin = null;
     let tempAuthRid = null;
     let activeTeamIdForDirectAdd = null;
+    
+    // Global Team Cache for Instant 0ms Panel Rendering
+    window.cachedTeamsMap = {};
 
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
@@ -543,11 +525,11 @@
     function showToast(msg) {
       const c = document.getElementById("toastContainer");
       const t = document.createElement("div");
-      t.className = `pointer-events-auto px-6 py-3.5 rounded-full text-xs font-bold shadow-xl bg-slate-900 text-white text-center border border-slate-700`;
+      t.className = `pointer-events-auto px-5 py-3 rounded-full text-xs font-bold shadow-lg bg-slate-900 text-white text-center border border-slate-700`;
       t.innerHTML = `<span>${msg}</span>`;
       c.appendChild(t);
 
-      setTimeout(() => t.remove(), 3200);
+      setTimeout(() => t.remove(), 3000);
     }
 
     function loadUserFromSession() {
@@ -577,18 +559,18 @@
       const slot = document.getElementById("headerUserSlot");
       if (currentUser) {
         slot.innerHTML = `
-          <button onclick="openMyTeamWorkspace()" class="btn-hm-outlined text-xs h-11 px-5 rounded-full font-bold">
+          <button onclick="openMyTeamWorkspace()" class="btn-hm-outlined text-xs h-10 px-4 rounded-full font-bold">
             <i data-lucide="users" class="w-4 h-4 text-indigo-600"></i> My Team
           </button>
           
-          <button onclick="openUserProfileModal()" class="flex items-center gap-3 bg-white hover:bg-slate-50 border border-slate-300 px-4 py-2 rounded-full transition-all cursor-pointer shadow-xs">
-            <img src="${currentUser.avatar_url}" class="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 object-cover">
+          <button onclick="openUserProfileModal()" class="flex items-center gap-2.5 bg-white hover:bg-slate-50 border border-slate-300 px-3.5 py-1.5 rounded-full transition-all cursor-pointer shadow-xs">
+            <img src="${currentUser.avatar_url}" class="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 object-cover">
             <span class="text-xs text-slate-900 font-extrabold">${escapeHtml(currentUser.name.split(' ')[0])}</span>
           </button>
         `;
       } else {
         slot.innerHTML = `
-          <button onclick="openAuthSheet()" class="btn-hm-primary text-xs h-11 px-6">
+          <button onclick="openAuthSheet()" class="btn-hm-primary text-xs h-10 px-5">
             Sign In with R-ID
           </button>
         `;
@@ -614,9 +596,9 @@
       const content = document.getElementById("userProfileContent");
       
       content.innerHTML = `
-        <div class="py-16 text-center">
+        <div class="py-12 text-center">
           <div class="ios-spinner mx-auto mb-3"></div>
-          <p class="text-xs text-slate-500 font-bold">Fetching college profile record...</p>
+          <p class="text-xs text-slate-500 font-bold">Loading profile...</p>
         </div>
       `;
 
@@ -646,15 +628,15 @@
 
       let teamsListHtml = "";
       if (!userTeams || userTeams.length === 0) {
-        teamsListHtml = `<div class="p-5 bg-slate-50 rounded-2xl text-xs text-slate-500 text-center font-bold">You are not currently in any hackathon team.</div>`;
+        teamsListHtml = `<div class="p-4 bg-slate-50 rounded-2xl text-xs text-slate-500 text-center font-bold">You are not currently in any hackathon team.</div>`;
       } else {
         teamsListHtml = userTeams.map(t => `
-          <div class="p-5 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex items-center justify-between gap-4">
+          <div class="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex items-center justify-between gap-3">
             <div>
-              <div class="text-base font-extrabold text-slate-900">${escapeHtml(t.name)}</div>
+              <div class="text-sm font-extrabold text-slate-900">${escapeHtml(t.name)}</div>
               <div class="text-xs text-slate-500 font-medium">Role: <span class="font-bold text-indigo-600 uppercase">${t.user_status}</span> • ${t.member_count}/6 Members</div>
             </div>
-            <button onclick="closeUserProfileModal(); openTeamDetailSheet(${t.id});" class="btn-hm-primary text-xs h-10 px-5">
+            <button onclick="closeUserProfileModal(); openTeamDetailSheet(${t.id});" class="btn-hm-primary text-xs h-9 px-4">
               Open Panel ➔
             </button>
           </div>
@@ -662,62 +644,62 @@
       }
 
       content.innerHTML = `
-        <div class="space-y-8">
+        <div class="space-y-6">
           
           <!-- Avatar & Header -->
-          <div class="flex items-center gap-6 p-6 bg-gradient-to-r from-indigo-50 via-blue-50 to-indigo-50 border border-indigo-100 rounded-3xl">
-            <img src="${prof.avatar_url}" class="w-24 h-24 rounded-full border-4 border-white shadow-md bg-white object-cover shrink-0">
+          <div class="flex items-center gap-5 p-5 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-100 rounded-3xl">
+            <img src="${prof.avatar_url}" class="w-20 h-20 rounded-full border-4 border-white shadow-md bg-white object-cover shrink-0">
             <div>
-              <h2 class="text-2xl font-extrabold text-slate-900">${escapeHtml(prof.name)}</h2>
-              <div class="inline-flex items-center gap-3 mt-2">
-                <span class="bg-indigo-600 text-white text-xs font-extrabold px-3.5 py-1 rounded-full">${prof.r_id}</span>
+              <h2 class="text-xl font-extrabold text-slate-900">${escapeHtml(prof.name)}</h2>
+              <div class="inline-flex items-center gap-2 mt-1.5">
+                <span class="bg-indigo-600 text-white text-xs font-extrabold px-3 py-0.5 rounded-full">${prof.r_id}</span>
                 <span class="text-xs font-bold text-slate-600">${prof.gender}</span>
               </div>
             </div>
           </div>
 
-          <!-- College Record Details Grid -->
+          <!-- Record Details -->
           <div>
-            <h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-4">Official College Records</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+            <h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-3">College Details</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
                 <div class="text-[11px] font-bold text-slate-400 uppercase">Email Address</div>
-                <div class="text-xs font-bold text-slate-900 break-all mt-1">${escapeHtml(prof.email)}</div>
+                <div class="text-xs font-bold text-slate-900 break-all mt-0.5">${escapeHtml(prof.email)}</div>
               </div>
 
-              <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
                 <div class="text-[11px] font-bold text-slate-400 uppercase">Phone Number</div>
-                <div class="text-xs font-bold text-slate-900 mt-1">${escapeHtml(prof.phone || 'N/A')}</div>
+                <div class="text-xs font-bold text-slate-900 mt-0.5">${escapeHtml(prof.phone || 'N/A')}</div>
               </div>
 
-              <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
                 <div class="text-[11px] font-bold text-slate-400 uppercase">Date of Birth</div>
-                <div class="text-xs font-bold text-indigo-600 mt-1">${escapeHtml(prof.dob || 'N/A')}</div>
+                <div class="text-xs font-bold text-indigo-600 mt-0.5">${escapeHtml(prof.dob || 'N/A')}</div>
               </div>
 
-              <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+              <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
                 <div class="text-[11px] font-bold text-slate-400 uppercase">Father's Name</div>
-                <div class="text-xs font-bold text-slate-900 mt-1">${escapeHtml(prof.father_name || 'N/A')}</div>
+                <div class="text-xs font-bold text-slate-900 mt-0.5">${escapeHtml(prof.father_name || 'N/A')}</div>
               </div>
 
-              <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl sm:col-span-2">
+              <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl sm:col-span-2">
                 <div class="text-[11px] font-bold text-slate-400 uppercase">Residential Address</div>
-                <div class="text-xs font-bold text-slate-900 mt-1 leading-relaxed">${escapeHtml(prof.address)}</div>
+                <div class="text-xs font-bold text-slate-900 mt-0.5 leading-relaxed">${escapeHtml(prof.address)}</div>
               </div>
             </div>
           </div>
 
           <!-- My Teams -->
           <div>
-            <h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-4">Joined Squads</h3>
-            <div class="space-y-3">
+            <h3 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-3">Joined Teams</h3>
+            <div class="space-y-2">
               ${teamsListHtml}
             </div>
           </div>
 
           <!-- Actions -->
-          <div class="pt-6 border-t border-slate-200 flex justify-end">
-            <button onclick="closeUserProfileModal(); logoutUser();" class="btn-hm-danger text-xs h-11 px-6">
+          <div class="pt-4 border-t border-slate-200 flex justify-end">
+            <button onclick="closeUserProfileModal(); logoutUser();" class="btn-hm-danger text-xs h-10 px-5">
               <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
             </button>
           </div>
@@ -775,7 +757,7 @@
       } catch(err) {
         showToast("Server error sending code");
       } finally {
-        btn.innerHTML = `<span>Send Verification Code</span> <i data-lucide="arrow-right" class="w-5 h-5"></i>`;
+        btn.innerHTML = `<span>Send Verification Code</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
         btn.disabled = false;
         lucide.createIcons();
       }
@@ -811,7 +793,7 @@
       } catch(err) {
         showToast("Server error verifying code");
       } finally {
-        btn.innerHTML = `<span>Verify & Sign In</span> <i data-lucide="check" class="w-5 h-5"></i>`;
+        btn.innerHTML = `<span>Verify & Sign In</span> <i data-lucide="check" class="w-4 h-4"></i>`;
         btn.disabled = false;
         lucide.createIcons();
       }
@@ -845,12 +827,12 @@
       } catch(e) { showToast("Registration error"); }
     }
 
-    /* --- TEAMS LISTING & CARDS REDESIGN --- */
+    /* --- TEAMS LISTING & CARDS --- */
 
     let searchDebounce = null;
     function debounceSearch() {
       clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(() => fetchTeams(), 300);
+      searchDebounce = setTimeout(() => fetchTeams(), 250);
     }
 
     function setFilter(filter) {
@@ -875,70 +857,64 @@
     function renderTeams(teams) {
       const grid = document.getElementById("teamsGrid");
       const empty = document.getElementById("emptyState");
-      grid.innerHTML = "";
 
       if (!teams || teams.length === 0) {
+        grid.innerHTML = "";
         empty.classList.remove("hidden");
         return;
       }
       empty.classList.add("hidden");
 
+      let html = "";
       teams.forEach(t => {
-        const card = document.createElement("div");
-        card.className = "hm-card hm-card-clickable flex flex-col justify-between";
-        card.onclick = () => openTeamDetailSheet(t.id);
+        // Cache team data locally for instant 0ms modal opening
+        window.cachedTeamsMap[t.id] = t;
 
         let seatsAvatarsHtml = "";
-        const seatModes = t.seat_modes || ["request","request","request","request","request"];
-        
         for (let i = 0; i < 6; i++) {
           const m = t.members[i];
           if (m) {
-            seatsAvatarsHtml += `<img src="${m.avatar_url}" class="w-9 h-9 rounded-full border-2 border-white bg-slate-100 object-cover shadow-xs" title="${escapeHtml(m.name)}">`;
+            seatsAvatarsHtml += `<img src="${m.avatar_url}" class="w-8 h-8 rounded-full border-2 border-white bg-slate-100 object-cover shadow-xs" title="${escapeHtml(m.name)}">`;
           } else {
-            const mode = seatModes[i - 1] || 'request';
-            if (mode === 'request') {
-              seatsAvatarsHtml += `<div class="w-9 h-9 rounded-full border-2 border-dashed border-indigo-300 bg-indigo-50/70 flex items-center justify-center text-xs text-indigo-600 font-bold" title="Open for requests">📩</div>`;
-            } else {
-              seatsAvatarsHtml += `<div class="w-9 h-9 rounded-full border-2 border-dashed border-slate-300 bg-slate-100 flex items-center justify-center text-xs text-slate-500 font-bold" title="Invitation only">🔒</div>`;
-            }
+            seatsAvatarsHtml += `<div class="w-8 h-8 rounded-full border-2 border-dashed border-indigo-300 bg-indigo-50 flex items-center justify-center text-xs text-indigo-600 font-bold" title="Open Seat">+</div>`;
           }
         }
 
         const tagColor = t.has_female ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200';
         const tagText = t.has_female ? '✓ Gender Balanced' : '⚡ Needs Female Teammate';
 
-        card.innerHTML = `
-          <div>
-            <div class="flex items-start justify-between gap-3 mb-3">
-              <h3 class="font-extrabold text-slate-900 text-xl leading-snug">${escapeHtml(t.name)}</h3>
-              <span class="text-xs font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-200 px-3.5 py-1 rounded-full shrink-0">${t.member_count}/6 Seats</span>
+        html += `
+          <div onclick="openTeamDetailSheet(${t.id})" class="hm-card hm-card-clickable flex flex-col justify-between">
+            <div>
+              <div class="flex items-start justify-between gap-3 mb-2">
+                <h3 class="font-extrabold text-slate-900 text-lg leading-snug">${escapeHtml(t.name)}</h3>
+                <span class="text-xs font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full shrink-0">${t.member_count}/6 Seats</span>
+              </div>
+
+              <p class="text-slate-600 text-xs line-clamp-2 mb-4 leading-relaxed">${escapeHtml(t.description || 'No pitch provided.')}</p>
+
+              <!-- Status Tag -->
+              <div class="mb-4">
+                <span class="text-xs font-extrabold border ${tagColor} px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                  ${tagText}
+                </span>
+              </div>
+
+              <!-- 6 Visual Seats Grid Bar -->
+              <div class="flex items-center gap-1.5 mb-5">
+                ${seatsAvatarsHtml}
+              </div>
             </div>
 
-            <p class="text-slate-600 text-xs line-clamp-2 mb-5 leading-relaxed">${escapeHtml(t.description || 'No pitch provided.')}</p>
-
-            <!-- Status Tag -->
-            <div class="mb-5">
-              <span class="text-xs font-extrabold border ${tagColor} px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-                ${tagText}
-              </span>
+            <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-500">${t.is_full ? 'Fully Staffed (6/6)' : (6 - t.member_count) + ' Open Slots'}</span>
+              <button class="btn-hm-outlined text-xs h-9 px-4">View Team Panel ➔</button>
             </div>
-
-            <!-- 6 Visual Seats Grid Bar -->
-            <div class="flex items-center gap-2 mb-6">
-              ${seatsAvatarsHtml}
-            </div>
-          </div>
-
-          <div class="pt-5 border-t border-slate-100 flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-500">${t.is_full ? 'Fully Staffed (6/6)' : (6 - t.member_count) + ' Open Slots'}</span>
-            <button class="btn-hm-outlined text-xs h-10 px-5">View Team Panel ➔</button>
           </div>
         `;
-
-        grid.appendChild(card);
       });
 
+      grid.innerHTML = html;
       lucide.createIcons();
     }
 
@@ -983,19 +959,19 @@
         } else {
           filtered.forEach(s => {
             const item = document.createElement("div");
-            item.className = "p-4 hover:bg-indigo-50 flex items-center justify-between cursor-pointer border-b border-slate-100 last:border-0";
+            item.className = "p-3.5 hover:bg-indigo-50 flex items-center justify-between cursor-pointer border-b border-slate-100 last:border-0";
             item.onclick = () => addFriendToTeam(s);
 
             item.innerHTML = `
               <div class="flex items-center gap-3">
-                <img src="${s.avatar_url}" class="w-11 h-11 rounded-full bg-slate-100 border border-slate-200 shrink-0 object-cover">
+                <img src="${s.avatar_url}" class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 shrink-0 object-cover">
                 <div>
                   <div class="text-xs font-bold text-slate-900">${escapeHtml(s.name)}</div>
                   <div class="text-[11px] text-slate-500 font-medium">${s.r_id} • ${s.gender}</div>
                   <div class="text-[10px] text-indigo-600 font-semibold">${escapeHtml(s.email)} • DOB: ${escapeHtml(s.dob || 'N/A')}</div>
                 </div>
               </div>
-              <span class="text-xs font-extrabold text-indigo-600 bg-indigo-100 px-3.5 py-1.5 rounded-full shrink-0">+ Add</span>
+              <span class="text-xs font-extrabold text-indigo-600 bg-indigo-100 px-3 py-1 rounded-full shrink-0">+ Add</span>
             `;
             resultsDiv.appendChild(item);
           });
@@ -1026,8 +1002,8 @@
 
       // Seat 1: Leader
       container.innerHTML += `
-        <div class="seat-card-filled flex items-center gap-3 border-indigo-200 bg-indigo-50/40">
-          <img src="${currentUser.avatar_url}" class="w-11 h-11 rounded-full bg-white shrink-0 border border-slate-200 object-cover">
+        <div class="seat-card-filled flex items-center gap-3 border-indigo-200 bg-indigo-50/30">
+          <img src="${currentUser.avatar_url}" class="w-10 h-10 rounded-full bg-white shrink-0 border border-slate-200 object-cover">
           <div class="flex-1 min-w-0">
             <div class="text-xs font-extrabold text-slate-900 truncate">${escapeHtml(currentUser.name)}</div>
             <div class="text-[11px] text-indigo-600 font-bold">Seat 1 • Leader (You)</div>
@@ -1042,23 +1018,23 @@
           container.innerHTML += `
             <div class="seat-card-filled flex items-center justify-between gap-2">
               <div class="flex items-center gap-3 min-w-0">
-                <img src="${friend.avatar_url}" class="w-11 h-11 rounded-full bg-white shrink-0 border border-slate-200 object-cover">
+                <img src="${friend.avatar_url}" class="w-10 h-10 rounded-full bg-white shrink-0 border border-slate-200 object-cover">
                 <div class="min-w-0">
                   <div class="text-xs font-bold text-slate-900 truncate">${escapeHtml(friend.name)}</div>
                   <div class="text-[11px] text-slate-500 font-medium">${friend.r_id} • Added</div>
                 </div>
               </div>
-              <button onclick="removeFriend('${friend.r_id}')" class="text-slate-400 hover:text-red-600 font-bold p-1 text-lg">×</button>
+              <button onclick="removeFriend('${friend.r_id}')" class="text-slate-400 hover:text-red-600 font-bold p-1 text-base">×</button>
             </div>
           `;
         } else {
           container.innerHTML += `
-            <div class="seat-card-open-request flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">+</div>
+            <div class="seat-card-open flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">+</div>
                 <div>
                   <div class="text-xs font-bold text-slate-800">Seat ${i + 2} Open</div>
-                  <div class="text-[10px] text-indigo-600 font-bold">Recruiting Member</div>
+                  <div class="text-[10px] text-indigo-600 font-bold">Open for Requests</div>
                 </div>
               </div>
             </div>
@@ -1103,39 +1079,43 @@
       } catch(e) {
         showToast("Error creating team");
       } finally {
-        btn.innerHTML = `<span>Create & Publish Team</span> <i data-lucide="rocket" class="w-5 h-5"></i>`;
+        btn.innerHTML = `<span>Create & Publish Team</span> <i data-lucide="rocket" class="w-4 h-4"></i>`;
         btn.disabled = false;
         lucide.createIcons();
       }
     }
 
-    /* --- DETAILED TEAM PANEL MODAL (WITH PER-SEAT TOGGLES & DIRECT ADD) --- */
+    /* --- DETAILED TEAM PANEL MODAL (INSTANT 0MS DATA RENDERING) --- */
 
     async function openTeamDetailSheet(teamId) {
+      const modal = document.getElementById("teamDetailSheet");
       const content = document.getElementById("teamDetailContent");
-      content.innerHTML = `
-        <div class="py-16 text-center">
-          <div class="ios-spinner mx-auto mb-3"></div>
-          <p class="text-xs text-slate-500 font-bold">Loading team panel...</p>
-        </div>
-      `;
 
-      document.getElementById("teamDetailSheet").classList.add("active");
+      // INSTANT 0MS RENDERING: If team is already cached locally, render immediately without showing spinner!
+      if (window.cachedTeamsMap[teamId]) {
+        renderTeamDetailPanel(window.cachedTeamsMap[teamId]);
+      } else {
+        content.innerHTML = `
+          <div class="py-12 text-center">
+            <div class="ios-spinner mx-auto mb-3"></div>
+            <p class="text-xs text-slate-500 font-bold">Opening team panel...</p>
+          </div>
+        `;
+      }
 
+      modal.classList.add("active");
+
+      // Background fresh fetch silently
       try {
         const r_id = currentUser ? currentUser.r_id : '';
         const res = await fetch(`/api/teams/${teamId}?r_id=${encodeURIComponent(r_id)}`);
         const data = await res.json();
 
-        if (!data.success) {
-          content.innerHTML = `<div class="p-6 text-center text-xs text-red-500 font-bold">${data.message}</div>`;
-          return;
+        if (data.success) {
+          window.cachedTeamsMap[teamId] = data.team;
+          renderTeamDetailPanel(data.team);
         }
-
-        renderTeamDetailPanel(data.team);
-      } catch(e) {
-        content.innerHTML = `<div class="p-6 text-center text-xs text-red-500 font-bold">Failed to load team panel</div>`;
-      }
+      } catch(e) {}
     }
 
     function closeTeamDetailSheet() {
@@ -1147,8 +1127,6 @@
       const isLeader = team.user_status === 'leader';
       const isMember = team.user_status === 'member';
 
-      const seatModes = team.seat_modes || ["request","request","request","request","request"];
-
       let seatsHtml = "";
       for (let i = 0; i < 6; i++) {
         const member = team.members[i];
@@ -1158,20 +1136,20 @@
           const canRemove = isLeader && member.role !== 'leader';
 
           seatsHtml += `
-            <div class="seat-card-filled flex items-center justify-between gap-4">
-              <div class="flex items-center gap-4 min-w-0">
-                <img src="${member.avatar_url}" class="w-14 h-14 rounded-full bg-slate-100 border border-slate-200 shrink-0 object-cover">
+            <div class="seat-card-filled flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3.5 min-w-0">
+                <img src="${member.avatar_url}" class="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 shrink-0 object-cover">
                 <div class="min-w-0">
-                  <div class="text-base font-extrabold text-slate-900 truncate flex items-center gap-2">
+                  <div class="text-sm font-extrabold text-slate-900 truncate flex items-center gap-1.5">
                     ${escapeHtml(member.name)} ${isMe ? '<span class="text-[10px] text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full font-bold">(You)</span>' : ''}
                   </div>
                   <div class="text-xs text-slate-500 font-medium">${member.r_id} • ${member.gender}</div>
-                  <div class="text-xs text-indigo-600 font-semibold truncate mt-0.5">${escapeHtml(member.email)} • DOB: ${escapeHtml(member.dob || 'N/A')}</div>
+                  <div class="text-[11px] text-indigo-600 font-semibold truncate mt-0.5">${escapeHtml(member.email)} • DOB: ${escapeHtml(member.dob || 'N/A')}</div>
                 </div>
               </div>
 
               <div class="flex items-center gap-2 shrink-0">
-                <span class="text-xs font-bold ${member.role === 'leader' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-slate-100 text-slate-700 border border-slate-200'} px-3 py-1 rounded-full uppercase">
+                <span class="text-[10px] font-bold ${member.role === 'leader' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-slate-100 text-slate-700 border border-slate-200'} px-2.5 py-1 rounded-full uppercase">
                   ${member.role}
                 </span>
 
@@ -1184,47 +1162,26 @@
             </div>
           `;
         } else {
-          const seatIndex = i - 1; // 0 to 4 for seats 2 to 6
-          const currentSeatMode = seatModes[seatIndex] || 'request';
-
           seatsHtml += `
-            <div class="${currentSeatMode === 'request' ? 'seat-card-open-request' : 'seat-card-open-direct'} flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-              <div class="flex items-center gap-3.5">
-                <div class="w-11 h-11 rounded-full ${currentSeatMode === 'request' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-700'} flex items-center justify-center font-extrabold text-xl">
-                  ${currentSeatMode === 'request' ? '📩' : '🔒'}
-                </div>
+            <div class="seat-card-open flex items-center justify-between p-3.5">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-extrabold text-lg">+</div>
                 <div>
-                  <div class="text-sm font-extrabold text-slate-800">Seat ${i + 1} Open</div>
-                  <div class="text-xs ${currentSeatMode === 'request' ? 'text-purple-700' : 'text-slate-600'} font-bold">
-                    ${currentSeatMode === 'request' ? 'Open for Join Requests' : 'Invitation Only (Leader Control)'}
-                  </div>
+                  <div class="text-xs font-extrabold text-slate-800">Seat ${i + 1} Open</div>
+                  <div class="text-[11px] text-indigo-600 font-bold">Open for Join Requests</div>
                 </div>
               </div>
 
-              <!-- Leader Per-Seat Control OR Candidate Join Button -->
-              <div class="flex items-center gap-2">
+              <!-- Leader Option: Add Directly OR Candidate Option: Request to Join -->
+              <div class="flex gap-2">
                 ${isLeader ? `
-                  <!-- PER-SEAT MODE TOGGLE SWITCH FOR LEADER -->
-                  <div class="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-xs">
-                    <button onclick="toggleSeatMode(${team.id}, ${seatIndex}, 'request')" class="text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all ${currentSeatMode === 'request' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}">
-                      📩 Public Request
-                    </button>
-                    <button onclick="toggleSeatMode(${team.id}, ${seatIndex}, 'direct')" class="text-[11px] font-bold px-3 py-1.5 rounded-lg transition-all ${currentSeatMode === 'direct' ? 'bg-slate-700 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900'}">
-                      🔒 Invitation Only
-                    </button>
-                  </div>
-                  
-                  <button onclick="openDirectAddTeammateModal(${team.id})" class="btn-hm-primary text-xs h-9 px-3.5 bg-indigo-600 hover:bg-indigo-700">
-                    + Add
+                  <button onclick="openDirectAddTeammateModal(${team.id})" class="btn-hm-primary text-xs h-9 px-3.5">
+                    + Add Teammate
                   </button>
                 ` : (!currentUser || team.user_status === 'none') ? `
-                  ${currentSeatMode === 'request' ? `
-                    <button onclick="closeTeamDetailSheet(); openJoinSheet(${team.id}, '${escapeHtml(team.name)}');" class="btn-hm-primary text-xs h-10 px-5">
-                      Request to Join ➔
-                    </button>
-                  ` : `
-                    <span class="text-xs font-bold text-slate-500 bg-slate-200 border border-slate-300 px-4 py-2 rounded-xl">Invitation Only</span>
-                  `}
+                  <button onclick="closeTeamDetailSheet(); openJoinSheet(${team.id}, '${escapeHtml(team.name)}');" class="btn-hm-primary text-xs h-9 px-4">
+                    Request to Join ➔
+                  </button>
                 ` : ''}
               </div>
             </div>
@@ -1235,13 +1192,13 @@
       let whatsappBanner = "";
       if (team.has_whatsapp && (isLeader || isMember)) {
         whatsappBanner = `
-          <div class="p-5 bg-emerald-50 border border-emerald-200 rounded-3xl flex items-center justify-between gap-4">
+          <div class="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-4">
             <div>
-              <div class="text-sm font-extrabold text-emerald-950">Official WhatsApp Group Link</div>
-              <div class="text-xs text-emerald-700 font-medium mt-0.5">Join official squad chat for hackathon collaboration</div>
+              <div class="text-xs font-extrabold text-emerald-950">Official WhatsApp Group Link</div>
+              <div class="text-[11px] text-emerald-700 font-medium">Join official squad chat for hackathon collaboration</div>
             </div>
-            <a href="${team.whatsapp_link}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-xs shrink-0 flex items-center gap-2">
-              <i data-lucide="message-circle" class="w-4 h-4"></i> Open WhatsApp Group ➔
+            <a href="${team.whatsapp_link}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs shrink-0 flex items-center gap-1.5">
+              <i data-lucide="message-circle" class="w-4 h-4"></i> Open WhatsApp ➔
             </a>
           </div>
         `;
@@ -1250,9 +1207,9 @@
       let leaderRequestsSection = "";
       if (isLeader) {
         leaderRequestsSection = `
-          <div class="pt-6 border-t border-slate-200">
-            <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-4">Pending Join Requests</h4>
-            <div id="panelPendingRequestsContainer" class="space-y-3">
+          <div class="pt-5 border-t border-slate-200">
+            <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider mb-3">Pending Join Requests</h4>
+            <div id="panelPendingRequestsContainer" class="space-y-2">
               <div class="text-center py-4"><div class="ios-spinner"></div></div>
             </div>
           </div>
@@ -1260,40 +1217,40 @@
       }
 
       content.innerHTML = `
-        <div class="space-y-8">
+        <div class="space-y-6">
           
           <!-- Header Info -->
           <div>
-            <div class="flex items-start justify-between gap-6">
+            <div class="flex items-start justify-between gap-4">
               <div>
-                <h3 class="text-3xl font-extrabold text-slate-900 leading-tight">${escapeHtml(team.name)}</h3>
-                <p class="text-sm text-slate-500 mt-2 leading-relaxed max-w-2xl">${escapeHtml(team.description || 'No pitch provided.')}</p>
+                <h3 class="text-2xl font-extrabold text-slate-900 leading-tight">${escapeHtml(team.name)}</h3>
+                <p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-xl">${escapeHtml(team.description || 'No pitch provided.')}</p>
               </div>
-              <span class="text-sm font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-200 px-4 py-2 rounded-full shrink-0">${team.member_count}/6 Seats Filled</span>
+              <span class="text-xs font-extrabold text-indigo-600 bg-indigo-50 border border-indigo-200 px-3.5 py-1.5 rounded-full shrink-0">${team.member_count}/6 Seats Filled</span>
             </div>
           </div>
 
           ${whatsappBanner}
 
           ${isLeader ? `
-            <div class="p-5 bg-slate-50 border border-slate-200 rounded-3xl space-y-3">
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
               <label class="block text-xs font-extrabold text-slate-700 uppercase tracking-wider">Team Leader Controls — WhatsApp Group Link</label>
-              <div class="flex gap-3">
-                <input type="text" id="panelWhatsappInput" value="${team.whatsapp_link || ''}" placeholder="https://chat.whatsapp.com/..." class="flex-1 h-12 px-4 bg-white border border-slate-300 rounded-2xl text-xs font-medium text-slate-900 outline-none focus:border-indigo-600">
-                <button onclick="updateWhatsappLink(${team.id})" class="btn-hm-primary text-xs h-12 px-6">Save Link</button>
+              <div class="flex gap-2">
+                <input type="text" id="panelWhatsappInput" value="${team.whatsapp_link || ''}" placeholder="https://chat.whatsapp.com/..." class="flex-1 h-11 px-4 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-indigo-600">
+                <button onclick="updateWhatsappLink(${team.id})" class="btn-hm-primary text-xs h-11 px-5">Save Link</button>
               </div>
             </div>
           ` : ''}
 
           <!-- 6 Visual Seats Grid -->
           <div>
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center justify-between mb-3">
               <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">All 6 Squad Seats</h4>
               ${isLeader && !team.is_full ? `
                 <button onclick="openDirectAddTeammateModal(${team.id})" class="text-xs font-extrabold text-indigo-600 hover:underline">+ Add Teammate Directly</button>
               ` : ''}
             </div>
-            <div class="grid grid-cols-1 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               ${seatsHtml}
             </div>
           </div>
@@ -1301,7 +1258,7 @@
           ${leaderRequestsSection}
 
           <!-- Footer Actions Toolbar -->
-          <div class="pt-6 border-t border-slate-200 flex items-center justify-between">
+          <div class="pt-5 border-t border-slate-200 flex items-center justify-between">
             ${isLeader ? `
               <button onclick="disbandTeam(${team.id})" class="btn-hm-danger">
                 <i data-lucide="trash-2" class="w-4 h-4"></i> Disband Team
@@ -1312,7 +1269,7 @@
               </button>
             ` : '<div></div>'}
 
-            <button onclick="closeTeamDetailSheet()" class="btn-hm-outlined text-xs h-11 px-6">Close Panel</button>
+            <button onclick="closeTeamDetailSheet()" class="btn-hm-outlined text-xs h-10 px-5">Close Panel</button>
           </div>
         </div>
       `;
@@ -1324,41 +1281,12 @@
       lucide.createIcons();
     }
 
-    /* --- PER-SEAT MODE TOGGLE API CALL --- */
-
-    async function toggleSeatMode(teamId, seatIndex, newMode) {
-      try {
-        const res = await fetch(`/api/teams/${teamId}?r_id=${encodeURIComponent(currentUser.r_id)}`);
-        const data = await res.json();
-        if (!data.success) return;
-
-        let seatModes = data.team.seat_modes || ["request","request","request","request","request"];
-        seatModes[seatIndex] = newMode;
-
-        const updateRes = await fetch(`/api/teams/${teamId}/seat-modes`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ leader_r_id: currentUser.r_id, seat_modes: seatModes })
-        });
-        const updateData = await updateRes.json();
-        if (updateData.success) {
-          showToast(`Seat ${seatIndex + 2} set to ${newMode === 'request' ? 'Public Requests' : 'Invitation Only'}`);
-          renderTeamDetailPanel(updateData.team);
-          fetchTeams();
-        } else {
-          showToast(updateData.message);
-        }
-      } catch(e) {
-        showToast("Error updating seat mode");
-      }
-    }
-
     /* --- DIRECT ADD TEAMMATE BY LEADER --- */
 
     function openDirectAddTeammateModal(teamId) {
       activeTeamIdForDirectAdd = teamId;
       document.getElementById("directAddSearchInput").value = "";
-      document.getElementById("directAddSearchResults").innerHTML = `<div class="text-xs text-slate-400 text-center py-8">Type student R-ID or name above</div>`;
+      document.getElementById("directAddSearchResults").innerHTML = `<div class="text-xs text-slate-400 text-center py-6">Type student R-ID or name above</div>`;
       document.getElementById("addTeammateModal").classList.add("active");
     }
 
@@ -1371,38 +1299,38 @@
       const container = document.getElementById("directAddSearchResults");
 
       if (q.length < 2) {
-        container.innerHTML = `<div class="text-xs text-slate-400 text-center py-8">Type student R-ID or name above</div>`;
+        container.innerHTML = `<div class="text-xs text-slate-400 text-center py-6">Type student R-ID or name above</div>`;
         return;
       }
 
-      container.innerHTML = `<div class="text-center py-6"><div class="ios-spinner"></div></div>`;
+      container.innerHTML = `<div class="text-center py-4"><div class="ios-spinner"></div></div>`;
 
       try {
         const res = await fetch(`/api/students/search?q=${encodeURIComponent(q)}`);
         const data = await res.json();
         
         if (!data.students || data.students.length === 0) {
-          container.innerHTML = `<div class="text-xs text-slate-400 text-center py-8 font-bold">No students found</div>`;
+          container.innerHTML = `<div class="text-xs text-slate-400 text-center py-6 font-bold">No students found</div>`;
           return;
         }
 
         container.innerHTML = data.students.map(s => `
-          <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-              <img src="${s.avatar_url}" class="w-12 h-12 rounded-full bg-white border border-slate-200 object-cover">
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <img src="${s.avatar_url}" class="w-10 h-10 rounded-full bg-white border border-slate-200 object-cover">
               <div>
                 <div class="text-xs font-bold text-slate-900">${escapeHtml(s.name)}</div>
                 <div class="text-[11px] text-slate-500">${s.r_id} • ${s.gender}</div>
                 <div class="text-[10px] text-indigo-600 font-semibold">${escapeHtml(s.email)} • DOB: ${escapeHtml(s.dob || 'N/A')}</div>
               </div>
             </div>
-            <button onclick="submitDirectAddTeammate('${s.r_id}')" class="btn-hm-primary text-xs h-9 px-4">
+            <button onclick="submitDirectAddTeammate('${s.r_id}')" class="btn-hm-primary text-xs h-8 px-3">
               + Add
             </button>
           </div>
         `).join('');
       } catch(e) {
-        container.innerHTML = `<div class="text-xs text-red-500 text-center py-6 font-bold">Error searching directory</div>`;
+        container.innerHTML = `<div class="text-xs text-red-500 text-center py-4 font-bold">Error searching directory</div>`;
       }
     }
 
@@ -1500,17 +1428,17 @@
         }
 
         container.innerHTML = reqs.map(r => `
-          <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-              <img src="${r.avatar_url}" class="w-11 h-11 rounded-full bg-white border border-slate-200 object-cover">
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <img src="${r.avatar_url}" class="w-10 h-10 rounded-full bg-white border border-slate-200 object-cover">
               <div>
                 <div class="text-xs font-bold text-slate-900">${escapeHtml(r.name)} (${r.r_id})</div>
                 <div class="text-[11px] text-slate-500 font-medium">"${escapeHtml(r.message || 'No note')}" • DOB: ${escapeHtml(r.dob || 'N/A')}</div>
               </div>
             </div>
-            <div class="flex gap-2 shrink-0">
-              <button onclick="actionRequest(${teamId}, ${r.request_id}, 'accept')" class="btn-hm-primary text-xs h-9 px-4">Accept</button>
-              <button onclick="actionRequest(${teamId}, ${r.request_id}, 'reject')" class="btn-hm-outlined text-xs h-9 px-4">Decline</button>
+            <div class="flex gap-1.5 shrink-0">
+              <button onclick="actionRequest(${teamId}, ${r.request_id}, 'accept')" class="btn-hm-primary text-xs h-8 px-3">Accept</button>
+              <button onclick="actionRequest(${teamId}, ${r.request_id}, 'reject')" class="btn-hm-outlined text-xs h-8 px-3">Decline</button>
             </div>
           </div>
         `).join('');
@@ -1572,7 +1500,7 @@
       } catch(e) {
         showToast("Error sending request");
       } finally {
-        btn.innerHTML = `<span>Send Join Request</span> <i data-lucide="send" class="w-5 h-5"></i>`;
+        btn.innerHTML = `<span>Send Join Request</span> <i data-lucide="send" class="w-4 h-4"></i>`;
         btn.disabled = false;
         lucide.createIcons();
       }
