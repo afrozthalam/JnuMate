@@ -178,16 +178,21 @@ function renderNavUserSlots() {
   const mbSlot = document.getElementById("navUserSlotMobile");
 
   if (currentUser) {
-    const initial = (currentUser.name || currentUser.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
+    const rawName = (currentUser.name || currentUser.id || "Student") + "";
+    const cleanName = rawName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
+    const initial = cleanName.charAt(0).toUpperCase() || 'U';
+    const firstName = cleanName.split(' ')[0] || cleanName;
+    const avatarUrl = currentUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.id || 'Student')}`;
+
     const userHtml = `
       <div style="display:flex; align-items:center; gap:8px;">
         <a href="/profile" style="text-decoration:none; display:flex; align-items:center; gap:6px;">
-          <div class="avatar-stack-item" style="width:26px; height:26px; border:1px solid var(--nav-glass-border); margin-left:0;">
+          <div class="avatar-stack-item" style="width:28px; height:28px; border:1px solid var(--nav-glass-border); margin-left:0;">
             <span style="font-size:0.6875rem; font-weight:700; color:var(--text-secondary);">${escapeHtml(initial)}</span>
-            <img src="${escapeHtml(currentUser.avatar_url || '')}" alt="${escapeHtml(currentUser.name)}" loading="lazy" onerror="this.remove();" style="width:100%; height:100%; object-fit:cover;">
+            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(firstName)}" loading="lazy" onerror="this.remove();" style="width:100%; height:100%; object-fit:cover;">
           </div>
-          <span style="font-size:0.8125rem; font-weight:600; color:var(--text-primary); max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            ${escapeHtml(currentUser.name.split(' ')[0])}
+          <span style="font-size:0.875rem; font-weight:600; color:var(--text-primary); max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escapeHtml(firstName)}
           </span>
         </a>
       </div>
@@ -473,29 +478,34 @@ function renderFullTeamDetail(team) {
   for (let i = 0; i < 6; i++) {
     if (i < members.length) {
       const m = members[i];
-      const initial = (m.name || m.r_id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
-      const isYou = currentUser && (m.r_id.toUpperCase() === currentUser.id.toUpperCase());
+      if (!m) continue;
+      const mRid = (m.r_id || m.student_r_id || "") + "";
+      const mName = (m.name || mRid || "Student") + "";
+      const cleanName = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
+      const initial = cleanName.charAt(0).toUpperCase() || 'U';
+      const isYou = Boolean(currentUser && currentUser.id && mRid && (mRid.toUpperCase() === (currentUser.id + '').toUpperCase()));
       const rolePill = m.role === 'leader'
         ? `<span class="status-pill leader">Leader</span>`
         : `<span class="status-pill" style="color:var(--text-secondary); background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.08);">Member</span>`;
+      const avatarUrl = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mRid || 'Student')}`;
 
       rosterCardsHtml += `
         <div class="member-row">
           <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
             <div class="member-avatar-box">
               <span class="avatar-initial">${escapeHtml(initial)}</span>
-              <img src="${escapeHtml(m.avatar_url || '')}" alt="${escapeHtml(m.name)}" loading="lazy" onerror="this.remove();">
+              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(mName)}" loading="lazy" onerror="this.remove();">
             </div>
 
             <div style="min-width:0; flex:1;">
               <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                <span class="member-name">${escapeHtml(m.name)}</span>
+                <span class="member-name">${escapeHtml(mName)}</span>
                 ${isYou ? `<span class="status-pill user-tag">(You)</span>` : ""}
                 ${rolePill}
               </div>
 
               <div class="member-meta-row" style="margin-top:2px;">
-                <span>${escapeHtml(m.r_id)} • ${escapeHtml(m.gender || 'Student')}</span>
+                <span>${escapeHtml(mRid)} • ${escapeHtml(m.gender || 'Student')}</span>
                 ${m.dob && m.dob !== 'N/A' ? `<span> • DOB: ${escapeHtml(m.dob)}</span>` : ""}
               </div>
 
@@ -515,7 +525,7 @@ function renderFullTeamDetail(team) {
           </div>
 
           ${isLeader && m.role !== 'leader' ? `
-            <button onclick="confirmRemoveMember('${team.id}', '${m.r_id}', '${escapeAttr(m.name)}')" class="btn-danger" style="margin-left:8px; height:26px; padding:0 8px; font-size:0.6875rem; flex-shrink:0;">
+            <button onclick="confirmRemoveMember('${team.id}', '${mRid}', '${escapeAttr(mName)}')" class="btn-danger" style="margin-left:8px; height:26px; padding:0 8px; font-size:0.6875rem; flex-shrink:0;">
               Remove
             </button>
           ` : ""}
@@ -1897,6 +1907,12 @@ function verifyEmailOtpCode() {
   const rid = (pendingRegistrationData && pendingRegistrationData.rid) || (ridInput ? ridInput.value.trim().toUpperCase() : "");
   const otp = otpInput.value.trim();
 
+  if (!rid) {
+    showToast("Session expired, please re-enter your R-ID", "error");
+    showAuthStep(1);
+    return;
+  }
+
   isVerifyingOtp = true;
   btn.disabled = true;
   btn.innerText = "Verifying...";
@@ -1922,26 +1938,37 @@ function verifyEmailOtpCode() {
       isVerifyingOtp = false;
       btn.disabled = false;
       btn.innerText = "Verify & Sign In";
-      if (data.success) {
-        currentUser = data.user;
-        renderNavUserSlots();
+
+      if (data && data.success) {
+        currentUser = data.user || { id: rid, name: "Student" };
+        try {
+          renderNavUserSlots();
+        } catch (renderErr) {
+          console.warn("renderNavUserSlots notice:", renderErr);
+        }
         showToast("Signed in successfully!", "success");
 
-        if (data.needs_program) {
-          // Existing student without course details -> prompt to select program
-          showCoursePickerModal();
-        } else {
-          navigateTo("/profile");
+        try {
+          if (data.needs_program) {
+            showCoursePickerModal();
+          } else {
+            navigateTo("/profile");
+          }
+        } catch (navErr) {
+          console.warn("Navigation notice:", navErr);
+          navigateTo("/");
         }
       } else {
-        showToast(data.message || "Invalid verification code", "error");
+        const errorMsg = (data && data.message) || "Invalid verification code";
+        showToast(errorMsg, "error");
       }
     })
-    .catch(() => {
+    .catch(err => {
       isVerifyingOtp = false;
       btn.disabled = false;
       btn.innerText = "Verify & Sign In";
-      showToast("Verification error", "error");
+      console.error("verify-otp error:", err);
+      showToast("Network error during verification. Please retry.", "error");
     });
 }
 
