@@ -44,8 +44,53 @@ SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
 SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER or "noreply@hackmate.edu")
 
+EDUCATION_DB_PATH = os.path.join(os.path.dirname(__file__), "education_details.db")
+
 def get_placeholder():
     return "%s" if is_postgres() else "?"
+
+def get_student_course_details(r_id, cursor=None):
+    if not r_id:
+        return None, None
+    r_id = str(r_id).strip()
+    
+    # 1. Check students table if cursor provided
+    if cursor:
+        p = get_placeholder()
+        try:
+            cursor.execute(f"SELECT program, semester_year FROM students WHERE UPPER(r_id) = {p}", (r_id.upper(),))
+            row = cursor.fetchone()
+            if row:
+                prog = row["program"] if hasattr(row, '__getitem__') else row[0]
+                sem = row["semester_year"] if hasattr(row, '__getitem__') else row[1]
+                if prog and str(prog).strip():
+                    return str(prog).strip(), (str(sem).strip() if sem else None)
+        except Exception:
+            pass
+
+    # 2. Check education_details.db
+    if os.path.exists(EDUCATION_DB_PATH):
+        try:
+            import sqlite3
+            e_conn = sqlite3.connect(EDUCATION_DB_PATH)
+            e_cur = e_conn.cursor()
+            e_cur.execute("SELECT program, semester_year FROM education_details WHERE LOWER(r_id) = LOWER(?) LIMIT 1", (r_id,))
+            e_row = e_cur.fetchone()
+            e_conn.close()
+            if e_row:
+                prog, sem = e_row[0], e_row[1]
+                # If cursor provided, cache it in students table for future speed
+                if cursor and prog:
+                    try:
+                        p = get_placeholder()
+                        cursor.execute(f"UPDATE students SET program = {p}, semester_year = {p} WHERE UPPER(r_id) = {p}", (prog, sem, r_id.upper()))
+                    except Exception:
+                        pass
+                return (str(prog).strip() if prog else None), (str(sem).strip() if sem else None)
+        except Exception as e:
+            print(f"Notice education_details lookup: {e}")
+
+    return None, None
 
 def send_real_email_otp(target_email, r_id, otp_code):
     subject = f"{otp_code} is your HackMate Verification Code"
@@ -164,11 +209,12 @@ def auth_send_otp():
     student = cursor.fetchone()
 
     if not student:
-        student = auto_import_student_from_json(r_id, conn, cursor)
-
-    if not student:
         conn.close()
-        return jsonify({"success": False, "message": "R-ID not found in college database"}), 404
+        return jsonify({
+            "success": False,
+            "not_found": True,
+            "message": "University records sync in progress for this R-ID. Please confirm your academic details below to continue."
+        }), 200
 
     student_dict = dict(student)
     email = student_dict.get("email") or f"{r_id}@student.edu"
@@ -193,7 +239,46 @@ def auth_send_otp():
 
     return jsonify({
         "success": True,
+        "exists": True,
         "message": f"Code sent to {email}",
+        "email": email,
+        "masked_email": mask_email(email)
+    })
+
+@app.route("/api/auth/send-registration-otp", methods=["POST"])
+def auth_send_registration_otp():
+    data = request.json or {}
+    r_id = (data.get("rid") or data.get("r_id") or "").strip().upper()
+    name = data.get("name", "").strip()
+    email = data.get("email", "").strip()
+    program = data.get("program", "").strip()
+    p = get_placeholder()
+
+    if not r_id or not name or not email or not program:
+        return jsonify({"success": False, "message": "R-ID, Name, Email, and Course are required"}), 400
+
+    otp_code = f"{random.randint(100000, 999999)}"
+    expires_at = datetime.datetime.now() + datetime.timedelta(minutes=15)
+
+    print(f"\n==========================================")
+    print(f" [REGISTRATION OTP] R-ID: {r_id} | Email: {email} | CODE: {otp_code} | Program: {program}")
+    print(f"==========================================\n")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(f"UPDATE email_otps SET used = 1 WHERE UPPER(r_id) = {p}", (r_id,))
+    cursor.execute(f"""
+        INSERT INTO email_otps (r_id, email, otp, expires_at)
+        VALUES ({p}, {p}, {p}, {p})
+    """, (r_id, email, str(otp_code), str(expires_at)))
+    conn.commit()
+    conn.close()
+
+    send_real_email_otp(email, r_id, otp_code)
+
+    return jsonify({
+        "success": True,
+        "message": f"Verification code sent to {email}",
         "email": email,
         "masked_email": mask_email(email)
     })
@@ -216,9 +301,23 @@ def auth_verify_otp():
     if not student:
         student = auto_import_student_from_json(r_id, conn, cursor)
 
+    # If student is still not in DB, check if registration data was supplied (Case 2: unlisted student)
+    if not student and data.get("name") and data.get("email"):
+        name = data.get("name", "").strip()
+        email = data.get("email", "").strip()
+        program = data.get("program", "").strip()
+        avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
+        cursor.execute(f"""
+            INSERT INTO students (r_id, name, email, program, gender, dob, is_registered, avatar_url)
+            VALUES ({p}, {p}, {p}, {p}, 'Student', 'N/A', 1, {p})
+        """, (r_id, name, email, program, avatar_url))
+        conn.commit()
+        cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+        student = cursor.fetchone()
+
     if not student:
         conn.close()
-        return jsonify({"success": False, "message": "Student not found"}), 404
+        return jsonify({"success": False, "message": "Student record could not be established. Please re-enter your details."}), 404
 
     # Robust matching by R-ID and OTP code
     cursor.execute(f"""
@@ -242,8 +341,10 @@ def auth_verify_otp():
     cursor.execute(f"UPDATE students SET is_registered = 1 WHERE UPPER(r_id) = {p}", (r_id,))
     conn.commit()
 
-    cursor.execute(f"SELECT r_id, name, email, phone, gender, dob, avatar_url, is_registered FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+    cursor.execute(f"SELECT r_id, name, email, phone, gender, dob, avatar_url, is_registered, program, semester_year FROM students WHERE UPPER(r_id) = {p}", (r_id,))
     updated_student = dict(cursor.fetchone())
+    
+    prog, sem = get_student_course_details(r_id, cursor)
     conn.close()
 
     session["user_rid"] = r_id
@@ -254,14 +355,47 @@ def auth_verify_otp():
         "email": updated_student["email"],
         "gender": updated_student["gender"],
         "dob": updated_student["dob"],
-        "avatar_url": updated_student["avatar_url"]
+        "avatar_url": updated_student["avatar_url"],
+        "program": prog,
+        "semester_year": sem,
+        "needs_program": not bool(prog)
     }
 
     return jsonify({
         "success": True,
         "message": "Signed in successfully",
         "user": user_payload,
+        "needs_program": not bool(prog),
         "student": updated_student
+    })
+
+@app.route("/api/user/update-program", methods=["POST"])
+def update_user_program():
+    data = request.json or {}
+    r_id = (data.get("r_id") or session.get("user_rid") or "").strip().upper()
+    program = data.get("program", "").strip()
+    semester_year = data.get("semester_year", "").strip()
+    p = get_placeholder()
+
+    if not r_id:
+        return jsonify({"success": False, "message": "Authentication required"}), 401
+    if not program:
+        return jsonify({"success": False, "message": "Please select your program"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    if semester_year:
+        cursor.execute(f"UPDATE students SET program = {p}, semester_year = {p} WHERE UPPER(r_id) = {p}", (program, semester_year, r_id))
+    else:
+        cursor.execute(f"UPDATE students SET program = {p} WHERE UPPER(r_id) = {p}", (program, r_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Program updated successfully",
+        "program": program,
+        "semester_year": semester_year
     })
 
 @app.route("/api/auth/register", methods=["POST"])
@@ -339,6 +473,7 @@ def auth_me():
     if not student:
         student = auto_import_student_from_json(user_rid, conn, cursor)
 
+    prog, sem = get_student_course_details(user_rid, cursor)
     conn.close()
 
     if not student:
@@ -353,7 +488,10 @@ def auth_me():
             "email": s_dict["email"],
             "gender": s_dict["gender"],
             "dob": s_dict["dob"],
-            "avatar_url": s_dict["avatar_url"]
+            "avatar_url": s_dict["avatar_url"],
+            "program": prog,
+            "semester_year": sem,
+            "needs_program": not bool(prog)
         }
     })
 
@@ -429,13 +567,22 @@ def format_team_data(team_row, current_r_id=None):
     p = get_placeholder()
 
     cursor.execute(f"""
-        SELECT tm.role, s.r_id, s.name, s.gender, s.dob, s.avatar_url, s.phone, s.email
+        SELECT tm.role, s.r_id, s.name, s.gender, s.dob, s.avatar_url, s.phone, s.email, s.program, s.semester_year
         FROM team_members tm
         JOIN students s ON tm.student_r_id = s.r_id
         WHERE tm.team_id = {p}
         ORDER BY tm.role DESC, tm.joined_at ASC
     """, (team_row["id"],))
-    members = [dict(r) for r in cursor.fetchall()]
+    members = []
+    for r in cursor.fetchall():
+        m = dict(r)
+        if not m.get("program"):
+            prog, sem = get_student_course_details(m["r_id"], cursor)
+            m["program"] = prog
+            m["semester_year"] = sem
+        members.append(m)
+
+    conn.close()
 
     member_count = len(members)
     female_count = sum(1 for m in members if m["gender"] == "Female")
@@ -764,6 +911,44 @@ def update_whatsapp_link(team_id):
 
     return jsonify({"success": True, "message": "WhatsApp link updated"})
 
+@app.route("/api/teams/<int:team_id>/update", methods=["POST", "PUT"])
+def update_team_details(team_id):
+    data = request.json or {}
+    leader_r_id = (data.get("leader_r_id") or session.get("user_rid") or "").strip().upper()
+    name = (data.get("name") or data.get("title") or "").strip()
+    description = data.get("description", "").strip()
+    whatsapp_link = data.get("whatsapp_link", "").strip()
+    p = get_placeholder()
+
+    if not leader_r_id:
+        return jsonify({"success": False, "message": "Leader authorization required"}), 401
+
+    if not name:
+        return jsonify({"success": False, "message": "Team name cannot be empty"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(f"SELECT leader_r_id FROM teams WHERE id = {p}", (team_id,))
+    team = cursor.fetchone()
+    if not team or team["leader_r_id"].upper() != leader_r_id:
+        conn.close()
+        return jsonify({"success": False, "message": "Unauthorized: Only team leader can update team details"}), 403
+
+    cursor.execute(f"""
+        UPDATE teams 
+        SET name = {p}, description = {p}, whatsapp_link = {p}
+        WHERE id = {p}
+    """, (name, description, whatsapp_link, team_id))
+    conn.commit()
+
+    cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
+    t_row = cursor.fetchone()
+    conn.close()
+
+    updated_team = format_team_data(t_row, leader_r_id) if t_row else None
+    return jsonify({"success": True, "message": "Team updated successfully", "team": updated_team})
+
 @app.route("/api/my-team", methods=["GET"])
 def get_my_team():
     r_id = request.args.get("r_id", "").strip().upper()
@@ -973,6 +1158,8 @@ def get_user_profile():
         image_urls = json_item.get("image_urls") or []
         avatar_url = image_urls[0] if image_urls and "demo/avatars/1.jpg" not in image_urls[0] else f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
 
+    prog, sem = get_student_course_details(r_id, cursor)
+
     profile_data = {
         "r_id": r_id,
         "name": student_dict.get("name") or json_item.get("name") or "Student",
@@ -981,6 +1168,9 @@ def get_user_profile():
         "gender": student_dict.get("gender") or personal.get("Gender") or "Unspecified",
         "dob": student_dict.get("dob") or personal.get("Date of Birth") or "N/A",
         "avatar_url": avatar_url,
+        "program": prog or "Not Specified",
+        "semester_year": sem or "",
+        "needs_program": not bool(prog),
         "father_name": family.get("Father's Name") or "N/A",
         "mother_name": family.get("Mother's Name") or "N/A",
         "religion": personal.get("Religion") or "N/A",

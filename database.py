@@ -137,12 +137,22 @@ def init_db():
             );
         """)
 
-        # Migration check for dob column in existing SQLite DB
+        # Migration check for dob, program, and semester_year columns in existing SQLite DB
         cursor.execute("PRAGMA table_info(students);")
         cols = [c[1] for c in cursor.fetchall()]
         if "dob" not in cols:
             try:
                 cursor.execute("ALTER TABLE students ADD COLUMN dob TEXT;")
+            except Exception:
+                pass
+        if "program" not in cols:
+            try:
+                cursor.execute("ALTER TABLE students ADD COLUMN program TEXT;")
+            except Exception:
+                pass
+        if "semester_year" not in cols:
+            try:
+                cursor.execute("ALTER TABLE students ADD COLUMN semester_year TEXT;")
             except Exception:
                 pass
 

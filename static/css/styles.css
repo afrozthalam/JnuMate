@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    HACKMATE — HARD RESET MASTER STYLESHEET
    Authentic translucent optical material • Neutral canvas • Zero white cards
    ========================================================================== */
@@ -682,6 +682,8 @@ html, body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .member-avatar-box {
@@ -1049,6 +1051,24 @@ html, body {
     grid-template-columns: 1fr !important;
   }
 
+  .member-row {
+    padding: 8px 10px !important;
+  }
+
+  .program-pill {
+    max-width: 170px !important;
+  }
+
+  .open-seat-action-btn {
+    padding: 0 8px !important;
+    font-size: 0.6875rem !important;
+    height: 24px !important;
+  }
+
+  .open-seat-meta {
+    font-size: 0.625rem !important;
+  }
+
   .profile-record-grid {
     grid-template-columns: 1fr !important;
   }
@@ -1061,3 +1081,108 @@ html, body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ==========================================================================
+   ENHANCEMENTS: UNIVERSITY LOGO, SYNC BANNER, SEAT ACTIONS & PROGRAM PILLS
+   ========================================================================== */
+
+/* University Logo on Login */
+.login-uni-logo-box {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  overflow: hidden;
+  margin: 0 auto 16px auto;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-uni-logo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Sync Notice Banner (Case 2) */
+.sync-notice-banner {
+  background: rgba(0, 113, 227, 0.06);
+  border: 1px solid rgba(0, 113, 227, 0.18);
+  border-radius: var(--radius-control);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.rid-banner-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 750;
+  color: var(--accent-blue);
+  background: rgba(0, 113, 227, 0.12);
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+}
+
+/* Open Seat Direct Add Button for Leader */
+.open-seat-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-blue);
+  background: rgba(0, 113, 227, 0.08);
+  border: 1px solid rgba(0, 113, 227, 0.2);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.open-seat-action-btn:hover {
+  background: rgba(0, 113, 227, 0.15);
+  border-color: rgba(0, 113, 227, 0.35);
+}
+
+/* Course / Program Pill */
+.program-pill {
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #0A58CA;
+  background: rgba(13, 110, 253, 0.08);
+  border: 1px solid rgba(13, 110, 253, 0.18);
+  padding: 2px 8px;
+  border-radius: 6px;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.semester-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 2px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+

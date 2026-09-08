@@ -1,17 +1,48 @@
 /**
- * HackMate — Hard Reset Application Engine
- * High-performance, instant responsiveness, authentic optical translucent materials.
+ * HackMate — Application Engine
+ * iOS 27 Liquid Glass Visual System, Client SPA Router, Real Database & Course Integration
  */
 
 let currentUser = null;
+let pendingRegistrationData = null;
 let currentSearchAbortController = null;
 let friendSearchAbortController = null;
+let seatSearchAbortController = null;
 let selectedFriends = [];
 let discoverFilter = 'all';
 let discoverSearchTerm = '';
 let discoverSearchDebounce = null;
 let friendSearchDebounce = null;
 let dirSearchDebounce = null;
+let seatSearchDebounce = null;
+
+// Ranked Academic Programs
+const ACADEMIC_PROGRAMS = [
+  "B.Tech CSE (AI & ML) Hons.-Samatrix",
+  "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+  "B.Tech AI & ML -Coding Pro",
+  "B.Tech AI & DS -Coding Pro",
+  "B.Tech CSE (AI) Hons.-Coding Pro",
+  "B.Tech. CSE(Hons.) in Cyber Security",
+  "B.Tech. CSE(Hons.) in Data Science",
+  "B.Tech. (Computer Science Engineering)",
+  "B.Tech Computer Science (RPA)(In Coll.)",
+  "BCA Full Stack Development (In Coll.)",
+  "BCA Specilization in Artificial Intelligence and Machine Learning",
+  "BCA Specialization in Cyber Security",
+  "BCA",
+  "B.Des (Gaming and Animation) (In Coll.)",
+  "B.Tech. (Electronics & Communication)",
+  "B.Tech. (Electrical Engineering)",
+  "B.Tech. (Mechanical Engineering)",
+  "B.Tech. (Civil Engineering)",
+  "B.Tech. (Biotechnology)",
+  "B.Tech. (Biomedical Engineering)",
+  "B.Tech. (Food Technology)",
+  "BBA (Digital Marketing)(In Coll.)",
+  "BBA-Fintech & Digital Banking(In Coll.)",
+  "Other Academic Program"
+];
 
 // In-Memory Client Cache
 const clientCache = {
@@ -109,15 +140,6 @@ function handleCurrentRoute() {
 
 function highlightActiveNavLinks() {
   const path = window.location.pathname;
-  
-  document.querySelectorAll(".nav-link-item").forEach(link => {
-    const href = link.getAttribute("href");
-    if (href === path || (href !== "/" && path.startsWith(href))) {
-      link.classList.add("active");
-    } else {
-      link.classList.remove("active");
-    }
-  });
 
   document.querySelectorAll(".dock-item").forEach(item => {
     const href = item.getAttribute("href");
@@ -158,14 +180,15 @@ function renderNavUserSlots() {
   if (currentUser) {
     const initial = (currentUser.name || currentUser.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
     const userHtml = `
-      <div style="display:flex; align-items:center; gap:8px; margin-left:6px;">
+      <div style="display:flex; align-items:center; gap:8px;">
         <a href="/profile" style="text-decoration:none; display:flex; align-items:center; gap:6px;">
-          <div class="avatar-stack-item" style="width:24px; height:24px; border:1px solid var(--nav-glass-border);">
-            <span class="avatar-initial" style="font-size:0.625rem;">${escapeHtml(initial)}</span>
-            <img src="${escapeHtml(currentUser.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(currentUser.id))}" 
-                 loading="lazy" onerror="this.remove();">
+          <div class="avatar-stack-item" style="width:26px; height:26px; border:1px solid var(--nav-glass-border); margin-left:0;">
+            <span style="font-size:0.6875rem; font-weight:700; color:var(--text-secondary);">${escapeHtml(initial)}</span>
+            <img src="${escapeHtml(currentUser.avatar_url || '')}" alt="${escapeHtml(currentUser.name)}" loading="lazy" onerror="this.remove();" style="width:100%; height:100%; object-fit:cover;">
           </div>
-          <span style="font-size:0.8125rem; font-weight:600; color:var(--text-primary);">${escapeHtml(currentUser.name || currentUser.id)}</span>
+          <span style="font-size:0.8125rem; font-weight:600; color:var(--text-primary); max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escapeHtml(currentUser.name.split(' ')[0])}
+          </span>
         </a>
       </div>
     `;
@@ -173,264 +196,342 @@ function renderNavUserSlots() {
     if (mbSlot) mbSlot.innerHTML = userHtml;
   } else {
     const loginHtml = `
-      <a href="/login" class="nav-signin-link">Sign In</a>
+      <a href="/login" class="nav-auth-btn">
+        Sign In
+      </a>
     `;
     if (dtSlot) dtSlot.innerHTML = loginHtml;
     if (mbSlot) mbSlot.innerHTML = loginHtml;
   }
 }
 
+function logoutUser() {
+  fetch("/api/auth/logout", { method: "POST" })
+    .then(res => res.json())
+    .then(() => {
+      currentUser = null;
+      clientCache.teamsList = null;
+      renderNavUserSlots();
+      showToast("Signed out successfully", "info");
+      navigateTo("/");
+    })
+    .catch(() => {
+      currentUser = null;
+      renderNavUserSlots();
+      navigateTo("/");
+    });
+}
+
 /* ==========================================================================
-   3. DISCOVER TEAMS VIEW
+   3. DISCOVER VIEW (STRICT 2-COLUMN MOBILE GRID & FAST CACHED FILTERING)
    ========================================================================== */
 function loadDiscoverView() {
+  const grid = document.getElementById("teamsGridContainer") || document.getElementById("discoverTeamsGrid");
+  if (!grid) return;
+
   if (clientCache.teamsList) {
-    renderTeamsGrid(clientCache.teamsList);
+    renderFilteredTeams(clientCache.teamsList);
+    return;
   }
+
+  grid.innerHTML = `
+    <div style="grid-column: 1 / -1; text-align:center; padding:32px 0;">
+      <p class="page-subtitle">Loading hackathon teams...</p>
+    </div>
+  `;
 
   fetch("/api/teams")
     .then(res => res.json())
     .then(data => {
-      const teams = data.teams || data;
-      clientCache.teamsList = teams;
-      renderTeamsGrid(teams);
+      clientCache.teamsList = data.teams || [];
+      renderFilteredTeams(clientCache.teamsList);
     })
-    .catch(err => console.error("Error fetching teams:", err));
-}
-
-function renderTeamsGrid(teams) {
-  const container = document.getElementById("teamsGridContainer");
-  const emptyState = document.getElementById("emptyStateContainer");
-  if (!container) return;
-
-  const filtered = teams.filter(t => {
-    const title = t.title || t.name || "";
-    const desc = t.description || "";
-    const matchesSearch = !discoverSearchTerm || 
-      title.toLowerCase().includes(discoverSearchTerm) || 
-      desc.toLowerCase().includes(discoverSearchTerm);
-    const memberCount = t.members ? t.members.length : (t.member_count || 1);
-    const matchesFilter = discoverFilter === "all" || (memberCount < 6);
-    return matchesSearch && matchesFilter;
-  });
-
-  if (filtered.length === 0) {
-    container.style.display = "none";
-    if (emptyState) emptyState.style.display = "block";
-    return;
-  }
-
-  if (emptyState) emptyState.style.display = "none";
-  container.style.display = "grid";
-
-  container.innerHTML = filtered.map(t => renderSingleTeamCard(t)).join("");
-}
-
-function renderSingleTeamCard(t) {
-  const title = t.title || t.name || "Untitled Team";
-  const desc = t.description || "No pitch details provided.";
-  const memberCount = t.members ? t.members.length : (t.member_count || 1);
-  const isFull = memberCount >= 6;
-  const openSlots = 6 - memberCount;
-
-  let avatarsHtml = "";
-  if (t.members && t.members.length > 0) {
-    avatarsHtml = t.members.slice(0, 3).map(m => {
-      const mId = m.student_id || m.r_id || "U";
-      const mName = m.name || mId;
-      const initial = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
-      const avatarSrc = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mId)}`;
-      return `
-        <div class="avatar-stack-item" title="${escapeHtml(mName)}">
-          <span class="avatar-initial">${escapeHtml(initial)}</span>
-          <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(mName)}" loading="lazy" onerror="this.remove();">
+    .catch(err => {
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align:center; padding:32px 0; color:var(--accent-red);">
+          <p class="page-subtitle">Failed to load teams. Please refresh.</p>
         </div>
       `;
-    }).join("");
-    if (t.members.length > 3) {
-      avatarsHtml += `<div class="avatar-stack-item"><span class="avatar-initial" style="font-size:0.5rem;">+${t.members.length - 3}</span></div>`;
+    });
+}
+
+function setDiscoverFilter(type) {
+  discoverFilter = type;
+  document.querySelectorAll(".segmented-btn, .pill-segment").forEach(btn => {
+    if (btn.getAttribute("data-filter") === type || (type === 'all' && btn.id === 'btnFilterAll') || (type === 'open' && btn.id === 'btnFilterOpen')) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
     }
+  });
+
+  if (clientCache.teamsList) {
+    renderFilteredTeams(clientCache.teamsList);
   }
-
-  return `
-    <a href="/team/${t.id}" class="team-card-module">
-      <div>
-        <div class="card-top-row">
-          <span class="status-pill ${isFull ? 'full' : 'open'}">
-            ${isFull ? 'Full (6/6)' : openSlots + ' Open'}
-          </span>
-          <div class="avatar-stack">${avatarsHtml}</div>
-        </div>
-
-        <h3 class="card-title">${escapeHtml(title)}</h3>
-        <p class="card-pitch">${escapeHtml(desc)}</p>
-      </div>
-
-      <div class="card-bottom-row">
-        <span class="meta-text">${memberCount}/6 members</span>
-        <span class="card-action-hint">View ➔</span>
-      </div>
-    </a>
-  `;
 }
 
 function debounceDiscoverSearch() {
   clearTimeout(discoverSearchDebounce);
   discoverSearchDebounce = setTimeout(() => {
-    const input = document.getElementById("searchInput");
+    const input = document.getElementById("searchInput") || document.getElementById("discoverSearchInput");
     if (input) {
       discoverSearchTerm = input.value.trim().toLowerCase();
       if (clientCache.teamsList) {
-        renderTeamsGrid(clientCache.teamsList);
+        renderFilteredTeams(clientCache.teamsList);
       }
     }
-  }, 120);
+  }, 80);
 }
 
-function setDiscoverFilter(type) {
-  discoverFilter = type;
-  const btnAll = document.getElementById("btnFilterAll");
-  const btnOpen = document.getElementById("btnFilterOpen");
+function renderFilteredTeams(teams) {
+  const grid = document.getElementById("teamsGridContainer") || document.getElementById("discoverTeamsGrid");
+  if (!grid) return;
 
-  if (btnAll) btnAll.className = type === "all" ? "segmented-btn active" : "segmented-btn";
-  if (btnOpen) btnOpen.className = type === "open" ? "segmented-btn active" : "segmented-btn";
+  let filtered = teams;
 
-  if (clientCache.teamsList) {
-    renderTeamsGrid(clientCache.teamsList);
+  if (discoverFilter === "open") {
+    filtered = filtered.filter(t => !t.is_full);
   }
+
+  if (discoverSearchTerm) {
+    filtered = filtered.filter(t => {
+      const nameMatch = (t.name || "").toLowerCase().includes(discoverSearchTerm);
+      const descMatch = (t.description || "").toLowerCase().includes(discoverSearchTerm);
+      const memberMatch = (t.members || []).some(m => (m.name || "").toLowerCase().includes(discoverSearchTerm) || (m.r_id || "").toLowerCase().includes(discoverSearchTerm));
+      return nameMatch || descMatch || memberMatch;
+    });
+  }
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="teams-empty-state">
+        <h3 class="page-title" style="font-size:1rem; margin-bottom:4px;">No Teams Found</h3>
+        <p class="page-subtitle">Try adjusting your search terms or filter.</p>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(team => {
+    const isFull = team.is_full;
+    const count = team.member_count || (team.members ? team.members.length : 0);
+    const openSlots = 6 - count;
+
+    let statusPill = "";
+    if (isFull) {
+      statusPill = `<span class="status-pill full">Full (6/6)</span>`;
+    } else {
+      statusPill = `<span class="status-pill open">${openSlots} Open</span>`;
+    }
+
+    const avatarsHtml = (team.members || []).slice(0, 3).map(m => {
+      const initial = (m.name || m.r_id || 'U').replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
+      return `
+        <div class="avatar-stack-item">
+          <span class="avatar-initial">${escapeHtml(initial)}</span>
+          <img src="${escapeHtml(m.avatar_url || '')}" alt="${escapeHtml(m.name)}" loading="lazy" onerror="this.remove();">
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <article class="team-card-module" onclick="navigateTo('/team/${team.id}')">
+        <div class="card-top-row">
+          ${statusPill}
+          <div class="avatar-stack">
+            ${avatarsHtml}
+          </div>
+        </div>
+
+        <div>
+          <h2 class="card-title">${escapeHtml(team.name)}</h2>
+          <p class="card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution.")}</p>
+        </div>
+
+        <div class="card-bottom-row">
+          <span class="meta-text">${count}/6 members</span>
+          <span class="card-action-hint">View ➔</span>
+        </div>
+      </article>
+    `;
+  }).join("");
 }
 
 /* ==========================================================================
-   4. TEAM DETAIL VIEW (ZERO INFORMATION LOSS • PROPER ROSTER COMPOSITION)
+   4. TEAM DETAIL VIEW (ROSTER, VACANT SEATS WITH DIRECT ADD & TEAM EDIT)
    ========================================================================== */
 function loadTeamDetailView(teamId) {
-  const container = document.getElementById("teamDetailViewContainer");
+  const container = document.getElementById("teamDetailViewContainer") || document.getElementById("teamDetailContainer");
   if (!container) return;
 
-  container.innerHTML = `<div class="surface-panel" style="text-align:center; padding:32px;"><p class="page-subtitle">Loading team details...</p></div>`;
+  container.innerHTML = `
+    <div class="surface-panel" style="text-align:center; padding:32px 0;">
+      <p class="page-subtitle">Loading team details...</p>
+    </div>
+  `;
 
-  const r_id = currentUser ? currentUser.id : "";
-  fetch(`/api/teams/${teamId}?r_id=${encodeURIComponent(r_id)}`)
+  const userRidParam = currentUser ? `?r_id=${encodeURIComponent(currentUser.id)}` : "";
+
+  fetch(`/api/teams/${teamId}${userRidParam}`)
     .then(res => res.json())
     .then(data => {
-      const team = data.team || data;
-      if (data.error || !team || team.error) {
-        container.innerHTML = `<div class="surface-panel" style="text-align:center; padding:32px;"><h3 style="color:var(--accent-red);">Team Not Found</h3></div>`;
+      if (!data.success) {
+        container.innerHTML = `
+          <div class="surface-panel" style="text-align:center; padding:32px;">
+            <h2 class="page-title" style="color:var(--accent-red); margin-bottom:8px;">Team Not Found</h2>
+            <p class="page-subtitle" style="margin-bottom:16px;">The team you are looking for does not exist or has been disbanded.</p>
+            <a href="/" class="btn-primary">← Back to Discover</a>
+          </div>
+        `;
         return;
       }
-      renderTeamDetail(team);
+      renderFullTeamDetail(data.team);
     })
     .catch(() => {
-      container.innerHTML = `<div class="surface-panel" style="text-align:center; padding:32px;"><h3 style="color:var(--accent-red);">Error loading team details</h3></div>`;
+      container.innerHTML = `
+        <div class="surface-panel" style="text-align:center; padding:32px; color:var(--accent-red);">
+          <p class="page-subtitle">Failed to load team details.</p>
+          <a href="/" class="btn-primary" style="margin-top:12px;">← Back to Discover</a>
+        </div>
+      `;
     });
 }
 
-function renderTeamDetail(team) {
-  const container = document.getElementById("teamDetailViewContainer");
+function renderFullTeamDetail(team) {
+  const container = document.getElementById("teamDetailViewContainer") || document.getElementById("teamDetailContainer");
   if (!container) return;
 
-  const title = team.title || team.name || "Untitled Team";
-  const desc = team.description || "No project pitch details provided.";
-  const leaderId = (team.leader_id || team.leader_r_id || "").toUpperCase();
-  const currentUserId = currentUser ? currentUser.id.toUpperCase() : null;
-  const isLeader = currentUserId && currentUserId === leaderId;
-  const isMember = currentUserId && team.members.some(m => ((m.student_id || m.r_id || "").toUpperCase()) === currentUserId);
-  const isFull = team.members.length >= 6;
-  const openSlots = 6 - team.members.length;
+  const count = team.member_count || (team.members ? team.members.length : 0);
+  const isFull = team.is_full;
+  const isLeader = currentUser && (team.leader_r_id.toUpperCase() === currentUser.id.toUpperCase());
+  const isMember = currentUser && (team.members || []).some(m => m.r_id.toUpperCase() === currentUser.id.toUpperCase());
 
+  // Hero Section
   const heroHtml = `
-    <div class="surface-panel">
-      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:8px;">
-        <div>
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-            <h1 class="page-title" style="font-size:1.35rem;">${escapeHtml(title)}</h1>
+    <div style="margin-bottom:12px;">
+      <a href="/" class="btn-primary" style="background:var(--card-bg); color:var(--text-secondary); border:1px solid var(--card-border); height:28px; padding:0 12px; font-size:0.75rem; display:inline-flex;">
+        ← Back to Discover Teams
+      </a>
+    </div>
+
+    <div class="surface-panel" style="margin-bottom:14px;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div style="flex:1; min-width:240px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <h1 class="page-title" style="font-size:1.375rem;">${escapeHtml(team.name)}</h1>
             <span class="status-pill ${isFull ? 'full' : 'open'}">
-              ${isFull ? 'Team Full (6/6)' : openSlots + ' Open Seats'}
+              ${isFull ? 'Team Full (6/6)' : `${6 - count} Open Seats`}
             </span>
           </div>
-          <p class="page-subtitle" style="font-size:0.8125rem; line-height:1.45; max-width:600px;">${escapeHtml(desc)}</p>
+          <p class="page-subtitle" style="margin-top:4px; font-size:0.875rem;">
+            ${escapeHtml(team.description || "Building an innovative hackathon solution.")}
+          </p>
         </div>
 
-        ${team.whatsapp_link ? `
-          <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-whatsapp">
-            Official WhatsApp Group ➔
-          </a>
-        ` : ""}
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          ${isLeader ? `
+            <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-primary" style="height:32px; font-size:0.75rem; background:rgba(0,0,0,0.06); color:var(--text-primary); border:1px solid rgba(0,0,0,0.12);">
+              ✎ Edit Team
+            </button>
+          ` : ''}
+
+          ${team.whatsapp_link ? `
+            <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-primary" style="background:#E6F7ED; color:#0F8B44; border:1px solid #B8E8CA; height:32px; font-size:0.75rem;">
+              Official WhatsApp Group ➔
+            </a>
+          ` : ''}
+        </div>
       </div>
     </div>
   `;
 
-  let rosterHtml = "";
+  // 6-Seat Visual Roster Grid
+  const members = team.members || [];
+  let rosterCardsHtml = "";
+
   for (let i = 0; i < 6; i++) {
-    const member = team.members[i];
-    if (member) {
-      const mId = member.student_id || member.r_id || "U";
-      const mName = member.name || mId;
-      const mRole = (member.role || "member").toLowerCase();
-      const isTeamLeader = mRole === "leader" || mId.toUpperCase() === leaderId;
-      const isMe = currentUserId && mId.toUpperCase() === currentUserId;
-      const canRemove = isLeader && !isTeamLeader;
+    if (i < members.length) {
+      const m = members[i];
+      const initial = (m.name || m.r_id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
+      const isYou = currentUser && (m.r_id.toUpperCase() === currentUser.id.toUpperCase());
+      const rolePill = m.role === 'leader'
+        ? `<span class="status-pill leader">Leader</span>`
+        : `<span class="status-pill" style="color:var(--text-secondary); background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.08);">Member</span>`;
 
-      const initial = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
-      const avatarSrc = member.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mId)}`;
-
-      rosterHtml += `
+      rosterCardsHtml += `
         <div class="member-row">
           <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
             <div class="member-avatar-box">
               <span class="avatar-initial">${escapeHtml(initial)}</span>
-              <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(mName)}" loading="lazy" onerror="this.remove();">
+              <img src="${escapeHtml(m.avatar_url || '')}" alt="${escapeHtml(m.name)}" loading="lazy" onerror="this.remove();">
             </div>
 
-            <div class="member-details">
-              <div class="member-name-row">
-                <span class="member-name">${escapeHtml(mName)}</span>
-                ${isMe ? `<span class="status-pill user-tag">(You)</span>` : ""}
-                <span class="status-pill ${isTeamLeader ? 'leader' : 'full'}">${isTeamLeader ? 'Leader' : 'Member'}</span>
+            <div style="min-width:0; flex:1;">
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span class="member-name">${escapeHtml(m.name)}</span>
+                ${isYou ? `<span class="status-pill user-tag">(You)</span>` : ""}
+                ${rolePill}
               </div>
 
-              <div class="member-meta-row">
-                <span>${escapeHtml(mId)} • ${escapeHtml(member.gender || 'Student')}</span>
-                ${member.dob && member.dob !== 'N/A' ? `<span> • DOB: ${escapeHtml(member.dob)}</span>` : ""}
+              <div class="member-meta-row" style="margin-top:2px;">
+                <span>${escapeHtml(m.r_id)} • ${escapeHtml(m.gender || 'Student')}</span>
+                ${m.dob && m.dob !== 'N/A' ? `<span> • DOB: ${escapeHtml(m.dob)}</span>` : ""}
               </div>
 
-              ${member.email ? `
-                <div style="margin-top:1px;">
-                  <a href="mailto:${escapeHtml(member.email)}" class="member-email-link">${escapeHtml(member.email)}</a>
+              ${m.program ? `
+                <div style="display:flex; align-items:center; gap:4px; margin-top:3px; flex-wrap:wrap;">
+                  <span class="program-pill">${escapeHtml(m.program)}</span>
+                  ${m.semester_year ? `<span class="semester-pill">${escapeHtml(m.semester_year)}</span>` : ''}
                 </div>
+              ` : ''}
+
+              ${m.email ? `
+                <a href="mailto:${escapeHtml(m.email)}" class="member-email-link" style="margin-top:3px; display:inline-block;">
+                  ${escapeHtml(m.email)}
+                </a>
               ` : ""}
             </div>
           </div>
 
-          ${canRemove ? `
-            <button onclick="confirmRemoveMember('${team.id}', '${mId}', '${escapeHtml(mName)}')" class="btn-danger">
+          ${isLeader && m.role !== 'leader' ? `
+            <button onclick="confirmRemoveMember('${team.id}', '${m.r_id}', '${escapeAttr(m.name)}')" class="btn-danger" style="margin-left:8px; height:26px; padding:0 8px; font-size:0.6875rem; flex-shrink:0;">
               Remove
             </button>
           ` : ""}
         </div>
       `;
     } else {
-      rosterHtml += `
-        <div class="member-open-row">
-          <div class="plus-circle">+</div>
-          <div>
-            <div style="font-size:0.8125rem; font-weight:650; color:var(--text-secondary);">Seat ${i + 1} Open</div>
-            <div class="meta-text">Available for join requests</div>
+      // Vacant Seat
+      rosterCardsHtml += `
+        <div class="member-row open-seat-row" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+            <div class="open-seat-icon">+</div>
+            <div>
+              <div class="open-seat-title">Seat ${i + 1} Open</div>
+              <div class="open-seat-meta">${isLeader ? 'Open for requests or add teammate' : 'Available for join requests'}</div>
+            </div>
           </div>
+
+          ${isLeader ? `
+            <button onclick="openAddMemberModal('${team.id}', ${i + 1})" class="open-seat-action-btn">
+              + Add Teammate
+            </button>
+          ` : ''}
         </div>
       `;
     }
   }
 
   const rosterSectionHtml = `
-    <div class="surface-panel">
-      <h3 class="section-title" style="margin-bottom:10px;">Team Roster (${team.members.length} / 6)</h3>
+    <div class="surface-panel" style="margin-bottom:14px;">
+      <h3 class="section-title" style="margin-bottom:12px;">Team Roster (${count} / 6)</h3>
       <div class="roster-grid">
-        ${rosterHtml}
+        ${rosterCardsHtml}
       </div>
     </div>
   `;
 
+  // Action Panel (Leader Controls, Join Request, Leave Team)
   let actionPanelHtml = "";
 
   if (!currentUser) {
@@ -497,7 +598,7 @@ function loadTeamJoinRequests(teamId) {
     .then(data => {
       const requests = data.requests || [];
       if (requests.length === 0) {
-        container.innerHTML = `<p class="meta-text">No pending join requests.</p>`;
+        container.innerHTML = `<p class="meta-text" style="font-size:0.75rem; color:var(--text-tertiary);">No pending join requests.</p>`;
         return;
       }
 
@@ -506,12 +607,12 @@ function loadTeamJoinRequests(teamId) {
           ${requests.map(req => `
             <div style="background:rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.06); border-radius:var(--radius-control); padding:10px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
               <div>
-                <div style="font-size:0.8125rem; font-weight:650; color:var(--text-primary);">${escapeHtml(req.student_name || req.student_r_id)} <span class="meta-text">(${escapeHtml(req.student_r_id)})</span></div>
+                <div style="font-size:0.8125rem; font-weight:650; color:var(--text-primary);">${escapeHtml(req.name || req.student_name || req.r_id)} <span class="meta-text">(${escapeHtml(req.r_id)})</span></div>
                 ${req.message ? `<div class="card-pitch" style="margin-top:2px;">"${escapeHtml(req.message)}"</div>` : ""}
               </div>
               <div style="display:flex; gap:6px; flex-shrink:0;">
-                <button onclick="handleJoinRequestAction('${teamId}', '${req.id}', 'accept')" class="btn-primary" style="background:var(--accent-green); height:26px; padding:0 8px; font-size:0.6875rem;">Accept</button>
-                <button onclick="handleJoinRequestAction('${teamId}', '${req.id}', 'reject')" class="btn-danger" style="height:26px; padding:0 8px; font-size:0.6875rem;">Decline</button>
+                <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'accept')" class="btn-primary" style="background:#E6F7ED; color:#0F8B44; border:1px solid #B8E8CA; height:26px; padding:0 8px; font-size:0.6875rem;">Accept</button>
+                <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'reject')" class="btn-danger" style="height:26px; padding:0 8px; font-size:0.6875rem;">Decline</button>
               </div>
             </div>
           `).join("")}
@@ -536,6 +637,7 @@ function handleJoinRequestAction(teamId, reqId, action) {
     .then(data => {
       if (data.success) {
         showToast(action === 'accept' ? "Teammate accepted!" : "Request declined", "info");
+        clientCache.teamsList = null;
         loadTeamDetailView(teamId);
       } else {
         showToast(data.message || "Action failed", "error");
@@ -598,8 +700,8 @@ function confirmLeaveTeam(teamId) {
 function confirmDisbandTeam(teamId) {
   showGlassModal({
     title: "Disband Team?",
-    message: "This will permanently dissolve the team and remove all members. This action cannot be undone.",
-    confirmText: "Disband Team",
+    message: "This will permanently remove the team and notify all members. This action cannot be undone.",
+    confirmText: "Disband Permanently",
     isDanger: true,
     onConfirm: () => {
       fetch(`/api/teams/${teamId}/disband`, {
@@ -641,6 +743,7 @@ function confirmRemoveMember(teamId, studentId, studentName) {
         .then(data => {
           if (data.success) {
             showToast(`Removed ${studentName}`, "info");
+            clientCache.teamsList = null;
             loadTeamDetailView(teamId);
           } else {
             showToast(data.message || "Failed to remove member", "error");
@@ -649,6 +752,205 @@ function confirmRemoveMember(teamId, studentId, studentName) {
         .catch(() => showToast("Network error removing member", "error"));
     }
   });
+}
+
+/* ==========================================================================
+   4B. LEADER EDIT TEAM MODAL & DIRECT SEAT ASSIGN MODAL
+   ========================================================================== */
+function openEditTeamModal(teamId, curName, curDesc, curWa) {
+  const overlay = document.getElementById("glassModalOverlay");
+  const sheet = document.getElementById("glassModalSheet");
+  if (!overlay || !sheet) return;
+
+  sheet.innerHTML = `
+    <h3 class="modal-title">Edit Team Details</h3>
+    <p class="modal-message" style="margin-bottom:12px;">Modify your team name, hackathon project pitch, and WhatsApp invite link.</p>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+      <div>
+        <label class="field-label" style="display:block; margin-bottom:4px;">Team Title *</label>
+        <input type="text" id="editTeamNameInput" value="${escapeAttr(curName)}" class="form-input">
+      </div>
+
+      <div>
+        <label class="field-label" style="display:block; margin-bottom:4px;">Project Pitch</label>
+        <textarea id="editTeamDescInput" rows="3" class="form-textarea">${escapeHtml(curDesc)}</textarea>
+      </div>
+
+      <div>
+        <label class="field-label" style="display:block; color:var(--accent-blue); margin-bottom:4px;">WhatsApp Invite Link</label>
+        <input type="text" id="editTeamWaInput" value="${escapeAttr(curWa)}" placeholder="https://chat.whatsapp.com/..." class="form-input">
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button onclick="closeGlassModal()" class="btn-primary" style="background:rgba(0,0,0,0.06); color:var(--text-primary); border:1px solid rgba(0,0,0,0.12);">
+        Cancel
+      </button>
+      <button onclick="submitUpdateTeamDetails('${teamId}')" class="btn-primary" id="btnSaveTeamEdit">
+        Save Changes
+      </button>
+    </div>
+  `;
+
+  overlay.classList.add("active");
+}
+
+function submitUpdateTeamDetails(teamId) {
+  const nameInput = document.getElementById("editTeamNameInput");
+  const descInput = document.getElementById("editTeamDescInput");
+  const waInput = document.getElementById("editTeamWaInput");
+  const btn = document.getElementById("btnSaveTeamEdit");
+
+  const name = nameInput ? nameInput.value.trim() : "";
+  const desc = descInput ? descInput.value.trim() : "";
+  const wa = waInput ? waInput.value.trim() : "";
+
+  if (!name) {
+    showToast("Team title is required", "error");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = "Saving...";
+  }
+
+  fetch(`/api/teams/${teamId}/update`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      leader_r_id: currentUser ? currentUser.id : "",
+      name: name,
+      description: desc,
+      whatsapp_link: wa
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Save Changes";
+      }
+      if (data.success) {
+        showToast("Team details updated!", "success");
+        closeGlassModal();
+        clientCache.teamsList = null;
+        loadTeamDetailView(teamId);
+      } else {
+        showToast(data.message || "Failed to update team", "error");
+      }
+    })
+    .catch(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Save Changes";
+      }
+      showToast("Network error updating team", "error");
+    });
+}
+
+function openAddMemberModal(teamId, seatNumber) {
+  const overlay = document.getElementById("glassModalOverlay");
+  const sheet = document.getElementById("glassModalSheet");
+  if (!overlay || !sheet) return;
+
+  sheet.innerHTML = `
+    <h3 class="modal-title">Assign Seat ${seatNumber}</h3>
+    <p class="modal-message" style="margin-bottom:12px;">Search university database by R-ID or Name to directly add a teammate.</p>
+
+    <div style="position:relative; margin-bottom:14px;">
+      <input type="text" id="seatStudentSearchInput" placeholder="Type student R-ID or name (e.g. R15008, Rahul)..." class="form-input" oninput="debounceSeatMemberSearch('${teamId}')">
+      <div id="seatStudentSearchResults" class="search-dropdown" style="display:none; max-height:220px;"></div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end;">
+      <button onclick="closeGlassModal()" class="btn-primary" style="background:rgba(0,0,0,0.06); color:var(--text-primary); border:1px solid rgba(0,0,0,0.12);">
+        Close
+      </button>
+    </div>
+  `;
+
+  overlay.classList.add("active");
+  setTimeout(() => {
+    const input = document.getElementById("seatStudentSearchInput");
+    if (input) input.focus();
+  }, 150);
+}
+
+function debounceSeatMemberSearch(teamId) {
+  clearTimeout(seatSearchDebounce);
+  seatSearchDebounce = setTimeout(() => {
+    const input = document.getElementById("seatStudentSearchInput");
+    const resultsDiv = document.getElementById("seatStudentSearchResults");
+    if (!input || !resultsDiv) return;
+
+    const query = input.value.trim();
+    if (query.length < 2) {
+      resultsDiv.style.display = "none";
+      return;
+    }
+
+    if (seatSearchAbortController) seatSearchAbortController.abort();
+    seatSearchAbortController = new AbortController();
+
+    fetch(`/api/students/search?q=${encodeURIComponent(query)}`, { signal: seatSearchAbortController.signal })
+      .then(res => res.json())
+      .then(data => {
+        const students = data.students || [];
+        if (students.length === 0) {
+          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span class="meta-text">No students matching "${escapeHtml(query)}"</span></div>`;
+          resultsDiv.style.display = "block";
+          return;
+        }
+
+        resultsDiv.innerHTML = students.map(s => `
+          <div class="search-dropdown-item" onclick="directAddTeammate('${teamId}', '${s.r_id}', '${escapeAttr(s.name)}')">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="avatar-stack-item" style="width:24px; height:24px; margin-left:0;">
+                <span class="avatar-initial" style="font-size:0.625rem;">${escapeHtml(s.name.charAt(0).toUpperCase())}</span>
+                <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.remove();">
+              </div>
+              <div>
+                <div style="font-size:0.8125rem; font-weight:650; color:var(--text-primary);">${escapeHtml(s.name)}</div>
+                <div class="meta-text">${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</div>
+              </div>
+            </div>
+            <span style="font-size:0.75rem; color:var(--accent-blue); font-weight:600;">+ Add</span>
+          </div>
+        `).join("");
+        resultsDiv.style.display = "block";
+      })
+      .catch(err => {
+        if (err.name !== "AbortError") {
+          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span class="meta-text" style="color:var(--accent-red);">Search failed</span></div>`;
+          resultsDiv.style.display = "block";
+        }
+      });
+  }, 100);
+}
+
+function directAddTeammate(teamId, studentRid, studentName) {
+  fetch(`/api/teams/${teamId}/members/add`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      leader_r_id: currentUser ? currentUser.id : "",
+      student_r_id: studentRid
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast(`Added ${studentName} to team!`, "success");
+        closeGlassModal();
+        clientCache.teamsList = null;
+        loadTeamDetailView(teamId);
+      } else {
+        showToast(data.message || "Failed to add teammate", "error");
+      }
+    })
+    .catch(() => showToast("Network error adding teammate", "error"));
 }
 
 /* ==========================================================================
@@ -693,19 +995,24 @@ function renderFullProfile(prof, userTeams) {
   const avatarSrc = prof.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(prof.r_id)}`;
 
   const heroHtml = `
-    <div class="surface-panel">
+    <div class="surface-panel" style="margin-bottom:14px;">
       <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div class="member-avatar-box" style="width:48px; height:48px;">
-            <span class="avatar-initial" style="font-size:1rem;">${escapeHtml(initial)}</span>
+        <div style="display:flex; align-items:center; gap:12px; min-width:200px;">
+          <div class="member-avatar-box" style="width:52px; height:52px; border-radius:16px;">
+            <span class="avatar-initial" style="font-size:1.125rem;">${escapeHtml(initial)}</span>
             <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(prof.name)}" loading="lazy" onerror="this.remove();">
           </div>
 
           <div>
             <h1 class="page-title" style="font-size:1.25rem;">${escapeHtml(prof.name)}</h1>
-            <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-top:2px; flex-wrap:wrap;">
               <span class="status-pill user-tag">${escapeHtml(prof.r_id)}</span>
               <span class="meta-text">${escapeHtml(prof.gender || "Student")}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap;">
+              <span class="program-pill">${escapeHtml(prof.program || "Academic Program Unspecified")}</span>
+              ${prof.semester_year ? `<span class="semester-pill">${escapeHtml(prof.semester_year)}</span>` : ''}
+              <button onclick="showCoursePickerModal()" style="font-size:0.6875rem; color:var(--accent-blue); background:none; border:none; cursor:pointer; text-decoration:underline;">Change</button>
             </div>
           </div>
         </div>
@@ -718,9 +1025,19 @@ function renderFullProfile(prof, userTeams) {
   `;
 
   const recordHtml = `
-    <div class="surface-panel">
+    <div class="surface-panel" style="margin-bottom:14px;">
       <h3 class="section-title" style="margin-bottom:10px;">College Database Record</h3>
       <div class="profile-record-grid">
+        <div class="profile-field-item">
+          <div class="field-label">Academic Program</div>
+          <div class="field-value" style="font-weight:600; color:var(--accent-blue);">${escapeHtml(prof.program || "Not Specified")}</div>
+        </div>
+
+        <div class="profile-field-item">
+          <div class="field-label">Semester / Year</div>
+          <div class="field-value">${escapeHtml(prof.semester_year || "Current Session")}</div>
+        </div>
+
         <div class="profile-field-item">
           <div class="field-label">Email Address</div>
           <div class="field-value">${escapeHtml(prof.email || "N/A")}</div>
@@ -743,55 +1060,180 @@ function renderFullProfile(prof, userTeams) {
 
         <div class="profile-field-item" style="grid-column: 1 / -1;">
           <div class="field-label">Residential Address</div>
-          <div class="field-value" style="font-weight:500;">${escapeHtml(prof.address || "N/A")}</div>
+          <div class="field-value">${escapeHtml(prof.address || "N/A")}</div>
         </div>
       </div>
     </div>
   `;
 
-  let teamsGridHtml = "";
-  if (!userTeams || userTeams.length === 0) {
-    teamsGridHtml = `
-      <div style="text-align:center; padding:20px;">
-        <p class="page-subtitle">You are not currently in any hackathon team.</p>
-        <a href="/create-team" class="btn-primary" style="margin-top:10px; display:inline-flex;">Create Team</a>
+  let teamsHtml = "";
+  if (userTeams.length === 0) {
+    teamsHtml = `
+      <div class="surface-panel">
+        <h3 class="section-title" style="margin-bottom:6px;">My Teams (0)</h3>
+        <p class="page-subtitle" style="margin-bottom:12px;">You haven't joined or created any hackathon teams yet.</p>
+        <div style="display:flex; gap:8px;">
+          <a href="/" class="btn-primary" style="font-size:0.75rem;">Discover Teams</a>
+          <a href="/create-team" class="btn-primary" style="font-size:0.75rem; background:rgba(0,0,0,0.06); color:var(--text-primary); border:1px solid rgba(0,0,0,0.12);">+ Create Team</a>
+        </div>
       </div>
     `;
   } else {
-    teamsGridHtml = `
-      <div class="teams-grid">
-        ${userTeams.map(t => renderSingleTeamCard(t)).join("")}
+    const cards = userTeams.map(team => {
+      const isFull = team.is_full;
+      const count = team.member_count || (team.members ? team.members.length : 0);
+      const openSlots = 6 - count;
+
+      const avatarsHtml = (team.members || []).slice(0, 3).map(m => {
+        const init = (m.name || m.r_id || 'U').replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
+        return `
+          <div class="avatar-stack-item">
+            <span class="avatar-initial">${escapeHtml(init)}</span>
+            <img src="${escapeHtml(m.avatar_url || '')}" alt="${escapeHtml(m.name)}" loading="lazy" onerror="this.remove();">
+          </div>
+        `;
+      }).join("");
+
+      return `
+        <article class="team-card-module" onclick="navigateTo('/team/${team.id}')">
+          <div class="card-top-row">
+            <span class="status-pill ${isFull ? 'full' : 'open'}">
+              ${isFull ? 'Full (6/6)' : `${openSlots} Open`}
+            </span>
+            <div class="avatar-stack">
+              ${avatarsHtml}
+            </div>
+          </div>
+
+          <div>
+            <h2 class="card-title">${escapeHtml(team.name)}</h2>
+            <p class="card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution.")}</p>
+          </div>
+
+          <div class="card-bottom-row">
+            <span class="meta-text">${count}/6 members</span>
+            <span class="card-action-hint">View ➔</span>
+          </div>
+        </article>
+      `;
+    }).join("");
+
+    teamsHtml = `
+      <div class="surface-panel">
+        <h3 class="section-title" style="margin-bottom:12px;">My Teams (${userTeams.length})</h3>
+        <div class="teams-grid">
+          ${cards}
+        </div>
       </div>
     `;
   }
 
-  const myTeamsSectionHtml = `
-    <div class="surface-panel">
-      <h3 class="section-title" style="margin-bottom:10px;">My Teams (${userTeams.length})</h3>
-      ${teamsGridHtml}
+  container.innerHTML = heroHtml + recordHtml + teamsHtml;
+}
+
+/* ==========================================================================
+   5B. COURSE PICKER MODAL
+   ========================================================================== */
+function showCoursePickerModal() {
+  const overlay = document.getElementById("glassModalOverlay");
+  const sheet = document.getElementById("glassModalSheet");
+  if (!overlay || !sheet) return;
+
+  const curProg = (currentUser && currentUser.program) || "";
+  const curSem = (currentUser && currentUser.semester_year) || "";
+
+  const optionsHtml = ACADEMIC_PROGRAMS.map(p => `
+    <option value="${escapeAttr(p)}" ${p === curProg ? 'selected' : ''}>${escapeHtml(p)}</option>
+  `).join("");
+
+  sheet.innerHTML = `
+    <h3 class="modal-title">Select Academic Program</h3>
+    <p class="modal-message" style="margin-bottom:14px;">Select your enrolled degree/program for your HackMate hackathon profile.</p>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+      <div>
+        <label class="field-label" style="display:block; margin-bottom:4px;">Academic Program *</label>
+        <select id="modalCourseSelect" class="form-input" style="font-weight:500;">
+          ${optionsHtml}
+        </select>
+      </div>
+
+      <div>
+        <label class="field-label" style="display:block; margin-bottom:4px;">Semester / Year (Optional)</label>
+        <input type="text" id="modalSemInput" value="${escapeAttr(curSem)}" placeholder="e.g. Semester 2 or Year 1" class="form-input">
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button onclick="saveCourseSelection()" class="btn-primary" id="btnSaveProgram">
+        Confirm & Continue
+      </button>
     </div>
   `;
 
-  container.innerHTML = heroHtml + recordHtml + myTeamsSectionHtml;
+  overlay.classList.add("active");
 }
 
-function logoutUser() {
-  fetch("/api/auth/logout", { method: "POST" })
-    .then(() => {
-      currentUser = null;
-      renderNavUserSlots();
-      showToast("Signed out", "info");
-      navigateTo("/");
+function saveCourseSelection() {
+  const sel = document.getElementById("modalCourseSelect");
+  const semInput = document.getElementById("modalSemInput");
+  const btn = document.getElementById("btnSaveProgram");
+
+  const program = sel ? sel.value.trim() : "";
+  const semester = semInput ? semInput.value.trim() : "";
+
+  if (!program) {
+    showToast("Please select your academic program", "error");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = "Saving...";
+  }
+
+  fetch("/api/user/update-program", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      program: program,
+      semester_year: semester
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Confirm & Continue";
+      }
+      if (data.success) {
+        if (currentUser) {
+          currentUser.program = program;
+          currentUser.semester_year = semester;
+          currentUser.needs_program = false;
+        }
+        showToast("Academic program updated!", "success");
+        closeGlassModal();
+        if (window.location.pathname === "/profile") {
+          loadProfileView();
+        } else {
+          navigateTo("/profile");
+        }
+      } else {
+        showToast(data.message || "Failed to update program", "error");
+      }
     })
     .catch(() => {
-      currentUser = null;
-      renderNavUserSlots();
-      navigateTo("/");
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Confirm & Continue";
+      }
+      showToast("Network error saving program", "error");
     });
 }
 
 /* ==========================================================================
-   6. CREATE TEAM VIEW (5-STEP STRUCTURED FLOW & 2x3 PREVIEW)
+   6. CREATE TEAM VIEW (TITLE, PITCH, WHATSAPP, FRIEND SEARCH & 6-SEAT PREVIEW)
    ========================================================================== */
 function loadCreateTeamView() {
   selectedFriends = [];
@@ -810,6 +1252,12 @@ function loadCreateTeamView() {
   }
 
   container.innerHTML = `
+    <div style="margin-bottom:12px;">
+      <a href="/" class="btn-primary" style="background:var(--card-bg); color:var(--text-secondary); border:1px solid var(--card-border); height:28px; padding:0 12px; font-size:0.75rem; display:inline-flex;">
+        ← Cancel & Back
+      </a>
+    </div>
+
     <div class="surface-panel">
       <h1 class="page-title" style="font-size:1.25rem;">Create New Team</h1>
       <p class="page-subtitle" style="margin-bottom:14px;">Build your 6-seat team: pre-add friends or leave seats open for requests.</p>
@@ -855,55 +1303,55 @@ function renderCreateTeamSeats() {
   const container = document.getElementById("createTeamSeatsContainer");
   if (!container) return;
 
-  const leaderInitial = currentUser ? (currentUser.name || currentUser.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() : "U";
+  const leaderInitial = currentUser ? (currentUser.name || currentUser.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U' : 'L';
 
-  let html = `
-    <div class="seat-preview-box" style="background:var(--accent-blue-tint); border-color:var(--accent-blue-border);">
-      <div class="field-label" style="color:var(--accent-blue); font-size:0.5625rem;">Seat 1 (Leader)</div>
-      <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-        <div class="avatar-stack-item" style="width:20px; height:20px;">
-          <span class="avatar-initial" style="font-size:0.5rem;">${escapeHtml(leaderInitial)}</span>
-          <img src="${escapeHtml(currentUser.avatar_url || '')}" loading="lazy" onerror="this.remove();">
+  let seatsHtml = `
+    <div class="seat-preview-item active">
+      <div class="seat-label" style="color:var(--accent-blue);">Seat 1 (Leader)</div>
+      <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+        <div class="avatar-stack-item" style="width:20px; height:20px; margin-left:0;">
+          <span class="avatar-initial" style="font-size:0.5625rem;">${escapeHtml(leaderInitial)}</span>
+          <img src="${escapeHtml((currentUser && currentUser.avatar_url) || '')}" alt="${escapeHtml((currentUser && currentUser.name) || '')}" loading="lazy" onerror="this.remove();">
         </div>
         <span style="font-size:0.75rem; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-          ${escapeHtml(currentUser.name || currentUser.id)}
+          ${escapeHtml((currentUser && currentUser.name) || 'Leader')}
         </span>
       </div>
     </div>
   `;
 
   for (let i = 0; i < 5; i++) {
-    const friend = selectedFriends[i];
-    if (friend) {
-      const fInitial = (friend.name || friend.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
-      html += `
-        <div class="seat-preview-box">
-          <div style="display:flex; align-items:center; justify-content:space-between;">
-            <span class="field-label" style="font-size:0.5625rem;">Seat ${i + 2}</span>
-            <button onclick="removeFriendFromCreate('${friend.id}')" style="background:none; border:none; color:var(--accent-red); font-size:0.75rem; cursor:pointer; padding:0;">×</button>
+    if (i < selectedFriends.length) {
+      const f = selectedFriends[i];
+      const initial = (f.name || f.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
+      seatsHtml += `
+        <div class="seat-preview-item active">
+          <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+            <span class="seat-label" style="color:var(--accent-blue);">Seat ${i + 2}</span>
+            <button onclick="removeFriendFromTeam('${f.id}')" style="background:none; border:none; color:var(--accent-red); font-size:0.6875rem; cursor:pointer; font-weight:700;">×</button>
           </div>
-          <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
-            <div class="avatar-stack-item" style="width:20px; height:20px;">
-              <span class="avatar-initial" style="font-size:0.5rem;">${escapeHtml(fInitial)}</span>
-              <img src="${escapeHtml(friend.avatar_url || '')}" loading="lazy" onerror="this.remove();">
+          <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+            <div class="avatar-stack-item" style="width:20px; height:20px; margin-left:0;">
+              <span class="avatar-initial" style="font-size:0.5625rem;">${escapeHtml(initial)}</span>
+              <img src="${escapeHtml(f.avatar_url || '')}" alt="${escapeHtml(f.name)}" loading="lazy" onerror="this.remove();">
             </div>
-            <span style="font-size:0.75rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              ${escapeHtml(friend.name || friend.id)}
+            <span style="font-size:0.75rem; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${escapeHtml(f.name)}
             </span>
           </div>
         </div>
       `;
     } else {
-      html += `
-        <div class="seat-preview-box" style="border:1px dashed rgba(0,0,0,0.12); opacity:0.65;">
-          <span class="field-label" style="font-size:0.5625rem;">Seat ${i + 2}</span>
-          <span class="meta-text" style="font-size:0.6875rem; margin-top:4px;">Open for Requests</span>
+      seatsHtml += `
+        <div class="seat-preview-item">
+          <div class="seat-label">Seat ${i + 2}</div>
+          <div class="seat-status">Open for Requests</div>
         </div>
       `;
     }
   }
 
-  container.innerHTML = html;
+  container.innerHTML = seatsHtml;
 }
 
 function debounceFriendSearch() {
@@ -913,8 +1361,8 @@ function debounceFriendSearch() {
     const resultsDiv = document.getElementById("friendSearchResults");
     if (!input || !resultsDiv) return;
 
-    const q = input.value.trim();
-    if (q.length < 2) {
+    const query = input.value.trim();
+    if (query.length < 2) {
       resultsDiv.style.display = "none";
       return;
     }
@@ -922,66 +1370,69 @@ function debounceFriendSearch() {
     if (friendSearchAbortController) friendSearchAbortController.abort();
     friendSearchAbortController = new AbortController();
 
-    fetch(`/api/students/search?q=${encodeURIComponent(q)}`, { signal: friendSearchAbortController.signal })
+    fetch(`/api/students/search?q=${encodeURIComponent(query)}`, { signal: friendSearchAbortController.signal })
       .then(res => res.json())
       .then(data => {
         const students = data.students || [];
         if (students.length === 0) {
-          resultsDiv.innerHTML = `<div style="padding:10px; font-size:0.75rem; color:var(--text-tertiary);">No students found</div>`;
+          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span class="meta-text">No students matching "${escapeHtml(query)}"</span></div>`;
           resultsDiv.style.display = "block";
           return;
         }
 
-        resultsDiv.innerHTML = students.map(s => {
-          const initial = s.name.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
-          return `
-            <div class="search-dropdown-item" onclick="addFriendToCreate('${escapeHtml(s.r_id)}', '${escapeHtml(s.name)}', '${escapeHtml(s.avatar_url || '')}')">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <div class="avatar-stack-item" style="width:24px; height:24px;">
-                  <span class="avatar-initial">${escapeHtml(initial)}</span>
-                  <img src="${escapeHtml(s.avatar_url || '')}" loading="lazy" onerror="this.remove();">
-                </div>
-                <div>
-                  <div style="font-size:0.8125rem; font-weight:650;">${escapeHtml(s.name)}</div>
-                  <div class="meta-text">${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</div>
-                </div>
+        resultsDiv.innerHTML = students.map(s => `
+          <div class="search-dropdown-item" onclick="addFriendToTeam('${s.r_id}', '${escapeAttr(s.name)}', '${escapeAttr(s.avatar_url || '')}')">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="avatar-stack-item" style="width:24px; height:24px; margin-left:0;">
+                <span class="avatar-initial" style="font-size:0.625rem;">${escapeHtml(s.name.charAt(0).toUpperCase())}</span>
+                <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.remove();">
               </div>
-              <span style="font-size:0.75rem; color:var(--accent-blue); font-weight:600;">+ Add</span>
+              <div>
+                <div style="font-size:0.8125rem; font-weight:650; color:var(--text-primary);">${escapeHtml(s.name)}</div>
+                <div class="meta-text">${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</div>
+              </div>
             </div>
-          `;
-        }).join("");
+            <span style="font-size:0.75rem; color:var(--accent-blue); font-weight:600;">+ Add</span>
+          </div>
+        `).join("");
         resultsDiv.style.display = "block";
       })
       .catch(err => {
-        if (err.name !== "AbortError") resultsDiv.style.display = "none";
+        if (err.name !== "AbortError") {
+          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span class="meta-text" style="color:var(--accent-red);">Search failed</span></div>`;
+          resultsDiv.style.display = "block";
+        }
       });
-  }, 120);
+  }, 100);
 }
 
-function addFriendToCreate(id, name, avatarUrl) {
-  if (selectedFriends.length >= 5) {
-    showToast("Team limit is 6 members (Leader + 5)", "error");
-    return;
-  }
-  if (selectedFriends.some(f => f.id.toUpperCase() === id.toUpperCase())) {
-    showToast("Student already added", "error");
-    return;
-  }
-  if (currentUser && currentUser.id.toUpperCase() === id.toUpperCase()) {
-    showToast("You are already the team leader", "error");
-    return;
-  }
-
-  selectedFriends.push({ id, name, avatar_url: avatarUrl });
+function addFriendToTeam(r_id, name, avatar_url) {
   const resultsDiv = document.getElementById("friendSearchResults");
   const input = document.getElementById("friendSearchInput");
   if (resultsDiv) resultsDiv.style.display = "none";
   if (input) input.value = "";
+
+  if (currentUser && currentUser.id.toUpperCase() === r_id.toUpperCase()) {
+    showToast("You are already the team leader", "info");
+    return;
+  }
+
+  if (selectedFriends.some(f => f.id.toUpperCase() === r_id.toUpperCase())) {
+    showToast("Friend already added", "info");
+    return;
+  }
+
+  if (selectedFriends.length >= 5) {
+    showToast("Maximum 5 teammates can be pre-added", "error");
+    return;
+  }
+
+  selectedFriends.push({ id: r_id, name: name, avatar_url: avatar_url });
   renderCreateTeamSeats();
 }
 
-function removeFriendFromCreate(id) {
-  selectedFriends = selectedFriends.filter(f => f.id !== id);
+function removeFriendFromTeam(r_id) {
+  selectedFriends = selectedFriends.filter(f => f.id.toUpperCase() !== r_id.toUpperCase());
   renderCreateTeamSeats();
 }
 
@@ -990,12 +1441,6 @@ function submitCreateTeam() {
   const descInput = document.getElementById("teamDescInput");
   const waInput = document.getElementById("teamWhatsappInput");
   const btn = document.getElementById("btnSubmitCreate");
-
-  if (!currentUser) {
-    showToast("Please sign in first to create a team", "error");
-    navigateTo("/login");
-    return;
-  }
 
   const title = nameInput ? nameInput.value.trim() : "";
   const desc = descInput ? descInput.value.trim() : "";
@@ -1118,34 +1563,82 @@ function debounceDirectorySearch() {
 }
 
 /* ==========================================================================
-   8. LOGIN & AUTHENTICATION VIEW
+   8. AUTHENTICATION VIEW (TWO-CASE R-ID RESOLUTION, BRANDED LOGO, NO UNLISTED LINK)
    ========================================================================== */
 function loadLoginView() {
   const container = document.getElementById("loginViewContainer");
   if (!container) return;
 
-  container.innerHTML = `
-    <div class="surface-panel" style="padding:22px;">
-      <h1 class="page-title" style="font-size:1.25rem; margin-bottom:2px;">Sign In with R-ID</h1>
-      <p class="page-subtitle" style="margin-bottom:14px;">Enter your College R-ID to receive a verification code on your email.</p>
+  pendingRegistrationData = null;
 
+  const courseOptionsHtml = ACADEMIC_PROGRAMS.map(p => `
+    <option value="${escapeAttr(p)}">${escapeHtml(p)}</option>
+  `).join("");
+
+  container.innerHTML = `
+    <div class="surface-panel" style="padding:26px 22px; max-width:420px; margin:0 auto;">
+      <!-- University Branding -->
+      <div class="login-uni-logo-box">
+        <img src="/static/img/jnu_logo.jpg" alt="University Logo" onerror="this.style.display='none';">
+      </div>
+
+      <h1 class="page-title" style="font-size:1.25rem; margin-bottom:2px; text-align:center;">Sign In with College R-ID</h1>
+      <p class="page-subtitle" style="margin-bottom:16px; text-align:center;">Official Hackathon Team Matching Platform</p>
+
+      <!-- Step 1: Input R-ID -->
       <div id="authStep1">
-        <div style="margin-bottom:12px;">
+        <div style="margin-bottom:14px;">
           <label class="field-label" style="display:block; margin-bottom:4px;">College R-ID</label>
-          <input type="text" id="authRidInput" placeholder="e.g. R15006" class="form-input" style="font-weight:700; text-transform:uppercase; height:36px;">
+          <input type="text" id="authRidInput" placeholder="e.g. R15006" class="form-input" style="font-weight:700; text-transform:uppercase; height:38px;">
         </div>
 
-        <button onclick="sendEmailOtpCode()" id="btnSendOtp" class="btn-primary" style="width:100%; height:34px;">
+        <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-primary" style="width:100%; height:36px;">
+          Continue
+        </button>
+      </div>
+
+      <!-- Step 1B: Fallback when details sync is pending (Case 2) -->
+      <div id="authStepSyncNotice" style="display:none;">
+        <div style="text-align:center; margin-bottom:10px;">
+          <div class="rid-banner-tag">
+            <span>R-ID:</span>
+            <span id="syncRidBanner"></span>
+          </div>
+        </div>
+
+        <div class="sync-notice-banner">
+          University records sync is currently in progress for this R-ID. Please confirm your academic details below to proceed.
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
+          <div>
+            <label class="field-label" style="display:block; margin-bottom:4px;">Full Name *</label>
+            <input type="text" id="syncNameInput" placeholder="Your full name as per records" class="form-input">
+          </div>
+
+          <div>
+            <label class="field-label" style="display:block; margin-bottom:4px;">College Email *</label>
+            <input type="email" id="syncEmailInput" placeholder="e.g. name@student.jnujaipur.ac.in" class="form-input">
+          </div>
+
+          <div>
+            <label class="field-label" style="display:block; margin-bottom:4px;">Academic Program *</label>
+            <select id="syncCourseSelect" class="form-input" style="font-weight:500;">
+              ${courseOptionsHtml}
+            </select>
+          </div>
+        </div>
+
+        <button onclick="submitSyncDetailsAndSendOtp()" id="btnSendSyncOtp" class="btn-primary" style="width:100%; height:36px;">
           Send Verification Code
         </button>
 
-        <div style="text-align:center; margin-top:12px;">
-          <button onclick="showAuthStep(3)" style="font-size:0.75rem; color:var(--accent-blue); font-weight:600; background:none; border:none; cursor:pointer;">
-            Unlisted R-ID? Register Account ➔
-          </button>
-        </div>
+        <button onclick="showAuthStep(1)" style="width:100%; text-align:center; margin-top:10px; font-size:0.75rem; color:var(--text-tertiary); font-weight:500; background:none; border:none; cursor:pointer;">
+          ← Change R-ID
+        </button>
       </div>
 
+      <!-- Step 2: OTP Verification -->
       <div id="authStep2" style="display:none;">
         <div style="padding:8px 10px; background:var(--accent-blue-tint); border:1px solid var(--accent-blue-border); border-radius:var(--radius-control); margin-bottom:12px;">
           <div class="meta-text" style="color:var(--accent-blue);">Verification code sent to:</div>
@@ -1157,7 +1650,7 @@ function loadLoginView() {
           <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" class="form-input" style="height:42px; font-size:1.25rem; font-weight:750; text-align:center; letter-spacing:0.2em; color:var(--text-primary);">
         </div>
 
-        <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-primary" style="width:100%; height:34px;">
+        <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-primary" style="width:100%; height:36px;">
           Verify & Sign In
         </button>
 
@@ -1165,41 +1658,21 @@ function loadLoginView() {
           ← Back to R-ID Input
         </button>
       </div>
-
-      <div id="authStepRegister" style="display:none;">
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <input type="text" id="regRid" placeholder="College R-ID (e.g. R15006)" class="form-input" style="font-weight:700; text-transform:uppercase;">
-          <input type="text" id="regName" placeholder="Full Name" class="form-input">
-          <input type="email" id="regEmail" placeholder="College Email Address" class="form-input">
-          <select id="regGender" class="form-input" style="font-weight:500;">
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-          <input type="text" id="regDob" placeholder="Date of Birth (e.g. 12 Nov 2002)" class="form-input">
-          <button onclick="submitManualRegister()" class="btn-primary" style="height:34px; margin-top:4px;">
-            Register & Sign In
-          </button>
-          <button onclick="showAuthStep(1)" style="width:100%; text-align:center; margin-top:6px; font-size:0.75rem; color:var(--text-tertiary); font-weight:500; background:none; border:none; cursor:pointer;">
-            ← Back to Sign In
-          </button>
-        </div>
-      </div>
     </div>
   `;
 }
 
 function showAuthStep(step) {
   const s1 = document.getElementById("authStep1");
+  const sSync = document.getElementById("authStepSyncNotice");
   const s2 = document.getElementById("authStep2");
-  const sReg = document.getElementById("authStepRegister");
 
   if (s1) s1.style.display = step === 1 ? "block" : "none";
+  if (sSync) sSync.style.display = step === 'sync' ? "block" : "none";
   if (s2) s2.style.display = step === 2 ? "block" : "none";
-  if (sReg) sReg.style.display = step === 3 ? "block" : "none";
 }
 
-function sendEmailOtpCode() {
+function submitInitialRid() {
   const ridInput = document.getElementById("authRidInput");
   const btn = document.getElementById("btnSendOtp");
   if (!ridInput || !ridInput.value.trim()) {
@@ -1209,7 +1682,7 @@ function sendEmailOtpCode() {
 
   const rid = ridInput.value.trim().toUpperCase();
   btn.disabled = true;
-  btn.innerText = "Sending code...";
+  btn.innerText = "Checking...";
 
   fetch("/api/auth/request-otp", {
     method: "POST",
@@ -1219,11 +1692,73 @@ function sendEmailOtpCode() {
     .then(res => res.json())
     .then(data => {
       btn.disabled = false;
-      btn.innerText = "Send Verification Code";
-      if (data.success) {
+      btn.innerText = "Continue";
+
+      if (data.exists) {
+        // Case 1: Student is in our database!
+        pendingRegistrationData = null;
         document.getElementById("targetEmailDisplay").innerText = data.masked_email || "your registered email";
         showAuthStep(2);
         showToast("Verification code sent!", "success");
+      } else if (data.not_found) {
+        // Case 2: Sync in progress notice!
+        pendingRegistrationData = { rid: rid };
+        document.getElementById("syncRidBanner").innerText = rid;
+        showAuthStep('sync');
+      } else {
+        showToast(data.message || "Unable to proceed with this R-ID", "error");
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.innerText = "Continue";
+      showToast("Network error checking R-ID", "error");
+    });
+}
+
+function submitSyncDetailsAndSendOtp() {
+  const nameInput = document.getElementById("syncNameInput");
+  const emailInput = document.getElementById("syncEmailInput");
+  const courseSelect = document.getElementById("syncCourseSelect");
+  const btn = document.getElementById("btnSendSyncOtp");
+
+  const rid = pendingRegistrationData ? pendingRegistrationData.rid : "";
+  const name = nameInput ? nameInput.value.trim() : "";
+  const email = emailInput ? emailInput.value.trim() : "";
+  const program = courseSelect ? courseSelect.value.trim() : "";
+
+  if (!rid || !name || !email || !program) {
+    showToast("Please fill all required academic fields", "error");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerText = "Sending Code...";
+
+  fetch("/api/auth/send-registration-otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      rid: rid,
+      name: name,
+      email: email,
+      program: program
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.innerText = "Send Verification Code";
+      if (data.success) {
+        pendingRegistrationData = {
+          rid: rid,
+          name: name,
+          email: email,
+          program: program
+        };
+        document.getElementById("targetEmailDisplay").innerText = data.masked_email || email;
+        showAuthStep(2);
+        showToast("Verification code sent to " + email, "success");
       } else {
         showToast(data.message || "Failed to send code", "error");
       }
@@ -1245,16 +1780,27 @@ function verifyEmailOtpCode() {
     return;
   }
 
-  const rid = ridInput ? ridInput.value.trim().toUpperCase() : "";
+  const rid = (pendingRegistrationData && pendingRegistrationData.rid) || (ridInput ? ridInput.value.trim().toUpperCase() : "");
   const otp = otpInput.value.trim();
 
   btn.disabled = true;
   btn.innerText = "Verifying...";
 
+  const payload = {
+    rid: rid,
+    otp: otp
+  };
+
+  if (pendingRegistrationData) {
+    payload.name = pendingRegistrationData.name;
+    payload.email = pendingRegistrationData.email;
+    payload.program = pendingRegistrationData.program;
+  }
+
   fetch("/api/auth/verify-otp", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rid: rid, otp: otp })
+    body: JSON.stringify(payload)
   })
     .then(res => res.json())
     .then(data => {
@@ -1264,7 +1810,13 @@ function verifyEmailOtpCode() {
         currentUser = data.user;
         renderNavUserSlots();
         showToast("Signed in successfully!", "success");
-        navigateTo("/");
+
+        if (data.needs_program) {
+          // Existing student without course details -> prompt to select program
+          showCoursePickerModal();
+        } else {
+          navigateTo("/profile");
+        }
       } else {
         showToast(data.message || "Invalid verification code", "error");
       }
@@ -1276,75 +1828,76 @@ function verifyEmailOtpCode() {
     });
 }
 
-function submitManualRegister() {
-  const rid = document.getElementById("regRid").value.trim().toUpperCase();
-  const name = document.getElementById("regName").value.trim();
-  const email = document.getElementById("regEmail").value.trim();
-  const gender = document.getElementById("regGender").value;
-  const dob = document.getElementById("regDob").value.trim();
-
-  if (!rid || !name || !email) {
-    showToast("Please fill in R-ID, Name, and Email", "error");
-    return;
-  }
-
-  fetch("/api/auth/register-unlisted", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: rid, name: name, email: email, gender: gender, dob: dob })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        currentUser = data.user;
-        renderNavUserSlots();
-        showToast("Account registered and signed in!", "success");
-        navigateTo("/");
-      } else {
-        showToast(data.message || "Registration failed", "error");
-      }
-    })
-    .catch(() => showToast("Registration network error", "error"));
-}
-
 /* ==========================================================================
-   9. GLASS CONFIRMATION MODAL
+   9. MODAL & TOAST UTILITY SYSTEM
    ========================================================================== */
-function showGlassModal(opts) {
+function showGlassModal(options) {
   const overlay = document.getElementById("glassModalOverlay");
   const sheet = document.getElementById("glassModalSheet");
   if (!overlay || !sheet) return;
 
+  const title = options.title || "Confirm Action";
+  const message = options.message || "Are you sure you want to proceed?";
+  const confirmText = options.confirmText || "Confirm";
+  const cancelText = options.cancelText || "Cancel";
+  const isDanger = options.isDanger || false;
+
   sheet.innerHTML = `
-    <h3 class="page-title" style="font-size:1.125rem; margin-bottom:6px;">${escapeHtml(opts.title || "Confirm Action")}</h3>
-    <p class="page-subtitle" style="margin-bottom:14px;">${escapeHtml(opts.message || "Are you sure?")}</p>
-    <div style="display:flex; justify-content:flex-end; gap:8px;">
-      <button onclick="hideGlassModal()" class="btn-secondary">Cancel</button>
-      <button id="modalConfirmBtn" class="${opts.isDanger ? 'btn-danger' : 'btn-primary'}" style="height:30px; font-size:0.8125rem;">
-        ${escapeHtml(opts.confirmText || "Confirm")}
+    <h3 class="modal-title">${escapeHtml(title)}</h3>
+    <p class="modal-message">${escapeHtml(message)}</p>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button onclick="closeGlassModal()" class="btn-primary" style="background:rgba(0,0,0,0.06); color:var(--text-primary); border:1px solid rgba(0,0,0,0.12);">
+        ${escapeHtml(cancelText)}
+      </button>
+      <button id="modalConfirmBtn" class="${isDanger ? 'btn-danger' : 'btn-primary'}">
+        ${escapeHtml(confirmText)}
       </button>
     </div>
   `;
 
-  document.getElementById("modalConfirmBtn").onclick = () => {
-    hideGlassModal();
-    if (opts.onConfirm) opts.onConfirm();
-  };
+  const btn = document.getElementById("modalConfirmBtn");
+  if (btn) {
+    btn.onclick = () => {
+      closeGlassModal();
+      if (typeof options.onConfirm === "function") options.onConfirm();
+    };
+  }
 
   overlay.classList.add("active");
 }
 
-function hideGlassModal() {
+function closeGlassModal() {
   const overlay = document.getElementById("glassModalOverlay");
   if (overlay) overlay.classList.remove("active");
 }
 
-/* ==========================================================================
-   HELPERS & TOAST NOTIFICATIONS
-   ========================================================================== */
-function escapeHtml(text) {
-  if (!text) return "";
-  return String(text)
+document.addEventListener("click", (e) => {
+  const overlay = document.getElementById("glassModalOverlay");
+  if (overlay && e.target === overlay) {
+    closeGlassModal();
+  }
+});
+
+function showToast(message, type = "info") {
+  const container = document.getElementById("toastContainer");
+  if (!container) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast-pill ${type}`;
+  toast.innerText = message;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(-6px)";
+    setTimeout(() => toast.remove(), 250);
+  }, 2800);
+}
+
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
@@ -1352,19 +1905,9 @@ function escapeHtml(text) {
     .replace(/'/g, "&#039;");
 }
 
-function showToast(message, type = "info") {
-  const container = document.getElementById("toastContainer");
-  if (!container) return;
-
-  const toast = document.createElement("div");
-  toast.className = `toast-item ${type}`;
-  toast.innerText = message;
-  container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.style.opacity = "0";
-    toast.style.transform = "translateY(-6px)";
-    toast.style.transition = "all 0.2s ease";
-    setTimeout(() => toast.remove(), 200);
-  }, 2400);
+function escapeAttr(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
