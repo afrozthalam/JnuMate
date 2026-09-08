@@ -372,8 +372,11 @@ def auth_verify_otp():
     cursor.execute(f"SELECT r_id, name, email, phone, gender, dob, avatar_url, is_registered, program, semester_year FROM students WHERE UPPER(r_id) = {p}", (r_id,))
     db_row = cursor.fetchone()
     updated_student = dict(db_row) if db_row else {}
-    
-    prog, sem = get_student_course_details(r_id)
+    prog, sem = get_student_course_details(r_id, cursor)
+    if not prog and updated_student.get("program"):
+        prog = updated_student.get("program")
+    if not sem and updated_student.get("semester_year"):
+        sem = updated_student.get("semester_year")
     conn.close()
 
     session["user_rid"] = r_id
@@ -669,7 +672,7 @@ def format_team_data(team_row, current_r_id=None):
                 m["avatar_url"] = f"https://api.dicebear.com/7.x/avataaars/svg?seed={m_rid}"
 
             if not m.get("program"):
-                prog, sem = get_student_course_details(m_rid)
+                prog, sem = get_student_course_details(m_rid, cursor)
                 m["program"] = prog
                 m["semester_year"] = sem
 

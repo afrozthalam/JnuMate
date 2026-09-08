@@ -1754,13 +1754,13 @@ function handleResendOtp() {
   const btn = document.getElementById("btnResendOtp");
   if (btn && btn.disabled) return;
 
-  if (pendingRegistrationData && pendingRegistrationData.rid) {
+  if (pendingRegistrationData && pendingRegistrationData.name) {
     // Case 2: Unlisted student registration OTP
     submitSyncDetailsAndSendOtp();
   } else {
     // Case 1: Existing student OTP
     const ridInput = document.getElementById("authRidInput");
-    const rid = (ridInput ? ridInput.value.trim() : "");
+    const rid = (pendingRegistrationData && pendingRegistrationData.rid) || (ridInput ? ridInput.value.trim() : "");
     if (!rid) {
       showToast("Please enter your R-ID first", "error");
       showAuthStep(1);
@@ -1933,7 +1933,15 @@ function verifyEmailOtpCode() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   })
-    .then(res => res.json())
+    .then(async res => {
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        throw new Error("Server returned an invalid response (status " + res.status + ")");
+      }
+      return data;
+    })
     .then(data => {
       isVerifyingOtp = false;
       btn.disabled = false;
@@ -1968,7 +1976,7 @@ function verifyEmailOtpCode() {
       btn.disabled = false;
       btn.innerText = "Verify & Sign In";
       console.error("verify-otp error:", err);
-      showToast("Network error during verification. Please retry.", "error");
+      showToast("Cannot connect to server. Please check your connection and retry.", "error");
     });
 }
 

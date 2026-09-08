@@ -3,7 +3,24 @@ import sqlite3
 
 # Supabase PostgreSQL or local SQLite fallback
 DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_DB_URL")
-LOCAL_DB_PATH = os.path.join(os.path.dirname(__file__), "hackmate.db")
+
+def get_sqlite_path():
+    base_path = os.path.join(os.path.dirname(__file__), "hackmate.db")
+    # On Vercel serverless / AWS Lambda, root directory is strictly read-only.
+    # We copy hackmate.db to temp storage so SQLite operations can read and write.
+    if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        import tempfile
+        import shutil
+        tmp_dir = "/tmp" if os.path.exists("/tmp") else tempfile.gettempdir()
+        tmp_path = os.path.join(tmp_dir, "hackmate.db")
+        if not os.path.exists(tmp_path) and os.path.exists(base_path):
+            try:
+                shutil.copy2(base_path, tmp_path)
+            except Exception as e:
+                print(f"Notice copying hackmate.db to tmp: {e}")
+        if os.path.exists(tmp_path):
+            return tmp_path
+    return base_path
 
 def is_postgres():
     return bool(DATABASE_URL and DATABASE_URL.startswith("postgres"))
@@ -21,7 +38,7 @@ def get_db():
         conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
         return conn
     else:
-        conn = sqlite3.connect(LOCAL_DB_PATH)
+        conn = sqlite3.connect(get_sqlite_path())
         conn.row_factory = sqlite3.Row
         return conn
 
@@ -48,16 +65,20 @@ def init_db():
                 dob VARCHAR(50),
                 avatar_url TEXT,
                 password TEXT,
+                program VARCHAR(150),
+                semester_year VARCHAR(50),
                 is_registered INT DEFAULT 0
             );
         """)
 
-        # Migration check for dob column in existing Postgres DB
+        # Migration checks for existing Postgres DB
         try:
             cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS dob VARCHAR(50);")
+            cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS program VARCHAR(150);")
+            cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS semester_year VARCHAR(50);")
             conn.commit()
         except Exception as e:
-            print(f"Postgres dob migration note: {e}")
+            print(f"Postgres students migration note: {e}")
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS email_otps (
