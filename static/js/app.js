@@ -229,29 +229,43 @@ function loadDiscoverView() {
   const grid = document.getElementById("teamsGridContainer") || document.getElementById("discoverTeamsGrid");
   if (!grid) return;
 
-  if (clientCache.teamsList) {
-    renderFilteredTeams(clientCache.teamsList);
-    return;
+  if (clientCache.teamsList && clientCache.teamsList.length > 0) {
+    try {
+      renderFilteredTeams(clientCache.teamsList);
+    } catch (e) {
+      console.warn("Cached render notice:", e);
+    }
+  } else {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align:center; padding:32px 0;">
+        <p class="page-subtitle">Loading hackathon teams...</p>
+      </div>
+    `;
   }
 
-  grid.innerHTML = `
-    <div style="grid-column: 1 / -1; text-align:center; padding:32px 0;">
-      <p class="page-subtitle">Loading hackathon teams...</p>
-    </div>
-  `;
-
   fetch("/api/teams")
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error("HTTP error " + res.status);
+      return res.json();
+    })
     .then(data => {
-      clientCache.teamsList = data.teams || [];
-      renderFilteredTeams(clientCache.teamsList);
+      clientCache.teamsList = (data && data.teams) ? data.teams : [];
+      try {
+        renderFilteredTeams(clientCache.teamsList);
+      } catch (renderError) {
+        console.error("renderFilteredTeams error:", renderError);
+      }
     })
     .catch(err => {
-      grid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align:center; padding:32px 0; color:var(--accent-red);">
-          <p class="page-subtitle">Failed to load teams. Please refresh.</p>
-        </div>
-      `;
+      console.error("Failed to load teams:", err);
+      if (!clientCache.teamsList || clientCache.teamsList.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align:center; padding:36px 16px;">
+            <p class="page-subtitle" style="margin-bottom:12px;">Unable to load teams right now.</p>
+            <button onclick="clientCache.teamsList=null;loadDiscoverView()" class="btn-primary" style="padding:8px 20px; font-size:0.875rem;">Refresh Teams</button>
+          </div>
+        `;
+      }
     });
 }
 
@@ -287,17 +301,22 @@ function renderFilteredTeams(teams) {
   const grid = document.getElementById("teamsGridContainer") || document.getElementById("discoverTeamsGrid");
   if (!grid) return;
 
+  if (!Array.isArray(teams)) {
+    teams = [];
+  }
+
   let filtered = teams;
 
   if (discoverFilter === "open") {
-    filtered = filtered.filter(t => !t.is_full);
+    filtered = filtered.filter(t => t && !t.is_full);
   }
 
   if (discoverSearchTerm) {
     filtered = filtered.filter(t => {
+      if (!t) return false;
       const nameMatch = (t.name || "").toLowerCase().includes(discoverSearchTerm);
       const descMatch = (t.description || "").toLowerCase().includes(discoverSearchTerm);
-      const memberMatch = (t.members || []).some(m => (m.name || "").toLowerCase().includes(discoverSearchTerm) || (m.r_id || "").toLowerCase().includes(discoverSearchTerm));
+      const memberMatch = (t.members || []).some(m => m && (((m.name || "") + "").toLowerCase().includes(discoverSearchTerm) || ((m.r_id || "") + "").toLowerCase().includes(discoverSearchTerm)));
       return nameMatch || descMatch || memberMatch;
     });
   }
@@ -305,7 +324,7 @@ function renderFilteredTeams(teams) {
   if (filtered.length === 0) {
     grid.innerHTML = `
       <div class="teams-empty-state">
-        <h3 class="page-title" style="font-size:1rem; margin-bottom:4px;">No Teams Found</h3>
+        <h3 class="page-title" style="font-size:1.125rem; margin-bottom:4px;">No Teams Found</h3>
         <p class="page-subtitle">Try adjusting your search terms or filter.</p>
       </div>
     `;
@@ -313,9 +332,10 @@ function renderFilteredTeams(teams) {
   }
 
   grid.innerHTML = filtered.map(team => {
-    const isFull = team.is_full;
+    if (!team) return "";
+    const isFull = Boolean(team.is_full);
     const count = team.member_count || (team.members ? team.members.length : 0);
-    const openSlots = 6 - count;
+    const openSlots = Math.max(0, 6 - count);
 
     let statusPill = "";
     if (isFull) {
@@ -325,11 +345,12 @@ function renderFilteredTeams(teams) {
     }
 
     const avatarsHtml = (team.members || []).slice(0, 3).map(m => {
-      const initial = (m.name || m.r_id || 'U').replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
+      if (!m) return "";
+      const initial = ((m.name || m.r_id || 'U') + '').replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
       return `
         <div class="avatar-stack-item">
           <span class="avatar-initial">${escapeHtml(initial)}</span>
-          <img src="${escapeHtml(m.avatar_url || '')}" alt="${escapeHtml(m.name)}" loading="lazy" onerror="this.remove();">
+          <img src="${escapeHtml(m.avatar_url || '')}" alt="${escapeHtml(m.name || '')}" loading="lazy" onerror="this.remove();">
         </div>
       `;
     }).join("");
@@ -344,7 +365,7 @@ function renderFilteredTeams(teams) {
         </div>
 
         <div>
-          <h2 class="card-title">${escapeHtml(team.name)}</h2>
+          <h2 class="card-title">${escapeHtml(team.name || 'Untitled Team')}</h2>
           <p class="card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution.")}</p>
         </div>
 
@@ -1787,7 +1808,7 @@ function submitInitialRid() {
 
       if (data.exists) {
         // Case 1: Student is in our database!
-        pendingRegistrationData = null;
+        pendingRegistrationData = { rid: rid };
         document.getElementById("targetEmailDisplay").innerText = data.masked_email || "your registered email";
         showAuthStep(2);
         showToast("Verification code sent!", "success");
