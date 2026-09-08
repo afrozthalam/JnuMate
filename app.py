@@ -333,9 +333,20 @@ def auth_verify_otp():
 
     otp_dict = dict(otp_record)
 
-    if str(otp_dict.get("used")) in ["1", "True"]:
+    # Check expiration (15-minute validity window)
+    expires_str = str(otp_dict.get("expires_at", "")).strip()
+    is_expired = False
+    try:
+        if expires_str:
+            exp_dt = datetime.datetime.fromisoformat(expires_str.replace(" ", "T"))
+            if exp_dt < datetime.datetime.now():
+                is_expired = True
+    except Exception:
+        pass
+
+    if is_expired:
         conn.close()
-        return jsonify({"success": False, "message": "This verification code was already used. Please request a new code."}), 400
+        return jsonify({"success": False, "message": "Verification code has expired. Please click Resend Code."}), 400
 
     cursor.execute(f"UPDATE email_otps SET used = 1 WHERE id = {p}", (otp_dict["id"],))
     cursor.execute(f"UPDATE students SET is_registered = 1 WHERE UPPER(r_id) = {p}", (r_id,))
@@ -582,8 +593,6 @@ def format_team_data(team_row, current_r_id=None):
             m["semester_year"] = sem
         members.append(m)
 
-    conn.close()
-
     member_count = len(members)
     female_count = sum(1 for m in members if m["gender"] == "Female")
     is_full = member_count >= 6
@@ -603,6 +612,8 @@ def format_team_data(team_row, current_r_id=None):
             req = cursor.fetchone()
             if req:
                 user_status = req["status"]
+
+    conn.close()
 
     raw_seat_modes = team_row["seat_modes"] if (isinstance(team_row, dict) and "seat_modes" in team_row) or (hasattr(team_row, "keys") and "seat_modes" in team_row.keys()) else "request,request,request,request,request"
     if not raw_seat_modes:

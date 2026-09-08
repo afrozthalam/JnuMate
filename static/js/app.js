@@ -196,7 +196,7 @@ function renderNavUserSlots() {
     if (mbSlot) mbSlot.innerHTML = userHtml;
   } else {
     const loginHtml = `
-      <a href="/login" class="nav-auth-btn">
+      <a href="/login" class="nav-signin-link">
         Sign In
       </a>
     `;
@@ -1565,41 +1565,49 @@ function debounceDirectorySearch() {
 /* ==========================================================================
    8. AUTHENTICATION VIEW (TWO-CASE R-ID RESOLUTION, BRANDED LOGO, NO UNLISTED LINK)
    ========================================================================== */
+let resendTimerInterval = null;
+let resendSecondsRemaining = 30;
+let isVerifyingOtp = false;
+
+/* ==========================================================================
+   8. AUTHENTICATION VIEW (BEAUTIFIED CARD, TRANSPARENT LOGO, RESEND OTP)
+   ========================================================================== */
 function loadLoginView() {
   const container = document.getElementById("loginViewContainer");
   if (!container) return;
 
   pendingRegistrationData = null;
+  clearInterval(resendTimerInterval);
 
   const courseOptionsHtml = ACADEMIC_PROGRAMS.map(p => `
     <option value="${escapeAttr(p)}">${escapeHtml(p)}</option>
   `).join("");
 
   container.innerHTML = `
-    <div class="surface-panel" style="padding:26px 22px; max-width:420px; margin:0 auto;">
-      <!-- University Branding -->
+    <div class="login-card">
+      <!-- Native Transparent University Crest -->
       <div class="login-uni-logo-box">
-        <img src="/static/img/jnu_logo.jpg" alt="University Logo" onerror="this.style.display='none';">
+        <img src="/static/img/jnu_logo.png" alt="University Crest" onerror="this.src='/static/img/jnu_logo.jpg';">
       </div>
 
-      <h1 class="page-title" style="font-size:1.25rem; margin-bottom:2px; text-align:center;">Sign In with College R-ID</h1>
-      <p class="page-subtitle" style="margin-bottom:16px; text-align:center;">Official Hackathon Team Matching Platform</p>
+      <h1 class="page-title" style="font-size:1.5rem; margin-bottom:4px; text-align:center;">Sign In with College R-ID</h1>
+      <p class="page-subtitle" style="margin-bottom:22px; text-align:center;">Official Hackathon Team Matching Platform</p>
 
       <!-- Step 1: Input R-ID -->
       <div id="authStep1">
-        <div style="margin-bottom:14px;">
-          <label class="field-label" style="display:block; margin-bottom:4px;">College R-ID</label>
-          <input type="text" id="authRidInput" placeholder="e.g. R15006" class="form-input" style="font-weight:700; text-transform:uppercase; height:38px;">
+        <div style="margin-bottom:16px;">
+          <label class="field-label" style="display:block; margin-bottom:6px;">College R-ID</label>
+          <input type="text" id="authRidInput" placeholder="e.g. R15006" class="form-input" style="font-weight:750; text-transform:uppercase; height:46px; font-size:1.125rem; letter-spacing:0.04em; text-align:center;">
         </div>
 
-        <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-primary" style="width:100%; height:36px;">
+        <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-primary" style="width:100%; height:44px; font-size:0.9375rem;">
           Continue
         </button>
       </div>
 
       <!-- Step 1B: Fallback when details sync is pending (Case 2) -->
       <div id="authStepSyncNotice" style="display:none;">
-        <div style="text-align:center; margin-bottom:10px;">
+        <div style="text-align:center; margin-bottom:12px;">
           <div class="rid-banner-tag">
             <span>R-ID:</span>
             <span id="syncRidBanner"></span>
@@ -1610,53 +1618,58 @@ function loadLoginView() {
           University records sync is currently in progress for this R-ID. Please confirm your academic details below to proceed.
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
+        <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
           <div>
             <label class="field-label" style="display:block; margin-bottom:4px;">Full Name *</label>
-            <input type="text" id="syncNameInput" placeholder="Your full name as per records" class="form-input">
+            <input type="text" id="syncNameInput" placeholder="Your full name as per records" class="form-input" style="height:44px; font-size:0.9375rem;">
           </div>
 
           <div>
             <label class="field-label" style="display:block; margin-bottom:4px;">College Email *</label>
-            <input type="email" id="syncEmailInput" placeholder="e.g. name@student.jnujaipur.ac.in" class="form-input">
+            <input type="email" id="syncEmailInput" placeholder="e.g. name@student.jnujaipur.ac.in" class="form-input" style="height:44px; font-size:0.9375rem;">
           </div>
 
           <div>
             <label class="field-label" style="display:block; margin-bottom:4px;">Academic Program *</label>
-            <select id="syncCourseSelect" class="form-input" style="font-weight:500;">
+            <select id="syncCourseSelect" class="form-input" style="font-weight:550; height:44px; font-size:0.9375rem;">
               ${courseOptionsHtml}
             </select>
           </div>
         </div>
 
-        <button onclick="submitSyncDetailsAndSendOtp()" id="btnSendSyncOtp" class="btn-primary" style="width:100%; height:36px;">
+        <button onclick="submitSyncDetailsAndSendOtp()" id="btnSendSyncOtp" class="btn-primary" style="width:100%; height:44px; font-size:0.9375rem;">
           Send Verification Code
         </button>
 
-        <button onclick="showAuthStep(1)" style="width:100%; text-align:center; margin-top:10px; font-size:0.75rem; color:var(--text-tertiary); font-weight:500; background:none; border:none; cursor:pointer;">
+        <button onclick="showAuthStep(1)" class="change-rid-btn" style="width:100%; text-align:center; margin-top:12px;">
           ← Change R-ID
         </button>
       </div>
 
       <!-- Step 2: OTP Verification -->
       <div id="authStep2" style="display:none;">
-        <div style="padding:8px 10px; background:var(--accent-blue-tint); border:1px solid var(--accent-blue-border); border-radius:var(--radius-control); margin-bottom:12px;">
-          <div class="meta-text" style="color:var(--accent-blue);">Verification code sent to:</div>
-          <div id="targetEmailDisplay" style="font-size:0.8125rem; font-weight:700; color:var(--text-primary); margin-top:2px;"></div>
+        <div style="padding:10px 14px; background:var(--accent-primary-tint); border:1px solid var(--accent-primary-border); border-radius:12px; margin-bottom:16px;">
+          <div class="meta-text" style="color:#1B8A33;">Verification code sent to:</div>
+          <div id="targetEmailDisplay" style="font-size:0.9375rem; font-weight:700; color:var(--text-primary); margin-top:2px;"></div>
         </div>
 
-        <div style="margin-bottom:12px;">
-          <label class="field-label" style="display:block; text-align:center; margin-bottom:4px;">Enter 6-Digit Code</label>
-          <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" class="form-input" style="height:42px; font-size:1.25rem; font-weight:750; text-align:center; letter-spacing:0.2em; color:var(--text-primary);">
+        <div style="margin-bottom:16px;">
+          <label class="field-label" style="display:block; text-align:center; margin-bottom:6px;">Enter 6-Digit Code</label>
+          <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" class="form-input" style="height:52px; font-size:1.5rem; font-weight:800; text-align:center; letter-spacing:0.3em; color:var(--text-primary);" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
         </div>
 
-        <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-primary" style="width:100%; height:36px;">
+        <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-primary" style="width:100%; height:44px; font-size:0.9375rem;">
           Verify & Sign In
         </button>
 
-        <button onclick="showAuthStep(1)" style="width:100%; text-align:center; margin-top:10px; font-size:0.75rem; color:var(--text-tertiary); font-weight:500; background:none; border:none; cursor:pointer;">
-          ← Back to R-ID Input
-        </button>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px;">
+          <button type="button" id="btnResendOtp" onclick="handleResendOtp()" class="resend-otp-btn" disabled>
+            Resend Code (<span id="resendCountdown">30</span>s)
+          </button>
+          <button type="button" onclick="showAuthStep(1)" class="change-rid-btn">
+            ← Change R-ID
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -1669,7 +1682,85 @@ function showAuthStep(step) {
 
   if (s1) s1.style.display = step === 1 ? "block" : "none";
   if (sSync) sSync.style.display = step === 'sync' ? "block" : "none";
-  if (s2) s2.style.display = step === 2 ? "block" : "none";
+  if (s2) {
+    s2.style.display = step === 2 ? "block" : "none";
+    if (step === 2) {
+      startResendTimer();
+      setTimeout(() => {
+        const input = document.getElementById("otpCodeInput");
+        if (input) {
+          input.value = "";
+          input.focus();
+        }
+      }, 150);
+    }
+  }
+}
+
+function startResendTimer() {
+  clearInterval(resendTimerInterval);
+  resendSecondsRemaining = 30;
+  const btn = document.getElementById("btnResendOtp");
+  if (!btn) return;
+
+  btn.disabled = true;
+  btn.innerHTML = `Resend Code (<span id="resendCountdown">${resendSecondsRemaining}</span>s)`;
+
+  resendTimerInterval = setInterval(() => {
+    resendSecondsRemaining--;
+    const span = document.getElementById("resendCountdown");
+    if (span) span.innerText = resendSecondsRemaining;
+
+    if (resendSecondsRemaining <= 0) {
+      clearInterval(resendTimerInterval);
+      btn.disabled = false;
+      btn.innerHTML = `Resend Code`;
+    }
+  }, 1000);
+}
+
+function handleResendOtp() {
+  const btn = document.getElementById("btnResendOtp");
+  if (btn && btn.disabled) return;
+
+  if (pendingRegistrationData && pendingRegistrationData.rid) {
+    // Case 2: Unlisted student registration OTP
+    submitSyncDetailsAndSendOtp();
+  } else {
+    // Case 1: Existing student OTP
+    const ridInput = document.getElementById("authRidInput");
+    const rid = (ridInput ? ridInput.value.trim() : "");
+    if (!rid) {
+      showToast("Please enter your R-ID first", "error");
+      showAuthStep(1);
+      return;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = "Resending...";
+    }
+    fetch("/api/auth/request-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rid: rid.toUpperCase() })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.exists) {
+          showToast("New verification code sent!", "success");
+          startResendTimer();
+        } else {
+          showToast(data.message || "Failed to resend code", "error");
+          btn.disabled = false;
+          btn.innerText = "Resend Code";
+        }
+      })
+      .catch(() => {
+        showToast("Network error resending code", "error");
+        btn.disabled = false;
+        btn.innerText = "Resend Code";
+      });
+  }
 }
 
 function submitInitialRid() {
@@ -1771,6 +1862,8 @@ function submitSyncDetailsAndSendOtp() {
 }
 
 function verifyEmailOtpCode() {
+  if (isVerifyingOtp) return;
+
   const ridInput = document.getElementById("authRidInput");
   const otpInput = document.getElementById("otpCodeInput");
   const btn = document.getElementById("btnVerifyOtp");
@@ -1783,6 +1876,7 @@ function verifyEmailOtpCode() {
   const rid = (pendingRegistrationData && pendingRegistrationData.rid) || (ridInput ? ridInput.value.trim().toUpperCase() : "");
   const otp = otpInput.value.trim();
 
+  isVerifyingOtp = true;
   btn.disabled = true;
   btn.innerText = "Verifying...";
 
@@ -1804,6 +1898,7 @@ function verifyEmailOtpCode() {
   })
     .then(res => res.json())
     .then(data => {
+      isVerifyingOtp = false;
       btn.disabled = false;
       btn.innerText = "Verify & Sign In";
       if (data.success) {
@@ -1822,6 +1917,7 @@ function verifyEmailOtpCode() {
       }
     })
     .catch(() => {
+      isVerifyingOtp = false;
       btn.disabled = false;
       btn.innerText = "Verify & Sign In";
       showToast("Verification error", "error");
