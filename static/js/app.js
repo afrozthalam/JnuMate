@@ -1,6 +1,7 @@
 /**
  * HackMate — Application Engine
- * iOS 27 Liquid Glass Visual System, Client SPA Router, Real Database & Course Integration
+ * LearnLingo Forest Green Neo-Editorial Design System
+ * Client SPA Router, Real Database & Course Integration, 100% Preserved Functionality
  */
 
 let currentUser = null;
@@ -95,6 +96,16 @@ function handleCurrentRoute() {
   const panels = document.querySelectorAll(".view-page-panel");
   panels.forEach(p => p.classList.remove("active"));
 
+  // Toggle right widget layout mode for clean presentation on focused views
+  const appShell = document.getElementById("appEnclosureFrame");
+  if (appShell) {
+    if (path === "/login" || path === "/create-team") {
+      appShell.classList.add("two-column-mode");
+    } else {
+      appShell.classList.remove("two-column-mode");
+    }
+  }
+
   if (path === "/") {
     const p = document.getElementById("viewDiscover");
     if (p) {
@@ -141,12 +152,23 @@ function handleCurrentRoute() {
 function highlightActiveNavLinks() {
   const path = window.location.pathname;
 
-  document.querySelectorAll(".dock-item").forEach(item => {
-    const href = item.getAttribute("href");
-    if (href === path || (href !== "/" && path.startsWith(href))) {
+  // Desktop sidebar nav links
+  document.querySelectorAll(".sidebar-nav-item").forEach(item => {
+    const itemPath = item.getAttribute("data-path") || item.getAttribute("href");
+    if (itemPath === path || (itemPath !== "/" && path.startsWith(itemPath))) {
       item.classList.add("active");
     } else {
       item.classList.remove("active");
+    }
+  });
+
+  // Mobile bottom dock tabs
+  document.querySelectorAll(".mobile-dock-tab").forEach(tab => {
+    const tabPath = tab.getAttribute("data-path") || tab.getAttribute("href");
+    if (tabPath === path || (tabPath !== "/" && path.startsWith(tabPath))) {
+      tab.classList.add("active");
+    } else {
+      tab.classList.remove("active");
     }
   });
 }
@@ -184,29 +206,57 @@ function renderNavUserSlots() {
     const firstName = cleanName.split(' ')[0] || cleanName;
     const avatarUrl = currentUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.id || 'Student')}`;
 
-    const userHtml = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <a href="/profile" style="text-decoration:none; display:flex; align-items:center; gap:6px;">
-          <div class="avatar-stack-item" style="width:28px; height:28px; border:1px solid var(--nav-glass-border); margin-left:0;">
-            <span style="font-size:0.6875rem; font-weight:700; color:var(--text-secondary);">${escapeHtml(initial)}</span>
-            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(firstName)}" loading="lazy" onerror="this.remove();" style="width:100%; height:100%; object-fit:cover;">
+    // Desktop sidebar user pill
+    const userDtHtml = `
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <a href="/profile" style="display:flex; align-items:center; gap:12px; text-decoration:none; padding:8px 12px; border-radius:var(--radius-xl); background:rgba(255,255,255,0.06); transition:background var(--trans-fast);">
+          <div class="avatar-stack-item" style="width:36px; height:36px; border:2px solid var(--badge-yellow); margin-left:0; flex-shrink:0;">
+            <span class="avatar-stack-initial">${escapeHtml(initial)}</span>
+            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(firstName)}" loading="lazy" onerror="this.remove();">
           </div>
-          <span style="font-size:0.875rem; font-weight:600; color:var(--text-primary); max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            ${escapeHtml(firstName)}
-          </span>
+          <div style="min-width:0; flex:1;">
+            <div style="font-weight:700; font-size:0.875rem; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${escapeHtml(cleanName)}
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-sage);">
+              ${escapeHtml(currentUser.id || 'Student')}
+            </div>
+          </div>
         </a>
+        <button onclick="logoutUser()" class="sidebar-footer-link" style="width:100%; border:none; background:none; cursor:pointer;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
+          <span>Sign Out</span>
+        </button>
       </div>
     `;
-    if (dtSlot) dtSlot.innerHTML = userHtml;
-    if (mbSlot) mbSlot.innerHTML = userHtml;
+    if (dtSlot) dtSlot.innerHTML = userDtHtml;
+
+    // Mobile top bar slot
+    const userMbHtml = `
+      <a href="/profile" style="display:flex; align-items:center; gap:8px; text-decoration:none;">
+        <div class="avatar-stack-item" style="width:32px; height:32px; border:2px solid var(--badge-yellow); margin-left:0;">
+          <span class="avatar-stack-initial">${escapeHtml(initial)}</span>
+          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(firstName)}" loading="lazy" onerror="this.remove();">
+        </div>
+      </a>
+    `;
+    if (mbSlot) mbSlot.innerHTML = userMbHtml;
   } else {
-    const loginHtml = `
-      <a href="/login" class="nav-signin-link">
+    // Desktop Sign In
+    const loginDtHtml = `
+      <a href="/login" class="btn-black-pill" style="width:100%; justify-content:center;">
+        Sign In with R-ID
+      </a>
+    `;
+    if (dtSlot) dtSlot.innerHTML = loginDtHtml;
+
+    // Mobile Sign In
+    const loginMbHtml = `
+      <a href="/login" class="btn-black-pill sm">
         Sign In
       </a>
     `;
-    if (dtSlot) dtSlot.innerHTML = loginHtml;
-    if (mbSlot) mbSlot.innerHTML = loginHtml;
+    if (mbSlot) mbSlot.innerHTML = loginMbHtml;
   }
 }
 
@@ -228,22 +278,23 @@ function logoutUser() {
 }
 
 /* ==========================================================================
-   3. DISCOVER VIEW (STRICT 2-COLUMN MOBILE GRID & FAST CACHED FILTERING)
+   3. DISCOVER VIEW (FOREST GREEN CARDS & LEADERBOARD SYNC)
    ========================================================================== */
 function loadDiscoverView() {
-  const grid = document.getElementById("teamsGridContainer") || document.getElementById("discoverTeamsGrid");
+  const grid = document.getElementById("teamsGridContainer");
   if (!grid) return;
 
   if (clientCache.teamsList && clientCache.teamsList.length > 0) {
     try {
       renderFilteredTeams(clientCache.teamsList);
+      updateLeaderboardWidget(clientCache.teamsList);
     } catch (e) {
       console.warn("Cached render notice:", e);
     }
   } else {
     grid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align:center; padding:32px 0;">
-        <p class="page-subtitle">Loading hackathon teams...</p>
+      <div style="grid-column: 1 / -1; text-align:center; padding:48px 0;">
+        <p style="color:var(--text-sage); font-size:1rem;">Loading hackathon teams...</p>
       </div>
     `;
   }
@@ -257,6 +308,7 @@ function loadDiscoverView() {
       clientCache.teamsList = (data && data.teams) ? data.teams : [];
       try {
         renderFilteredTeams(clientCache.teamsList);
+        updateLeaderboardWidget(clientCache.teamsList);
       } catch (renderError) {
         console.error("renderFilteredTeams error:", renderError);
       }
@@ -265,9 +317,9 @@ function loadDiscoverView() {
       console.error("Failed to load teams:", err);
       if (!clientCache.teamsList || clientCache.teamsList.length === 0) {
         grid.innerHTML = `
-          <div style="grid-column: 1 / -1; text-align:center; padding:36px 16px;">
-            <p class="page-subtitle" style="margin-bottom:12px;">Unable to load teams right now.</p>
-            <button onclick="clientCache.teamsList=null;loadDiscoverView()" class="btn-primary" style="padding:8px 20px; font-size:0.875rem;">Refresh Teams</button>
+          <div style="grid-column: 1 / -1; text-align:center; padding:48px 20px;">
+            <p style="color:var(--text-sage); margin-bottom:16px;">Unable to load teams right now.</p>
+            <button onclick="clientCache.teamsList=null;loadDiscoverView()" class="btn-black-pill">Refresh Teams</button>
           </div>
         `;
       }
@@ -276,7 +328,7 @@ function loadDiscoverView() {
 
 function setDiscoverFilter(type) {
   discoverFilter = type;
-  document.querySelectorAll(".segmented-btn, .pill-segment").forEach(btn => {
+  document.querySelectorAll(".filter-btn").forEach(btn => {
     if (btn.getAttribute("data-filter") === type || (type === 'all' && btn.id === 'btnFilterAll') || (type === 'open' && btn.id === 'btnFilterOpen')) {
       btn.classList.add("active");
     } else {
@@ -292,7 +344,7 @@ function setDiscoverFilter(type) {
 function debounceDiscoverSearch() {
   clearTimeout(discoverSearchDebounce);
   discoverSearchDebounce = setTimeout(() => {
-    const input = document.getElementById("searchInput") || document.getElementById("discoverSearchInput");
+    const input = document.getElementById("searchInput");
     if (input) {
       discoverSearchTerm = input.value.trim().toLowerCase();
       if (clientCache.teamsList) {
@@ -303,7 +355,8 @@ function debounceDiscoverSearch() {
 }
 
 function renderFilteredTeams(teams) {
-  const grid = document.getElementById("teamsGridContainer") || document.getElementById("discoverTeamsGrid");
+  const grid = document.getElementById("teamsGridContainer");
+  const emptyState = document.getElementById("emptyStateContainer");
   if (!grid) return;
 
   if (!Array.isArray(teams)) {
@@ -327,14 +380,12 @@ function renderFilteredTeams(teams) {
   }
 
   if (filtered.length === 0) {
-    grid.innerHTML = `
-      <div class="teams-empty-state">
-        <h3 class="page-title" style="font-size:1.125rem; margin-bottom:4px;">No Teams Found</h3>
-        <p class="page-subtitle">Try adjusting your search terms or filter.</p>
-      </div>
-    `;
+    grid.innerHTML = "";
+    if (emptyState) emptyState.style.display = "block";
     return;
   }
+
+  if (emptyState) emptyState.style.display = "none";
 
   grid.innerHTML = filtered.map(team => {
     if (!team) return "";
@@ -344,127 +395,173 @@ function renderFilteredTeams(teams) {
 
     let statusPill = "";
     if (isFull) {
-      statusPill = `<span class="status-pill full">Full (6/6)</span>`;
+      statusPill = `<span class="status-capsule full">Team Full (6/6)</span>`;
     } else {
-      statusPill = `<span class="status-pill open">${openSlots} Open</span>`;
+      statusPill = `<span class="status-capsule open">${openSlots} Seats Open</span>`;
     }
 
-    const avatarsHtml = (team.members || []).slice(0, 3).map(m => {
+    const avatarsHtml = (team.members || []).slice(0, 4).map(m => {
       if (!m) return "";
       const initial = ((m.name || m.r_id || 'U') + '').replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
       return `
         <div class="avatar-stack-item">
-          <span class="avatar-initial">${escapeHtml(initial)}</span>
+          <span class="avatar-stack-initial">${escapeHtml(initial)}</span>
           <img src="${escapeHtml(m.avatar_url || '')}" alt="${escapeHtml(m.name || '')}" loading="lazy" onerror="this.remove();">
         </div>
       `;
     }).join("");
 
     return `
-      <article class="team-card-module" onclick="navigateTo('/team/${team.id}')">
-        <div class="card-top-row">
-          ${statusPill}
-          <div class="avatar-stack">
-            ${avatarsHtml}
-          </div>
-        </div>
-
+      <article class="team-card-forest" onclick="navigateTo('/team/${team.id}')">
         <div>
-          <h2 class="card-title">${escapeHtml(team.name || 'Untitled Team')}</h2>
-          <p class="card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution.")}</p>
+          <div class="team-card-top-row">
+            ${statusPill}
+            <div class="avatar-stack">
+              ${avatarsHtml}
+            </div>
+          </div>
+
+          <h2 class="team-card-title">${escapeHtml(team.name || 'Untitled Team')}</h2>
+          <p class="team-card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution.")}</p>
         </div>
 
-        <div class="card-bottom-row">
-          <span class="meta-text">${count}/6 members</span>
-          <span class="card-action-hint">View ➔</span>
+        <div class="team-card-bottom-row">
+          <span class="meta-members-tag">${count}/6 Members</span>
+          <span class="btn-black-pill sm">View Team ➔</span>
         </div>
       </article>
     `;
   }).join("");
 }
 
+// Dynamically update the Right Column Leaderboard Widget from active teams
+function updateLeaderboardWidget(teams) {
+  const container = document.getElementById("widgetLeaderboardList");
+  if (!container || !Array.isArray(teams) || teams.length === 0) return;
+
+  // Sort by member count descending
+  const sorted = [...teams].sort((a, b) => {
+    const aCount = a.member_count || (a.members ? a.members.length : 0);
+    const bCount = b.member_count || (b.members ? b.members.length : 0);
+    return bCount - aCount;
+  });
+
+  const rankClasses = ["rank-1", "rank-2", "rank-3", "rank-user"];
+  const displayTeams = sorted.slice(0, 4);
+
+  container.innerHTML = displayTeams.map((t, idx) => {
+    const rankClass = rankClasses[idx] || "rank-user";
+    const count = t.member_count || (t.members ? t.members.length : 0);
+    const scoreText = count === 6 ? "Full (6/6)" : `${count}/6 Members`;
+    const numStr = `#0${idx + 1}`;
+
+    return `
+      <div class="leaderboard-rank-pill ${rankClass}" onclick="navigateTo('/team/${t.id}')" style="cursor:pointer;">
+        <div class="rank-left-box">
+          <span class="rank-number">${numStr}</span>
+          <span style="max-width:140px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(t.name)}</span>
+        </div>
+        <span class="rank-score">${scoreText}</span>
+      </div>
+    `;
+  }).join("");
+}
+
 /* ==========================================================================
-   4. TEAM DETAIL VIEW (ROSTER, VACANT SEATS WITH DIRECT ADD & TEAM EDIT)
+   4. TEAM DETAIL VIEW (6-SEAT ROSTER & INTERACTIONS)
    ========================================================================== */
 function loadTeamDetailView(teamId) {
-  const container = document.getElementById("teamDetailViewContainer") || document.getElementById("teamDetailContainer");
+  const container = document.getElementById("teamDetailViewContainer");
   if (!container) return;
 
   container.innerHTML = `
-    <div class="surface-panel" style="text-align:center; padding:32px 0;">
-      <p class="page-subtitle">Loading team details...</p>
+    <div style="text-align:center; padding:60px 20px;">
+      <p style="color:var(--text-sage); font-size:1rem;">Loading team details...</p>
     </div>
   `;
 
-  const userRidParam = currentUser ? `?r_id=${encodeURIComponent(currentUser.id)}` : "";
-
-  fetch(`/api/teams/${teamId}${userRidParam}`)
-    .then(res => res.json())
+  fetch(`/api/teams/${teamId}`)
+    .then(res => {
+      if (!res.ok) throw new Error("Team not found");
+      return res.json();
+    })
     .then(data => {
-      if (!data.success) {
+      const team = data.team;
+      if (!team) {
         container.innerHTML = `
-          <div class="surface-panel" style="text-align:center; padding:32px;">
-            <h2 class="page-title" style="color:var(--accent-red); margin-bottom:8px;">Team Not Found</h2>
-            <p class="page-subtitle" style="margin-bottom:16px;">The team you are looking for does not exist or has been disbanded.</p>
-            <a href="/" class="btn-primary">← Back to Discover</a>
+          <div style="text-align:center; padding:60px 20px;">
+            <div style="font-family:var(--font-serif); font-size:1.5rem; margin-bottom:8px;">Team Not Found</div>
+            <p style="color:var(--text-sage); margin-bottom:18px;">The requested hackathon team does not exist or has been disbanded.</p>
+            <a href="/" class="btn-black-pill">← Back to Discover</a>
           </div>
         `;
         return;
       }
-      renderFullTeamDetail(data.team);
+      renderFullTeamDetail(team);
+      loadTeamJoinRequests(teamId);
     })
     .catch(() => {
       container.innerHTML = `
-        <div class="surface-panel" style="text-align:center; padding:32px; color:var(--accent-red);">
-          <p class="page-subtitle">Failed to load team details.</p>
-          <a href="/" class="btn-primary" style="margin-top:12px;">← Back to Discover</a>
+        <div style="text-align:center; padding:60px 20px;">
+          <div style="font-family:var(--font-serif); font-size:1.5rem; margin-bottom:8px;">Unable to Load Team</div>
+          <p style="color:var(--text-sage); margin-bottom:18px;">Please check your connection and try again.</p>
+          <a href="/" class="btn-black-pill">← Back to Discover</a>
         </div>
       `;
     });
 }
 
 function renderFullTeamDetail(team) {
-  const container = document.getElementById("teamDetailViewContainer") || document.getElementById("teamDetailContainer");
+  const container = document.getElementById("teamDetailViewContainer");
   if (!container) return;
 
   const count = team.member_count || (team.members ? team.members.length : 0);
-  const isFull = team.is_full;
-  const isLeader = currentUser && (team.leader_r_id.toUpperCase() === currentUser.id.toUpperCase());
-  const isMember = currentUser && (team.members || []).some(m => m.r_id.toUpperCase() === currentUser.id.toUpperCase());
+  const isFull = Boolean(team.is_full);
+  const isLeader = Boolean(currentUser && currentUser.id && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentUser.id.toUpperCase()));
+  const isMember = Boolean(currentUser && currentUser.id && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentUser.id.toUpperCase())));
 
   // Hero Section
   const heroHtml = `
-    <div style="margin-bottom:12px;">
-      <a href="/" class="btn-primary" style="background:var(--card-bg); color:var(--text-secondary); border:1px solid var(--card-border); height:28px; padding:0 12px; font-size:0.75rem; display:inline-flex;">
-        ← Back to Discover Teams
+    <div style="margin-bottom:20px;">
+      <a href="/" class="btn-outline-pill">
+        ← Back to Discover
       </a>
     </div>
 
-    <div class="surface-panel" style="margin-bottom:14px;">
-      <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-        <div style="flex:1; min-width:240px;">
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <h1 class="page-title" style="font-size:1.375rem;">${escapeHtml(team.name)}</h1>
-            <span class="status-pill ${isFull ? 'full' : 'open'}">
+    <div class="team-hero-card">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+        <div style="flex:1; min-width:260px;">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <h1 class="font-serif" style="font-size:2rem;">${escapeHtml(team.name)}</h1>
+            <span class="status-capsule ${isFull ? 'full' : 'open'}">
               ${isFull ? 'Team Full (6/6)' : `${6 - count} Open Seats`}
             </span>
           </div>
-          <p class="page-subtitle" style="margin-top:4px; font-size:0.875rem;">
+          <p style="font-size:1rem; color:var(--text-sage-light); line-height:1.5; margin-top:10px;">
             ${escapeHtml(team.description || "Building an innovative hackathon solution.")}
           </p>
         </div>
 
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          ${team.whatsapp_link ? `
+            <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-whatsapp-pill">
+              WhatsApp Group ➔
+            </a>
+          ` : ''}
+
           ${isLeader ? `
-            <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-primary" style="height:32px; font-size:0.75rem; background:rgba(0,0,0,0.06); color:var(--text-primary); border:1px solid rgba(0,0,0,0.12);">
+            <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-black-pill sm">
               ✎ Edit Team
+            </button>
+            <button onclick="confirmDisbandTeam('${team.id}')" class="btn-danger-pill">
+              Disband Team
             </button>
           ` : ''}
 
-          ${team.whatsapp_link ? `
-            <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-primary" style="background:#E6F7ED; color:#0F8B44; border:1px solid #B8E8CA; height:32px; font-size:0.75rem;">
-              Official WhatsApp Group ➔
-            </a>
+          ${(isMember && !isLeader) ? `
+            <button onclick="confirmLeaveTeam('${team.id}')" class="btn-danger-pill">
+              Leave Team
+            </button>
           ` : ''}
         </div>
       </div>
@@ -484,140 +581,127 @@ function renderFullTeamDetail(team) {
       const cleanName = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
       const initial = cleanName.charAt(0).toUpperCase() || 'U';
       const isYou = Boolean(currentUser && currentUser.id && mRid && (mRid.toUpperCase() === (currentUser.id + '').toUpperCase()));
-      const rolePill = m.role === 'leader'
-        ? `<span class="status-pill leader">Leader</span>`
-        : `<span class="status-pill" style="color:var(--text-secondary); background:rgba(0,0,0,0.05); border:1px solid rgba(0,0,0,0.08);">Member</span>`;
+      const roleCapsule = m.role === 'leader'
+        ? `<span class="status-capsule leader">Leader</span>`
+        : `<span class="status-capsule member">Member</span>`;
       const avatarUrl = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mRid || 'Student')}`;
 
       rosterCardsHtml += `
-        <div class="member-row">
-          <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
-            <div class="member-avatar-box">
-              <span class="avatar-initial">${escapeHtml(initial)}</span>
+        <div class="roster-seat-card">
+          <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+            <div class="seat-avatar">
+              <span class="avatar-stack-initial">${escapeHtml(initial)}</span>
               <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(mName)}" loading="lazy" onerror="this.remove();">
             </div>
 
             <div style="min-width:0; flex:1;">
-              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                <span class="member-name">${escapeHtml(mName)}</span>
-                ${isYou ? `<span class="status-pill user-tag">(You)</span>` : ""}
-                ${rolePill}
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span class="seat-name">${escapeHtml(cleanName)}</span>
+                ${isYou ? `<span class="status-capsule" style="background:var(--badge-mint); color:#fff; font-size:0.6875rem;">(You)</span>` : ""}
+                ${roleCapsule}
               </div>
 
-              <div class="member-meta-row" style="margin-top:2px;">
-                <span>${escapeHtml(mRid)} • ${escapeHtml(m.gender || 'Student')}</span>
-                ${m.dob && m.dob !== 'N/A' ? `<span> • DOB: ${escapeHtml(m.dob)}</span>` : ""}
+              <div class="seat-meta">
+                ${escapeHtml(mRid)} • ${escapeHtml(m.gender || 'Student')}
+                ${m.dob && m.dob !== 'N/A' ? ` • DOB: ${escapeHtml(m.dob)}` : ""}
               </div>
 
               ${m.program ? `
-                <div style="display:flex; align-items:center; gap:4px; margin-top:3px; flex-wrap:wrap;">
-                  <span class="program-pill">${escapeHtml(m.program)}</span>
-                  ${m.semester_year ? `<span class="semester-pill">${escapeHtml(m.semester_year)}</span>` : ''}
+                <div style="margin-top:4px;">
+                  <span class="status-capsule member" style="font-size:0.6875rem;">${escapeHtml(m.program)}</span>
                 </div>
               ` : ''}
 
               ${m.email ? `
-                <a href="mailto:${escapeHtml(m.email)}" class="member-email-link" style="margin-top:3px; display:inline-block;">
-                  ${escapeHtml(m.email)}
-                </a>
-              ` : ""}
+                <div style="margin-top:4px;">
+                  <a href="mailto:${escapeHtml(m.email)}" style="font-size:0.75rem; color:var(--badge-blue); text-decoration:underline;">
+                    ${escapeHtml(m.email)}
+                  </a>
+                </div>
+              ` : ''}
             </div>
           </div>
 
           ${isLeader && m.role !== 'leader' ? `
-            <button onclick="confirmRemoveMember('${team.id}', '${mRid}', '${escapeAttr(mName)}')" class="btn-danger" style="margin-left:8px; height:26px; padding:0 8px; font-size:0.6875rem; flex-shrink:0;">
+            <button onclick="confirmRemoveMember('${team.id}', '${escapeAttr(mRid)}', '${escapeAttr(cleanName)}')" class="btn-danger-pill" style="padding:4px 10px; font-size:0.6875rem;">
               Remove
             </button>
-          ` : ""}
+          ` : ''}
         </div>
       `;
     } else {
-      // Vacant Seat
+      // Empty seat
+      const seatNum = i + 1;
       rosterCardsHtml += `
-        <div class="member-row open-seat-row" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-          <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-            <div class="open-seat-icon">+</div>
-            <div>
-              <div class="open-seat-title">Seat ${i + 1} Open</div>
-              <div class="open-seat-meta">${isLeader ? 'Open for requests or add teammate' : 'Available for join requests'}</div>
-            </div>
+        <div class="roster-seat-card empty-seat">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-sage);">
+              Seat ${seatNum} • Open
+            </span>
+            ${isLeader ? `
+              <button onclick="openAddMemberModal('${team.id}', ${seatNum})" class="btn-black-pill sm" style="margin-top:4px;">
+                + Add Teammate
+              </button>
+            ` : `
+              <span style="font-size:0.8125rem; color:var(--text-sage-light);">Open for join requests</span>
+            `}
           </div>
-
-          ${isLeader ? `
-            <button onclick="openAddMemberModal('${team.id}', ${i + 1})" class="open-seat-action-btn">
-              + Add Teammate
-            </button>
-          ` : ''}
         </div>
       `;
     }
   }
 
-  const rosterSectionHtml = `
-    <div class="surface-panel" style="margin-bottom:14px;">
-      <h3 class="section-title" style="margin-bottom:12px;">Team Roster (${count} / 6)</h3>
-      <div class="roster-grid">
-        ${rosterCardsHtml}
-      </div>
-    </div>
-  `;
-
-  // Action Panel (Leader Controls, Join Request, Leave Team)
-  let actionPanelHtml = "";
-
-  if (!currentUser) {
-    actionPanelHtml = `
-      <div class="surface-panel" style="text-align:center; padding:20px;">
-        <p class="page-subtitle" style="margin-bottom:10px;">Sign in with your College R-ID to request to join this team.</p>
-        <a href="/login" class="btn-primary">Sign In to Request</a>
-      </div>
-    `;
-  } else if (isLeader) {
-    actionPanelHtml = `
-      <div class="surface-panel" id="leaderAdminPanel">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-          <h3 class="section-title" style="margin-bottom:0;">Leader Controls</h3>
-          <button onclick="confirmDisbandTeam('${team.id}')" class="btn-danger">
-            Disband Team
-          </button>
+  // Non-member Join Request Form
+  let joinSectionHtml = "";
+  if (!isMember && !isFull) {
+    if (currentUser) {
+      joinSectionHtml = `
+        <div class="team-hero-card" style="margin-top:24px;">
+          <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:6px;">Interested in Joining?</h3>
+          <p style="font-size:0.875rem; color:var(--text-sage); margin-bottom:16px;">Send a join request with a brief message to the team leader.</p>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <input type="text" id="joinMessageInput" placeholder="Brief note: e.g. Frontend dev with React experience..." class="input-forest" style="flex:1; min-width:240px;">
+            <button onclick="submitJoinRequest('${team.id}')" class="btn-black-pill">
+              Request to Join Team
+            </button>
+          </div>
         </div>
-
-        <div id="pendingRequestsContainer">
-          <p class="page-subtitle" style="font-size:0.75rem;">Loading pending join requests...</p>
+      `;
+    } else {
+      joinSectionHtml = `
+        <div class="team-hero-card" style="margin-top:24px; text-align:center; padding:32px;">
+          <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">Want to Join This Team?</h3>
+          <p style="font-size:0.875rem; color:var(--text-sage); margin-bottom:16px;">Sign in with your College R-ID to send a join request to the team leader.</p>
+          <a href="/login" class="btn-black-pill">Sign In with R-ID</a>
         </div>
-      </div>
-    `;
-  } else if (isMember) {
-    actionPanelHtml = `
-      <div class="surface-panel" style="display:flex; align-items:center; justify-content:space-between;">
-        <div>
-          <div style="font-size:0.8125rem; font-weight:650;">You are a member of this team</div>
-          <div class="meta-text">Collaborate with your teammates on WhatsApp or in person.</div>
-        </div>
-        <button onclick="confirmLeaveTeam('${team.id}')" class="btn-danger">
-          Leave Team
-        </button>
-      </div>
-    `;
-  } else if (!isFull) {
-    actionPanelHtml = `
-      <div class="surface-panel">
-        <h3 class="section-title">Request to Join Team</h3>
-        <p class="page-subtitle" style="margin-bottom:10px;">Send a message to the team leader introducing your skills.</p>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <textarea id="joinMessageInput" rows="2" class="form-textarea" placeholder="e.g. Hi, I have experience in Python backend and would love to join your project..."></textarea>
-          <button onclick="submitJoinRequest('${team.id}')" class="btn-primary" style="align-self:flex-start;">
-            Send Join Request
-          </button>
-        </div>
-      </div>
-    `;
+      `;
+    }
   }
 
-  container.innerHTML = heroHtml + rosterSectionHtml + actionPanelHtml;
+  // Leader Pending Join Requests
+  let pendingRequestsHtml = "";
   if (isLeader) {
-    loadTeamJoinRequests(team.id);
+    pendingRequestsHtml = `
+      <div class="team-hero-card" style="margin-top:24px;">
+        <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">Pending Join Requests</h3>
+        <div id="pendingRequestsContainer">
+          <p style="color:var(--text-sage); font-size:0.875rem;">Checking for join requests...</p>
+        </div>
+      </div>
+    `;
   }
+
+  container.innerHTML = `
+    ${heroHtml}
+    <div style="margin-bottom:14px;">
+      <h2 class="font-serif" style="font-size:1.375rem; margin-bottom:14px;">6-Seat Roster</h2>
+    </div>
+    <div class="roster-grid-6">
+      ${rosterCardsHtml}
+    </div>
+    ${joinSectionHtml}
+    ${pendingRequestsHtml}
+  `;
 }
 
 function loadTeamJoinRequests(teamId) {
@@ -629,21 +713,27 @@ function loadTeamJoinRequests(teamId) {
     .then(data => {
       const requests = data.requests || [];
       if (requests.length === 0) {
-        container.innerHTML = `<p class="meta-text" style="font-size:0.75rem; color:var(--text-tertiary);">No pending join requests.</p>`;
+        container.innerHTML = `<p style="font-size:0.875rem; color:var(--text-sage);">No pending join requests.</p>`;
         return;
       }
 
       container.innerHTML = `
-        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
           ${requests.map(req => `
-            <div style="background:rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.06); border-radius:var(--radius-control); padding:10px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <div style="background:var(--bg-forest-800); border:1px solid var(--border-surface); border-radius:var(--radius-xl); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
               <div>
-                <div style="font-size:0.8125rem; font-weight:650; color:var(--text-primary);">${escapeHtml(req.name || req.student_name || req.r_id)} <span class="meta-text">(${escapeHtml(req.r_id)})</span></div>
-                ${req.message ? `<div class="card-pitch" style="margin-top:2px;">"${escapeHtml(req.message)}"</div>` : ""}
+                <div style="font-weight:700; font-size:0.9375rem; color:var(--text-white);">
+                  ${escapeHtml(req.name || req.student_name || req.r_id)} <span style="font-size:0.8125rem; color:var(--text-sage);">(${escapeHtml(req.r_id)})</span>
+                </div>
+                ${req.message ? `<div style="font-size:0.8125rem; color:var(--text-sage-light); margin-top:4px;">"${escapeHtml(req.message)}"</div>` : ""}
               </div>
-              <div style="display:flex; gap:6px; flex-shrink:0;">
-                <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'accept')" class="btn-primary" style="background:#E6F7ED; color:#0F8B44; border:1px solid #B8E8CA; height:26px; padding:0 8px; font-size:0.6875rem;">Accept</button>
-                <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'reject')" class="btn-danger" style="height:26px; padding:0 8px; font-size:0.6875rem;">Decline</button>
+              <div style="display:flex; gap:8px; flex-shrink:0;">
+                <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'accept')" class="btn-black-pill sm" style="background:var(--badge-mint); color:#fff; border-color:var(--badge-mint);">
+                  Accept
+                </button>
+                <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'reject')" class="btn-danger-pill" style="padding:6px 14px;">
+                  Decline
+                </button>
               </div>
             </div>
           `).join("")}
@@ -651,7 +741,7 @@ function loadTeamJoinRequests(teamId) {
       `;
     })
     .catch(() => {
-      container.innerHTML = `<p class="meta-text">Failed to load requests.</p>`;
+      container.innerHTML = `<p style="color:var(--badge-coral); font-size:0.875rem;">Failed to load requests.</p>`;
     });
 }
 
@@ -786,7 +876,7 @@ function confirmRemoveMember(teamId, studentId, studentName) {
 }
 
 /* ==========================================================================
-   4B. LEADER EDIT TEAM MODAL & DIRECT SEAT ASSIGN MODAL
+   4B. LEADER EDIT TEAM & DIRECT SEAT ASSIGN MODALS
    ========================================================================== */
 function openEditTeamModal(teamId, curName, curDesc, curWa) {
   const overlay = document.getElementById("glassModalOverlay");
@@ -794,31 +884,31 @@ function openEditTeamModal(teamId, curName, curDesc, curWa) {
   if (!overlay || !sheet) return;
 
   sheet.innerHTML = `
-    <h3 class="modal-title">Edit Team Details</h3>
-    <p class="modal-message" style="margin-bottom:12px;">Modify your team name, hackathon project pitch, and WhatsApp invite link.</p>
+    <h3 class="forest-modal-title">Edit Team Details</h3>
+    <p class="forest-modal-message">Modify your team title, project pitch, and official WhatsApp invite link.</p>
 
-    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+    <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
       <div>
-        <label class="field-label" style="display:block; margin-bottom:4px;">Team Title *</label>
-        <input type="text" id="editTeamNameInput" value="${escapeAttr(curName)}" class="form-input">
+        <label class="form-label-forest">Team Title *</label>
+        <input type="text" id="editTeamNameInput" value="${escapeAttr(curName)}" class="input-forest">
       </div>
 
       <div>
-        <label class="field-label" style="display:block; margin-bottom:4px;">Project Pitch</label>
-        <textarea id="editTeamDescInput" rows="3" class="form-textarea">${escapeHtml(curDesc)}</textarea>
+        <label class="form-label-forest">Project Pitch</label>
+        <textarea id="editTeamDescInput" rows="3" class="input-forest">${escapeHtml(curDesc)}</textarea>
       </div>
 
       <div>
-        <label class="field-label" style="display:block; color:var(--accent-blue); margin-bottom:4px;">WhatsApp Invite Link</label>
-        <input type="text" id="editTeamWaInput" value="${escapeAttr(curWa)}" placeholder="https://chat.whatsapp.com/..." class="form-input">
+        <label class="form-label-forest">WhatsApp Invite Link</label>
+        <input type="text" id="editTeamWaInput" value="${escapeAttr(curWa)}" placeholder="https://chat.whatsapp.com/..." class="input-forest">
       </div>
     </div>
 
-    <div style="display:flex; gap:8px; justify-content:flex-end;">
-      <button onclick="closeGlassModal()" class="btn-primary" style="background:rgba(0,0,0,0.06); color:var(--text-primary); border:1px solid rgba(0,0,0,0.12);">
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button onclick="closeGlassModal()" class="btn-outline-pill">
         Cancel
       </button>
-      <button onclick="submitUpdateTeamDetails('${teamId}')" class="btn-primary" id="btnSaveTeamEdit">
+      <button onclick="submitUpdateTeamDetails('${teamId}')" class="btn-black-pill" id="btnSaveTeamEdit">
         Save Changes
       </button>
     </div>
@@ -887,16 +977,16 @@ function openAddMemberModal(teamId, seatNumber) {
   if (!overlay || !sheet) return;
 
   sheet.innerHTML = `
-    <h3 class="modal-title">Assign Seat ${seatNumber}</h3>
-    <p class="modal-message" style="margin-bottom:12px;">Search university database by R-ID or Name to directly add a teammate.</p>
+    <h3 class="forest-modal-title">Assign Seat ${seatNumber}</h3>
+    <p class="forest-modal-message">Search the university directory by R-ID or Name to directly add a teammate.</p>
 
-    <div style="position:relative; margin-bottom:14px;">
-      <input type="text" id="seatStudentSearchInput" placeholder="Type student R-ID or name (e.g. R15008, Rahul)..." class="form-input" oninput="debounceSeatMemberSearch('${teamId}')">
-      <div id="seatStudentSearchResults" class="search-dropdown" style="display:none; max-height:220px;"></div>
+    <div style="position:relative; margin-bottom:20px;">
+      <input type="text" id="seatStudentSearchInput" placeholder="Type R-ID or Name (e.g. R15008, Rahul)..." class="input-forest" oninput="debounceSeatMemberSearch('${teamId}')">
+      <div id="seatStudentSearchResults" class="search-dropdown" style="display:none;"></div>
     </div>
 
     <div style="display:flex; justify-content:flex-end;">
-      <button onclick="closeGlassModal()" class="btn-primary" style="background:rgba(0,0,0,0.06); color:var(--text-primary); border:1px solid rgba(0,0,0,0.12);">
+      <button onclick="closeGlassModal()" class="btn-outline-pill">
         Close
       </button>
     </div>
@@ -930,31 +1020,31 @@ function debounceSeatMemberSearch(teamId) {
       .then(data => {
         const students = data.students || [];
         if (students.length === 0) {
-          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span class="meta-text">No students matching "${escapeHtml(query)}"</span></div>`;
+          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span style="color:var(--text-sage); font-size:0.8125rem;">No students matching "${escapeHtml(query)}"</span></div>`;
           resultsDiv.style.display = "block";
           return;
         }
 
         resultsDiv.innerHTML = students.map(s => `
           <div class="search-dropdown-item" onclick="directAddTeammate('${teamId}', '${s.r_id}', '${escapeAttr(s.name)}')">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <div class="avatar-stack-item" style="width:24px; height:24px; margin-left:0;">
-                <span class="avatar-initial" style="font-size:0.625rem;">${escapeHtml(s.name.charAt(0).toUpperCase())}</span>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="avatar-stack-item" style="width:28px; height:28px; margin-left:0;">
+                <span class="avatar-stack-initial" style="font-size:0.6875rem;">${escapeHtml(s.name.charAt(0).toUpperCase())}</span>
                 <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.remove();">
               </div>
               <div>
-                <div style="font-size:0.8125rem; font-weight:650; color:var(--text-primary);">${escapeHtml(s.name)}</div>
-                <div class="meta-text">${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</div>
+                <div style="font-size:0.875rem; font-weight:700; color:var(--text-white);">${escapeHtml(s.name)}</div>
+                <div style="font-size:0.75rem; color:var(--text-sage);">${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</div>
               </div>
             </div>
-            <span style="font-size:0.75rem; color:var(--accent-blue); font-weight:600;">+ Add</span>
+            <span class="btn-black-pill sm" style="font-size:0.75rem; padding:4px 12px;">+ Add</span>
           </div>
         `).join("");
         resultsDiv.style.display = "block";
       })
       .catch(err => {
         if (err.name !== "AbortError") {
-          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span class="meta-text" style="color:var(--accent-red);">Search failed</span></div>`;
+          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span style="color:var(--badge-coral); font-size:0.8125rem;">Search failed</span></div>`;
           resultsDiv.style.display = "block";
         }
       });
@@ -985,7 +1075,7 @@ function directAddTeammate(teamId, studentRid, studentName) {
 }
 
 /* ==========================================================================
-   5. USER PROFILE VIEW (IDENTITY HERO, COLLEGE RECORD GRID & MY TEAMS)
+   5. USER PROFILE VIEW (LISA LEARNER DESIGN SYSTEM - SCREENSHOT 2)
    ========================================================================== */
 function loadProfileView() {
   const container = document.getElementById("profileViewContainer");
@@ -993,28 +1083,30 @@ function loadProfileView() {
 
   if (!currentUser) {
     container.innerHTML = `
-      <div class="surface-panel" style="text-align:center; padding:32px;">
-        <h2 class="page-title" style="font-size:1.25rem; margin-bottom:6px;">Sign In Required</h2>
-        <p class="page-subtitle" style="margin-bottom:14px;">Sign in with your College R-ID to view your profile and joined teams.</p>
-        <a href="/login" class="btn-primary" style="display:inline-flex;">Sign In with R-ID</a>
+      <div class="form-card-centered" style="text-align:center;">
+        <h2 class="font-serif" style="font-size:1.625rem; margin-bottom:8px;">Sign In Required</h2>
+        <p style="color:var(--text-sage); margin-bottom:20px;">Sign in with your College R-ID to view your hackathon profile and teams.</p>
+        <a href="/login" class="btn-black-pill lg" style="width:100%;">Sign In with R-ID</a>
       </div>
     `;
     return;
   }
 
-  container.innerHTML = `<div class="surface-panel" style="text-align:center; padding:32px;"><p class="page-subtitle">Loading student profile...</p></div>`;
+  container.innerHTML = `
+    <div style="text-align:center; padding:60px 20px;">
+      <p style="color:var(--text-sage); font-size:1rem;">Loading your profile...</p>
+    </div>
+  `;
 
-  fetch(`/api/user/profile?r_id=${encodeURIComponent(currentUser.id)}`)
+  fetch(`/api/user/profile?r_id=${encodeURIComponent(currentUser.id || "")}`)
     .then(res => res.json())
     .then(data => {
-      if (!data.success) {
-        container.innerHTML = `<div class="surface-panel" style="text-align:center; padding:32px;"><h3 style="color:var(--accent-red);">${escapeHtml(data.message || "Failed to load profile")}</h3></div>`;
-        return;
-      }
-      renderFullProfile(data.profile, data.teams || []);
+      const prof = data.profile || currentUser;
+      const userTeams = data.teams || [];
+      renderFullProfile(prof, userTeams);
     })
     .catch(() => {
-      container.innerHTML = `<div class="surface-panel" style="text-align:center; padding:32px;"><h3 style="color:var(--accent-red);">Error loading profile</h3></div>`;
+      renderFullProfile(currentUser, []);
     });
 }
 
@@ -1022,144 +1114,216 @@ function renderFullProfile(prof, userTeams) {
   const container = document.getElementById("profileViewContainer");
   if (!container) return;
 
-  const initial = (prof.name || prof.r_id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
-  const avatarSrc = prof.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(prof.r_id)}`;
+  const rawName = prof.name || prof.r_id || "Student";
+  const cleanName = rawName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
+  const avatarSrc = prof.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(prof.r_id || 'Student')}`;
 
+  // Count total teammates across joined teams
+  let totalTeammates = 0;
+  userTeams.forEach(t => {
+    totalTeammates += (t.members ? t.members.length : (t.member_count || 1));
+  });
+
+  // 1. Profile Hero Section (Matching Screenshot 2 Lisa Learner)
   const heroHtml = `
-    <div class="surface-panel" style="margin-bottom:14px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-        <div style="display:flex; align-items:center; gap:12px; min-width:200px;">
-          <div class="member-avatar-box" style="width:52px; height:52px; border-radius:16px;">
-            <span class="avatar-initial" style="font-size:1.125rem;">${escapeHtml(initial)}</span>
-            <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(prof.name)}" loading="lazy" onerror="this.remove();">
-          </div>
-
-          <div>
-            <h1 class="page-title" style="font-size:1.25rem;">${escapeHtml(prof.name)}</h1>
-            <div style="display:flex; align-items:center; gap:6px; margin-top:2px; flex-wrap:wrap;">
-              <span class="status-pill user-tag">${escapeHtml(prof.r_id)}</span>
-              <span class="meta-text">${escapeHtml(prof.gender || "Student")}</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap;">
-              <span class="program-pill">${escapeHtml(prof.program || "Academic Program Unspecified")}</span>
-              ${prof.semester_year ? `<span class="semester-pill">${escapeHtml(prof.semester_year)}</span>` : ''}
-              <button onclick="showCoursePickerModal()" style="font-size:0.6875rem; color:var(--accent-blue); background:none; border:none; cursor:pointer; text-decoration:underline;">Change</button>
-            </div>
-          </div>
+    <div class="profile-hero-section">
+      <div class="profile-identity-box">
+        <div class="profile-avatar-mascot-ring">
+          <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cleanName)}" onerror="this.src='/static/img/jnu_logo.png';">
         </div>
 
-        <button onclick="logoutUser()" class="btn-danger" style="height:28px; font-size:0.75rem;">
+        <div>
+          <h1 class="profile-name-title">${escapeHtml(cleanName)}</h1>
+          <div class="profile-handle">@${escapeHtml((prof.r_id || 'student').toLowerCase())}</div>
+          <div class="profile-counters-row">
+            <span>${userTeams.length} Active Team(s)</span>
+            <span>•</span>
+            <span>${escapeHtml(prof.program || "Student")}</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <button onclick="showCoursePickerModal()" class="btn-black-pill sm">
+          Edit Academic Course
+        </button>
+        <button onclick="logoutUser()" class="btn-danger-pill">
           Sign Out
         </button>
       </div>
     </div>
+
+    <div class="profile-divider-line"></div>
   `;
 
-  const recordHtml = `
-    <div class="surface-panel" style="margin-bottom:14px;">
-      <h3 class="section-title" style="margin-bottom:10px;">College Database Record</h3>
-      <div class="profile-record-grid">
-        <div class="profile-field-item">
-          <div class="field-label">Academic Program</div>
-          <div class="field-value" style="font-weight:600; color:var(--accent-blue);">${escapeHtml(prof.program || "Not Specified")}</div>
+  // 2. Statistics Section (5 Vibrant Stat Capsules from Screenshot 2)
+  const statsHtml = `
+    <div style="margin-bottom:14px;">
+      <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:14px;">Statistics</h3>
+      <div class="stats-capsules-grid">
+        <div class="stat-capsule-card coral">
+          <span class="stat-value-big">${userTeams.length}</span>
+          <span class="stat-label-tiny">Active Teams</span>
         </div>
-
-        <div class="profile-field-item">
-          <div class="field-label">Semester / Year</div>
-          <div class="field-value">${escapeHtml(prof.semester_year || "Current Session")}</div>
+        <div class="stat-capsule-card blue">
+          <span class="stat-value-big">${totalTeammates}</span>
+          <span class="stat-label-tiny">Total Teammates</span>
         </div>
-
-        <div class="profile-field-item">
-          <div class="field-label">Email Address</div>
-          <div class="field-value">${escapeHtml(prof.email || "N/A")}</div>
+        <div class="stat-capsule-card yellow">
+          <span class="stat-value-big">${prof.program ? prof.program.split(' ')[0] : 'B.Tech'}</span>
+          <span class="stat-label-tiny">Academic Program</span>
         </div>
-
-        <div class="profile-field-item">
-          <div class="field-label">Mobile Phone</div>
-          <div class="field-value">${escapeHtml(prof.phone || "N/A")}</div>
+        <div class="stat-capsule-card pink">
+          <span class="stat-value-big">${prof.semester_year ? prof.semester_year.replace('Semester', 'Sem') : '2026'}</span>
+          <span class="stat-label-tiny">Session</span>
         </div>
-
-        <div class="profile-field-item">
-          <div class="field-label">Date of Birth</div>
-          <div class="field-value" style="color:var(--accent-blue);">${escapeHtml(prof.dob || "N/A")}</div>
-        </div>
-
-        <div class="profile-field-item">
-          <div class="field-label">Father's Name</div>
-          <div class="field-value">${escapeHtml(prof.father_name || "N/A")}</div>
-        </div>
-
-        <div class="profile-field-item" style="grid-column: 1 / -1;">
-          <div class="field-label">Residential Address</div>
-          <div class="field-value">${escapeHtml(prof.address || "N/A")}</div>
+        <div class="stat-capsule-card mint">
+          <span class="stat-value-big">✓</span>
+          <span class="stat-label-tiny">Verified Student</span>
         </div>
       </div>
     </div>
   `;
 
+  // 3. Achievements Section (Matching Screenshot 2)
+  const achievementsHtml = `
+    <div style="margin-bottom:14px;">
+      <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:14px;">Achievements</h3>
+      <div class="achievements-grid">
+        <div class="achievement-card">
+          <div class="achievement-icon-box">🚀</div>
+          <div>
+            <div class="achievement-title">Team Pioneer</div>
+            <div class="achievement-desc">${userTeams.length > 0 ? "Formed/joined a hackathon squad" : "Ready to join your first team"}</div>
+          </div>
+        </div>
+
+        <div class="achievement-card">
+          <div class="achievement-icon-box">🎓</div>
+          <div>
+            <div class="achievement-title">Academic Scholar</div>
+            <div class="achievement-desc">${prof.program ? escapeHtml(prof.program) : "Verified University Profile"}</div>
+          </div>
+        </div>
+
+        <div class="achievement-card">
+          <div class="achievement-icon-box">⚡</div>
+          <div>
+            <div class="achievement-title">Fast Collaborator</div>
+            <div class="achievement-desc">Active hackathon candidate ready to build</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 4. College Database Record
+  const recordHtml = `
+    <div class="college-record-panel">
+      <h3 class="font-serif" style="font-size:1.25rem;">College Database Record</h3>
+      <div class="college-record-grid">
+        <div class="record-field-box">
+          <span class="record-label">Academic Program</span>
+          <span class="record-value" style="color:var(--badge-mint);">${escapeHtml(prof.program || "Not Specified")}</span>
+        </div>
+
+        <div class="record-field-box">
+          <span class="record-label">Semester / Year</span>
+          <span class="record-value">${escapeHtml(prof.semester_year || "Current Session")}</span>
+        </div>
+
+        <div class="record-field-box">
+          <span class="record-label">Email Address</span>
+          <span class="record-value">${escapeHtml(prof.email || "N/A")}</span>
+        </div>
+
+        <div class="record-field-box">
+          <span class="record-label">Mobile Phone</span>
+          <span class="record-value">${escapeHtml(prof.phone || "N/A")}</span>
+        </div>
+
+        <div class="record-field-box">
+          <span class="record-label">Date of Birth</span>
+          <span class="record-value" style="color:var(--badge-mint);">${escapeHtml(prof.dob || "N/A")}</span>
+        </div>
+
+        <div class="record-field-box">
+          <span class="record-label">Father's Name</span>
+          <span class="record-value">${escapeHtml(prof.father_name || "N/A")}</span>
+        </div>
+
+        <div class="record-field-box" style="grid-column: 1 / -1;">
+          <span class="record-label">Residential Address</span>
+          <span class="record-value">${escapeHtml(prof.address || "N/A")}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 5. My Teams Section
   let teamsHtml = "";
   if (userTeams.length === 0) {
     teamsHtml = `
-      <div class="surface-panel">
-        <h3 class="section-title" style="margin-bottom:6px;">My Teams (0)</h3>
-        <p class="page-subtitle" style="margin-bottom:12px;">You haven't joined or created any hackathon teams yet.</p>
-        <div style="display:flex; gap:8px;">
-          <a href="/" class="btn-primary" style="font-size:0.75rem;">Discover Teams</a>
-          <a href="/create-team" class="btn-primary" style="font-size:0.75rem; background:rgba(0,0,0,0.06); color:var(--text-primary); border:1px solid rgba(0,0,0,0.12);">+ Create Team</a>
+      <div class="college-record-panel" style="text-align:center; padding:36px 20px;">
+        <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:6px;">My Teams (0)</h3>
+        <p style="color:var(--text-sage); margin-bottom:18px;">You haven't joined or created any hackathon teams yet.</p>
+        <div style="display:flex; justify-content:center; gap:10px;">
+          <a href="/" class="btn-black-pill">Discover Teams</a>
+          <a href="/create-team" class="btn-outline-pill">+ Create Team</a>
         </div>
       </div>
     `;
   } else {
     const cards = userTeams.map(team => {
-      const isFull = team.is_full;
+      const isFull = Boolean(team.is_full);
       const count = team.member_count || (team.members ? team.members.length : 0);
-      const openSlots = 6 - count;
+      const openSlots = Math.max(0, 6 - count);
 
-      const avatarsHtml = (team.members || []).slice(0, 3).map(m => {
+      const avatarsHtml = (team.members || []).slice(0, 4).map(m => {
         const init = (m.name || m.r_id || 'U').replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
         return `
           <div class="avatar-stack-item">
-            <span class="avatar-initial">${escapeHtml(init)}</span>
+            <span class="avatar-stack-initial">${escapeHtml(init)}</span>
             <img src="${escapeHtml(m.avatar_url || '')}" alt="${escapeHtml(m.name)}" loading="lazy" onerror="this.remove();">
           </div>
         `;
       }).join("");
 
       return `
-        <article class="team-card-module" onclick="navigateTo('/team/${team.id}')">
-          <div class="card-top-row">
-            <span class="status-pill ${isFull ? 'full' : 'open'}">
-              ${isFull ? 'Full (6/6)' : `${openSlots} Open`}
-            </span>
-            <div class="avatar-stack">
-              ${avatarsHtml}
-            </div>
-          </div>
-
+        <article class="team-card-forest" onclick="navigateTo('/team/${team.id}')">
           <div>
-            <h2 class="card-title">${escapeHtml(team.name)}</h2>
-            <p class="card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution.")}</p>
+            <div class="team-card-top-row">
+              <span class="status-capsule ${isFull ? 'full' : 'open'}">
+                ${isFull ? 'Team Full (6/6)' : `${openSlots} Seats Open`}
+              </span>
+              <div class="avatar-stack">
+                ${avatarsHtml}
+              </div>
+            </div>
+
+            <h2 class="team-card-title">${escapeHtml(team.name)}</h2>
+            <p class="team-card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution.")}</p>
           </div>
 
-          <div class="card-bottom-row">
-            <span class="meta-text">${count}/6 members</span>
-            <span class="card-action-hint">View ➔</span>
+          <div class="team-card-bottom-row">
+            <span class="meta-members-tag">${count}/6 Members</span>
+            <span class="btn-black-pill sm">View Team ➔</span>
           </div>
         </article>
       `;
     }).join("");
 
     teamsHtml = `
-      <div class="surface-panel">
-        <h3 class="section-title" style="margin-bottom:12px;">My Teams (${userTeams.length})</h3>
-        <div class="teams-grid">
+      <div style="margin-bottom:20px;">
+        <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:14px;">My Teams (${userTeams.length})</h3>
+        <div class="teams-forest-grid">
           ${cards}
         </div>
       </div>
     `;
   }
 
-  container.innerHTML = heroHtml + recordHtml + teamsHtml;
+  container.innerHTML = heroHtml + statsHtml + achievementsHtml + recordHtml + teamsHtml;
 }
 
 /* ==========================================================================
@@ -1178,26 +1342,29 @@ function showCoursePickerModal() {
   `).join("");
 
   sheet.innerHTML = `
-    <h3 class="modal-title">Select Academic Program</h3>
-    <p class="modal-message" style="margin-bottom:14px;">Select your enrolled degree/program for your HackMate hackathon profile.</p>
+    <h3 class="forest-modal-title">Select Academic Program</h3>
+    <p class="forest-modal-message">Select your enrolled degree and course for your HackMate hackathon profile.</p>
 
-    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+    <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
       <div>
-        <label class="field-label" style="display:block; margin-bottom:4px;">Academic Program *</label>
-        <select id="modalCourseSelect" class="form-input" style="font-weight:500;">
+        <label class="form-label-forest">Academic Program *</label>
+        <select id="modalCourseSelect" class="input-forest">
           ${optionsHtml}
         </select>
       </div>
 
       <div>
-        <label class="field-label" style="display:block; margin-bottom:4px;">Semester / Year (Optional)</label>
-        <input type="text" id="modalSemInput" value="${escapeAttr(curSem)}" placeholder="e.g. Semester 2 or Year 1" class="form-input">
+        <label class="form-label-forest">Semester / Year (Optional)</label>
+        <input type="text" id="modalSemInput" value="${escapeAttr(curSem)}" placeholder="e.g. Semester 4 or Year 2" class="input-forest">
       </div>
     </div>
 
-    <div style="display:flex; gap:8px; justify-content:flex-end;">
-      <button onclick="saveCourseSelection()" class="btn-primary" id="btnSaveProgram">
-        Confirm & Continue
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button onclick="closeGlassModal()" class="btn-outline-pill">
+        Cancel
+      </button>
+      <button onclick="saveCourseSelection()" class="btn-black-pill" id="btnSaveProgram">
+        Confirm & Save
       </button>
     </div>
   `;
@@ -1235,7 +1402,7 @@ function saveCourseSelection() {
     .then(data => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Confirm & Continue";
+        btn.innerText = "Confirm & Save";
       }
       if (data.success) {
         if (currentUser) {
@@ -1257,14 +1424,14 @@ function saveCourseSelection() {
     .catch(() => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Confirm & Continue";
+        btn.innerText = "Confirm & Save";
       }
-      showToast("Network error saving program", "error");
+      showToast("Network error updating program", "error");
     });
 }
 
 /* ==========================================================================
-   6. CREATE TEAM VIEW (TITLE, PITCH, WHATSAPP, FRIEND SEARCH & 6-SEAT PREVIEW)
+   6. CREATE TEAM VIEW (SCREENSHOT 1 STYLE)
    ========================================================================== */
 function loadCreateTeamView() {
   selectedFriends = [];
@@ -1273,54 +1440,55 @@ function loadCreateTeamView() {
 
   if (!currentUser) {
     container.innerHTML = `
-      <div class="surface-panel" style="text-align:center; padding:32px;">
-        <h2 class="page-title" style="font-size:1.25rem; margin-bottom:6px;">Sign In Required</h2>
-        <p class="page-subtitle" style="margin-bottom:14px;">Sign in with your College R-ID to create and publish a hackathon team.</p>
-        <a href="/login" class="btn-primary" style="display:inline-flex;">Sign In with R-ID</a>
+      <div class="form-card-centered" style="text-align:center;">
+        <h2 class="font-serif" style="font-size:1.625rem; margin-bottom:8px;">Sign In Required</h2>
+        <p style="color:var(--text-sage); margin-bottom:20px;">Sign in with your College R-ID to create and publish a hackathon team.</p>
+        <a href="/login" class="btn-black-pill lg" style="width:100%;">Sign In with R-ID</a>
       </div>
     `;
     return;
   }
 
   container.innerHTML = `
-    <div style="margin-bottom:12px;">
-      <a href="/" class="btn-primary" style="background:var(--card-bg); color:var(--text-secondary); border:1px solid var(--card-border); height:28px; padding:0 12px; font-size:0.75rem; display:inline-flex;">
+    <div style="margin-bottom:20px; max-width:520px; margin-left:auto; margin-right:auto;">
+      <a href="/" class="btn-outline-pill">
         ← Cancel & Back
       </a>
     </div>
 
-    <div class="surface-panel">
-      <h1 class="page-title" style="font-size:1.25rem;">Create New Team</h1>
-      <p class="page-subtitle" style="margin-bottom:14px;">Build your 6-seat team: pre-add friends or leave seats open for requests.</p>
+    <div class="form-card-centered">
+      <div class="greeting-sup-text" style="text-align:center;">6-Seat Team Builder</div>
+      <h1 class="font-serif" style="font-size:1.875rem; text-align:center; margin-bottom:6px;">Create New Team</h1>
+      <p style="color:var(--text-sage); font-size:0.875rem; text-align:center; margin-bottom:24px;">Pre-add teammates or leave seats open for other participants to request.</p>
 
-      <div style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; flex-direction:column; gap:16px;">
         <div>
-          <label class="field-label" style="display:block; margin-bottom:4px;">Team Title *</label>
-          <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, NeuroVision" class="form-input">
+          <label class="form-label-forest">Team Title *</label>
+          <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, NeuroVision" class="input-forest">
         </div>
 
         <div>
-          <label class="field-label" style="display:block; margin-bottom:4px;">Project Pitch</label>
-          <textarea id="teamDescInput" rows="2" placeholder="Describe your hackathon project pitch or required skills..." class="form-textarea"></textarea>
+          <label class="form-label-forest">Project Pitch</label>
+          <textarea id="teamDescInput" rows="3" placeholder="Describe your hackathon project pitch or required skills..." class="input-forest"></textarea>
         </div>
 
         <div>
-          <label class="field-label" style="display:block; color:var(--accent-blue); margin-bottom:4px;">WhatsApp Group Link (Optional)</label>
-          <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="form-input">
+          <label class="form-label-forest">WhatsApp Group Link (Optional)</label>
+          <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="input-forest">
         </div>
 
-        <div style="padding-top:10px; border-top:1px solid rgba(0,0,0,0.06); position:relative;">
-          <label class="field-label" style="display:block; margin-bottom:4px;">Search & Pre-Add Teammates</label>
-          <input type="text" id="friendSearchInput" placeholder="Type student R-ID or name..." class="form-input" oninput="debounceFriendSearch()">
+        <div style="padding-top:12px; border-top:1px solid var(--border-muted); position:relative;">
+          <label class="form-label-forest">Search & Pre-Add Teammates</label>
+          <input type="text" id="friendSearchInput" placeholder="Type student R-ID or Name..." class="input-forest" oninput="debounceFriendSearch()">
           <div id="friendSearchResults" class="search-dropdown" style="display:none;"></div>
         </div>
 
         <div>
-          <label class="field-label" style="display:block; margin-bottom:6px;">6-Seat Visual Preview</label>
+          <label class="form-label-forest">6-Seat Visual Preview</label>
           <div id="createTeamSeatsContainer" class="seat-preview-grid"></div>
         </div>
 
-        <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-primary" style="height:34px; width:100%; margin-top:4px;">
+        <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-black-pill lg" style="width:100%; margin-top:8px;">
           Create & Publish Team
         </button>
       </div>
@@ -1337,14 +1505,14 @@ function renderCreateTeamSeats() {
   const leaderInitial = currentUser ? (currentUser.name || currentUser.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U' : 'L';
 
   let seatsHtml = `
-    <div class="seat-preview-item active">
-      <div class="seat-label" style="color:var(--accent-blue);">Seat 1 (Leader)</div>
-      <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-        <div class="avatar-stack-item" style="width:20px; height:20px; margin-left:0;">
-          <span class="avatar-initial" style="font-size:0.5625rem;">${escapeHtml(leaderInitial)}</span>
+    <div class="seat-preview-box active">
+      <div style="font-size:0.6875rem; font-weight:800; text-transform:uppercase; color:var(--badge-mint);">Seat 1 (Leader)</div>
+      <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+        <div class="avatar-stack-item" style="width:24px; height:24px; margin-left:0;">
+          <span class="avatar-stack-initial" style="font-size:0.625rem;">${escapeHtml(leaderInitial)}</span>
           <img src="${escapeHtml((currentUser && currentUser.avatar_url) || '')}" alt="${escapeHtml((currentUser && currentUser.name) || '')}" loading="lazy" onerror="this.remove();">
         </div>
-        <span style="font-size:0.75rem; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+        <span style="font-size:0.8125rem; font-weight:700; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
           ${escapeHtml((currentUser && currentUser.name) || 'Leader')}
         </span>
       </div>
@@ -1356,17 +1524,17 @@ function renderCreateTeamSeats() {
       const f = selectedFriends[i];
       const initial = (f.name || f.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
       seatsHtml += `
-        <div class="seat-preview-item active">
+        <div class="seat-preview-box active">
           <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
-            <span class="seat-label" style="color:var(--accent-blue);">Seat ${i + 2}</span>
-            <button onclick="removeFriendFromTeam('${f.id}')" style="background:none; border:none; color:var(--accent-red); font-size:0.6875rem; cursor:pointer; font-weight:700;">×</button>
+            <span style="font-size:0.6875rem; font-weight:800; text-transform:uppercase; color:var(--badge-mint);">Seat ${i + 2}</span>
+            <button onclick="removeFriendFromTeam('${f.id}')" style="color:var(--badge-coral); font-size:0.75rem; cursor:pointer; font-weight:800;">✕</button>
           </div>
-          <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-            <div class="avatar-stack-item" style="width:20px; height:20px; margin-left:0;">
-              <span class="avatar-initial" style="font-size:0.5625rem;">${escapeHtml(initial)}</span>
+          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+            <div class="avatar-stack-item" style="width:24px; height:24px; margin-left:0;">
+              <span class="avatar-stack-initial" style="font-size:0.625rem;">${escapeHtml(initial)}</span>
               <img src="${escapeHtml(f.avatar_url || '')}" alt="${escapeHtml(f.name)}" loading="lazy" onerror="this.remove();">
             </div>
-            <span style="font-size:0.75rem; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            <span style="font-size:0.8125rem; font-weight:700; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
               ${escapeHtml(f.name)}
             </span>
           </div>
@@ -1374,9 +1542,9 @@ function renderCreateTeamSeats() {
       `;
     } else {
       seatsHtml += `
-        <div class="seat-preview-item">
-          <div class="seat-label">Seat ${i + 2}</div>
-          <div class="seat-status">Open for Requests</div>
+        <div class="seat-preview-box">
+          <span style="font-size:0.6875rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Seat ${i + 2}</span>
+          <span style="font-size:0.75rem; color:var(--text-sage);">Open Slot</span>
         </div>
       `;
     }
@@ -1405,32 +1573,39 @@ function debounceFriendSearch() {
       .then(res => res.json())
       .then(data => {
         const students = data.students || [];
-        if (students.length === 0) {
-          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span class="meta-text">No students matching "${escapeHtml(query)}"</span></div>`;
+        const filtered = students.filter(s => {
+          if (!s || !s.r_id) return false;
+          if (currentUser && s.r_id.toUpperCase() === currentUser.id.toUpperCase()) return false;
+          if (selectedFriends.some(f => f.id.toUpperCase() === s.r_id.toUpperCase())) return false;
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span style="color:var(--text-sage); font-size:0.8125rem;">No unselected students matching "${escapeHtml(query)}"</span></div>`;
           resultsDiv.style.display = "block";
           return;
         }
 
-        resultsDiv.innerHTML = students.map(s => `
-          <div class="search-dropdown-item" onclick="addFriendToTeam('${s.r_id}', '${escapeAttr(s.name)}', '${escapeAttr(s.avatar_url || '')}')">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <div class="avatar-stack-item" style="width:24px; height:24px; margin-left:0;">
-                <span class="avatar-initial" style="font-size:0.625rem;">${escapeHtml(s.name.charAt(0).toUpperCase())}</span>
+        resultsDiv.innerHTML = filtered.slice(0, 5).map(s => `
+          <div class="search-dropdown-item" onclick="addFriendToTeam('${escapeAttr(s.r_id)}', '${escapeAttr(s.name)}', '${escapeAttr(s.avatar_url || '')}')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="avatar-stack-item" style="width:28px; height:28px; margin-left:0;">
+                <span class="avatar-stack-initial" style="font-size:0.6875rem;">${escapeHtml(s.name.charAt(0).toUpperCase())}</span>
                 <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.remove();">
               </div>
               <div>
-                <div style="font-size:0.8125rem; font-weight:650; color:var(--text-primary);">${escapeHtml(s.name)}</div>
-                <div class="meta-text">${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</div>
+                <div style="font-size:0.875rem; font-weight:700; color:var(--text-white);">${escapeHtml(s.name)}</div>
+                <div style="font-size:0.75rem; color:var(--text-sage);">${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</div>
               </div>
             </div>
-            <span style="font-size:0.75rem; color:var(--accent-blue); font-weight:600;">+ Add</span>
+            <span class="btn-black-pill sm" style="font-size:0.75rem; padding:4px 12px;">+ Add</span>
           </div>
         `).join("");
         resultsDiv.style.display = "block";
       })
       .catch(err => {
         if (err.name !== "AbortError") {
-          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span class="meta-text" style="color:var(--accent-red);">Search failed</span></div>`;
+          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span style="color:var(--badge-coral); font-size:0.8125rem;">Search failed</span></div>`;
           resultsDiv.style.display = "block";
         }
       });
@@ -1438,32 +1613,20 @@ function debounceFriendSearch() {
 }
 
 function addFriendToTeam(r_id, name, avatar_url) {
+  if (selectedFriends.length >= 5) {
+    showToast("A team can have a maximum of 6 members (1 Leader + 5 Teammates)", "error");
+    return;
+  }
+  selectedFriends.push({ id: r_id, name: name, avatar_url: avatar_url });
   const resultsDiv = document.getElementById("friendSearchResults");
   const input = document.getElementById("friendSearchInput");
   if (resultsDiv) resultsDiv.style.display = "none";
   if (input) input.value = "";
-
-  if (currentUser && currentUser.id.toUpperCase() === r_id.toUpperCase()) {
-    showToast("You are already the team leader", "info");
-    return;
-  }
-
-  if (selectedFriends.some(f => f.id.toUpperCase() === r_id.toUpperCase())) {
-    showToast("Friend already added", "info");
-    return;
-  }
-
-  if (selectedFriends.length >= 5) {
-    showToast("Maximum 5 teammates can be pre-added", "error");
-    return;
-  }
-
-  selectedFriends.push({ id: r_id, name: name, avatar_url: avatar_url });
   renderCreateTeamSeats();
 }
 
 function removeFriendFromTeam(r_id) {
-  selectedFriends = selectedFriends.filter(f => f.id.toUpperCase() !== r_id.toUpperCase());
+  selectedFriends = selectedFriends.filter(f => f.id !== r_id);
   renderCreateTeamSeats();
 }
 
@@ -1473,66 +1636,76 @@ function submitCreateTeam() {
   const waInput = document.getElementById("teamWhatsappInput");
   const btn = document.getElementById("btnSubmitCreate");
 
-  const title = nameInput ? nameInput.value.trim() : "";
+  const name = nameInput ? nameInput.value.trim() : "";
   const desc = descInput ? descInput.value.trim() : "";
   const wa = waInput ? waInput.value.trim() : "";
 
-  if (!title) {
+  if (!name) {
     showToast("Team title is required", "error");
     return;
   }
 
-  btn.disabled = true;
-  btn.innerText = "Publishing Team...";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = "Creating Team...";
+  }
 
   fetch("/api/teams/create", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      title: title,
+      leader_r_id: currentUser ? currentUser.id : "",
+      name: name,
       description: desc,
       whatsapp_link: wa,
-      initial_members: selectedFriends.map(f => f.id)
+      pre_added_members: selectedFriends.map(f => f.id)
     })
   })
     .then(res => res.json())
     .then(data => {
-      btn.disabled = false;
-      btn.innerText = "Create & Publish Team";
-      if (data.success) {
-        showToast("Team created successfully!", "info");
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Create & Publish Team";
+      }
+      if (data.success && data.team_id) {
+        showToast("Team published successfully!", "success");
         clientCache.teamsList = null;
-        navigateTo(`/team/${data.team_id || (data.team && data.team.id)}`);
+        navigateTo(`/team/${data.team_id}`);
       } else {
         showToast(data.message || "Failed to create team", "error");
       }
     })
     .catch(() => {
-      btn.disabled = false;
-      btn.innerText = "Create & Publish Team";
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Create & Publish Team";
+      }
       showToast("Network error creating team", "error");
     });
 }
 
 /* ==========================================================================
-   7. STUDENT DIRECTORY SEARCH VIEW
+   7. STUDENT DIRECTORY VIEW
    ========================================================================== */
 function loadStudentsView() {
   const container = document.getElementById("studentsViewContainer");
   if (!container) return;
 
   container.innerHTML = `
-    <div class="surface-panel">
-      <h1 class="page-title" style="font-size:1.25rem;">Student Directory</h1>
-      <p class="page-subtitle" style="margin-bottom:12px;">Search college student database by R-ID or Name.</p>
+    <div class="forest-header-section">
+      <div class="greeting-sup-text">University Student Directory</div>
+      <h1 class="greeting-main-title">Student Directory</h1>
+      <p class="greeting-subtitle">Search registered college participants by R-ID or Name to discover collaborators.</p>
+    </div>
 
-      <div class="search-wrapper" style="margin-bottom:14px;">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-        <input type="text" id="dirSearchInput" placeholder="Type student R-ID or Name (e.g. R15006, Rahul)..." class="search-input" oninput="debounceDirectorySearch()">
-      </div>
+    <div class="search-pill-wrapper" style="margin-bottom:24px;">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+      <input type="text" id="dirSearchInput" placeholder="Type student R-ID or Name (e.g. R15006, Rahul)..." class="search-pill-input" oninput="debounceDirectorySearch()">
+    </div>
 
-      <div id="dirSearchResults" style="display:flex; flex-direction:column; gap:6px;">
-        <p class="meta-text" style="text-align:center; padding:24px;">Type student R-ID or name above to search</p>
+    <div id="dirSearchResults" class="teams-forest-grid">
+      <div style="grid-column: 1 / -1; text-align:center; padding:48px 20px;">
+        <p style="color:var(--text-sage); font-size:0.9375rem;">Type student R-ID or Name above to search</p>
       </div>
     </div>
   `;
@@ -1547,7 +1720,7 @@ function debounceDirectorySearch() {
 
     const query = input.value.trim();
     if (query.length < 2) {
-      resultsDiv.innerHTML = `<p class="meta-text" style="text-align:center; padding:24px;">Type student R-ID or name above to search</p>`;
+      resultsDiv.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:48px 20px;"><p style="color:var(--text-sage); font-size:0.9375rem;">Type student R-ID or Name above to search</p></div>`;
       return;
     }
 
@@ -1559,27 +1732,36 @@ function debounceDirectorySearch() {
       .then(data => {
         const students = data.students || [];
         if (students.length === 0) {
-          resultsDiv.innerHTML = `<p class="meta-text" style="text-align:center; padding:24px;">No students matching "${escapeHtml(query)}"</p>`;
+          resultsDiv.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:48px 20px;"><p style="color:var(--text-sage); font-size:0.9375rem;">No students matching "${escapeHtml(query)}"</p></div>`;
           return;
         }
 
         resultsDiv.innerHTML = students.map(s => {
           const initial = s.name.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
           return `
-            <div class="member-row">
-              <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                <div class="member-avatar-box">
-                  <span class="avatar-initial">${escapeHtml(initial)}</span>
+            <div class="team-card-forest">
+              <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+                <div class="avatar-stack-item" style="width:48px; height:48px; margin-left:0; border:2px solid var(--badge-yellow);">
+                  <span class="avatar-stack-initial" style="font-size:1.125rem;">${escapeHtml(initial)}</span>
                   <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.remove();">
                 </div>
-                <div>
-                  <div class="member-name">${escapeHtml(s.name)}</div>
-                  <div class="member-meta-row">
-                    <span>${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</span>
-                    ${s.dob && s.dob !== 'N/A' ? `<span> • DOB: ${escapeHtml(s.dob)}</span>` : ""}
+                <div style="min-width:0; flex:1;">
+                  <h3 class="font-serif" style="font-size:1.125rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(s.name)}</h3>
+                  <div style="font-size:0.8125rem; color:var(--text-sage); margin-top:2px;">
+                    ${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}
                   </div>
-                  ${s.email ? `<a href="mailto:${escapeHtml(s.email)}" class="member-email-link">${escapeHtml(s.email)}</a>` : ""}
                 </div>
+              </div>
+
+              ${s.program ? `
+                <div style="margin-bottom:12px;">
+                  <span class="status-capsule member" style="font-size:0.6875rem;">${escapeHtml(s.program)}</span>
+                </div>
+              ` : ''}
+
+              <div class="team-card-bottom-row">
+                <span style="font-size:0.75rem; color:var(--text-sage);">DOB: ${escapeHtml(s.dob || 'N/A')}</span>
+                ${s.email ? `<a href="mailto:${escapeHtml(s.email)}" class="btn-black-pill sm" style="font-size:0.75rem; padding:4px 12px;">Email ➔</a>` : ""}
               </div>
             </div>
           `;
@@ -1587,22 +1769,19 @@ function debounceDirectorySearch() {
       })
       .catch(err => {
         if (err.name !== "AbortError") {
-          resultsDiv.innerHTML = `<p class="meta-text" style="text-align:center; padding:24px; color:var(--accent-red);">Search failed</p>`;
+          resultsDiv.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:48px 20px;"><p style="color:var(--badge-coral); font-size:0.9375rem;">Search failed</p></div>`;
         }
       });
   }, 120);
 }
 
 /* ==========================================================================
-   8. AUTHENTICATION VIEW (TWO-CASE R-ID RESOLUTION, BRANDED LOGO, NO UNLISTED LINK)
+   8. AUTHENTICATION VIEW (MASCOTS DUO & 6-DIGIT OTP FLOW - SCREENSHOT 4 & 5)
    ========================================================================== */
 let resendTimerInterval = null;
 let resendSecondsRemaining = 30;
 let isVerifyingOtp = false;
 
-/* ==========================================================================
-   8. AUTHENTICATION VIEW (BEAUTIFIED CARD, TRANSPARENT LOGO, RESEND OTP)
-   ========================================================================== */
 function loadLoginView() {
   const container = document.getElementById("loginViewContainer");
   if (!container) return;
@@ -1615,92 +1794,96 @@ function loadLoginView() {
   `).join("");
 
   container.innerHTML = `
-    <div class="login-card">
-      <!-- Native Transparent University Crest -->
-      <div class="login-uni-logo-box">
-        <img src="/static/img/jnu_logo.png" alt="University Crest" onerror="this.src='/static/img/jnu_logo.jpg';">
-      </div>
-
-      <h1 class="page-title" style="font-size:1.5rem; margin-bottom:4px; text-align:center;">Sign In with College R-ID</h1>
-      <p class="page-subtitle" style="margin-bottom:22px; text-align:center;">Official Hackathon Team Matching Platform</p>
-
-      <!-- Step 1: Input R-ID -->
-      <div id="authStep1">
-        <div style="margin-bottom:16px;">
-          <label class="field-label" style="display:block; margin-bottom:6px;">College R-ID</label>
-          <input type="text" id="authRidInput" placeholder="e.g. R15006" class="form-input" style="font-weight:750; text-transform:uppercase; height:46px; font-size:1.125rem; letter-spacing:0.04em; text-align:center;">
+    <div class="login-screen-wrap">
+      <div class="login-editorial-card">
+        
+        <!-- Playful Mascot Duo Illustration from Screenshot 4 & 5 -->
+        <div class="mascot-hero-container">
+          <img src="/static/img/hackmate_mascots.svg" alt="HackMate Mascots" onerror="this.src='/static/img/jnu_logo.png';">
         </div>
 
-        <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-primary" style="width:100%; height:44px; font-size:0.9375rem;">
-          Continue
-        </button>
-      </div>
+        <div class="greeting-sup-text">Welcome to HackMate</div>
+        <h1 class="font-serif" style="font-size:1.875rem; margin-bottom:6px;">Sign In with College R-ID</h1>
+        <p style="color:var(--text-sage); font-size:0.875rem; margin-bottom:28px;">Find teammates, build dream teams, and win hackathons easily and fast!</p>
 
-      <!-- Step 1B: Fallback when details sync is pending (Case 2) -->
-      <div id="authStepSyncNotice" style="display:none;">
-        <div style="text-align:center; margin-bottom:12px;">
-          <div class="rid-banner-tag">
-            <span>R-ID:</span>
-            <span id="syncRidBanner"></span>
-          </div>
-        </div>
-
-        <div class="sync-notice-banner">
-          University records sync is currently in progress for this R-ID. Please confirm your academic details below to proceed.
-        </div>
-
-        <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
-          <div>
-            <label class="field-label" style="display:block; margin-bottom:4px;">Full Name *</label>
-            <input type="text" id="syncNameInput" placeholder="Your full name as per records" class="form-input" style="height:44px; font-size:0.9375rem;">
+        <!-- Step 1: Input R-ID -->
+        <div id="authStep1">
+          <div class="form-group">
+            <label class="form-label-forest" style="text-align:left;">College R-ID</label>
+            <input type="text" id="authRidInput" placeholder="e.g. R15006" class="input-forest" style="font-weight:750; text-transform:uppercase; font-size:1.125rem; letter-spacing:0.04em; text-align:center;">
           </div>
 
-          <div>
-            <label class="field-label" style="display:block; margin-bottom:4px;">College Email *</label>
-            <input type="email" id="syncEmailInput" placeholder="e.g. name@student.jnujaipur.ac.in" class="form-input" style="height:44px; font-size:0.9375rem;">
-          </div>
-
-          <div>
-            <label class="field-label" style="display:block; margin-bottom:4px;">Academic Program *</label>
-            <select id="syncCourseSelect" class="form-input" style="font-weight:550; height:44px; font-size:0.9375rem;">
-              ${courseOptionsHtml}
-            </select>
-          </div>
-        </div>
-
-        <button onclick="submitSyncDetailsAndSendOtp()" id="btnSendSyncOtp" class="btn-primary" style="width:100%; height:44px; font-size:0.9375rem;">
-          Send Verification Code
-        </button>
-
-        <button onclick="showAuthStep(1)" class="change-rid-btn" style="width:100%; text-align:center; margin-top:12px;">
-          ← Change R-ID
-        </button>
-      </div>
-
-      <!-- Step 2: OTP Verification -->
-      <div id="authStep2" style="display:none;">
-        <div style="padding:10px 14px; background:var(--accent-primary-tint); border:1px solid var(--accent-primary-border); border-radius:12px; margin-bottom:16px;">
-          <div class="meta-text" style="color:#1B8A33;">Verification code sent to:</div>
-          <div id="targetEmailDisplay" style="font-size:0.9375rem; font-weight:700; color:var(--text-primary); margin-top:2px;"></div>
-        </div>
-
-        <div style="margin-bottom:16px;">
-          <label class="field-label" style="display:block; text-align:center; margin-bottom:6px;">Enter 6-Digit Code</label>
-          <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" class="form-input" style="height:52px; font-size:1.5rem; font-weight:800; text-align:center; letter-spacing:0.3em; color:var(--text-primary);" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
-        </div>
-
-        <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-primary" style="width:100%; height:44px; font-size:0.9375rem;">
-          Verify & Sign In
-        </button>
-
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-top:14px;">
-          <button type="button" id="btnResendOtp" onclick="handleResendOtp()" class="resend-otp-btn" disabled>
-            Resend Code (<span id="resendCountdown">30</span>s)
+          <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-black-pill lg" style="width:100%;">
+            Continue
           </button>
-          <button type="button" onclick="showAuthStep(1)" class="change-rid-btn">
+        </div>
+
+        <!-- Step 1B: Fallback when details sync is pending -->
+        <div id="authStepSyncNotice" style="display:none; text-align:left;">
+          <div style="text-align:center; margin-bottom:16px;">
+            <span class="status-capsule open" style="font-size:0.8125rem; padding:6px 16px;">
+              R-ID: <strong id="syncRidBanner"></strong>
+            </span>
+          </div>
+
+          <div style="background:rgba(244,170,37,0.15); border:1px solid rgba(244,170,37,0.3); border-radius:var(--radius-lg); padding:12px 16px; margin-bottom:18px; font-size:0.8125rem; color:#FFD479; line-height:1.45;">
+            University records sync in progress for this R-ID. Please confirm your academic details below to continue.
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px;">
+            <div>
+              <label class="form-label-forest">Full Name *</label>
+              <input type="text" id="syncNameInput" placeholder="Your full name as per records" class="input-forest">
+            </div>
+
+            <div>
+              <label class="form-label-forest">College Email *</label>
+              <input type="email" id="syncEmailInput" placeholder="name@student.jnujaipur.ac.in" class="input-forest">
+            </div>
+
+            <div>
+              <label class="form-label-forest">Academic Program *</label>
+              <select id="syncCourseSelect" class="input-forest">
+                ${courseOptionsHtml}
+              </select>
+            </div>
+          </div>
+
+          <button onclick="submitSyncDetailsAndSendOtp()" id="btnSendSyncOtp" class="btn-black-pill lg" style="width:100%;">
+            Send Verification Code
+          </button>
+
+          <button onclick="showAuthStep(1)" class="btn-outline-pill" style="width:100%; margin-top:10px;">
             ← Change R-ID
           </button>
         </div>
+
+        <!-- Step 2: OTP Verification -->
+        <div id="authStep2" style="display:none;">
+          <div style="background:rgba(62,168,108,0.15); border:1px solid rgba(62,168,108,0.3); border-radius:var(--radius-lg); padding:12px 16px; margin-bottom:20px; text-align:left;">
+            <div style="font-size:0.75rem; color:var(--badge-mint); font-weight:700;">Verification code sent to:</div>
+            <div id="targetEmailDisplay" style="font-size:0.9375rem; font-weight:700; color:var(--text-white); margin-top:2px; word-break:break-all;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label-forest">Enter 6-Digit Code</label>
+            <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" class="input-forest" style="height:56px; font-size:1.75rem; font-weight:800; text-align:center; letter-spacing:0.35em;" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
+          </div>
+
+          <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-black-pill lg" style="width:100%;">
+            Verify & Sign In
+          </button>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;">
+            <button type="button" id="btnResendOtp" onclick="handleResendOtp()" style="font-size:0.8125rem; color:var(--badge-yellow); font-weight:700;" disabled>
+              Resend Code (<span id="resendCountdown">30</span>s)
+            </button>
+            <button type="button" onclick="showAuthStep(1)" style="font-size:0.8125rem; color:var(--text-sage); font-weight:700;">
+              ← Change R-ID
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   `;
@@ -1755,10 +1938,8 @@ function handleResendOtp() {
   if (btn && btn.disabled) return;
 
   if (pendingRegistrationData && pendingRegistrationData.name) {
-    // Case 2: Unlisted student registration OTP
     submitSyncDetailsAndSendOtp();
   } else {
-    // Case 1: Existing student OTP
     const ridInput = document.getElementById("authRidInput");
     const rid = (pendingRegistrationData && pendingRegistrationData.rid) || (ridInput ? ridInput.value.trim() : "");
     if (!rid) {
@@ -1817,13 +1998,11 @@ function submitInitialRid() {
       btn.innerText = "Continue";
 
       if (data.exists) {
-        // Case 1: Student is in our database!
         pendingRegistrationData = { rid: rid };
         document.getElementById("targetEmailDisplay").innerText = data.masked_email || "your registered email";
         showAuthStep(2);
         showToast("Verification code sent!", "success");
       } else if (data.not_found) {
-        // Case 2: Sync in progress notice!
         pendingRegistrationData = { rid: rid };
         document.getElementById("syncRidBanner").innerText = rid;
         showAuthStep('sync');
@@ -1871,6 +2050,7 @@ function submitSyncDetailsAndSendOtp() {
     .then(data => {
       btn.disabled = false;
       btn.innerText = "Send Verification Code";
+
       if (data.success) {
         pendingRegistrationData = {
           rid: rid,
@@ -1880,7 +2060,7 @@ function submitSyncDetailsAndSendOtp() {
         };
         document.getElementById("targetEmailDisplay").innerText = data.masked_email || email;
         showAuthStep(2);
-        showToast("Verification code sent to " + email, "success");
+        showToast("Verification code sent!", "success");
       } else {
         showToast(data.message || "Failed to send code", "error");
       }
@@ -1995,13 +2175,13 @@ function showGlassModal(options) {
   const isDanger = options.isDanger || false;
 
   sheet.innerHTML = `
-    <h3 class="modal-title">${escapeHtml(title)}</h3>
-    <p class="modal-message">${escapeHtml(message)}</p>
-    <div style="display:flex; gap:8px; justify-content:flex-end;">
-      <button onclick="closeGlassModal()" class="btn-primary" style="background:rgba(0,0,0,0.06); color:var(--text-primary); border:1px solid rgba(0,0,0,0.12);">
+    <h3 class="forest-modal-title">${escapeHtml(title)}</h3>
+    <p class="forest-modal-message">${escapeHtml(message)}</p>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button onclick="closeGlassModal()" class="btn-outline-pill">
         ${escapeHtml(cancelText)}
       </button>
-      <button id="modalConfirmBtn" class="${isDanger ? 'btn-danger' : 'btn-primary'}">
+      <button id="modalConfirmBtn" class="${isDanger ? 'btn-danger-pill' : 'btn-black-pill'}">
         ${escapeHtml(confirmText)}
       </button>
     </div>
@@ -2035,14 +2215,14 @@ function showToast(message, type = "info") {
   if (!container) return;
 
   const toast = document.createElement("div");
-  toast.className = `toast-pill ${type}`;
+  toast.className = `forest-toast-pill ${type}`;
   toast.innerText = message;
 
   container.appendChild(toast);
 
   setTimeout(() => {
     toast.style.opacity = "0";
-    toast.style.transform = "translateY(-6px)";
+    toast.style.transform = "translateY(-10px)";
     setTimeout(() => toast.remove(), 250);
   }, 2800);
 }

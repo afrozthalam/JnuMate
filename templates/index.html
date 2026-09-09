@@ -4,127 +4,223 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>HackMate — Team Matching & Teammate Discovery</title>
+  
+  <!-- Google Fonts: Fraunces (Editorial Display Serif) & Plus Jakarta Sans (Modern UI Sans) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
 
-  <!-- Toast Container -->
+  <!-- Toast Notification Container -->
   <div id="toastContainer"></div>
 
-  <!-- Optical Floating Desktop Header -->
-  <header class="glass-header-desktop">
-    <a href="/" class="brand-wordmark">
-      HackMate<span class="accent-dot">.</span>
-    </a>
+  <!-- Ambient Outer Surround Desktop Canvas -->
+  <div class="app-desktop-surround">
+    
+    <!-- Main App Enclosure Shell -->
+    <div class="app-enclosure-shell" id="appEnclosureFrame">
 
-    <div class="nav-links-desktop">
-      <div id="navUserSlotDesktop"></div>
-    </div>
+      <!-- ================= DEDICATED MOBILE TOP BAR (< 768px) ================= -->
+      <header class="mobile-top-bar">
+        <a href="/" class="mobile-brand">
+          HackMate<span class="brand-dot">.</span>
+        </a>
+        <div id="navUserSlotMobile"></div>
+      </header>
 
-    <div id="navUserSlotMobile"></div>
-  </header>
-
-  <!-- Main Viewport Shell -->
-  <main class="app-viewport-shell">
-
-    <!-- VIEW 1: DISCOVER TEAMS (STRICT FOCUS) -->
-    <section id="viewDiscover" class="view-page-panel active">
-      <!-- Page Header: Title, Subtitle, and Balanced Primary Action -->
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px;">
+      <!-- ================= LEFT SIDEBAR NAVIGATION (DESKTOP) ================= -->
+      <aside class="app-sidebar-desktop">
         <div>
-          <h1 class="page-title">Discover Teams</h1>
-          <p class="page-subtitle">Find teammates or join an open hackathon team.</p>
+          <!-- Brand Logo -->
+          <a href="/" class="brand-header-link">
+            <span class="brand-wordmark-forest">HackMate<span class="brand-dot">.</span></span>
+          </a>
+
+          <!-- Primary Navigation Links -->
+          <nav>
+            <ul class="sidebar-nav-list">
+              <li>
+                <a href="/" class="sidebar-nav-item active" data-path="/">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+                  <span>Discover</span>
+                </a>
+              </li>
+              <li>
+                <a href="/students" class="sidebar-nav-item" data-path="/students">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                  <span>Directory</span>
+                </a>
+              </li>
+              <li>
+                <a href="/create-team" class="sidebar-nav-item" data-path="/create-team">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                  <span>Create Team</span>
+                </a>
+              </li>
+              <li>
+                <a href="/profile" class="sidebar-nav-item" data-path="/profile">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                  <span>Profile</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
         </div>
 
-        <a href="/create-team" class="btn-primary">
-          + Create Team
-        </a>
-      </div>
-
-      <!-- Controls Bar: Canvas-Level Search Field & Segmented Filter Control -->
-      <div class="controls-bar">
-        <div class="search-wrapper">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-          <input type="text" id="searchInput" placeholder="Search teams by title or pitch..." class="search-input" oninput="debounceDiscoverSearch()">
+        <!-- Sidebar Bottom: User Session Slot & Controls -->
+        <div class="sidebar-footer-box">
+          <div id="navUserSlotDesktop"></div>
         </div>
-        
-        <div class="segmented-control">
-          <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="segmented-btn active">All Teams</button>
-          <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="segmented-btn">Open Slots</button>
+      </aside>
+
+      <!-- ================= CENTER MAIN WORKSPACE ================= -->
+      <main class="app-main-workspace">
+
+        <!-- VIEW 1: DISCOVER TEAMS -->
+        <section id="viewDiscover" class="view-page-panel active">
+          <!-- Editorial Header -->
+          <div class="forest-header-section" style="display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+            <div>
+              <div class="greeting-sup-text">Hackathon Team Matching</div>
+              <h1 class="greeting-main-title">Discover Teams</h1>
+              <p class="greeting-subtitle">Explore open hackathon teams, browse project pitches, or assemble your 6-seat roster.</p>
+            </div>
+            <a href="/create-team" class="btn-black-pill">
+              + Create Team
+            </a>
+          </div>
+
+          <!-- Search & Filter Controls -->
+          <div class="forest-controls-bar">
+            <div class="search-pill-wrapper">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+              <input type="text" id="searchInput" placeholder="Search teams by title, pitch, or member..." class="search-pill-input" oninput="debounceDiscoverSearch()">
+            </div>
+            
+            <div class="filter-segmented-pill">
+              <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active" data-filter="all">All Teams</button>
+              <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open Slots</button>
+            </div>
+          </div>
+
+          <!-- Teams Grid -->
+          <div id="teamsGridContainer" class="teams-forest-grid"></div>
+
+          <!-- Empty State -->
+          <div id="emptyStateContainer" style="display:none; text-align:center; padding:60px 20px;">
+            <div style="font-family:var(--font-serif); font-size:1.5rem; font-weight:700; margin-bottom:8px;">No teams found</div>
+            <p style="color:var(--text-sage); margin-bottom:20px;">Be the first to build an unstoppable hackathon team!</p>
+            <a href="/create-team" class="btn-black-pill">
+              + Create New Team
+            </a>
+          </div>
+        </section>
+
+        <!-- VIEW 2: TEAM DETAIL -->
+        <section id="viewTeamDetail" class="view-page-panel">
+          <div id="teamDetailViewContainer"></div>
+        </section>
+
+        <!-- VIEW 3: CREATE TEAM -->
+        <section id="viewCreateTeam" class="view-page-panel">
+          <div id="createTeamViewContainer"></div>
+        </section>
+
+        <!-- VIEW 4: USER PROFILE -->
+        <section id="viewProfile" class="view-page-panel">
+          <div id="profileViewContainer"></div>
+        </section>
+
+        <!-- VIEW 5: LOGIN / AUTHENTICATION -->
+        <section id="viewLogin" class="view-page-panel">
+          <div id="loginViewContainer"></div>
+        </section>
+
+        <!-- VIEW 6: STUDENT DIRECTORY -->
+        <section id="viewStudents" class="view-page-panel">
+          <div id="studentsViewContainer"></div>
+        </section>
+
+      </main>
+
+      <!-- ================= RIGHT WIDGET COLUMN (DESKTOP) ================= -->
+      <aside class="app-widgets-desktop" id="rightWidgetsPanel">
+        <!-- Widget 1: Daily Hackathon Challenge -->
+        <div class="widget-card-forest">
+          <div class="widget-title-row">
+            <span class="widget-label-tiny">Hackathon Status</span>
+            <span style="font-size:0.75rem; color:var(--badge-mint); font-weight:750;">● Live</span>
+          </div>
+          <h3 style="font-family:var(--font-serif); font-size:1.125rem; font-weight:700; margin-bottom:6px;">Build Your Team</h3>
+          <p style="font-size:0.8125rem; color:var(--text-sage); line-height:1.45; margin-bottom:16px;">Assemble your 6-seat team with balanced engineering & design talent before registrations close.</p>
+          <a href="/create-team" class="btn-black-pill" style="width:100%;">
+            Create Team Now
+          </a>
         </div>
-      </div>
 
-      <!-- Teams Grid (Responsive: 2-column on mobile, auto-fill on desktop) -->
-      <div id="teamsGridContainer" class="teams-grid"></div>
+        <!-- Widget 2: Dynamic Leaderboard / Active Teams (Screenshot 3 Style) -->
+        <div class="widget-card-forest">
+          <div class="widget-title-row">
+            <span class="widget-label-tiny">Leaderboard</span>
+            <a href="/" class="widget-link-tiny">All Teams</a>
+          </div>
+          <div class="leaderboard-stack" id="widgetLeaderboardList">
+            <!-- Dynamically populated from active teams -->
+            <div class="leaderboard-rank-pill rank-1">
+              <div class="rank-left-box">
+                <span class="rank-number">#01</span>
+                <span>CyberStorm</span>
+              </div>
+              <span class="rank-score">6/6 Full</span>
+            </div>
+            <div class="leaderboard-rank-pill rank-2">
+              <div class="rank-left-box">
+                <span class="rank-number">#02</span>
+                <span>NeuroVision</span>
+              </div>
+              <span class="rank-score">5/6 Slots</span>
+            </div>
+            <div class="leaderboard-rank-pill rank-3">
+              <div class="rank-left-box">
+                <span class="rank-number">#03</span>
+                <span>CodeCrafters</span>
+              </div>
+              <span class="rank-score">4/6 Slots</span>
+            </div>
+          </div>
+        </div>
+      </aside>
 
-      <!-- Empty State -->
-      <div id="emptyStateContainer" style="display:none; text-align:center; padding:44px 16px;">
-        <h3 class="section-title">No teams found</h3>
-        <p class="page-subtitle" style="margin-top:2px;">Be the first to build a team for the hackathon!</p>
-        <a href="/create-team" class="btn-primary" style="margin-top:12px; display:inline-flex;">
-          + Create Team
-        </a>
-      </div>
-    </section>
+    </div><!-- /.app-enclosure-shell -->
 
-    <!-- VIEW 2: TEAM DETAIL PAGE PLACEHOLDER -->
-    <section id="viewTeamDetail" class="view-page-panel">
-      <div class="focused-content-shell">
-        <div id="teamDetailViewContainer"></div>
-      </div>
-    </section>
+  </div><!-- /.app-desktop-surround -->
 
-    <!-- VIEW 3: CREATE TEAM PAGE PLACEHOLDER -->
-    <section id="viewCreateTeam" class="view-page-panel">
-      <div class="focused-content-shell">
-        <div id="createTeamViewContainer"></div>
-      </div>
-    </section>
-
-    <!-- VIEW 4: USER PROFILE PAGE PLACEHOLDER -->
-    <section id="viewProfile" class="view-page-panel">
-      <div class="focused-content-shell">
-        <div id="profileViewContainer"></div>
-      </div>
-    </section>
-
-    <!-- VIEW 5: LOGIN PAGE PLACEHOLDER -->
-    <section id="viewLogin" class="view-page-panel">
-      <div class="focused-content-shell" style="max-width:480px;">
-        <div id="loginViewContainer"></div>
-      </div>
-    </section>
-
-    <!-- VIEW 6: STUDENT DIRECTORY SEARCH PAGE PLACEHOLDER -->
-    <section id="viewStudents" class="view-page-panel">
-      <div class="focused-content-shell">
-        <div id="studentsViewContainer"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Floating Optical Mobile Bottom Dock -->
-  <nav class="liquid-glass-dock">
-    <a href="/" class="dock-item active">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+  <!-- ================= FLOATING MOBILE BOTTOM DOCK (< 768px) ================= -->
+  <nav class="mobile-bottom-dock">
+    <a href="/" class="mobile-dock-tab active" data-path="/">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
       <span>Discover</span>
     </a>
-
-    <a href="/students" class="dock-item">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-      <span>Search</span>
+    <a href="/students" class="mobile-dock-tab" data-path="/students">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+      <span>Directory</span>
     </a>
-
-    <a href="/profile" class="dock-item">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+    <a href="/create-team" class="mobile-dock-tab" data-path="/create-team">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      <span>Create</span>
+    </a>
+    <a href="/profile" class="mobile-dock-tab" data-path="/profile">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
       <span>Profile</span>
     </a>
   </nav>
 
-  <!-- Modal Confirmation Sheet Overlay -->
-  <div id="glassModalOverlay" class="glass-modal-overlay">
-    <div class="glass-modal-sheet" id="glassModalSheet"></div>
+  <!-- ================= MODAL CONFIRMATION SHEET OVERLAY ================= -->
+  <div id="glassModalOverlay" class="forest-modal-overlay">
+    <div class="forest-modal-sheet" id="glassModalSheet"></div>
   </div>
 
   <!-- JavaScript SPA Engine -->

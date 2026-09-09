@@ -2,111 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="refresh" content="0; url=/students">
+  <script>window.location.replace("/students");</script>
   <title>HackMate — Student Directory</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
-<body>
-
-  <!-- TOAST CONTAINER -->
-  <div id="toastContainer" style="position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:99; display:flex; flex-direction:column; gap:8px; width:90%; max-width:380px; pointer-events:none;"></div>
-
-  <!-- SINGLE UNIFIED TOP HEADER -->
-  <header class="nav-header">
-    <a href="/" class="brand-google-logo">
-      <span class="g-blue">H</span><span class="g-red">a</span><span class="g-yellow">c</span><span class="g-green">k</span><span class="g-blue">M</span><span class="g-red">a</span><span class="g-yellow">t</span><span class="g-green">e</span>
-    </a>
-
-    <div class="nav-links-desktop">
-      <a href="/" class="nav-link">Discover</a>
-      <a href="/create-team" class="nav-link">+ Create Team</a>
-      <a href="/students" class="nav-link active">Directory</a>
-      <div id="navUserSlotDesktop"></div>
-    </div>
-
-    <div id="navUserSlotMobile" class="md:hidden"></div>
-  </header>
-
-  <!-- MAIN STUDENTS DIRECTORY CONTENT -->
-  <main class="page-container" style="max-width:720px;">
-    
-    <div class="card-liquid">
-      <h1 class="page-title">Student Directory</h1>
-      <p class="page-subtitle">Search college student database by R-ID or Name.</p>
-
-      <input type="text" id="dirSearchInput" placeholder="Type student R-ID or Name (e.g. R15006, Rahul)..." class="input-control" style="margin-bottom:20px;" onkeyup="searchStudentDirectory()">
-
-      <div id="dirSearchResults" style="display:flex; flex-direction:column; gap:10px;">
-        <div style="font-size:0.8125rem; color:var(--text-muted); text-align:center; padding:36px;">Type student R-ID or name above to search</div>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- FLOATING IOS LIQUID GLASS MOBILE BOTTOM BAR -->
-  <nav class="liquid-glass-dock">
-    <a href="/" class="dock-item">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
-      <span>Discover</span>
-    </a>
-
-    <a href="/students" class="dock-item active">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-      <span>Search</span>
-    </a>
-
-    <a href="/profile" class="dock-item">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
-      <span>Profile</span>
-    </a>
-  </nav>
-
-  <!-- JS ENGINE -->
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-  <script>
-    let searchTimer = null;
-    function searchStudentDirectory() {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => executeStudentSearch(), 200);
-    }
-
-    async function executeStudentSearch() {
-      const q = document.getElementById("dirSearchInput").value.trim();
-      const container = document.getElementById("dirSearchResults");
-
-      if (q.length < 2) {
-        container.innerHTML = `<div style="font-size:0.8125rem; color:var(--text-muted); text-align:center; padding:36px;">Type student R-ID or name above to search</div>`;
-        return;
-      }
-
-      container.innerHTML = `<div style="font-size:0.8125rem; color:var(--text-muted); text-align:center; padding:24px;">Searching college database...</div>`;
-
-      try {
-        const res = await fetch(`/api/students/search?q=${encodeURIComponent(q)}`);
-        const data = await res.json();
-        
-        if (!data.students || data.students.length === 0) {
-          container.innerHTML = `<div style="font-size:0.8125rem; color:var(--text-muted); text-align:center; padding:36px; font-weight:700;">No students found matching "${escapeHtml(q)}"</div>`;
-          return;
-        }
-
-        container.innerHTML = data.students.map(s => `
-          <div style="padding:14px 18px; background:rgba(255,255,255,0.7); border:1px solid rgba(0,0,0,0.08); border-radius:16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
-            <div style="display:flex; align-items:center; gap:14px;">
-              <img src="${s.avatar_url}" style="width:44px; height:44px; border-radius:9999px; background:#FFF; border:1px solid rgba(0,0,0,0.08); object-fit:cover; flex-shrink:0;">
-              <div>
-                <div style="font-size:0.875rem; font-weight:800; color:var(--text-main);">${escapeHtml(s.name)}</div>
-                <div style="font-size:0.75rem; color:var(--text-muted);">${s.r_id} • ${s.gender}</div>
-                <div style="font-size:0.6875rem; color:#4285F4; font-weight:700; margin-top:2px;">${escapeHtml(s.email)} • DOB: ${escapeHtml(s.dob || 'N/A')}</div>
-              </div>
-            </div>
-            <span style="font-size:0.75rem; font-weight:800; background:rgba(66,133,244,0.12); color:#4285F4; padding:4px 12px; border-radius:9999px;">${s.r_id}</span>
-          </div>
-        `).join('');
-      } catch(e) {
-        container.innerHTML = `<div style="font-size:0.8125rem; color:#EA4335; text-align:center; padding:24px; font-weight:700;">Error searching database</div>`;
-      }
-    }
-  </script>
+<body style="background:#13432C; color:#FFFFFF; font-family:sans-serif; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;">
+  <p>Loading HackMate...</p>
 </body>
 </html>

@@ -1223,7 +1223,7 @@ def delete_team(team_id):
 
 @app.route("/api/user/profile", methods=["GET"])
 def get_user_profile():
-    r_id = request.args.get("r_id", "").strip().upper()
+    r_id = (request.args.get("r_id") or session.get("user_rid") or "").strip().upper()
     p = get_placeholder()
 
     if not r_id:
