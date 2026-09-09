@@ -1444,6 +1444,8 @@ h1, h2, h3, h4, .font-serif {
   max-height: 480px;
   padding-right: 4px;
   scrollbar-width: thin;
+  contain: content;
+  will-change: scroll-position;
 }
 
 .student-search-card-rich {
@@ -1456,7 +1458,8 @@ h1, h2, h3, h4, .font-serif {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  transition: all 0.2s ease;
+  transition: transform 0.15s ease, background 0.15s ease;
+  contain: layout style;
 }
 
 .student-search-card-rich:hover {
@@ -1694,6 +1697,7 @@ textarea.input-forest {
   overflow-y: auto;
   z-index: 50;
   box-shadow: var(--shadow-card-hover);
+  contain: content;
 }
 
 .search-dropdown-item {
@@ -2050,14 +2054,15 @@ textarea.input-forest {
 .forest-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(8, 26, 17, 0.78);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(6, 20, 13, 0.94);
   z-index: 1000;
   display: none;
   align-items: center;
   justify-content: center;
   padding: 20px;
+  contain: paint;
+  will-change: opacity;
+  transform: translateZ(0);
 }
 
 .forest-modal-overlay.active {

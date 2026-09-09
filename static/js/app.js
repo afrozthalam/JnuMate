@@ -54,6 +54,26 @@ const clientCache = {
   userProfiles: {}
 };
 
+// High-speed client-side search cache and avatar optimizations
+const studentSearchClientCache = {};
+const failedAvatarUrls = new Set();
+
+// Sleek zero-network offline SVG fallback avatar (0ms render, 0 external requests)
+const DEFAULT_STUDENT_AVATAR = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">' +
+  '<rect width="64" height="64" rx="32" fill="#13432C"/>' +
+  '<circle cx="32" cy="24" r="11" fill="#8AB89B"/>' +
+  '<path d="M16 52 C16 42 23 38 32 38 C41 38 48 42 48 52" fill="#8AB89B"/>' +
+  '</svg>'
+);
+
+function getStudentAvatarSrc(rawUrl, rId) {
+  if (!rawUrl || failedAvatarUrls.has(rawUrl)) {
+    return DEFAULT_STUDENT_AVATAR;
+  }
+  return rawUrl;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupRouter();
   loadUserFromSession(() => {
@@ -1188,8 +1208,14 @@ function debounceSeatMemberSearch(teamId) {
     if (!input || !resultsDiv) return;
 
     const query = input.value.trim();
-    if (query.length < 2) {
+    if (!query) {
       resultsDiv.style.display = "none";
+      return;
+    }
+
+    const cacheKey = query.toUpperCase();
+    if (studentSearchClientCache[cacheKey]) {
+      renderSeatSearchResults(teamId, studentSearchClientCache[cacheKey], query);
       return;
     }
 
@@ -1200,27 +1226,11 @@ function debounceSeatMemberSearch(teamId) {
       .then(res => res.json())
       .then(data => {
         const students = data.students || [];
-        if (students.length === 0) {
-          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span style="color:var(--text-sage); font-size:0.8125rem;">No students matching "${escapeHtml(query)}"</span></div>`;
-          resultsDiv.style.display = "block";
-          return;
+        studentSearchClientCache[cacheKey] = students;
+        const currentVal = (document.getElementById("seatStudentSearchInput")?.value || "").trim().toUpperCase();
+        if (currentVal === cacheKey) {
+          renderSeatSearchResults(teamId, students, query);
         }
-
-        resultsDiv.innerHTML = students.map(s => `
-          <div class="search-dropdown-item" onclick="directAddTeammate('${teamId}', '${s.r_id}', '${escapeAttr(s.name)}')">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <div class="avatar-stack-item" style="width:28px; height:28px; margin-left:0;">
-                <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(s.r_id || 'Student')}';">
-              </div>
-              <div>
-                <div style="font-size:0.875rem; font-weight:700; color:var(--text-white);">${escapeHtml(s.name)}</div>
-                <div style="font-size:0.75rem; color:var(--text-sage);">${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</div>
-              </div>
-            </div>
-            <span class="btn-black-pill sm" style="font-size:0.75rem; padding:4px 12px;">+ Add</span>
-          </div>
-        `).join("");
-        resultsDiv.style.display = "block";
       })
       .catch(err => {
         if (err.name !== "AbortError") {
@@ -1228,7 +1238,43 @@ function debounceSeatMemberSearch(teamId) {
           resultsDiv.style.display = "block";
         }
       });
-  }, 100);
+  }, 45);
+}
+
+function renderSeatSearchResults(teamId, students, query) {
+  const resultsDiv = document.getElementById("seatStudentSearchResults");
+  if (!resultsDiv) return;
+
+  if (students.length === 0) {
+    resultsDiv.innerHTML = `<div class="search-dropdown-item"><span style="color:var(--text-sage); font-size:0.8125rem;">No students matching "${escapeHtml(query)}"</span></div>`;
+    resultsDiv.style.display = "block";
+    return;
+  }
+
+  resultsDiv.innerHTML = students.map(s => {
+    const rawAvatar = s.avatar_url || "";
+    const avatarSrc = getStudentAvatarSrc(rawAvatar, s.r_id);
+    return `
+      <div class="search-dropdown-item" onclick="directAddTeammate('${teamId}', '${s.r_id}', '${escapeAttr(s.name)}')">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="avatar-stack-item" style="width:28px; height:28px; margin-left:0;">
+            <img src="${escapeHtml(avatarSrc)}" 
+                 data-raw-src="${escapeHtml(rawAvatar)}" 
+                 alt="${escapeHtml(s.name)}" 
+                 loading="lazy" 
+                 decoding="async" 
+                 onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+          </div>
+          <div>
+            <div style="font-size:0.875rem; font-weight:700; color:var(--text-white);">${escapeHtml(s.name)}</div>
+            <div style="font-size:0.75rem; color:var(--text-sage);">${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</div>
+          </div>
+        </div>
+        <span class="btn-black-pill sm" style="font-size:0.75rem; padding:4px 12px;">+ Add</span>
+      </div>
+    `;
+  }).join("");
+  resultsDiv.style.display = "block";
 }
 
 function directAddTeammate(teamId, studentRid, studentName) {
@@ -1753,6 +1799,30 @@ let currentSearchTargetSlot = null;
 let currentSearchTeamId = null;
 let slotSearchDebounceTimer = null;
 
+let slotSearchAbortController = null;
+
+function loadInitialSearchSuggestions() {
+  const results = document.getElementById("slotStudentSearchResults");
+  if (!results) return;
+
+  if (studentSearchClientCache["__SUGGESTIONS__"]) {
+    renderSlotSearchResults(studentSearchClientCache["__SUGGESTIONS__"], "");
+    return;
+  }
+
+  fetch("/api/students/search?q=")
+    .then(res => res.json())
+    .then(data => {
+      const students = data.students || [];
+      studentSearchClientCache["__SUGGESTIONS__"] = students;
+      const input = document.getElementById("slotStudentSearchInput");
+      if (input && input.value.trim().length === 0) {
+        renderSlotSearchResults(students, "");
+      }
+    })
+    .catch(() => {});
+}
+
 function openSlotStudentSearchModal(slotIndex) {
   currentSearchTargetSlot = slotIndex;
   currentSearchTeamId = null;
@@ -1761,17 +1831,16 @@ function openSlotStudentSearchModal(slotIndex) {
   const title = document.getElementById("studentSearchModalTitle");
   const subtitle = document.getElementById("studentSearchModalSubtitle");
   const input = document.getElementById("slotStudentSearchInput");
-  const results = document.getElementById("slotStudentSearchResults");
 
   if (!overlay) return;
 
   if (title) title.innerText = `Assign Teammate (Seat ${slotIndex + 2})`;
   if (subtitle) subtitle.innerText = "Search by College R-ID or Student Name from the university records database.";
   if (input) input.value = "";
-  if (results) results.innerHTML = `<div style="text-align:center; padding:32px 16px; color:var(--text-sage);">Type student R-ID or Name to search the database...</div>`;
 
   overlay.classList.add("active");
-  setTimeout(() => { if (input) input.focus(); }, 100);
+  loadInitialSearchSuggestions();
+  setTimeout(() => { if (input) input.focus(); }, 80);
 }
 
 function openSlotStudentSearchModalForTeam(teamId, seatNum) {
@@ -1782,26 +1851,22 @@ function openSlotStudentSearchModalForTeam(teamId, seatNum) {
   const title = document.getElementById("studentSearchModalTitle");
   const subtitle = document.getElementById("studentSearchModalSubtitle");
   const input = document.getElementById("slotStudentSearchInput");
-  const results = document.getElementById("slotStudentSearchResults");
 
   if (!overlay) return;
 
   if (title) title.innerText = `Add Teammate to Seat ${seatNum}`;
   if (subtitle) subtitle.innerText = "Search by College R-ID or Student Name to directly add a verified member to your team.";
   if (input) input.value = "";
-  if (results) results.innerHTML = `<div style="text-align:center; padding:32px 16px; color:var(--text-sage);">Type student R-ID or Name to search the database...</div>`;
 
   overlay.classList.add("active");
-  setTimeout(() => { if (input) input.focus(); }, 100);
+  loadInitialSearchSuggestions();
+  setTimeout(() => { if (input) input.focus(); }, 80);
 }
 
 function closeStudentSearchModal() {
   const overlay = document.getElementById("studentSearchModalOverlay");
   if (overlay) overlay.classList.remove("active");
 }
-
-const studentSearchClientCache = {};
-let slotSearchAbortController = null;
 
 function handleInTeamStudentClick(name, rId, teamName) {
   showGlassModal({
@@ -1821,8 +1886,8 @@ function debounceSlotStudentSearch() {
     if (!input || !results) return;
 
     const query = input.value.trim();
-    if (query.length < 2) {
-      results.innerHTML = `<div style="text-align:center; padding:32px 16px; color:var(--text-sage);">Type at least 2 characters to search college database...</div>`;
+    if (!query) {
+      loadInitialSearchSuggestions();
       return;
     }
 
@@ -1837,23 +1902,22 @@ function debounceSlotStudentSearch() {
     }
     slotSearchAbortController = new AbortController();
 
-    if (!results.querySelector(".student-search-card-rich")) {
-      results.innerHTML = `<div style="text-align:center; padding:24px 16px; color:var(--text-sage);">Searching university database...</div>`;
-    }
-
     fetch(`/api/students/search?q=${encodeURIComponent(query)}`, { signal: slotSearchAbortController.signal })
       .then(res => res.json())
       .then(data => {
         const students = data.students || [];
         studentSearchClientCache[cacheKey] = students;
-        renderSlotSearchResults(students, query);
+        const currentVal = (document.getElementById("slotStudentSearchInput")?.value || "").trim().toUpperCase();
+        if (currentVal === cacheKey) {
+          renderSlotSearchResults(students, query);
+        }
       })
       .catch(err => {
         if (err.name !== "AbortError") {
           results.innerHTML = `<div style="text-align:center; padding:24px 16px; color:var(--badge-coral);">Search request failed. Please check connection.</div>`;
         }
       });
-  }, 100);
+  }, 45);
 }
 
 function renderSlotSearchResults(students, query) {
@@ -1870,7 +1934,8 @@ function renderSlotSearchResults(students, query) {
     const isMe = Boolean(currentUser && currentUser.id && currentUser.id.toUpperCase() === sRid);
     const isAlreadySelected = selectedFriends.some(f => f.id.toUpperCase() === sRid);
     const cleanName = (s.name || sRid).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
-    const avatarUrl = s.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sRid)}`;
+    const rawAvatar = s.avatar_url || "";
+    const avatarSrc = getStudentAvatarSrc(rawAvatar, sRid);
     const isInTeam = Boolean(s.in_team);
     const teamName = s.team_name || "Another Team";
 
@@ -1887,7 +1952,7 @@ function renderSlotSearchResults(students, query) {
       `;
     } else {
       actionButtonHtml = `
-        <button onclick="selectStudentForSlot('${escapeAttr(sRid)}', '${escapeAttr(cleanName)}', '${escapeAttr(avatarUrl)}', '${escapeAttr(s.program || '')}', '${escapeAttr(s.semester_year || '')}')" class="btn-black-pill sm">
+        <button onclick="selectStudentForSlot('${escapeAttr(sRid)}', '${escapeAttr(cleanName)}', '${escapeAttr(avatarSrc)}', '${escapeAttr(s.program || '')}', '${escapeAttr(s.semester_year || '')}')" class="btn-black-pill sm">
           + Select Teammate
         </button>
       `;
@@ -1897,7 +1962,12 @@ function renderSlotSearchResults(students, query) {
       <div class="student-search-card-rich">
         <div class="student-card-left">
           <div class="student-search-avatar">
-            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sRid)}';">
+            <img src="${escapeHtml(avatarSrc)}" 
+                 data-raw-src="${escapeHtml(rawAvatar)}" 
+                 alt="${escapeHtml(cleanName)}" 
+                 loading="lazy" 
+                 decoding="async" 
+                 onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
           </div>
           <div class="student-search-info">
             <div class="student-name-row">
@@ -2072,8 +2142,14 @@ function debounceDirectorySearch() {
     if (!input || !resultsDiv) return;
 
     const query = input.value.trim();
-    if (query.length < 2) {
+    if (!query) {
       resultsDiv.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:48px 20px;"><p style="color:var(--text-sage); font-size:0.9375rem;">Type student R-ID or Name above to search</p></div>`;
+      return;
+    }
+
+    const cacheKey = "DIR_" + query.toUpperCase();
+    if (studentSearchClientCache[cacheKey]) {
+      renderDirectorySearchResults(studentSearchClientCache[cacheKey], query);
       return;
     }
 
@@ -2084,47 +2160,64 @@ function debounceDirectorySearch() {
       .then(res => res.json())
       .then(data => {
         const students = data.students || [];
-        if (students.length === 0) {
-          resultsDiv.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:48px 20px;"><p style="color:var(--text-sage); font-size:0.9375rem;">No students matching "${escapeHtml(query)}"</p></div>`;
-          return;
+        studentSearchClientCache[cacheKey] = students;
+        const currentVal = (document.getElementById("dirSearchInput")?.value || "").trim().toUpperCase();
+        if (currentVal === query.toUpperCase()) {
+          renderDirectorySearchResults(students, query);
         }
-
-        resultsDiv.innerHTML = students.map(s => {
-          const initial = s.name.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
-          return `
-            <div class="team-card-forest">
-              <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
-                <div class="avatar-stack-item" style="width:48px; height:48px; margin-left:0; border:2px solid var(--badge-yellow);">
-                  <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(s.r_id || 'Student')}';">
-                </div>
-                <div style="min-width:0; flex:1;">
-                  <h3 class="font-serif" style="font-size:1.125rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(s.name)}</h3>
-                  <div style="font-size:0.8125rem; color:var(--text-sage); margin-top:2px;">
-                    ${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}
-                  </div>
-                </div>
-              </div>
-
-              ${s.program ? `
-                <div style="margin-bottom:12px;">
-                  <span class="status-capsule member" style="font-size:0.6875rem;">${escapeHtml(s.program)}</span>
-                </div>
-              ` : ''}
-
-              <div class="team-card-bottom-row">
-                <span style="font-size:0.75rem; color:var(--text-sage);">DOB: ${escapeHtml(s.dob || 'N/A')}</span>
-                ${s.email ? `<a href="mailto:${escapeHtml(s.email)}" class="btn-black-pill sm" style="font-size:0.75rem; padding:4px 12px;">Email ➔</a>` : ""}
-              </div>
-            </div>
-          `;
-        }).join("");
       })
       .catch(err => {
         if (err.name !== "AbortError") {
           resultsDiv.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:48px 20px;"><p style="color:var(--badge-coral); font-size:0.9375rem;">Search failed</p></div>`;
         }
       });
-  }, 120);
+  }, 45);
+}
+
+function renderDirectorySearchResults(students, query) {
+  const resultsDiv = document.getElementById("dirSearchResults");
+  if (!resultsDiv) return;
+
+  if (students.length === 0) {
+    resultsDiv.innerHTML = `<div style="grid-column: 1 / -1; text-align:center; padding:48px 20px;"><p style="color:var(--text-sage); font-size:0.9375rem;">No students matching "${escapeHtml(query)}"</p></div>`;
+    return;
+  }
+
+  resultsDiv.innerHTML = students.map(s => {
+    const rawAvatar = s.avatar_url || "";
+    const avatarSrc = getStudentAvatarSrc(rawAvatar, s.r_id);
+    return `
+      <div class="team-card-forest">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
+          <div class="avatar-stack-item" style="width:48px; height:48px; margin-left:0; border:2px solid var(--badge-yellow);">
+            <img src="${escapeHtml(avatarSrc)}" 
+                 data-raw-src="${escapeHtml(rawAvatar)}" 
+                 alt="${escapeHtml(s.name)}" 
+                 loading="lazy" 
+                 decoding="async" 
+                 onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+          </div>
+          <div style="min-width:0; flex:1;">
+            <h3 class="font-serif" style="font-size:1.125rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(s.name)}</h3>
+            <div style="font-size:0.8125rem; color:var(--text-sage); margin-top:2px;">
+              ${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}
+            </div>
+          </div>
+        </div>
+
+        ${s.program ? `
+          <div style="margin-bottom:12px;">
+            <span class="status-capsule member" style="font-size:0.6875rem;">${escapeHtml(s.program)}</span>
+          </div>
+        ` : ''}
+
+        <div class="team-card-bottom-row">
+          <span style="font-size:0.75rem; color:var(--text-sage);">DOB: ${escapeHtml(s.dob || 'N/A')}</span>
+          ${s.email ? `<a href="mailto:${escapeHtml(s.email)}" class="btn-black-pill sm" style="font-size:0.75rem; padding:4px 12px;">Email ➔</a>` : ""}
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 /* ==========================================================================

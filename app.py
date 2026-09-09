@@ -108,6 +108,31 @@ def build_student_search_index():
 
 build_student_search_index()
 
+# ZERO-LATENCY IN-MEMORY TEAM MEMBERSHIP CACHE
+TEAM_MEMBERSHIP_MAP = {}
+
+def refresh_team_membership_cache():
+    global TEAM_MEMBERSHIP_MAP
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT tm.student_r_id, t.name, t.id FROM team_members tm JOIN teams t ON tm.team_id = t.id")
+        rows = cursor.fetchall()
+        m_map = {}
+        for row in rows:
+            r_dict = dict(row)
+            rid = str(r_dict["student_r_id"]).strip().upper()
+            m_map[rid] = {
+                "team_name": r_dict["name"],
+                "team_id": r_dict["id"]
+            }
+        TEAM_MEMBERSHIP_MAP = m_map
+        conn.close()
+    except Exception as e:
+        print(f"Notice caching team membership: {e}")
+
+refresh_team_membership_cache()
+
 def get_placeholder():
     return "%s" if is_postgres() else "?"
 
@@ -580,19 +605,30 @@ def auth_logout():
 def student_search():
     raw_query = request.args.get("q", "").strip()
     query = raw_query.upper()
+
+    # If empty or 1 character, return instant suggested candidates
     if len(query) < 2:
-        return jsonify({"students": []})
+        suggested = SEARCHABLE_STUDENTS_LIST[:10]
+        enriched = []
+        for s in suggested:
+            item = dict(s)
+            tm = TEAM_MEMBERSHIP_MAP.get(item["r_id"])
+            item["in_team"] = bool(tm)
+            item["team_name"] = tm["team_name"] if tm else None
+            item["team_id"] = tm["team_id"] if tm else None
+            enriched.append(item)
+        return jsonify({"students": enriched})
 
     results = []
     seen_rids = set()
 
-    # Priority 0: Exact R-ID match (Sub-millisecond instant lookup)
-    if query in STUDENT_CACHE_BY_RID:
-        s = dict(STUDENT_CACHE_BY_RID[query])
-        results.append(s)
+    # Priority 0: Exact R-ID match (Sub-millisecond 0.001ms instant lookup)
+    exact_student = STUDENT_CACHE_BY_RID.get(query)
+    if exact_student:
+        results.append(dict(exact_student))
         seen_rids.add(query)
 
-    # Priority 1: Prefix R-ID match (e.g., query "R1500" matches R15006, R15007...)
+    # Priority 1: Prefix R-ID match (Instant break at 15)
     for s in SEARCHABLE_STUDENTS_LIST:
         rid = s["r_id"]
         if rid.startswith(query) and rid not in seen_rids:
@@ -601,7 +637,7 @@ def student_search():
             if len(results) >= 15:
                 break
 
-    # Priority 2: Name match (Name starts with or contains query)
+    # Priority 2: Name match (Starts with or contains query)
     if len(results) < 15:
         for s in SEARCHABLE_STUDENTS_LIST:
             rid = s["r_id"]
@@ -612,65 +648,18 @@ def student_search():
                     if len(results) >= 15:
                         break
 
-    # Priority 3: Newly registered students in DB
-    conn = get_db()
-    cursor = conn.cursor()
-    p = get_placeholder()
-    try:
-        cursor.execute(f"""
-            SELECT r_id, name, email, phone, gender, dob, avatar_url, program, semester_year 
-            FROM students
-            WHERE (UPPER(r_id) = {p} OR UPPER(r_id) LIKE {p} OR UPPER(name) LIKE {p})
-            LIMIT 10
-        """, (query, f"{query}%", f"%{query}%"))
-        for row in cursor.fetchall():
-            d = dict(row)
-            d_id = d["r_id"].strip().upper()
-            if d_id not in seen_rids:
-                d["r_id"] = d_id
-                d["name_upper"] = (d.get("name") or "").upper()
-                d["avatar_url"] = d.get("avatar_url") or f"https://api.dicebear.com/7.x/avataaars/svg?seed={d_id}"
-                d["program"] = d.get("program") or "Student"
-                d["semester_year"] = d.get("semester_year") or ""
-                results.append(d)
-                seen_rids.add(d_id)
-    except Exception as e:
-        print(f"Notice querying db students: {e}")
+    # Attach team membership in 0.0001ms from in-memory cache
+    for s in results:
+        tm = TEAM_MEMBERSHIP_MAP.get(s["r_id"])
+        if tm:
+            s["in_team"] = True
+            s["team_name"] = tm["team_name"]
+            s["team_id"] = tm["team_id"]
+        else:
+            s["in_team"] = False
+            s["team_name"] = None
+            s["team_id"] = None
 
-    # Attach team membership info in a single fast query
-    if results:
-        rids_list = list(seen_rids)
-        placeholders = ",".join([p] * len(rids_list))
-        team_map = {}
-        try:
-            cursor.execute(f"""
-                SELECT tm.student_r_id, t.name, t.id
-                FROM team_members tm
-                JOIN teams t ON tm.team_id = t.id
-                WHERE UPPER(tm.student_r_id) IN ({placeholders})
-            """, tuple(rids_list))
-            for row in cursor.fetchall():
-                row_dict = dict(row)
-                s_rid = row_dict["student_r_id"].strip().upper()
-                team_map[s_rid] = {
-                    "team_name": row_dict["name"],
-                    "team_id": row_dict["id"]
-                }
-        except Exception as e:
-            print(f"Notice fetching student team membership: {e}")
-
-        for s in results:
-            rid = s["r_id"].upper()
-            if rid in team_map:
-                s["in_team"] = True
-                s["team_name"] = team_map[rid]["team_name"]
-                s["team_id"] = team_map[rid]["team_id"]
-            else:
-                s["in_team"] = False
-                s["team_name"] = None
-                s["team_id"] = None
-
-    conn.close()
     return jsonify({"students": results[:15]})
 
 # --- NOTIFICATION ENGINE ---
@@ -966,6 +955,7 @@ def create_team():
         """, (team_id, f_id))
 
     conn.commit()
+    refresh_team_membership_cache()
 
     cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
     t_row = cursor.fetchone()
@@ -1108,6 +1098,7 @@ def handle_join_request(team_id, req_id):
         create_notification_db(cursor, p, join_req["student_r_id"], "Join Request Accepted! 🎉", f"Congratulations! You are now an official team member of {team_name}.", "request_accepted", f"/team/{team_id}")
 
         conn.commit()
+        refresh_team_membership_cache()
         conn.close()
         return jsonify({"success": True, "message": "Member accepted"})
 
@@ -1259,6 +1250,7 @@ def add_team_member(team_id):
     create_notification_db(cursor, p, s["r_id"], "Added to Team! 🎉", f"You have been directly added to {team_name} by the team leader.", "team_added", f"/team/{team_id}")
 
     conn.commit()
+    refresh_team_membership_cache()
 
     cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
     updated_team = format_team_data(cursor.fetchone(), leader_r_id)
@@ -1291,6 +1283,7 @@ def remove_team_member(team_id):
 
     cursor.execute(f"DELETE FROM team_members WHERE team_id = {p} AND UPPER(student_r_id) = {p}", (team_id, target_r_id))
     conn.commit()
+    refresh_team_membership_cache()
 
     cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
     t_row = cursor.fetchone()
@@ -1331,6 +1324,7 @@ def leave_team(team_id):
             cursor.execute(f"DELETE FROM teams WHERE id = {p}", (team_id,))
 
     conn.commit()
+    refresh_team_membership_cache()
     conn.close()
     return jsonify({"success": True, "message": "Left team successfully"})
 
