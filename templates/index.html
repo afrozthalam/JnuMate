@@ -101,14 +101,12 @@
 
         <!-- VIEW 1: DISCOVER TEAMS -->
         <section id="viewDiscover" class="view-page-panel active">
-          <!-- Editorial Header -->
-          <div class="forest-header-section" style="display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:16px;">
-            <div>
-              <div class="greeting-sup-text">Hackathon Team Matching</div>
-              <h1 class="greeting-main-title">Discover Teams</h1>
-              <p class="greeting-subtitle">Explore open hackathon teams, browse project pitches, or assemble your 6-seat roster.</p>
+          <!-- Editorial Header (Short & Beautiful) -->
+          <div class="forest-header-section home-header-compact">
+            <div class="home-header-title-box">
+              <h1 class="home-quick-title">Find teammates for your team, or join any open team here.</h1>
             </div>
-            <a href="/create-team" class="btn-black-pill">
+            <a href="/create-team" class="btn-black-pill desktop-create-team-btn">
               + Create Team
             </a>
           </div>
@@ -120,9 +118,14 @@
               <input type="text" id="searchInput" placeholder="Search teams by title, pitch, or member..." class="search-pill-input" oninput="debounceDiscoverSearch()">
             </div>
             
-            <div class="filter-segmented-pill">
-              <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active" data-filter="all">All Teams</button>
-              <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open Slots</button>
+            <div class="controls-filter-action-row">
+              <div class="filter-segmented-pill">
+                <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active" data-filter="all">All Teams</button>
+                <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open Slots</button>
+              </div>
+              <a href="/create-team" class="btn-black-pill sm mobile-create-team-btn">
+                + Create Team
+              </a>
             </div>
           </div>
 
@@ -268,6 +271,26 @@
   <!-- ================= MODAL CONFIRMATION SHEET OVERLAY ================= -->
   <div id="glassModalOverlay" class="forest-modal-overlay">
     <div class="forest-modal-sheet" id="glassModalSheet"></div>
+  </div>
+
+  <!-- ================= STUDENT SEARCH MODAL OVERLAY ================= -->
+  <div id="studentSearchModalOverlay" class="forest-modal-overlay" onclick="closeStudentSearchModal()">
+    <div class="forest-modal-sheet student-search-modal-sheet" onclick="event.stopPropagation()">
+      <div class="student-search-modal-header">
+        <div>
+          <h3 id="studentSearchModalTitle" class="forest-modal-title" style="margin-bottom:4px;">Add Teammate</h3>
+          <p id="studentSearchModalSubtitle" class="forest-modal-message" style="margin-bottom:0;">Search by R-ID or Student Name to assign to this roster slot.</p>
+        </div>
+        <button onclick="closeStudentSearchModal()" class="drawer-close-btn" aria-label="Close">✕</button>
+      </div>
+      <div class="student-search-input-wrapper">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+        <input type="text" id="slotStudentSearchInput" placeholder="Type R-ID (e.g. R15006) or Student Name..." class="search-pill-input" oninput="debounceSlotStudentSearch()" autocomplete="off">
+      </div>
+      <div id="slotStudentSearchResults" class="student-search-results-list">
+        <div style="text-align:center; padding:32px 16px; color:var(--text-sage);">Type at least 2 characters to search college database</div>
+      </div>
+    </div>
   </div>
 
   <!-- JavaScript SPA Engine -->

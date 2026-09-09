@@ -580,7 +580,6 @@ def student_search():
         LIMIT 8
     """, (f"%{query}%", f"%{query}%"))
     db_rows = cursor.fetchall()
-    conn.close()
 
     for r in db_rows:
         d = dict(r)
@@ -591,7 +590,17 @@ def student_search():
             if d.get("dob") and d.get("dob") != "N/A":
                 results_map[d_id]["dob"] = d["dob"]
 
-    return jsonify({"students": list(results_map.values())[:8]})
+    # Enrich all results with degree & semester from education database
+    final_students = []
+    for s_id, s_data in list(results_map.items())[:8]:
+        prog, sem = get_student_course_details(s_id, cursor)
+        s_data["program"] = prog or s_data.get("program") or "Student"
+        s_data["semester_year"] = sem or s_data.get("semester_year") or ""
+        final_students.append(s_data)
+
+    conn.close()
+
+    return jsonify({"students": final_students})
 
 # --- NOTIFICATION ENGINE ---
 
@@ -807,7 +816,7 @@ def create_team():
     team_name = (data.get("title") or data.get("name") or "").strip()
     description = data.get("description", "").strip()
     whatsapp_link = data.get("whatsapp_link", "").strip()
-    friend_r_ids = data.get("initial_members") or data.get("friend_r_ids") or []
+    friend_r_ids = data.get("initial_members") or data.get("friend_r_ids") or data.get("pre_added_members") or []
     p = get_placeholder()
 
     if not leader_r_id:
@@ -833,7 +842,18 @@ def create_team():
         conn.close()
         return jsonify({"success": False, "message": "You are already in another team"}), 400
 
-    unique_friends = list(set([f.strip().upper() for f in friend_r_ids if f.strip().upper() != leader_r_id]))
+    clean_rids = []
+    for item in friend_r_ids:
+        if isinstance(item, dict):
+            rid = item.get("r_id") or item.get("id") or ""
+        elif isinstance(item, str):
+            rid = item
+        else:
+            rid = str(item)
+        rid = rid.strip().upper()
+        if rid and rid != leader_r_id:
+            clean_rids.append(rid)
+    unique_friends = list(dict.fromkeys(clean_rids))
     if len(unique_friends) + 1 > 6:
         conn.close()
         return jsonify({"success": False, "message": "Team size max 6 members"}), 400

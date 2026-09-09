@@ -105,10 +105,10 @@ function handleCurrentRoute() {
   const panels = document.querySelectorAll(".view-page-panel");
   panels.forEach(p => p.classList.remove("active"));
 
-  // Toggle layout mode for clean presentation on focused views
+  // Toggle layout mode: show right widgets ONLY on discover home (/), hide on all other views
   const appShell = document.getElementById("appEnclosureFrame");
   if (appShell) {
-    if (path === "/login" || path === "/create-team" || path === "/about") {
+    if (path !== "/") {
       appShell.classList.add("two-column-mode");
     } else {
       appShell.classList.remove("two-column-mode");
@@ -471,49 +471,55 @@ function renderFilteredTeams(teams) {
 
     let statusPill = "";
     if (isFull) {
-      statusPill = `<span class="status-capsule full">Team Full (6/6)</span>`;
+      statusPill = `<span class="status-capsule full-pill">● Full (6/6)</span>`;
     } else {
-      statusPill = `<span class="status-capsule open">${openSlots} Seats Open</span>`;
+      statusPill = `<span class="status-capsule open-pill">● ${openSlots} Open Seats</span>`;
     }
 
-    // 6-Dot visual vacancy indicator
-    let dotsHtml = "";
-    for (let d = 0; d < 6; d++) {
-      dotsHtml += `<span class="slot-dot ${d < count ? 'filled' : 'empty'}"></span>`;
-    }
+    // 6 Pronounced Roster Avatars: filled member avatars + empty dashed circle avatars
+    const members = team.members || [];
+    let rosterAvatarsHtml = "";
+    for (let i = 0; i < 6; i++) {
+      if (i < members.length && members[i]) {
+        const m = members[i];
+        const mName = (m.name || m.r_id || "Student") + "";
+        const cleanName = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
+        const initial = cleanName.charAt(0).toUpperCase() || 'U';
+        const isLeader = m.role === 'leader';
+        const avatarUrl = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}`;
 
-    const avatarsHtml = (team.members || []).slice(0, 4).map(m => {
-      if (!m) return "";
-      const initial = ((m.name || m.r_id || 'U') + '').replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
-      return `
-        <div class="avatar-stack-item">
-          <span class="avatar-stack-initial">${escapeHtml(initial)}</span>
-          <img src="${escapeHtml(m.avatar_url || '')}" alt="${escapeHtml(m.name || '')}" loading="lazy" onerror="this.remove();">
-        </div>
-      `;
-    }).join("");
+        rosterAvatarsHtml += `
+          <div class="roster-avatar-item filled" title="${escapeAttr(cleanName)}${isLeader ? ' (Leader)' : ''}">
+            <span class="avatar-initial">${escapeHtml(initial)}</span>
+            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" loading="lazy" onerror="this.remove();">
+          </div>
+        `;
+      } else {
+        rosterAvatarsHtml += `
+          <div class="roster-avatar-item empty" title="Open Seat">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          </div>
+        `;
+      }
+    }
 
     return `
-      <article class="team-card-forest" onclick="navigateTo('/team/${team.id}')">
+      <article class="team-forest-card" onclick="navigateTo('/team/${team.id}')">
         <div>
           <div class="team-card-top-row">
             ${statusPill}
-            <div class="avatar-stack">
-              ${avatarsHtml}
-            </div>
           </div>
 
           <h2 class="team-card-title">${escapeHtml(team.name || 'Untitled Team')}</h2>
-          <p class="team-card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution.")}</p>
+          <p class="team-card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution. Check out open seats and join our squad!")}</p>
 
-          <div class="team-slot-indicator-box">
-            <span style="font-size:0.75rem; color:var(--text-sage); font-weight:700;">Roster Slots</span>
-            <div class="slot-dots-bar">${dotsHtml}</div>
+          <div class="team-card-roster-row">
+            ${rosterAvatarsHtml}
           </div>
         </div>
 
         <div class="team-card-bottom-row">
-          <span class="meta-members-tag">${count}/6 Members</span>
+          <span class="meta-members-tag">${count} / 6 Members</span>
           <span class="btn-black-pill sm">View Team ➔</span>
         </div>
       </article>
@@ -619,59 +625,11 @@ function renderFullTeamDetail(team) {
   if (!container) return;
 
   const count = team.member_count || (team.members ? team.members.length : 0);
-  const isFull = Boolean(team.is_full);
+  const isFull = Boolean(team.is_full || count >= 6);
   const isLeader = Boolean(currentUser && currentUser.id && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentUser.id.toUpperCase()));
   const isMember = Boolean(currentUser && currentUser.id && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentUser.id.toUpperCase())));
 
-  // Hero Section
-  const heroHtml = `
-    <div style="margin-bottom:20px;">
-      <a href="/" class="btn-outline-pill">
-        ← Back to Discover
-      </a>
-    </div>
-
-    <div class="team-hero-card">
-      <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px;">
-        <div style="flex:1; min-width:260px;">
-          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <h1 class="font-serif" style="font-size:2rem;">${escapeHtml(team.name)}</h1>
-            <span class="status-capsule ${isFull ? 'full' : 'open'}">
-              ${isFull ? 'Team Full (6/6)' : `${6 - count} Open Seats`}
-            </span>
-          </div>
-          <p style="font-size:1rem; color:var(--text-sage-light); line-height:1.5; margin-top:10px;">
-            ${escapeHtml(team.description || "Building an innovative hackathon solution.")}
-          </p>
-        </div>
-
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          ${team.whatsapp_link ? `
-            <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-whatsapp-pill">
-              WhatsApp Group ➔
-            </a>
-          ` : ''}
-
-          ${isLeader ? `
-            <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-black-pill sm">
-              ✎ Edit Team
-            </button>
-            <button onclick="confirmDisbandTeam('${team.id}')" class="btn-danger-pill">
-              Disband Team
-            </button>
-          ` : ''}
-
-          ${(isMember && !isLeader) ? `
-            <button onclick="confirmLeaveTeam('${team.id}')" class="btn-danger-pill">
-              Leave Team
-            </button>
-          ` : ''}
-        </div>
-      </div>
-    </div>
-  `;
-
-  // 6-Seat Visual Roster Grid
+  // 6-Seat Visual Roster Cards
   const members = team.members || [];
   let rosterCardsHtml = "";
 
@@ -684,7 +642,8 @@ function renderFullTeamDetail(team) {
       const cleanName = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
       const initial = cleanName.charAt(0).toUpperCase() || 'U';
       const isYou = Boolean(currentUser && currentUser.id && mRid && (mRid.toUpperCase() === (currentUser.id + '').toUpperCase()));
-      const roleCapsule = m.role === 'leader'
+      const isTeamLeader = m.role === 'leader';
+      const roleCapsule = isTeamLeader
         ? `<span class="status-capsule leader">Leader</span>`
         : `<span class="status-capsule member">Member</span>`;
       const avatarUrl = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mRid || 'Student')}`;
@@ -705,7 +664,7 @@ function renderFullTeamDetail(team) {
               </div>
 
               <div class="seat-meta">
-                ${escapeHtml(mRid)} • ${escapeHtml(m.gender || 'Student')}
+                @${escapeHtml(mRid)} ${m.gender ? `• ${escapeHtml(m.gender)}` : ""}
                 ${m.dob && m.dob !== 'N/A' ? ` • DOB: ${escapeHtml(m.dob)}` : ""}
               </div>
 
@@ -725,7 +684,7 @@ function renderFullTeamDetail(team) {
             </div>
           </div>
 
-          ${isLeader && m.role !== 'leader' ? `
+          ${isLeader && !isTeamLeader ? `
             <button onclick="confirmRemoveMember('${team.id}', '${escapeAttr(mRid)}', '${escapeAttr(cleanName)}')" class="btn-danger-pill" style="padding:4px 10px; font-size:0.6875rem;">
               Remove
             </button>
@@ -741,7 +700,7 @@ function renderFullTeamDetail(team) {
               Seat ${seatNum} • Open
             </span>
             ${isLeader ? `
-              <button onclick="openAddMemberModal('${team.id}', ${seatNum})" class="btn-black-pill sm" style="margin-top:4px;">
+              <button onclick="openSlotStudentSearchModalForTeam('${team.id}', ${seatNum})" class="btn-black-pill sm" style="margin-top:4px;">
                 + Add Teammate
               </button>
             ` : `
@@ -753,94 +712,212 @@ function renderFullTeamDetail(team) {
     }
   }
 
-  // Non-member Join Request Form
-  let joinSectionHtml = "";
-  if (!isMember && !isFull) {
-    if (currentUser) {
-      joinSectionHtml = `
-        <div class="team-hero-card" style="margin-top:24px;">
-          <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:6px;">Interested in Joining?</h3>
-          <p style="font-size:0.875rem; color:var(--text-sage); margin-bottom:16px;">Send a join request with a brief message to the team leader.</p>
-          <div style="display:flex; gap:12px; flex-wrap:wrap;">
-            <input type="text" id="joinMessageInput" placeholder="Brief note: e.g. Frontend dev with React experience..." class="input-forest" style="flex:1; min-width:240px;">
-            <button onclick="submitJoinRequest('${team.id}')" class="btn-black-pill">
-              Request to Join Team
-            </button>
+  container.innerHTML = `
+    <div class="team-page-full-container">
+      <div style="margin-bottom:20px;">
+        <a href="/" class="btn-outline-pill">
+          ← Back to Discover
+        </a>
+      </div>
+
+      <!-- Hero Header -->
+      <div class="team-header-hero">
+        <div class="team-header-top">
+          <div class="team-title-cluster">
+            <span class="status-capsule ${isFull ? 'full-pill' : 'open-pill'}">
+              ${isFull ? '● Team Full (6/6)' : `● ${6 - count} Open Seats Available`}
+            </span>
+            <h1 class="team-hero-name">${escapeHtml(team.name)}</h1>
+          </div>
+
+          <div class="team-header-actions">
+            ${isLeader ? `
+              <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-black-pill sm">
+                ✎ Edit Team
+              </button>
+              <button onclick="confirmDisbandTeam('${team.id}')" class="btn-danger-pill">
+                Disband Team
+              </button>
+            ` : ''}
+
+            ${(isMember && !isLeader) ? `
+              <button onclick="confirmLeaveTeam('${team.id}')" class="btn-danger-pill">
+                Leave Team
+              </button>
+            ` : ''}
           </div>
         </div>
-      `;
-    } else {
-      joinSectionHtml = `
-        <div class="team-hero-card" style="margin-top:24px; text-align:center; padding:32px;">
-          <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">Want to Join This Team?</h3>
-          <p style="font-size:0.875rem; color:var(--text-sage); margin-bottom:16px;">Sign in with your College R-ID to send a join request to the team leader.</p>
-          <a href="/login" class="btn-black-pill">Sign In with R-ID</a>
-        </div>
-      `;
-    }
-  }
 
-  // Leader Pending Join Requests
-  let pendingRequestsHtml = "";
-  if (isLeader) {
-    pendingRequestsHtml = `
-      <div class="team-hero-card" style="margin-top:24px;">
-        <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">Pending Join Requests</h3>
-        <div id="pendingRequestsContainer">
-          <p style="color:var(--text-sage); font-size:0.875rem;">Checking for join requests...</p>
+        <div class="team-pitch-quote-box">
+          <div class="pitch-quote-label">PROJECT PITCH & GOAL</div>
+          <p class="pitch-quote-text">
+            ${escapeHtml(team.description || "Building an innovative hackathon solution. Check out our open seats and join the squad!")}
+          </p>
         </div>
       </div>
-    `;
-  }
 
-  container.innerHTML = `
-    ${heroHtml}
-    <div style="margin-bottom:14px;">
-      <h2 class="font-serif" style="font-size:1.375rem; margin-bottom:14px;">6-Seat Roster</h2>
+      <!-- 2-Column Team Workspace Layout -->
+      <div class="team-detail-grid">
+        <!-- LEFT COLUMN: WhatsApp Card & 6-Seat Roster -->
+        <div class="team-detail-left-col">
+          <!-- WhatsApp Group Card -->
+          <div class="team-wa-card">
+            <div class="team-wa-left">
+              <div class="team-wa-icon-circle">
+                <svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.67 12.05 3.67Z"/></svg>
+              </div>
+              <div>
+                <div class="team-wa-title">Official Team WhatsApp Chat</div>
+                <div class="team-wa-subtitle">
+                  ${team.whatsapp_link ? 'Connect directly with confirmed teammates for standups and coding sessions.' : (isLeader ? 'You haven\'t linked a WhatsApp group yet. Add one so members can coordinate!' : 'No WhatsApp link provided yet by team leader.')}
+                </div>
+              </div>
+            </div>
+            <div>
+              ${team.whatsapp_link ? `
+                <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-whatsapp-pill">
+                  Join WhatsApp ➔
+                </a>
+              ` : (isLeader ? `
+                <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-outline-pill">
+                  + Add Link
+                </button>
+              ` : `<span style="font-size:0.8125rem; color:var(--text-sage);">Not set</span>`)}
+            </div>
+          </div>
+
+          <!-- 6-Seat Roster Section -->
+          <div class="roster-section-card">
+            <div class="roster-section-header">
+              <div>
+                <h3 class="font-serif" style="font-size:1.375rem;">Official Team Roster</h3>
+                <p style="font-size:0.8125rem; color:var(--text-sage); margin-top:2px;">
+                  ${count} of 6 seats filled (${6 - count} open)
+                </p>
+              </div>
+              <span class="status-capsule ${isFull ? 'full' : 'open'}">
+                ${isFull ? 'Roster Complete' : `${6 - count} Open Slots`}
+              </span>
+            </div>
+
+            <div class="roster-grid-6">
+              ${rosterCardsHtml}
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Pending Requests & Team Info -->
+        <div class="team-detail-right-col">
+          <!-- IF LEADER: Pending Join Requests Panel (PROMINENT AT TOP!) -->
+          ${isLeader ? `
+            <div class="pending-requests-card">
+              <div class="pending-requests-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <h3 class="font-serif" style="font-size:1.25rem;">Pending Join Requests</h3>
+                  <span id="pendingReqCountBadge" class="status-capsule open" style="font-size:0.6875rem;">0</span>
+                </div>
+              </div>
+              <div id="pendingRequestsContainer" class="pending-requests-list">
+                <p style="color:var(--text-sage); font-size:0.8125rem;">Checking for applicants...</p>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- IF NON-MEMBER & NOT FULL: Join Team Card -->
+          ${(!isMember && !isFull) ? `
+            <div class="join-team-action-card">
+              <div class="widget-title-row" style="margin-bottom:12px;">
+                <span class="widget-label-tiny">Join Team</span>
+                <span style="font-size:0.75rem; color:var(--badge-mint); font-weight:750;">● Open for Applications</span>
+              </div>
+              <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:6px;">Want to join ${escapeHtml(team.name)}?</h3>
+              <p style="font-size:0.8125rem; color:var(--text-sage-light); line-height:1.45; margin-bottom:14px;">
+                Send a direct join request to the team leader. Introduce yourself or highlight your technical skills.
+              </p>
+              ${currentUser ? `
+                <textarea id="joinMessageInput" rows="3" placeholder="e.g. Hey! I'm proficient in React, Node, and UI design. Would love to join..." class="input-forest" style="margin-bottom:12px;"></textarea>
+                <button onclick="submitJoinRequest('${team.id}')" class="btn-black-pill" style="width:100%;">
+                  Send Join Request ➔
+                </button>
+              ` : `
+                <div style="background:rgba(0,0,0,0.25); border-radius:var(--radius-lg); padding:14px; text-align:center;">
+                  <p style="font-size:0.8125rem; color:var(--text-sage); margin-bottom:10px;">Sign in with your College R-ID to request joining this team.</p>
+                  <a href="/login" class="btn-black-pill sm">Sign In to Apply</a>
+                </div>
+              `}
+            </div>
+          ` : ''}
+
+          <!-- Team Guidelines Card -->
+          <div class="team-guide-side-card">
+            <h4 class="font-serif" style="font-size:1.0625rem; margin-bottom:10px;">Team Guidelines</h4>
+            <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; font-size:0.8125rem; color:var(--text-sage-light);">
+              <li style="display:flex; gap:8px;">
+                <span style="color:var(--badge-mint);">✓</span> <span>Max 6 members per hackathon squad.</span>
+              </li>
+              <li style="display:flex; gap:8px;">
+                <span style="color:var(--badge-mint);">✓</span> <span>Leaders can directly invite peers via R-ID or accept applications.</span>
+              </li>
+              <li style="display:flex; gap:8px;">
+                <span style="color:var(--badge-mint);">✓</span> <span>Join the official WhatsApp chat to coordinate immediately.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="roster-grid-6">
-      ${rosterCardsHtml}
-    </div>
-    ${joinSectionHtml}
-    ${pendingRequestsHtml}
   `;
 }
 
 function loadTeamJoinRequests(teamId) {
   const container = document.getElementById("pendingRequestsContainer");
+  const badge = document.getElementById("pendingReqCountBadge");
   if (!container) return;
 
   fetch(`/api/teams/${teamId}/requests?leader_r_id=${encodeURIComponent(currentUser ? currentUser.id : "")}`)
     .then(res => res.json())
     .then(data => {
       const requests = data.requests || [];
+      if (badge) badge.innerText = `${requests.length} Pending`;
+
       if (requests.length === 0) {
-        container.innerHTML = `<p style="font-size:0.875rem; color:var(--text-sage);">No pending join requests.</p>`;
+        container.innerHTML = `<p style="font-size:0.8125rem; color:var(--text-sage); text-align:center; padding:12px 0;">No pending join requests right now.</p>`;
         return;
       }
 
-      container.innerHTML = `
-        <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
-          ${requests.map(req => `
-            <div style="background:var(--bg-forest-800); border:1px solid var(--border-surface); border-radius:var(--radius-xl); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;">
-              <div>
-                <div style="font-weight:700; font-size:0.9375rem; color:var(--text-white);">
-                  ${escapeHtml(req.name || req.student_name || req.r_id)} <span style="font-size:0.8125rem; color:var(--text-sage);">(${escapeHtml(req.r_id)})</span>
-                </div>
-                ${req.message ? `<div style="font-size:0.8125rem; color:var(--text-sage-light); margin-top:4px;">"${escapeHtml(req.message)}"</div>` : ""}
+      container.innerHTML = requests.map(req => {
+        const applicantName = (req.name || req.student_name || req.r_id || "Student") + "";
+        const initial = applicantName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
+        return `
+          <div class="pending-request-item">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div class="seat-avatar" style="width:36px; height:36px;">
+                <span class="avatar-stack-initial" style="font-size:0.8125rem;">${escapeHtml(initial)}</span>
+                <img src="${escapeHtml(req.avatar_url || '')}" alt="${escapeHtml(applicantName)}" onerror="this.remove()">
               </div>
-              <div style="display:flex; gap:8px; flex-shrink:0;">
-                <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'accept')" class="btn-black-pill sm" style="background:var(--badge-mint); color:#fff; border-color:var(--badge-mint);">
-                  Accept
-                </button>
-                <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'reject')" class="btn-danger-pill" style="padding:6px 14px;">
-                  Decline
-                </button>
+              <div style="min-width:0; flex:1;">
+                <div style="font-weight:750; font-size:0.875rem; color:var(--text-white);">${escapeHtml(applicantName)}</div>
+                <div style="font-size:0.6875rem; color:var(--text-sage);">@${escapeHtml(req.r_id)} ${req.gender ? `• ${escapeHtml(req.gender)}` : ''}</div>
               </div>
             </div>
-          `).join("")}
-        </div>
-      `;
+
+            ${req.message ? `
+              <div style="font-size:0.8125rem; color:var(--text-sage-light); background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:var(--radius-md); font-style:italic;">
+                "${escapeHtml(req.message)}"
+              </div>
+            ` : ""}
+
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+              <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'reject')" class="btn-outline-pill" style="padding:5px 12px; font-size:0.75rem;">
+                Decline
+              </button>
+              <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'accept')" class="btn-black-pill sm" style="background:var(--badge-mint); color:#fff; border-color:var(--badge-mint);">
+                ✓ Accept
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
     })
     .catch(() => {
       container.innerHTML = `<p style="color:var(--badge-coral); font-size:0.875rem;">Failed to load requests.</p>`;
@@ -1526,47 +1603,53 @@ function loadCreateTeamView() {
   }
 
   container.innerHTML = `
-    <div style="margin-bottom:20px; max-width:520px; margin-left:auto; margin-right:auto;">
-      <a href="/" class="btn-outline-pill">
-        ← Cancel & Back
-      </a>
-    </div>
+    <div class="create-team-container">
+      <div style="margin-bottom:20px;">
+        <a href="/" class="btn-outline-pill">
+          ← Cancel & Back to Discover
+        </a>
+      </div>
 
-    <div class="form-card-centered">
-      <div class="greeting-sup-text" style="text-align:center;">6-Seat Team Builder</div>
-      <h1 class="font-serif" style="font-size:1.875rem; text-align:center; margin-bottom:6px;">Create New Team</h1>
-      <p style="color:var(--text-sage); font-size:0.875rem; text-align:center; margin-bottom:24px;">Pre-add teammates or leave seats open for other participants to request.</p>
+      <div class="create-team-card">
+        <div class="greeting-sup-text" style="color:var(--badge-mint);">6-Seat Team Builder</div>
+        <h1 class="font-serif" style="font-size:2.25rem; margin-bottom:8px;">Create New Team</h1>
+        <p style="color:var(--text-sage); font-size:0.9375rem; margin-bottom:28px;">
+          Name your hackathon team, describe your project pitch, and assign teammates to slots or leave them open for applicants.
+        </p>
 
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <div>
-          <label class="form-label-forest">Team Title *</label>
-          <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, NeuroVision" class="input-forest">
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
+            <div>
+              <label class="form-label-forest">Team Title *</label>
+              <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, NeuroVision" class="input-forest">
+            </div>
+            <div>
+              <label class="form-label-forest">WhatsApp Group Link (Optional)</label>
+              <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="input-forest">
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label-forest">Project Pitch & Goals</label>
+            <textarea id="teamDescInput" rows="3" placeholder="Describe what you plan to build, required skills, and hackathon focus..." class="input-forest"></textarea>
+          </div>
+
+          <div style="padding-top:16px; border-top:1px solid var(--border-muted);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+              <div>
+                <label class="form-label-forest" style="margin-bottom:2px;">6-Seat Team Roster</label>
+                <span style="font-size:0.8125rem; color:var(--text-sage);">Click any open seat to search and add a student by R-ID. Empty seats stay open for join requests.</span>
+              </div>
+              <span class="status-capsule open" id="createTeamFilledCount">1/6 Assigned</span>
+            </div>
+
+            <div id="createTeamSlotsContainer" class="create-slots-grid"></div>
+          </div>
+
+          <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-black-pill lg" style="width:100%; margin-top:12px;">
+            Create & Publish Team ➔
+          </button>
         </div>
-
-        <div>
-          <label class="form-label-forest">Project Pitch</label>
-          <textarea id="teamDescInput" rows="3" placeholder="Describe your hackathon project pitch or required skills..." class="input-forest"></textarea>
-        </div>
-
-        <div>
-          <label class="form-label-forest">WhatsApp Group Link (Optional)</label>
-          <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="input-forest">
-        </div>
-
-        <div style="padding-top:12px; border-top:1px solid var(--border-muted); position:relative;">
-          <label class="form-label-forest">Search & Pre-Add Teammates</label>
-          <input type="text" id="friendSearchInput" placeholder="Type student R-ID or Name..." class="input-forest" oninput="debounceFriendSearch()">
-          <div id="friendSearchResults" class="search-dropdown" style="display:none;"></div>
-        </div>
-
-        <div>
-          <label class="form-label-forest">6-Seat Visual Preview</label>
-          <div id="createTeamSeatsContainer" class="seat-preview-grid"></div>
-        </div>
-
-        <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-black-pill lg" style="width:100%; margin-top:8px;">
-          Create & Publish Team
-        </button>
       </div>
     </div>
   `;
@@ -1575,22 +1658,35 @@ function loadCreateTeamView() {
 }
 
 function renderCreateTeamSeats() {
-  const container = document.getElementById("createTeamSeatsContainer");
+  const container = document.getElementById("createTeamSlotsContainer");
+  const countBadge = document.getElementById("createTeamFilledCount");
   if (!container) return;
+
+  const totalFilled = 1 + selectedFriends.length;
+  if (countBadge) countBadge.innerText = `${totalFilled}/6 Assigned`;
 
   const leaderInitial = currentUser ? (currentUser.name || currentUser.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U' : 'L';
 
   let seatsHtml = `
-    <div class="seat-preview-box active">
-      <div style="font-size:0.6875rem; font-weight:800; text-transform:uppercase; color:var(--badge-mint);">Seat 1 (Leader)</div>
-      <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-        <div class="avatar-stack-item" style="width:24px; height:24px; margin-left:0;">
-          <span class="avatar-stack-initial" style="font-size:0.625rem;">${escapeHtml(leaderInitial)}</span>
-          <img src="${escapeHtml((currentUser && currentUser.avatar_url) || '')}" alt="${escapeHtml((currentUser && currentUser.name) || '')}" loading="lazy" onerror="this.remove();">
+    <!-- Slot 1: Team Leader -->
+    <div class="create-slot-box leader">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <span style="font-size:0.6875rem; font-weight:800; text-transform:uppercase; color:var(--badge-mint);">Seat 1 • Leader (You)</span>
+        <span class="status-capsule leader" style="font-size:0.625rem; padding:2px 8px;">Leader</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="seat-avatar" style="width:38px; height:38px;">
+          <span class="avatar-stack-initial" style="font-size:0.8125rem;">${escapeHtml(leaderInitial)}</span>
+          <img src="${escapeHtml((currentUser && currentUser.avatar_url) || '')}" alt="${escapeHtml((currentUser && currentUser.name) || '')}" onerror="this.remove();">
         </div>
-        <span style="font-size:0.8125rem; font-weight:700; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-          ${escapeHtml((currentUser && currentUser.name) || 'Leader')}
-        </span>
+        <div style="min-width:0; flex:1;">
+          <div style="font-size:0.875rem; font-weight:750; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escapeHtml((currentUser && currentUser.name) || 'Leader')}
+          </div>
+          <div style="font-size:0.6875rem; color:var(--text-sage);">
+            @${escapeHtml((currentUser && currentUser.id) || '')} ${currentUser && currentUser.program ? `• ${escapeHtml(currentUser.program)}` : ''}
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -1600,27 +1696,35 @@ function renderCreateTeamSeats() {
       const f = selectedFriends[i];
       const initial = (f.name || f.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
       seatsHtml += `
-        <div class="seat-preview-box active">
-          <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
-            <span style="font-size:0.6875rem; font-weight:800; text-transform:uppercase; color:var(--badge-mint);">Seat ${i + 2}</span>
-            <button onclick="removeFriendFromTeam('${f.id}')" style="color:var(--badge-coral); font-size:0.75rem; cursor:pointer; font-weight:800;">✕</button>
+        <div class="create-slot-box filled">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:0.6875rem; font-weight:800; text-transform:uppercase; color:var(--badge-mint);">Seat ${i + 2} • Teammate</span>
+            <button onclick="removeFriendFromTeam('${escapeAttr(f.id)}')" class="btn-danger-pill" style="padding:2px 8px; font-size:0.6875rem;">
+              ✕ Remove
+            </button>
           </div>
-          <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-            <div class="avatar-stack-item" style="width:24px; height:24px; margin-left:0;">
-              <span class="avatar-stack-initial" style="font-size:0.625rem;">${escapeHtml(initial)}</span>
-              <img src="${escapeHtml(f.avatar_url || '')}" alt="${escapeHtml(f.name)}" loading="lazy" onerror="this.remove();">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="seat-avatar" style="width:38px; height:38px;">
+              <span class="avatar-stack-initial" style="font-size:0.8125rem;">${escapeHtml(initial)}</span>
+              <img src="${escapeHtml(f.avatar_url || '')}" alt="${escapeHtml(f.name)}" onerror="this.remove();">
             </div>
-            <span style="font-size:0.8125rem; font-weight:700; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              ${escapeHtml(f.name)}
-            </span>
+            <div style="min-width:0; flex:1;">
+              <div style="font-size:0.875rem; font-weight:750; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${escapeHtml(f.name)}
+              </div>
+              <div style="font-size:0.6875rem; color:var(--text-sage);">
+                @${escapeHtml(f.id)} ${f.program ? `• ${escapeHtml(f.program)}` : ''}
+              </div>
+            </div>
           </div>
         </div>
       `;
     } else {
       seatsHtml += `
-        <div class="seat-preview-box">
-          <span style="font-size:0.6875rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Seat ${i + 2}</span>
-          <span style="font-size:0.75rem; color:var(--text-sage);">Open Slot</span>
+        <div class="create-slot-box empty" onclick="openSlotStudentSearchModal(${i})" title="Click to add student by R-ID">
+          <div class="slot-empty-icon">+</div>
+          <div class="slot-empty-title">Seat ${i + 2} • Open Slot</div>
+          <div class="slot-empty-subtitle">Click to search & add teammate</div>
         </div>
       `;
     }
@@ -1629,80 +1733,190 @@ function renderCreateTeamSeats() {
   container.innerHTML = seatsHtml;
 }
 
-function debounceFriendSearch() {
-  clearTimeout(friendSearchDebounce);
-  friendSearchDebounce = setTimeout(() => {
-    const input = document.getElementById("friendSearchInput");
-    const resultsDiv = document.getElementById("friendSearchResults");
-    if (!input || !resultsDiv) return;
+/* ==========================================================================
+   STUDENT SEARCH MODAL SYSTEM (CREATE TEAM & TEAM DETAIL)
+   ========================================================================== */
+let currentSearchTargetSlot = null;
+let currentSearchTeamId = null;
+let slotSearchDebounceTimer = null;
+
+function openSlotStudentSearchModal(slotIndex) {
+  currentSearchTargetSlot = slotIndex;
+  currentSearchTeamId = null;
+
+  const overlay = document.getElementById("studentSearchModalOverlay");
+  const title = document.getElementById("studentSearchModalTitle");
+  const subtitle = document.getElementById("studentSearchModalSubtitle");
+  const input = document.getElementById("slotStudentSearchInput");
+  const results = document.getElementById("slotStudentSearchResults");
+
+  if (!overlay) return;
+
+  if (title) title.innerText = `Assign Teammate (Seat ${slotIndex + 2})`;
+  if (subtitle) subtitle.innerText = "Search by College R-ID or Student Name from the university records database.";
+  if (input) input.value = "";
+  if (results) results.innerHTML = `<div style="text-align:center; padding:32px 16px; color:var(--text-sage);">Type student R-ID or Name to search the database...</div>`;
+
+  overlay.classList.add("active");
+  setTimeout(() => { if (input) input.focus(); }, 100);
+}
+
+function openSlotStudentSearchModalForTeam(teamId, seatNum) {
+  currentSearchTargetSlot = null;
+  currentSearchTeamId = teamId;
+
+  const overlay = document.getElementById("studentSearchModalOverlay");
+  const title = document.getElementById("studentSearchModalTitle");
+  const subtitle = document.getElementById("studentSearchModalSubtitle");
+  const input = document.getElementById("slotStudentSearchInput");
+  const results = document.getElementById("slotStudentSearchResults");
+
+  if (!overlay) return;
+
+  if (title) title.innerText = `Add Teammate to Seat ${seatNum}`;
+  if (subtitle) subtitle.innerText = "Search by College R-ID or Student Name to directly add a verified member to your team.";
+  if (input) input.value = "";
+  if (results) results.innerHTML = `<div style="text-align:center; padding:32px 16px; color:var(--text-sage);">Type student R-ID or Name to search the database...</div>`;
+
+  overlay.classList.add("active");
+  setTimeout(() => { if (input) input.focus(); }, 100);
+}
+
+function closeStudentSearchModal() {
+  const overlay = document.getElementById("studentSearchModalOverlay");
+  if (overlay) overlay.classList.remove("active");
+}
+
+function debounceSlotStudentSearch() {
+  clearTimeout(slotSearchDebounceTimer);
+  slotSearchDebounceTimer = setTimeout(() => {
+    const input = document.getElementById("slotStudentSearchInput");
+    const results = document.getElementById("slotStudentSearchResults");
+    if (!input || !results) return;
 
     const query = input.value.trim();
     if (query.length < 2) {
-      resultsDiv.style.display = "none";
+      results.innerHTML = `<div style="text-align:center; padding:32px 16px; color:var(--text-sage);">Type at least 2 characters to search college database...</div>`;
       return;
     }
 
-    if (friendSearchAbortController) friendSearchAbortController.abort();
-    friendSearchAbortController = new AbortController();
+    results.innerHTML = `<div style="text-align:center; padding:24px 16px; color:var(--text-sage);">Searching university database...</div>`;
 
-    fetch(`/api/students/search?q=${encodeURIComponent(query)}`, { signal: friendSearchAbortController.signal })
+    fetch(`/api/students/search?q=${encodeURIComponent(query)}`)
       .then(res => res.json())
       .then(data => {
         const students = data.students || [];
-        const filtered = students.filter(s => {
-          if (!s || !s.r_id) return false;
-          if (currentUser && s.r_id.toUpperCase() === currentUser.id.toUpperCase()) return false;
-          if (selectedFriends.some(f => f.id.toUpperCase() === s.r_id.toUpperCase())) return false;
-          return true;
-        });
-
-        if (filtered.length === 0) {
-          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span style="color:var(--text-sage); font-size:0.8125rem;">No unselected students matching "${escapeHtml(query)}"</span></div>`;
-          resultsDiv.style.display = "block";
+        if (students.length === 0) {
+          results.innerHTML = `<div style="text-align:center; padding:32px 16px; color:var(--text-sage);">No students found matching "${escapeHtml(query)}"</div>`;
           return;
         }
 
-        resultsDiv.innerHTML = filtered.slice(0, 5).map(s => `
-          <div class="search-dropdown-item" onclick="addFriendToTeam('${escapeAttr(s.r_id)}', '${escapeAttr(s.name)}', '${escapeAttr(s.avatar_url || '')}')">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <div class="avatar-stack-item" style="width:28px; height:28px; margin-left:0;">
-                <span class="avatar-stack-initial" style="font-size:0.6875rem;">${escapeHtml(s.name.charAt(0).toUpperCase())}</span>
-                <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.remove();">
+        results.innerHTML = students.map(s => {
+          const sRid = (s.r_id || "").toUpperCase();
+          const isMe = Boolean(currentUser && currentUser.id && currentUser.id.toUpperCase() === sRid);
+          const isAlreadySelected = selectedFriends.some(f => f.id.toUpperCase() === sRid);
+          const cleanName = (s.name || sRid).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
+          const initial = cleanName.charAt(0).toUpperCase() || 'U';
+          const avatarUrl = s.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sRid)}`;
+
+          return `
+            <div class="student-search-card-rich">
+              <div class="student-card-left">
+                <div class="student-search-avatar">
+                  <span class="avatar-initial">${escapeHtml(initial)}</span>
+                  <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" onerror="this.remove()">
+                </div>
+                <div class="student-search-info">
+                  <div class="student-name-row">
+                    <span class="student-search-name">${escapeHtml(cleanName)}</span>
+                    <span class="student-rid-badge">@${escapeHtml(sRid)}</span>
+                    <span class="college-verified-tag">✓ College DB</span>
+                  </div>
+
+                  <div class="student-academic-row">
+                    <span class="academic-prog-tag">${escapeHtml(s.program || 'Student')}</span>
+                    ${s.semester_year ? `<span class="academic-sem-tag">• ${escapeHtml(s.semester_year)}</span>` : ''}
+                  </div>
+
+                  <div class="student-contact-row">
+                    ${s.email ? `<span class="contact-item">✉ ${escapeHtml(s.email)}</span>` : ''}
+                    ${s.phone && s.phone !== 'N/A' ? `<span class="contact-item">📞 ${escapeHtml(s.phone)}</span>` : ''}
+                    ${s.gender ? `<span class="contact-item">• ${escapeHtml(s.gender)}</span>` : ''}
+                  </div>
+                </div>
               </div>
-              <div>
-                <div style="font-size:0.875rem; font-weight:700; color:var(--text-white);">${escapeHtml(s.name)}</div>
-                <div style="font-size:0.75rem; color:var(--text-sage);">${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}</div>
+
+              <div class="student-card-action">
+                ${isMe ? `
+                  <span class="badge-selected">You (Leader)</span>
+                ` : isAlreadySelected ? `
+                  <span class="badge-selected">Already Selected</span>
+                ` : `
+                  <button onclick="selectStudentForSlot('${escapeAttr(sRid)}', '${escapeAttr(cleanName)}', '${escapeAttr(avatarUrl)}', '${escapeAttr(s.program || '')}', '${escapeAttr(s.semester_year || '')}')" class="btn-black-pill sm">
+                    + Select Teammate
+                  </button>
+                `}
               </div>
             </div>
-            <span class="btn-black-pill sm" style="font-size:0.75rem; padding:4px 12px;">+ Add</span>
-          </div>
-        `).join("");
-        resultsDiv.style.display = "block";
+          `;
+        }).join("");
       })
-      .catch(err => {
-        if (err.name !== "AbortError") {
-          resultsDiv.innerHTML = `<div class="search-dropdown-item"><span style="color:var(--badge-coral); font-size:0.8125rem;">Search failed</span></div>`;
-          resultsDiv.style.display = "block";
-        }
+      .catch(() => {
+        results.innerHTML = `<div style="text-align:center; padding:24px 16px; color:var(--badge-coral);">Network error searching students.</div>`;
       });
-  }, 100);
+  }, 120);
 }
 
-function addFriendToTeam(r_id, name, avatar_url) {
-  if (selectedFriends.length >= 5) {
-    showToast("A team can have a maximum of 6 members (1 Leader + 5 Teammates)", "error");
-    return;
+function selectStudentForSlot(rId, name, avatarUrl, program, semesterYear) {
+  // If in Create Team mode
+  if (currentSearchTeamId === null) {
+    if (selectedFriends.some(f => f.id.toUpperCase() === rId.toUpperCase())) {
+      showToast("Student already added to roster", "error");
+      return;
+    }
+    if (selectedFriends.length >= 5) {
+      showToast("All 5 teammate slots are already filled", "error");
+      return;
+    }
+    selectedFriends.push({
+      id: rId,
+      name: name,
+      avatar_url: avatarUrl,
+      program: program,
+      semester_year: semesterYear
+    });
+    closeStudentSearchModal();
+    renderCreateTeamSeats();
+    showToast(`Added ${name} to team roster!`, "success");
+  } else {
+    // In Team Detail mode: directly add member to the existing team
+    const teamId = currentSearchTeamId;
+    fetch(`/api/teams/${teamId}/members/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        leader_r_id: currentUser ? currentUser.id : "",
+        student_r_id: rId
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast(`Added ${name} to the team!`, "success");
+          closeStudentSearchModal();
+          delete clientCache.teamsMap[teamId];
+          clientCache.teamsList = null;
+          loadTeamDetailView(teamId);
+        } else {
+          showToast(data.message || "Failed to add member", "error");
+        }
+      })
+      .catch(() => showToast("Network error adding member", "error"));
   }
-  selectedFriends.push({ id: r_id, name: name, avatar_url: avatar_url });
-  const resultsDiv = document.getElementById("friendSearchResults");
-  const input = document.getElementById("friendSearchInput");
-  if (resultsDiv) resultsDiv.style.display = "none";
-  if (input) input.value = "";
-  renderCreateTeamSeats();
 }
 
-function removeFriendFromTeam(r_id) {
-  selectedFriends = selectedFriends.filter(f => f.id !== r_id);
+function removeFriendFromTeam(rId) {
+  selectedFriends = selectedFriends.filter(f => f.id.toUpperCase() !== rId.toUpperCase());
   renderCreateTeamSeats();
 }
 
@@ -1734,6 +1948,7 @@ function submitCreateTeam() {
       name: name,
       description: desc,
       whatsapp_link: wa,
+      friend_r_ids: selectedFriends.map(f => f.id),
       pre_added_members: selectedFriends.map(f => f.id)
     })
   })
@@ -1741,7 +1956,7 @@ function submitCreateTeam() {
     .then(data => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Create & Publish Team";
+        btn.innerText = "Create & Publish Team ➔";
       }
       if (data.success && data.team_id) {
         showToast("Team published successfully!", "success");
@@ -1755,7 +1970,7 @@ function submitCreateTeam() {
     .catch(() => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Create & Publish Team";
+        btn.innerText = "Create & Publish Team ➔";
       }
       showToast("Network error creating team", "error");
     });
@@ -2378,86 +2593,85 @@ function loadAboutView() {
   if (!container) return;
 
   container.innerHTML = `
-    <div style="max-width:960px; margin:0 auto;">
+    <div style="max-width:920px; margin:0 auto; padding-bottom:40px;">
       
       <!-- Editorial Header -->
-      <div class="about-hero-section">
-        <div class="greeting-sup-text" style="color:var(--badge-mint);">Official Platform Guide</div>
-        <h1 class="font-serif" style="font-size:2.5rem; line-height:1.15; margin-bottom:12px;">About HackMate</h1>
+      <div class="about-hero-section" style="margin-bottom:32px;">
+        <div class="greeting-sup-text" style="color:var(--badge-mint);">Quick Student Guide</div>
+        <h1 class="font-serif" style="font-size:2.5rem; line-height:1.15; margin-bottom:12px;">How to Use HackMate in 4 Easy Steps</h1>
         <p style="font-size:1.0625rem; color:var(--text-sage-light); line-height:1.6;">
-          HackMate is the university's premier team matching platform designed to connect ambitious developers, designers, and innovators to form unstoppable 6-seat hackathon squads.
+          Looking to join a team or find great teammates for your hackathon project? HackMate makes it simple to team up, connect on WhatsApp, and start building together.
         </p>
       </div>
 
-      <!-- Creator Spotlight Banner (HONORING AFROZ ALAM) -->
+      <!-- Human 4-Step Guide -->
+      <div class="about-features-grid" style="margin-bottom:36px;">
+        <div class="about-feature-card">
+          <div class="about-feature-icon">⚡</div>
+          <h4 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">1. Sign In with R-ID</h4>
+          <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">
+            Type your College R-ID (e.g. R15006) and enter the 6-digit OTP. You are logged in within 5 seconds—no lengthy forms or passwords needed.
+          </p>
+        </div>
+
+        <div class="about-feature-card">
+          <div class="about-feature-icon">🚀</div>
+          <h4 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">2. Browse or Pitch an Idea</h4>
+          <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">
+            Explore open project pitches on the Discover feed to find teams needing your skills, or tap <strong>+ Create Team</strong> to launch your own idea.
+          </p>
+        </div>
+
+        <div class="about-feature-card">
+          <div class="about-feature-icon">🤝</div>
+          <h4 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">3. Fill Roster & Add Friends</h4>
+          <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">
+            Searching for friends? Click any open slot on your team and search them by name or R-ID to add them instantly, or accept incoming join requests.
+          </p>
+        </div>
+
+        <div class="about-feature-card">
+          <div class="about-feature-icon">💬</div>
+          <h4 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">4. Chat on WhatsApp & Build</h4>
+          <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">
+            Once your team is assembled, click the team's official WhatsApp group link to sync up in real time, plan tasks, and hack together.
+          </p>
+        </div>
+      </div>
+
+      <!-- FAQ Card -->
+      <div class="profile-pro-card" style="margin-bottom:36px;">
+        <h3 class="font-serif" style="font-size:1.375rem; margin-bottom:16px;">Helpful Tips for Students</h3>
+        
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div style="font-weight:750; font-size:1rem; color:var(--text-white); margin-bottom:4px;">Can I be in multiple teams?</div>
+            <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">No, each student can only belong to one active hackathon squad at a time so rosters stay fair and committed.</p>
+          </div>
+
+          <div style="border-top:1px solid var(--border-muted); padding-top:14px;">
+            <div style="font-weight:750; font-size:1rem; color:var(--text-white); margin-bottom:4px;">How do teammates communicate?</div>
+            <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">Team leaders can link an official WhatsApp group chat directly in the team page so all members can join with one click.</p>
+          </div>
+
+          <div style="border-top:1px solid var(--border-muted); padding-top:14px;">
+            <div style="font-weight:750; font-size:1rem; color:var(--text-white); margin-bottom:4px;">How do open slots work?</div>
+            <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">Any slot you leave unassigned will show as an open seat on the homepage feed. Other students can submit a request with a note explaining why they want to join.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Creator Spotlight Banner (HONORING AFROZ ALAM - AT BOTTOM) -->
       <div class="creator-spotlight-banner">
         <div class="creator-badge">★ Creator Spotlight</div>
         <h2 class="creator-name-title">Designed & Built by Afroz Alam</h2>
         <p class="creator-pitch">
-          HackMate was conceived, architected, and crafted by <strong>Afroz Alam</strong> to eliminate the chaos of hackathon team formation. By combining real university database verification, dynamic 6-seat roster balance, instant collaboration tools, and a high-performance experience, HackMate empowers every student to turn bold ideas into winning reality.
+          HackMate was designed and crafted by <strong>Afroz Alam</strong> to eliminate the chaos of hackathon team hunting. Built specifically for students, HackMate brings together instant discovery, verified student search, and seamless collaboration so you can spend less time looking for a team and more time building winning software.
         </p>
       </div>
 
-      <!-- Quick Guide: 4 Core Capabilities -->
-      <h3 class="font-serif" style="font-size:1.5rem; margin-bottom:20px;">How HackMate Works</h3>
-      <div class="about-features-grid">
-        <div class="about-feature-card">
-          <div class="about-feature-icon">🔍</div>
-          <h4 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">1. Discover & Match</h4>
-          <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">
-            Browse open hackathon teams by project pitch, skill needs, or open slots. Filter instantly without page reloads.
-          </p>
-        </div>
-
-        <div class="about-feature-card">
-          <div class="about-feature-icon">🛡️</div>
-          <h4 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">2. 6-Seat Team System</h4>
-          <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">
-            Teams are structured with 1 Leader + 5 Teammates. Leaders can pre-add peers or accept live join requests.
-          </p>
-        </div>
-
-        <div class="about-feature-card">
-          <div class="about-feature-icon">🎓</div>
-          <h4 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">3. Verified College Records</h4>
-          <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">
-            Directly integrated with academic database records to ensure verified student credentials, courses, and eligibility.
-          </p>
-        </div>
-
-        <div class="about-feature-card">
-          <div class="about-feature-icon">⚡</div>
-          <h4 class="font-serif" style="font-size:1.25rem; margin-bottom:8px;">4. Real-time Notifications</h4>
-          <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">
-            Instant notification engine alerts leaders of new join requests and informs students when their applications are accepted.
-          </p>
-        </div>
-      </div>
-
-      <!-- FAQ & Rules Card -->
-      <div class="profile-pro-card" style="margin-bottom:36px;">
-        <h3 class="font-serif" style="font-size:1.375rem; margin-bottom:16px;">Frequently Asked Questions</h3>
-        
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          <div>
-            <div style="font-weight:750; font-size:1rem; color:var(--text-white); margin-bottom:4px;">How do I sign in?</div>
-            <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">Simply enter your College R-ID (e.g. R15006). A 6-digit verification code will be sent to your registered university email.</p>
-          </div>
-
-          <div style="border-top:1px solid var(--border-muted); padding-top:14px;">
-            <div style="font-weight:750; font-size:1rem; color:var(--text-white); margin-bottom:4px;">Can I be in multiple teams?</div>
-            <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">No. To maintain fairness across the hackathon, each student can only belong to one active team at any time.</p>
-          </div>
-
-          <div style="border-top:1px solid var(--border-muted); padding-top:14px;">
-            <div style="font-weight:750; font-size:1rem; color:var(--text-white); margin-bottom:4px;">What if my R-ID is not listed yet?</div>
-            <p style="font-size:0.875rem; color:var(--text-sage-light); line-height:1.5;">If your university record sync is still in progress, you can confirm your Full Name, Email, and Academic Program on the Sign In page to register immediately.</p>
-          </div>
-        </div>
-      </div>
-
       <!-- Bottom Action CTA -->
-      <div style="text-align:center; margin-bottom:20px;">
+      <div style="text-align:center; margin-top:24px; margin-bottom:20px;">
         <a href="/" class="btn-black-pill lg" style="margin-right:12px;">
           Discover Teams ➔
         </a>

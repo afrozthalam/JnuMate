@@ -125,30 +125,37 @@ h1, h2, h3, h4, .font-serif {
    3. APP ENCLOSURE FRAME & 3-COLUMN DESKTOP LAYOUT
    ========================================================================== */
 .app-desktop-surround {
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 20px;
   background: var(--bg-canvas-frame);
+  overflow: hidden;
 }
 
 .app-enclosure-shell {
   width: 100%;
-  max-width: 1420px;
-  min-height: calc(100vh - 48px);
+  max-width: 1440px;
+  height: calc(100vh - 40px);
+  max-height: calc(100vh - 40px);
   background-color: var(--bg-forest-850);
   border-radius: var(--radius-3xl);
   box-shadow: var(--shadow-app-frame);
   display: grid;
-  grid-template-columns: 240px 1fr 340px;
+  grid-template-columns: 240px minmax(0, 1fr) 340px;
   position: relative;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .app-enclosure-shell.two-column-mode {
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 240px minmax(0, 1fr) !important;
+}
+
+.app-enclosure-shell.two-column-mode .app-widgets-desktop {
+  display: none !important;
 }
 
 /* ==========================================================================
@@ -157,11 +164,26 @@ h1, h2, h3, h4, .font-serif {
 .app-sidebar-desktop {
   background-color: var(--bg-forest-850);
   border-right: 1px solid var(--border-muted);
-  padding: 32px 20px 28px 24px;
+  padding: 28px 20px 24px 24px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   user-select: none;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.app-sidebar-desktop > div:first-child {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-sidebar-desktop nav {
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .brand-header-link {
@@ -306,9 +328,10 @@ h1, h2, h3, h4, .font-serif {
    ========================================================================== */
 .app-main-workspace {
   background-color: var(--bg-forest-850);
-  padding: 36px 36px 48px;
+  padding: 32px 36px 48px;
   overflow-y: auto;
-  min-height: 100%;
+  height: 100%;
+  max-height: 100%;
 }
 
 .view-page-panel {
@@ -327,6 +350,37 @@ h1, h2, h3, h4, .font-serif {
 
 .forest-header-section {
   margin-bottom: 24px;
+}
+
+.home-header-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.home-header-title-box {
+  max-width: 680px;
+}
+
+.home-quick-title {
+  font-family: var(--font-serif);
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-white);
+  letter-spacing: -0.02em;
+}
+
+.controls-filter-action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-create-team-btn {
+  display: none;
 }
 
 .greeting-sup-text {
@@ -433,70 +487,58 @@ h1, h2, h3, h4, .font-serif {
 }
 
 /* ==========================================================================
-   6. LIVELY CARD DESIGNS (POINT 2: MORE ALIVE, MULTI-LAYER GRADIENT, 6-DOTS)
+   6. HIGH-CONTRAST WHITISH NEO-EDITORIAL TEAM CARDS & PRONOUNCED AVATARS
    ========================================================================== */
 .teams-forest-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 24px;
 }
 
-.team-card-forest {
-  background: linear-gradient(155deg, #1C583B 0%, #16492F 60%, #113A25 100%);
-  border: 1px solid var(--border-surface);
-  border-top: 1.5px solid rgba(255, 255, 255, 0.22);
+.team-forest-card {
+  background: #FFFFFF;
+  color: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-2xl);
-  padding: 24px;
+  padding: 24px 26px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
-  transition: all var(--trans-smooth);
+  transition: transform 0.25s var(--spring-ease), box-shadow 0.25s var(--spring-ease), border-color 0.25s ease;
   position: relative;
   overflow: hidden;
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 10px 30px -4px rgba(5, 20, 13, 0.35), 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-.team-card-forest::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: radial-gradient(circle at 50% -20%, rgba(60, 166, 106, 0.25), transparent 70%);
-  pointer-events: none;
-}
-
-.team-card-forest:hover {
-  transform: translateY(-5px) scale(1.01);
-  border-color: rgba(60, 166, 106, 0.5);
-  box-shadow: var(--shadow-card-hover);
+.team-forest-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 22px 48px -8px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(60, 166, 106, 0.4);
 }
 
 .team-card-top-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   position: relative;
   z-index: 2;
 }
 
 .team-card-title {
   font-family: var(--font-serif);
-  font-size: 1.3125rem;
-  font-weight: 700;
-  color: var(--text-white);
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: #0B2B1B;
   margin-bottom: 8px;
   line-height: 1.25;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.015em;
 }
 
 .team-card-pitch {
   font-size: 0.875rem;
-  color: var(--text-sage-light);
-  line-height: 1.5;
+  color: #4B5563;
+  line-height: 1.55;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -504,53 +546,105 @@ h1, h2, h3, h4, .font-serif {
   margin-bottom: 18px;
 }
 
-/* 6-Dot Visual Vacancy Bar */
-.team-slot-indicator-box {
+/* 6-Roster Pronounced Avatars Row (Filled + Empty Seat Avatars) */
+.team-card-roster-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-.slot-dots-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.slot-dot {
-  width: 10px;
-  height: 10px;
+.roster-avatar-item {
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-pill);
-  transition: all 0.2s ease;
+  position: relative;
+  transition: transform 0.18s ease;
+  flex-shrink: 0;
 }
 
-.slot-dot.filled {
-  background-color: var(--badge-mint);
-  box-shadow: 0 0 6px rgba(62, 168, 108, 0.8);
+.roster-avatar-item.filled {
+  border: 2.5px solid #FFFFFF;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.14);
+  background-color: #E2E8F0;
+  overflow: hidden;
 }
 
-.slot-dot.empty {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px dashed rgba(255, 255, 255, 0.35);
+.roster-avatar-item.filled img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.roster-avatar-item.filled .avatar-initial {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9375rem;
+  color: #1A5438;
+  background: #E6F4EA;
+}
+
+.roster-avatar-item.empty {
+  border: 2px dashed #9CA3AF;
+  background-color: #F8FAFC;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9CA3AF;
+}
+
+.roster-avatar-item.empty svg {
+  width: 18px;
+  height: 18px;
+  stroke: #9CA3AF;
+  stroke-width: 2.2;
+}
+
+.roster-avatar-item:hover {
+  transform: scale(1.1);
+  z-index: 5;
 }
 
 .team-card-bottom-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 14px;
-  border-top: 1px solid var(--border-muted);
+  padding-top: 16px;
+  border-top: 1px solid #E5E7EB;
 }
 
 .meta-members-tag {
   font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--text-sage);
+  font-weight: 750;
+  color: #4B5563;
+}
+
+/* Status Capsules for Whitish Team Card */
+.status-capsule.open-pill {
+  background-color: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+  font-size: 0.75rem;
+  font-weight: 750;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+}
+
+.status-capsule.full-pill {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+  font-size: 0.75rem;
+  font-weight: 750;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
 }
 
 /* Pitch Black High-Contrast Pill Buttons */
@@ -923,59 +1017,216 @@ h1, h2, h3, h4, .font-serif {
 
 /* ==========================================================================
    9. TEAM DETAIL VIEW (6-SEAT ROSTER & INTERACTIONS)
+/* ==========================================================================
+   9. TEAM DETAIL VIEW (FULL SPACE, WHATSAPP CARD, PROMINENT PENDING REQUESTS)
    ========================================================================== */
-.team-hero-card {
+.team-page-full-container {
+  width: 100%;
+}
+
+.team-header-hero {
   background: linear-gradient(155deg, #1C583B 0%, #15452E 100%);
   border: 1px solid var(--border-surface);
   border-top: 1.5px solid rgba(255, 255, 255, 0.22);
   border-radius: var(--radius-2xl);
-  padding: 28px;
-  margin-bottom: 28px;
+  padding: 30px;
+  margin-bottom: 24px;
   box-shadow: var(--shadow-card);
+}
+
+.team-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.team-title-cluster {
+  flex: 1;
+  min-width: 260px;
+}
+
+.team-hero-name {
+  font-family: var(--font-serif);
+  font-size: 2.125rem;
+  font-weight: 800;
+  color: var(--text-white);
+  letter-spacing: -0.02em;
+  margin-top: 8px;
+  line-height: 1.2;
+}
+
+.team-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.team-pitch-quote-box {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  padding: 18px 22px;
+}
+
+.pitch-quote-label {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--badge-mint);
+  margin-bottom: 6px;
+}
+
+.pitch-quote-text {
+  font-size: 0.9375rem;
+  color: var(--text-white);
+  line-height: 1.6;
+}
+
+/* 2-Column Team Workspace Grid */
+.team-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1.15fr);
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .team-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+}
+
+.team-detail-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.team-detail-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Dedicated WhatsApp Group Card */
+.team-wa-card {
+  background: linear-gradient(135deg, rgba(37, 211, 102, 0.12) 0%, rgba(19, 67, 44, 0.5) 100%);
+  border: 1.5px solid rgba(37, 211, 102, 0.4);
+  border-radius: var(--radius-2xl);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  flex-wrap: wrap;
+}
+
+.team-wa-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.team-wa-icon-circle {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-pill);
+  background: #25D366;
+  color: #063A17;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
+}
+
+.team-wa-icon-circle svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.team-wa-title {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  font-weight: 750;
+  color: var(--text-white);
+  margin-bottom: 2px;
+}
+
+.team-wa-subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-sage);
+  line-height: 1.4;
+}
+
+/* 6-Seat Roster Section */
+.roster-section-card {
+  background: linear-gradient(155deg, #1A5438 0%, #15452E 100%);
+  border: 1px solid var(--border-surface);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-2xl);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.roster-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-muted);
 }
 
 .roster-grid-6 {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-  margin-bottom: 32px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
 }
 
 .roster-seat-card {
-  background: linear-gradient(155deg, #1A5438 0%, #15452E 100%);
+  background: rgba(0, 0, 0, 0.25);
   border: 1px solid var(--border-surface);
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-xl);
-  padding: 18px;
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px;
   transition: all var(--trans-fast);
-  box-shadow: var(--shadow-card);
 }
 
 .roster-seat-card:hover {
-  background: linear-gradient(155deg, #1E5E3F 0%, #184D34 100%);
+  background: rgba(0, 0, 0, 0.35);
   border-color: rgba(60, 166, 106, 0.4);
   transform: translateY(-2px);
 }
 
 .roster-seat-card.empty-seat {
-  border: 1.5px dashed var(--border-bright);
-  background: rgba(19, 67, 44, 0.3);
+  border: 1.5px dashed rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.03);
   justify-content: center;
   text-align: center;
-  padding: 24px 18px;
-  box-shadow: none;
+  padding: 20px 14px;
 }
 
 .seat-avatar {
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: var(--radius-pill);
   background-color: var(--bg-forest-900);
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
   flex-shrink: 0;
   display: flex;
@@ -1002,9 +1253,345 @@ h1, h2, h3, h4, .font-serif {
   margin-top: 2px;
 }
 
+/* Prominent Pending Join Requests Panel */
+.pending-requests-card {
+  background: linear-gradient(155deg, #1C583B 0%, #15452E 100%);
+  border: 1.5px solid rgba(242, 169, 34, 0.4);
+  border-top: 2px solid #F2A922;
+  border-radius: var(--radius-2xl);
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+}
+
+.pending-requests-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.pending-requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pending-request-item {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--border-surface);
+  border-radius: var(--radius-xl);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all var(--trans-fast);
+}
+
+.pending-request-item:hover {
+  background: rgba(0, 0, 0, 0.38);
+  border-color: var(--badge-mint);
+}
+
+/* Join Team Action Card (for non-members) */
+.join-team-action-card {
+  background: linear-gradient(155deg, #1A5438 0%, #15452E 100%);
+  border: 1px solid var(--border-surface);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-2xl);
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+}
+
+.team-guide-side-card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-surface);
+  border-radius: var(--radius-xl);
+  padding: 18px;
+}
+
 /* ==========================================================================
-   10. FORMS & CREATE TEAM
+   10. FORMS & CREATE TEAM (EXPANDED WIDTH & INTERACTIVE SLOTS)
    ========================================================================== */
+.create-team-container {
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.create-team-card {
+  background: linear-gradient(155deg, #1A5438 0%, #15452E 100%);
+  border: 1px solid var(--border-surface);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-2xl);
+  padding: 36px 40px;
+  box-shadow: var(--shadow-card);
+  width: 100%;
+}
+
+.create-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .create-slots-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .create-slots-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.create-slot-box {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-surface);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: all 0.2s var(--spring-ease);
+}
+
+.create-slot-box.leader {
+  border-color: rgba(62, 168, 108, 0.5);
+  background: rgba(62, 168, 108, 0.08);
+}
+
+.create-slot-box.filled {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.create-slot-box.empty {
+  border: 1.5px dashed rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.create-slot-box.empty:hover {
+  border-color: var(--badge-mint);
+  background: rgba(62, 168, 108, 0.12);
+  transform: translateY(-2px);
+}
+
+.create-slot-box.empty .slot-empty-icon {
+  font-size: 1.25rem;
+  color: var(--badge-mint);
+  margin-bottom: 4px;
+}
+
+.create-slot-box.empty .slot-empty-title {
+  font-size: 0.8125rem;
+  font-weight: 750;
+  color: var(--text-white);
+}
+
+.create-slot-box.empty .slot-empty-subtitle {
+  font-size: 0.6875rem;
+  color: var(--text-sage);
+}
+
+/* ==========================================================================
+   10B. STUDENT SEARCH MODAL & GORGEOUS STUDENT CARD (POINT 9)
+   ========================================================================== */
+.student-search-modal-sheet {
+  max-width: 680px;
+  width: 94%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.student-search-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.student-search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.student-search-input-wrapper svg {
+  position: absolute;
+  left: 16px;
+  width: 18px;
+  height: 18px;
+  stroke: var(--text-sage);
+  pointer-events: none;
+}
+
+.student-search-input-wrapper input {
+  width: 100%;
+  padding-left: 48px;
+}
+
+.student-search-results-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 480px;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.student-search-card-rich {
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid var(--border-surface);
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-xl);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.student-search-card-rich:hover {
+  background: rgba(0, 0, 0, 0.45);
+  border-color: var(--badge-mint);
+  transform: translateY(-2px);
+}
+
+.student-card-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.student-search-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-forest-900);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.student-search-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.student-search-avatar .avatar-initial {
+  font-weight: 800;
+  font-size: 1.125rem;
+  color: var(--badge-mint);
+}
+
+.student-search-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.student-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.student-search-name {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  font-weight: 750;
+  color: var(--text-white);
+}
+
+.student-rid-badge {
+  font-size: 0.75rem;
+  font-weight: 750;
+  color: var(--badge-yellow);
+  background: rgba(242, 169, 34, 0.15);
+  border: 1px solid rgba(242, 169, 34, 0.3);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.college-verified-tag {
+  font-size: 0.6875rem;
+  font-weight: 750;
+  color: var(--badge-mint);
+  background: rgba(62, 168, 108, 0.15);
+  border: 1px solid rgba(62, 168, 108, 0.3);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.student-academic-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 0.8125rem;
+  color: var(--text-sage-light);
+}
+
+.academic-prog-tag {
+  font-weight: 600;
+  color: var(--text-white);
+}
+
+.academic-sem-tag {
+  color: var(--text-sage);
+}
+
+.student-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--text-sage);
+}
+
+.contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.student-card-action {
+  flex-shrink: 0;
+}
+
+.badge-selected {
+  font-size: 0.75rem;
+  font-weight: 750;
+  color: var(--text-sage);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+}
+
 .form-card-centered {
   max-width: 520px;
   margin: 0 auto;
@@ -1663,6 +2250,34 @@ textarea.input-forest {
 
   .app-main-workspace {
     padding: 20px 16px 40px; /* Clean padding without bottom dock obstruction */
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .desktop-create-team-btn {
+    display: none !important;
+  }
+
+  .mobile-create-team-btn {
+    display: inline-flex !important;
+  }
+
+  .home-header-compact {
+    margin-bottom: 16px;
+  }
+
+  .home-quick-title {
+    font-size: 1.35rem;
+    line-height: 1.25;
+  }
+
+  .controls-filter-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
   }
 
   .greeting-main-title {
@@ -1672,6 +2287,27 @@ textarea.input-forest {
   .teams-forest-grid {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .create-team-card {
+    padding: 24px 18px;
+  }
+
+  .team-header-hero {
+    padding: 22px 18px;
+  }
+
+  .team-hero-name {
+    font-size: 1.75rem;
+  }
+
+  .team-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .roster-grid-6 {
+    grid-template-columns: 1fr;
   }
 
   .form-card-centered, .login-editorial-card, .profile-pro-card, .creator-spotlight-banner {
