@@ -192,6 +192,7 @@ def auto_import_student_from_json(r_id, conn, cursor):
 @app.route("/profile")
 @app.route("/login")
 @app.route("/students")
+@app.route("/about")
 def index(team_id=None):
     return render_template("index.html")
 
@@ -592,9 +593,22 @@ def student_search():
 
     return jsonify({"students": list(results_map.values())[:8]})
 
+# --- NOTIFICATION ENGINE ---
+
+def create_notification_db(cursor, p, recipient_r_id, title, message, notif_type="info", link=None):
+    if not recipient_r_id:
+        return
+    try:
+        cursor.execute(f"""
+            INSERT INTO notifications (recipient_r_id, title, message, type, link, is_read)
+            VALUES ({p}, {p}, {p}, {p}, {p}, 0)
+        """, (str(recipient_r_id).strip().upper(), str(title), str(message), str(notif_type), link))
+    except Exception as e:
+        print(f"Notice inserting notification: {e}")
+
 # --- TEAM MANAGEMENT & DETAILED PANEL ---
 
-def format_team_data(team_row, current_r_id=None):
+def format_team_data(team_row, current_r_id=None, conn=None):
     if not team_row:
         return None
 
@@ -630,7 +644,11 @@ def format_team_data(team_row, current_r_id=None):
     if not t_id:
         return None
 
-    conn = get_db()
+    should_close = False
+    if not conn:
+        conn = get_db()
+        should_close = True
+
     cursor = conn.cursor()
     p = get_placeholder()
     members = []
@@ -694,7 +712,11 @@ def format_team_data(team_row, current_r_id=None):
     except Exception as e:
         print(f"Error reading team {t_id} members: {e}")
     finally:
-        conn.close()
+        if should_close:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
     member_count = len(members)
     female_count = sum(1 for m in members if m.get("gender") == "Female")
@@ -746,13 +768,13 @@ def get_teams():
         query += " ORDER BY id DESC"
         cursor.execute(query, params)
         team_rows = cursor.fetchall()
-        conn.close()
 
         teams_data = []
         for t in team_rows:
-            formatted = format_team_data(t, current_r_id)
+            formatted = format_team_data(t, current_r_id, conn=conn)
             if formatted:
                 teams_data.append(formatted)
+        conn.close()
 
         if filter_type == "open":
             teams_data = [t for t in teams_data if not t["is_full"]]
@@ -902,6 +924,15 @@ def request_join_team(team_id):
             INSERT INTO join_requests (team_id, student_r_id, message, status)
             VALUES ({p}, {p}, {p}, 'pending')
         """, (team_id, student_r_id, message))
+
+        # Notify team leader
+        leader_rid = team["leader_r_id"]
+        cursor.execute(f"SELECT name FROM students WHERE UPPER(r_id) = {p}", (student_r_id,))
+        s_row = cursor.fetchone()
+        applicant_name = (s_row["name"] if s_row else student_r_id) or student_r_id
+        team_name = team["name"] or "your team"
+        create_notification_db(cursor, p, leader_rid, "New Join Request", f"{applicant_name} ({student_r_id}) requested to join {team_name}", "join_request", f"/team/{team_id}")
+
         conn.commit()
         conn.close()
     except Exception:
@@ -980,12 +1011,22 @@ def handle_join_request(team_id, req_id):
         """, (team_id, join_req["student_r_id"]))
 
         cursor.execute(f"UPDATE join_requests SET status = 'accepted' WHERE id = {p}", (req_id,))
+
+        # Notify applicant
+        team_name = team["name"] if ("name" in team.keys() if hasattr(team, 'keys') else True) else "the team"
+        create_notification_db(cursor, p, join_req["student_r_id"], "Join Request Accepted! 🎉", f"Congratulations! You are now an official team member of {team_name}.", "request_accepted", f"/team/{team_id}")
+
         conn.commit()
         conn.close()
         return jsonify({"success": True, "message": "Member accepted"})
 
     elif action == "reject":
         cursor.execute(f"UPDATE join_requests SET status = 'rejected' WHERE id = {p}", (req_id,))
+
+        # Notify applicant
+        team_name = team["name"] if ("name" in team.keys() if hasattr(team, 'keys') else True) else "the team"
+        create_notification_db(cursor, p, join_req["student_r_id"], "Join Request Update", f"Your request to join {team_name} was not accepted.", "request_declined", "/")
+
         conn.commit()
         conn.close()
         return jsonify({"success": True, "message": "Request declined"})
@@ -1121,6 +1162,11 @@ def add_team_member(team_id):
     """, (team_id, s["r_id"]))
 
     cursor.execute(f"UPDATE join_requests SET status = 'accepted' WHERE team_id = {p} AND UPPER(student_r_id) = {p}", (team_id, student_r_id))
+
+    # Notify added student
+    team_name = team["name"] if ("name" in team.keys() if hasattr(team, 'keys') else True) else "the team"
+    create_notification_db(cursor, p, s["r_id"], "Added to Team! 🎉", f"You have been directly added to {team_name} by the team leader.", "team_added", f"/team/{team_id}")
+
     conn.commit()
 
     cursor.execute(f"SELECT * FROM teams WHERE id = {p}", (team_id,))
@@ -1328,6 +1374,69 @@ def update_team_seat_modes(team_id):
     conn.close()
 
     return jsonify({"success": True, "message": "Seat modes updated successfully", "team": updated_team})
+
+# --- NOTIFICATION API ENDPOINTS ---
+
+@app.route("/api/notifications", methods=["GET"])
+def get_user_notifications():
+    r_id = (request.args.get("r_id") or session.get("user_rid") or "").strip().upper()
+    if not r_id:
+        return jsonify({"success": True, "notifications": [], "unread_count": 0})
+
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute(f"""
+            SELECT id, recipient_r_id, title, message, type, link, is_read, created_at
+            FROM notifications
+            WHERE UPPER(recipient_r_id) = {p}
+            ORDER BY id DESC
+            LIMIT 30
+        """, (r_id,))
+        rows = cursor.fetchall()
+        notifs = [dict(r) for r in rows]
+
+        cursor.execute(f"""
+            SELECT COUNT(*) as unread
+            FROM notifications
+            WHERE UPPER(recipient_r_id) = {p} AND (is_read = 0 OR is_read IS NULL)
+        """, (r_id,))
+        cnt_row = cursor.fetchone()
+        unread_count = cnt_row["unread"] if isinstance(cnt_row, dict) or hasattr(cnt_row, '__getitem__') else cnt_row[0]
+        conn.close()
+
+        return jsonify({"success": True, "notifications": notifs, "unread_count": unread_count})
+    except Exception as e:
+        print(f"Notice fetching notifications: {e}")
+        conn.close()
+        return jsonify({"success": False, "notifications": [], "unread_count": 0, "error": str(e)})
+
+@app.route("/api/notifications/mark-read", methods=["POST"])
+def mark_user_notifications_read():
+    data = request.json or {}
+    r_id = (data.get("r_id") or session.get("user_rid") or "").strip().upper()
+    notif_id = data.get("notification_id")
+    p = get_placeholder()
+
+    if not r_id:
+        return jsonify({"success": False, "message": "Sign in required"}), 401
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        if notif_id:
+            cursor.execute(f"UPDATE notifications SET is_read = 1 WHERE id = {p} AND UPPER(recipient_r_id) = {p}", (notif_id, r_id))
+        else:
+            cursor.execute(f"UPDATE notifications SET is_read = 1 WHERE UPPER(recipient_r_id) = {p}", (r_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Notifications marked as read"})
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "error": str(e)})
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

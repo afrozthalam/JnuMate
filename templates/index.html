@@ -28,16 +28,30 @@
         <a href="/" class="mobile-brand">
           HackMate<span class="brand-dot">.</span>
         </a>
-        <div id="navUserSlotMobile"></div>
+        <div class="mobile-top-actions">
+          <button id="btnMobileNotif" onclick="toggleNotificationsPanel()" class="mobile-action-icon-btn" aria-label="Notifications">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+            <span id="mobileNotifBadge" class="notif-badge" style="display:none;">0</span>
+          </button>
+          <button id="btnMobileMenuToggle" onclick="toggleMobileDrawer()" class="mobile-menu-btn" aria-label="Open Menu">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/></svg>
+          </button>
+        </div>
       </header>
 
       <!-- ================= LEFT SIDEBAR NAVIGATION (DESKTOP) ================= -->
       <aside class="app-sidebar-desktop">
         <div>
-          <!-- Brand Logo -->
-          <a href="/" class="brand-header-link">
-            <span class="brand-wordmark-forest">HackMate<span class="brand-dot">.</span></span>
-          </a>
+          <!-- Brand Logo & Desktop Notification Bell -->
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px;">
+            <a href="/" class="brand-header-link" style="margin-bottom:0;">
+              <span class="brand-wordmark-forest">HackMate<span class="brand-dot">.</span></span>
+            </a>
+            <button id="btnDesktopNotif" onclick="toggleNotificationsPanel()" class="desktop-notif-btn" aria-label="Notifications" title="Notifications">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+              <span id="desktopNotifBadge" class="notif-badge" style="display:none;">0</span>
+            </button>
+          </div>
 
           <!-- Primary Navigation Links -->
           <nav>
@@ -58,6 +72,12 @@
                 <a href="/create-team" class="sidebar-nav-item" data-path="/create-team">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                   <span>Create Team</span>
+                </a>
+              </li>
+              <li>
+                <a href="/about" class="sidebar-nav-item" data-path="/about">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+                  <span>About</span>
                 </a>
               </li>
               <li>
@@ -144,6 +164,11 @@
           <div id="studentsViewContainer"></div>
         </section>
 
+        <!-- VIEW 7: ABOUT PAGE & QUICK GUIDE (AFROZ ALAM) -->
+        <section id="viewAbout" class="view-page-panel">
+          <div id="aboutViewContainer"></div>
+        </section>
+
       </main>
 
       <!-- ================= RIGHT WIDGET COLUMN (DESKTOP) ================= -->
@@ -169,27 +194,6 @@
           </div>
           <div class="leaderboard-stack" id="widgetLeaderboardList">
             <!-- Dynamically populated from active teams -->
-            <div class="leaderboard-rank-pill rank-1">
-              <div class="rank-left-box">
-                <span class="rank-number">#01</span>
-                <span>CyberStorm</span>
-              </div>
-              <span class="rank-score">6/6 Full</span>
-            </div>
-            <div class="leaderboard-rank-pill rank-2">
-              <div class="rank-left-box">
-                <span class="rank-number">#02</span>
-                <span>NeuroVision</span>
-              </div>
-              <span class="rank-score">5/6 Slots</span>
-            </div>
-            <div class="leaderboard-rank-pill rank-3">
-              <div class="rank-left-box">
-                <span class="rank-number">#03</span>
-                <span>CodeCrafters</span>
-              </div>
-              <span class="rank-score">4/6 Slots</span>
-            </div>
           </div>
         </div>
       </aside>
@@ -198,25 +202,68 @@
 
   </div><!-- /.app-desktop-surround -->
 
-  <!-- ================= FLOATING MOBILE BOTTOM DOCK (< 768px) ================= -->
-  <nav class="mobile-bottom-dock">
-    <a href="/" class="mobile-dock-tab active" data-path="/">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
-      <span>Discover</span>
-    </a>
-    <a href="/students" class="mobile-dock-tab" data-path="/students">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-      <span>Directory</span>
-    </a>
-    <a href="/create-team" class="mobile-dock-tab" data-path="/create-team">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-      <span>Create</span>
-    </a>
-    <a href="/profile" class="mobile-dock-tab" data-path="/profile">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
-      <span>Profile</span>
-    </a>
-  </nav>
+  <!-- ================= MOBILE OFF-CANVAS APP DRAWER (< 768px) ================= -->
+  <div id="mobileDrawerOverlay" class="mobile-drawer-overlay" onclick="closeMobileDrawer()">
+    <div class="mobile-drawer-sheet" onclick="event.stopPropagation()">
+      <div class="mobile-drawer-header">
+        <a href="/" class="mobile-brand" onclick="closeMobileDrawer()">
+          HackMate<span class="brand-dot">.</span>
+        </a>
+        <button onclick="closeMobileDrawer()" class="drawer-close-btn" aria-label="Close Menu">
+          ✕
+        </button>
+      </div>
+
+      <!-- User Info / Sign In Slot in Drawer -->
+      <div id="drawerUserSlot" class="drawer-user-slot"></div>
+
+      <!-- Drawer Nav List -->
+      <nav class="drawer-nav-list">
+        <a href="/" class="drawer-nav-link" onclick="closeMobileDrawer()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+          <span>Discover Teams</span>
+        </a>
+        <a href="/students" class="drawer-nav-link" onclick="closeMobileDrawer()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          <span>Student Directory</span>
+        </a>
+        <a href="/create-team" class="drawer-nav-link" onclick="closeMobileDrawer()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          <span>Create Team</span>
+        </a>
+        <a href="/about" class="drawer-nav-link" onclick="closeMobileDrawer()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+          <span>About HackMate</span>
+        </a>
+        <a href="/profile" id="drawerProfileLink" class="drawer-nav-link" onclick="closeMobileDrawer()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+          <span>My Profile</span>
+        </a>
+      </nav>
+
+      <!-- Drawer Sign Out / Sign In Footer -->
+      <div id="drawerFooterSlot" class="drawer-footer-box"></div>
+    </div>
+  </div>
+
+  <!-- ================= NOTIFICATION SLIDE-OVER PANEL ================= -->
+  <div id="notifOverlay" class="notif-center-overlay" onclick="closeNotificationsPanel()">
+    <div class="notif-center-sheet" onclick="event.stopPropagation()">
+      <div class="notif-center-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <h3 class="font-serif" style="font-size:1.25rem;">Notifications</h3>
+          <span id="notifTotalBadge" class="status-capsule open" style="display:none; font-size:0.6875rem;">0 unread</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button onclick="markAllNotificationsAsRead()" class="btn-outline-pill" style="padding:4px 12px; font-size:0.75rem;">Mark all read</button>
+          <button onclick="closeNotificationsPanel()" class="drawer-close-btn" aria-label="Close Notifications">✕</button>
+        </div>
+      </div>
+      <div id="notifListContainer" class="notif-list-body">
+        <div style="text-align:center; padding:36px 16px; color:var(--text-sage);">No new notifications</div>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= MODAL CONFIRMATION SHEET OVERLAY ================= -->
   <div id="glassModalOverlay" class="forest-modal-overlay">

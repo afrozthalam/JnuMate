@@ -134,6 +134,19 @@ def init_db():
             );
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id SERIAL PRIMARY KEY,
+                recipient_r_id VARCHAR(50) NOT NULL,
+                title VARCHAR(150) NOT NULL,
+                message TEXT NOT NULL,
+                type VARCHAR(50) DEFAULT 'info',
+                link TEXT,
+                is_read INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
         conn.commit()
         conn.close()
         print("PostgreSQL tables initialized successfully!")
@@ -235,6 +248,19 @@ def init_db():
                 UNIQUE(team_id, student_r_id),
                 FOREIGN KEY (team_id) REFERENCES teams (id) ON DELETE CASCADE,
                 FOREIGN KEY (student_r_id) REFERENCES students (r_id)
+            );
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                recipient_r_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                message TEXT NOT NULL,
+                type TEXT DEFAULT 'info',
+                link TEXT,
+                is_read INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
 
