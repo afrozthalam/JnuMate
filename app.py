@@ -68,6 +68,46 @@ def load_education_details():
 
 load_education_details()
 
+# PRE-INDEXED FAST STUDENT SEARCH CACHE
+SEARCHABLE_STUDENTS_LIST = []
+STUDENT_CACHE_BY_RID = {}
+
+def build_student_search_index():
+    global SEARCHABLE_STUDENTS_LIST, STUDENT_CACHE_BY_RID
+    SEARCHABLE_STUDENTS_LIST = []
+    STUDENT_CACHE_BY_RID = {}
+    
+    for r_id_key, item in STUDENT_PROFILES_MAP.items():
+        name = (item.get("name") or "Unknown Student").strip()
+        personal = item.get("personal_details", {}) or {}
+        email = (personal.get("EmailID") or f"{r_id_key}@student.edu").strip()
+        phone = (personal.get("Mobile No") or "").strip()
+        gender = personal.get("Gender") or "Other"
+        dob = (personal.get("Date of Birth") or "N/A").strip()
+        gender_clean = "Female" if "Female" in gender or "F" == gender else ("Male" if "Male" in gender or "M" == gender else "Other")
+        image_urls = item.get("image_urls") or []
+        avatar_url = image_urls[0] if image_urls else f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id_key}"
+        
+        prog, sem = EDUCATION_DETAILS_MAP.get(r_id_key, (None, None))
+        
+        student_obj = {
+            "r_id": r_id_key,
+            "name": name,
+            "name_upper": name.upper(),
+            "email": email,
+            "phone": phone,
+            "gender": gender_clean,
+            "dob": dob,
+            "avatar_url": avatar_url,
+            "program": prog or "Student",
+            "semester_year": sem or ""
+        }
+        SEARCHABLE_STUDENTS_LIST.append(student_obj)
+        STUDENT_CACHE_BY_RID[r_id_key] = student_obj
+    print(f"[SEARCH INDEX BUILT] Pre-indexed {len(SEARCHABLE_STUDENTS_LIST)} students for instant sub-millisecond search.")
+
+build_student_search_index()
+
 def get_placeholder():
     return "%s" if is_postgres() else "?"
 
@@ -538,69 +578,100 @@ def auth_logout():
 
 @app.route("/api/students/search", methods=["GET"])
 def student_search():
-    query = request.args.get("q", "").strip().upper()
-    p = get_placeholder()
+    raw_query = request.args.get("q", "").strip()
+    query = raw_query.upper()
     if len(query) < 2:
         return jsonify({"students": []})
 
-    results_map = {}
+    results = []
+    seen_rids = set()
 
-    # First search JSON map in memory
-    for r_id_key, item in STUDENT_PROFILES_MAP.items():
-        name = item.get("name", "")
-        if query in r_id_key or query in name.upper():
-            personal = item.get("personal_details", {}) or {}
-            email = (personal.get("EmailID") or f"{r_id_key}@student.edu").strip()
-            phone = (personal.get("Mobile No") or "").strip()
-            gender = personal.get("Gender") or "Other"
-            dob = (personal.get("Date of Birth") or "N/A").strip()
-            
-            gender_clean = "Female" if "Female" in gender or "F" == gender else ("Male" if "Male" in gender or "M" == gender else "Other")
-            image_urls = item.get("image_urls") or []
-            avatar_url = image_urls[0] if image_urls else f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id_key}"
+    # Priority 0: Exact R-ID match (Sub-millisecond instant lookup)
+    if query in STUDENT_CACHE_BY_RID:
+        s = dict(STUDENT_CACHE_BY_RID[query])
+        results.append(s)
+        seen_rids.add(query)
 
-            results_map[r_id_key] = {
-                "r_id": r_id_key,
-                "name": name.strip(),
-                "email": email,
-                "phone": phone,
-                "gender": gender_clean,
-                "dob": dob,
-                "avatar_url": avatar_url
-            }
-            if len(results_map) >= 8:
+    # Priority 1: Prefix R-ID match (e.g., query "R1500" matches R15006, R15007...)
+    for s in SEARCHABLE_STUDENTS_LIST:
+        rid = s["r_id"]
+        if rid.startswith(query) and rid not in seen_rids:
+            results.append(dict(s))
+            seen_rids.add(rid)
+            if len(results) >= 15:
                 break
 
-    # Also search DB table
+    # Priority 2: Name match (Name starts with or contains query)
+    if len(results) < 15:
+        for s in SEARCHABLE_STUDENTS_LIST:
+            rid = s["r_id"]
+            if rid not in seen_rids:
+                if query in s["name_upper"]:
+                    results.append(dict(s))
+                    seen_rids.add(rid)
+                    if len(results) >= 15:
+                        break
+
+    # Priority 3: Newly registered students in DB
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute(f"""
-        SELECT r_id, name, email, phone, gender, dob, avatar_url FROM students
-        WHERE UPPER(r_id) LIKE {p} OR UPPER(name) LIKE {p}
-        LIMIT 8
-    """, (f"%{query}%", f"%{query}%"))
-    db_rows = cursor.fetchall()
+    p = get_placeholder()
+    try:
+        cursor.execute(f"""
+            SELECT r_id, name, email, phone, gender, dob, avatar_url, program, semester_year 
+            FROM students
+            WHERE (UPPER(r_id) = {p} OR UPPER(r_id) LIKE {p} OR UPPER(name) LIKE {p})
+            LIMIT 10
+        """, (query, f"{query}%", f"%{query}%"))
+        for row in cursor.fetchall():
+            d = dict(row)
+            d_id = d["r_id"].strip().upper()
+            if d_id not in seen_rids:
+                d["r_id"] = d_id
+                d["name_upper"] = (d.get("name") or "").upper()
+                d["avatar_url"] = d.get("avatar_url") or f"https://api.dicebear.com/7.x/avataaars/svg?seed={d_id}"
+                d["program"] = d.get("program") or "Student"
+                d["semester_year"] = d.get("semester_year") or ""
+                results.append(d)
+                seen_rids.add(d_id)
+    except Exception as e:
+        print(f"Notice querying db students: {e}")
 
-    for r in db_rows:
-        d = dict(r)
-        d_id = d["r_id"].upper()
-        if d_id not in results_map:
-            results_map[d_id] = d
-        else:
-            if d.get("dob") and d.get("dob") != "N/A":
-                results_map[d_id]["dob"] = d["dob"]
+    # Attach team membership info in a single fast query
+    if results:
+        rids_list = list(seen_rids)
+        placeholders = ",".join([p] * len(rids_list))
+        team_map = {}
+        try:
+            cursor.execute(f"""
+                SELECT tm.student_r_id, t.name, t.id
+                FROM team_members tm
+                JOIN teams t ON tm.team_id = t.id
+                WHERE UPPER(tm.student_r_id) IN ({placeholders})
+            """, tuple(rids_list))
+            for row in cursor.fetchall():
+                row_dict = dict(row)
+                s_rid = row_dict["student_r_id"].strip().upper()
+                team_map[s_rid] = {
+                    "team_name": row_dict["name"],
+                    "team_id": row_dict["id"]
+                }
+        except Exception as e:
+            print(f"Notice fetching student team membership: {e}")
 
-    # Enrich all results with degree & semester from education database
-    final_students = []
-    for s_id, s_data in list(results_map.items())[:8]:
-        prog, sem = get_student_course_details(s_id, cursor)
-        s_data["program"] = prog or s_data.get("program") or "Student"
-        s_data["semester_year"] = sem or s_data.get("semester_year") or ""
-        final_students.append(s_data)
+        for s in results:
+            rid = s["r_id"].upper()
+            if rid in team_map:
+                s["in_team"] = True
+                s["team_name"] = team_map[rid]["team_name"]
+                s["team_id"] = team_map[rid]["team_id"]
+            else:
+                s["in_team"] = False
+                s["team_name"] = None
+                s["team_id"] = None
 
     conn.close()
-
-    return jsonify({"students": final_students})
+    return jsonify({"students": results[:15]})
 
 # --- NOTIFICATION ENGINE ---
 

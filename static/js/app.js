@@ -228,8 +228,7 @@ function renderNavUserSlots() {
       <div style="display:flex; flex-direction:column; gap:8px;">
         <a href="/profile" style="display:flex; align-items:center; gap:12px; text-decoration:none; padding:8px 12px; border-radius:var(--radius-xl); background:rgba(255,255,255,0.06); transition:background var(--trans-fast);">
           <div class="avatar-stack-item" style="width:36px; height:36px; border:2px solid var(--badge-yellow); margin-left:0; flex-shrink:0;">
-            <span class="avatar-stack-initial">${escapeHtml(initial)}</span>
-            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(firstName)}" loading="lazy" onerror="this.remove();">
+            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(firstName)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.id || 'Student')}';">
           </div>
           <div style="min-width:0; flex:1;">
             <div style="font-weight:700; font-size:0.875rem; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -490,8 +489,7 @@ function renderFilteredTeams(teams) {
 
         rosterAvatarsHtml += `
           <div class="roster-avatar-item filled" title="${escapeAttr(cleanName)}${isLeader ? ' (Leader)' : ''}">
-            <span class="avatar-initial">${escapeHtml(initial)}</span>
-            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" loading="lazy" onerror="this.remove();">
+            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}';">
           </div>
         `;
       } else {
@@ -652,8 +650,7 @@ function renderFullTeamDetail(team) {
         <div class="roster-seat-card">
           <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
             <div class="seat-avatar">
-              <span class="avatar-stack-initial">${escapeHtml(initial)}</span>
-              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(mName)}" loading="lazy" onerror="this.remove();">
+              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(mName)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mRid || 'Student')}';">
             </div>
 
             <div style="min-width:0; flex:1;">
@@ -892,8 +889,7 @@ function loadTeamJoinRequests(teamId) {
           <div class="pending-request-item">
             <div style="display:flex; align-items:center; gap:10px;">
               <div class="seat-avatar" style="width:36px; height:36px;">
-                <span class="avatar-stack-initial" style="font-size:0.8125rem;">${escapeHtml(initial)}</span>
-                <img src="${escapeHtml(req.avatar_url || '')}" alt="${escapeHtml(applicantName)}" onerror="this.remove()">
+                <img src="${escapeHtml(req.avatar_url || '')}" alt="${escapeHtml(applicantName)}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(req.r_id || 'Student')}';">
               </div>
               <div style="min-width:0; flex:1;">
                 <div style="font-weight:750; font-size:0.875rem; color:var(--text-white);">${escapeHtml(applicantName)}</div>
@@ -1214,8 +1210,7 @@ function debounceSeatMemberSearch(teamId) {
           <div class="search-dropdown-item" onclick="directAddTeammate('${teamId}', '${s.r_id}', '${escapeAttr(s.name)}')">
             <div style="display:flex; align-items:center; gap:10px;">
               <div class="avatar-stack-item" style="width:28px; height:28px; margin-left:0;">
-                <span class="avatar-stack-initial" style="font-size:0.6875rem;">${escapeHtml(s.name.charAt(0).toUpperCase())}</span>
-                <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.remove();">
+                <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(s.r_id || 'Student')}';">
               </div>
               <div>
                 <div style="font-size:0.875rem; font-weight:700; color:var(--text-white);">${escapeHtml(s.name)}</div>
@@ -1425,34 +1420,54 @@ function renderFullProfile(prof, userTeams) {
       const count = team.member_count || (team.members ? team.members.length : 0);
       const openSlots = Math.max(0, 6 - count);
 
-      const avatarsHtml = (team.members || []).slice(0, 4).map(m => {
-        const init = (m.name || m.r_id || 'U').replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
-        return `
-          <div class="avatar-stack-item">
-            <span class="avatar-stack-initial">${escapeHtml(init)}</span>
-            <img src="${escapeHtml(m.avatar_url || '')}" alt="${escapeHtml(m.name)}" loading="lazy" onerror="this.remove();">
-          </div>
-        `;
-      }).join("");
+      let statusPill = "";
+      if (isFull) {
+        statusPill = `<span class="status-capsule full-pill">● Full (6/6)</span>`;
+      } else {
+        statusPill = `<span class="status-capsule open-pill">● ${openSlots} Open Seats</span>`;
+      }
+
+      const members = team.members || [];
+      let rosterAvatarsHtml = "";
+      for (let i = 0; i < 6; i++) {
+        if (i < members.length && members[i]) {
+          const m = members[i];
+          const mName = (m.name || m.r_id || "Student") + "";
+          const cleanName = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
+          const isLeader = m.role === 'leader';
+          const avatarUrl = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}`;
+
+          rosterAvatarsHtml += `
+            <div class="roster-avatar-item filled" title="${escapeAttr(cleanName)}${isLeader ? ' (Leader)' : ''}">
+              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}';">
+            </div>
+          `;
+        } else {
+          rosterAvatarsHtml += `
+            <div class="roster-avatar-item empty" title="Open Seat">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+            </div>
+          `;
+        }
+      }
 
       return `
-        <article class="team-card-forest" onclick="navigateTo('/team/${team.id}')">
+        <article class="team-forest-card" onclick="navigateTo('/team/${team.id}')">
           <div>
             <div class="team-card-top-row">
-              <span class="status-capsule ${isFull ? 'full' : 'open'}">
-                ${isFull ? 'Team Full (6/6)' : `${openSlots} Seats Open`}
-              </span>
-              <div class="avatar-stack">
-                ${avatarsHtml}
-              </div>
+              ${statusPill}
             </div>
 
-            <h2 class="team-card-title">${escapeHtml(team.name)}</h2>
+            <h2 class="team-card-title">${escapeHtml(team.name || 'Untitled Team')}</h2>
             <p class="team-card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution.")}</p>
+
+            <div class="team-card-roster-row">
+              ${rosterAvatarsHtml}
+            </div>
           </div>
 
           <div class="team-card-bottom-row">
-            <span class="meta-members-tag">${count}/6 Members</span>
+            <span class="meta-members-tag">${count} / 6 Members</span>
             <span class="btn-black-pill sm">View Team ➔</span>
           </div>
         </article>
@@ -1676,8 +1691,7 @@ function renderCreateTeamSeats() {
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
         <div class="seat-avatar" style="width:38px; height:38px;">
-          <span class="avatar-stack-initial" style="font-size:0.8125rem;">${escapeHtml(leaderInitial)}</span>
-          <img src="${escapeHtml((currentUser && currentUser.avatar_url) || '')}" alt="${escapeHtml((currentUser && currentUser.name) || '')}" onerror="this.remove();">
+          <img src="${escapeHtml((currentUser && currentUser.avatar_url) || '')}" alt="${escapeHtml((currentUser && currentUser.name) || '')}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent((currentUser && currentUser.id) || 'Leader')}';">
         </div>
         <div style="min-width:0; flex:1;">
           <div style="font-size:0.875rem; font-weight:750; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -1705,8 +1719,7 @@ function renderCreateTeamSeats() {
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
             <div class="seat-avatar" style="width:38px; height:38px;">
-              <span class="avatar-stack-initial" style="font-size:0.8125rem;">${escapeHtml(initial)}</span>
-              <img src="${escapeHtml(f.avatar_url || '')}" alt="${escapeHtml(f.name)}" onerror="this.remove();">
+              <img src="${escapeHtml(f.avatar_url || '')}" alt="${escapeHtml(f.name)}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(f.id || 'Student')}';">
             </div>
             <div style="min-width:0; flex:1;">
               <div style="font-size:0.875rem; font-weight:750; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -1787,6 +1800,19 @@ function closeStudentSearchModal() {
   if (overlay) overlay.classList.remove("active");
 }
 
+const studentSearchClientCache = {};
+let slotSearchAbortController = null;
+
+function handleInTeamStudentClick(name, rId, teamName) {
+  showGlassModal({
+    title: "Student Already In Team",
+    message: `${name} (@${rId}) is already enrolled in team "${teamName}". Each student can only belong to one active hackathon team at a time.`,
+    confirmText: "Understood",
+    icon: "⚠️",
+    alertOnly: true
+  });
+}
+
 function debounceSlotStudentSearch() {
   clearTimeout(slotSearchDebounceTimer);
   slotSearchDebounceTimer = setTimeout(() => {
@@ -1800,71 +1826,106 @@ function debounceSlotStudentSearch() {
       return;
     }
 
-    results.innerHTML = `<div style="text-align:center; padding:24px 16px; color:var(--text-sage);">Searching university database...</div>`;
+    const cacheKey = query.toUpperCase();
+    if (studentSearchClientCache[cacheKey]) {
+      renderSlotSearchResults(studentSearchClientCache[cacheKey], query);
+      return;
+    }
 
-    fetch(`/api/students/search?q=${encodeURIComponent(query)}`)
+    if (slotSearchAbortController) {
+      slotSearchAbortController.abort();
+    }
+    slotSearchAbortController = new AbortController();
+
+    if (!results.querySelector(".student-search-card-rich")) {
+      results.innerHTML = `<div style="text-align:center; padding:24px 16px; color:var(--text-sage);">Searching university database...</div>`;
+    }
+
+    fetch(`/api/students/search?q=${encodeURIComponent(query)}`, { signal: slotSearchAbortController.signal })
       .then(res => res.json())
       .then(data => {
         const students = data.students || [];
-        if (students.length === 0) {
-          results.innerHTML = `<div style="text-align:center; padding:32px 16px; color:var(--text-sage);">No students found matching "${escapeHtml(query)}"</div>`;
-          return;
-        }
-
-        results.innerHTML = students.map(s => {
-          const sRid = (s.r_id || "").toUpperCase();
-          const isMe = Boolean(currentUser && currentUser.id && currentUser.id.toUpperCase() === sRid);
-          const isAlreadySelected = selectedFriends.some(f => f.id.toUpperCase() === sRid);
-          const cleanName = (s.name || sRid).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
-          const initial = cleanName.charAt(0).toUpperCase() || 'U';
-          const avatarUrl = s.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sRid)}`;
-
-          return `
-            <div class="student-search-card-rich">
-              <div class="student-card-left">
-                <div class="student-search-avatar">
-                  <span class="avatar-initial">${escapeHtml(initial)}</span>
-                  <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" onerror="this.remove()">
-                </div>
-                <div class="student-search-info">
-                  <div class="student-name-row">
-                    <span class="student-search-name">${escapeHtml(cleanName)}</span>
-                    <span class="student-rid-badge">@${escapeHtml(sRid)}</span>
-                    <span class="college-verified-tag">✓ College DB</span>
-                  </div>
-
-                  <div class="student-academic-row">
-                    <span class="academic-prog-tag">${escapeHtml(s.program || 'Student')}</span>
-                    ${s.semester_year ? `<span class="academic-sem-tag">• ${escapeHtml(s.semester_year)}</span>` : ''}
-                  </div>
-
-                  <div class="student-contact-row">
-                    ${s.email ? `<span class="contact-item">✉ ${escapeHtml(s.email)}</span>` : ''}
-                    ${s.phone && s.phone !== 'N/A' ? `<span class="contact-item">📞 ${escapeHtml(s.phone)}</span>` : ''}
-                    ${s.gender ? `<span class="contact-item">• ${escapeHtml(s.gender)}</span>` : ''}
-                  </div>
-                </div>
-              </div>
-
-              <div class="student-card-action">
-                ${isMe ? `
-                  <span class="badge-selected">You (Leader)</span>
-                ` : isAlreadySelected ? `
-                  <span class="badge-selected">Already Selected</span>
-                ` : `
-                  <button onclick="selectStudentForSlot('${escapeAttr(sRid)}', '${escapeAttr(cleanName)}', '${escapeAttr(avatarUrl)}', '${escapeAttr(s.program || '')}', '${escapeAttr(s.semester_year || '')}')" class="btn-black-pill sm">
-                    + Select Teammate
-                  </button>
-                `}
-              </div>
-            </div>
-          `;
-        }).join("");
+        studentSearchClientCache[cacheKey] = students;
+        renderSlotSearchResults(students, query);
       })
-      .catch(() => {
-        results.innerHTML = `<div style="text-align:center; padding:24px 16px; color:var(--badge-coral);">Network error searching students.</div>`;
+      .catch(err => {
+        if (err.name !== "AbortError") {
+          results.innerHTML = `<div style="text-align:center; padding:24px 16px; color:var(--badge-coral);">Search request failed. Please check connection.</div>`;
+        }
       });
-  }, 120);
+  }, 100);
+}
+
+function renderSlotSearchResults(students, query) {
+  const results = document.getElementById("slotStudentSearchResults");
+  if (!results) return;
+
+  if (students.length === 0) {
+    results.innerHTML = `<div style="text-align:center; padding:32px 16px; color:var(--text-sage);">No students found matching "${escapeHtml(query)}"</div>`;
+    return;
+  }
+
+  results.innerHTML = students.map(s => {
+    const sRid = (s.r_id || "").toUpperCase();
+    const isMe = Boolean(currentUser && currentUser.id && currentUser.id.toUpperCase() === sRid);
+    const isAlreadySelected = selectedFriends.some(f => f.id.toUpperCase() === sRid);
+    const cleanName = (s.name || sRid).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
+    const avatarUrl = s.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sRid)}`;
+    const isInTeam = Boolean(s.in_team);
+    const teamName = s.team_name || "Another Team";
+
+    let actionButtonHtml = "";
+    if (isMe) {
+      actionButtonHtml = `<span class="badge-selected">You (Leader)</span>`;
+    } else if (isAlreadySelected) {
+      actionButtonHtml = `<span class="badge-selected">Already Selected</span>`;
+    } else if (isInTeam) {
+      actionButtonHtml = `
+        <button onclick="handleInTeamStudentClick('${escapeAttr(cleanName)}', '${escapeAttr(sRid)}', '${escapeAttr(teamName)}')" class="btn-in-team-badge" title="Click to view details">
+          In Team ⚠️
+        </button>
+      `;
+    } else {
+      actionButtonHtml = `
+        <button onclick="selectStudentForSlot('${escapeAttr(sRid)}', '${escapeAttr(cleanName)}', '${escapeAttr(avatarUrl)}', '${escapeAttr(s.program || '')}', '${escapeAttr(s.semester_year || '')}')" class="btn-black-pill sm">
+          + Select Teammate
+        </button>
+      `;
+    }
+
+    return `
+      <div class="student-search-card-rich">
+        <div class="student-card-left">
+          <div class="student-search-avatar">
+            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sRid)}';">
+          </div>
+          <div class="student-search-info">
+            <div class="student-name-row">
+              <span class="student-search-name">${escapeHtml(cleanName)}</span>
+              <span class="student-rid-badge">@${escapeHtml(sRid)}</span>
+              <span class="college-verified-tag">✓ College DB</span>
+              ${isInTeam ? `<span class="already-in-team-badge">In: ${escapeHtml(teamName)}</span>` : ''}
+            </div>
+
+            <div class="student-academic-row">
+              <span class="academic-prog-tag">${escapeHtml(s.program || 'Student')}</span>
+              ${s.semester_year ? `<span class="academic-sem-tag">• ${escapeHtml(s.semester_year)}</span>` : ''}
+            </div>
+
+            <div class="student-contact-row">
+              ${s.email ? `<span class="contact-item">✉ ${escapeHtml(s.email)}</span>` : ''}
+              ${s.phone && s.phone !== 'N/A' ? `<span class="contact-item">📞 ${escapeHtml(s.phone)}</span>` : ''}
+              ${s.gender ? `<span class="contact-item">• ${escapeHtml(s.gender)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div class="student-card-action">
+          ${actionButtonHtml}
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 function selectStudentForSlot(rId, name, avatarUrl, program, semesterYear) {
@@ -2034,8 +2095,7 @@ function debounceDirectorySearch() {
             <div class="team-card-forest">
               <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
                 <div class="avatar-stack-item" style="width:48px; height:48px; margin-left:0; border:2px solid var(--badge-yellow);">
-                  <span class="avatar-stack-initial" style="font-size:1.125rem;">${escapeHtml(initial)}</span>
-                  <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.remove();">
+                  <img src="${escapeHtml(s.avatar_url || '')}" alt="${escapeHtml(s.name)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(s.r_id || 'Student')}';">
                 </div>
                 <div style="min-width:0; flex:1;">
                   <h3 class="font-serif" style="font-size:1.125rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(s.name)}</h3>
@@ -2697,6 +2757,23 @@ function showGlassModal(options) {
   const confirmText = options.confirmText || "Confirm";
   const cancelText = options.cancelText || "Cancel";
   const isDanger = options.isDanger || false;
+
+  if (options.alertOnly) {
+    sheet.innerHTML = `
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <span style="font-size:1.625rem;">${options.icon || '⚠️'}</span>
+        <h3 class="forest-modal-title" style="margin-bottom:0;">${escapeHtml(title)}</h3>
+      </div>
+      <p class="forest-modal-message" style="font-size:0.9375rem; line-height:1.55; color:var(--text-white); margin-bottom:20px;">${escapeHtml(message)}</p>
+      <div style="display:flex; justify-content:flex-end;">
+        <button onclick="closeGlassModal()" class="btn-black-pill" style="padding:9px 24px;">
+          ${escapeHtml(confirmText || "Understood")}
+        </button>
+      </div>
+    `;
+    overlay.classList.add("active");
+    return;
+  }
 
   sheet.innerHTML = `
     <h3 class="forest-modal-title">${escapeHtml(title)}</h3>
