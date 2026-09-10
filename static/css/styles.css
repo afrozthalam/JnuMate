@@ -1015,23 +1015,39 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .pro-field-item {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.pro-field-item:hover {
+  background: rgba(0, 0, 0, 0.38);
+  border-color: rgba(110, 231, 183, 0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .pro-field-label {
-  font-size: 0.6875rem;
+  font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-sage);
-  margin-bottom: 5px;
+  color: #6EE7B7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .pro-field-value {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--text-white);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #FFFFFF;
   word-break: break-word;
 }
 
@@ -2741,5 +2757,522 @@ textarea.input-forest {
   .pro-details-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+}
+
+/* ==========================================================================
+   14. AGROCONTROL DESKTOP TOPBAR & HOMEPAGE LAYOUT REARRANGEMENT
+   ========================================================================== */
+.desktop-top-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+  padding: 0 32px;
+  background: rgba(14, 45, 29, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  width: 100%;
+}
+
+.desktop-top-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.desktop-crest-logo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+}
+
+.desktop-brand-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-nav-capsule {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-pill);
+  padding: 4px 6px;
+}
+
+.nav-capsule-link {
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-sage);
+  padding: 8px 20px;
+  border-radius: var(--radius-pill);
+  transition: all var(--trans-fast);
+}
+
+.nav-capsule-link:hover {
+  color: var(--text-white);
+}
+
+.nav-capsule-link.active {
+  background: #FFFFFF;
+  color: #113524;
+  font-weight: 750;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.desktop-top-right-cluster {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.desktop-icon-pill-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-sage);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--trans-fast);
+}
+
+.desktop-icon-pill-btn:hover {
+  color: var(--text-white);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.desktop-icon-pill-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* AgroControl Header Row */
+.agro-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.agro-main-title {
+  font-family: var(--font-serif);
+  font-size: 2.25rem;
+  font-weight: 750;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px 0;
+  line-height: 1.15;
+}
+
+.agro-subtitle-text {
+  font-size: 0.9375rem;
+  color: var(--text-sage-light);
+  margin: 0;
+}
+
+.btn-agro-yellow-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #FACC15;
+  color: #1C3307;
+  font-size: 0.9375rem;
+  font-weight: 750;
+  padding: 10px 24px;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 14px rgba(250, 204, 21, 0.25);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-agro-yellow-pill:hover {
+  background-color: #FEF08A;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(250, 204, 21, 0.35);
+  color: #1A2E05;
+}
+
+/* AgroControl Controls Bar */
+.agro-controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.agro-controls-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.agro-search-box {
+  max-width: 340px;
+  width: 100%;
+}
+
+.agro-filter-pill {
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.agro-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-switch-segmented-pill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-pill);
+  padding: 3px 4px;
+}
+
+.view-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-pill);
+  padding: 7px 16px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--text-sage);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--trans-fast);
+}
+
+.view-switch-btn svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.2;
+}
+
+.view-switch-btn:hover {
+  color: var(--text-white);
+}
+
+.view-switch-btn.active {
+  background: #FFFFFF;
+  color: #113524;
+  font-weight: 750;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* ==========================================================================
+   15. KANBAN COLUMNS & AGROCONTROL CARD GRID
+   ========================================================================== */
+.teams-kanban-board {
+  width: 100%;
+}
+
+.teams-kanban-board.kanban-mode {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.teams-kanban-board.grid-mode {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 1280px) and (min-width: 769px) {
+  .teams-kanban-board.kanban-mode {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.kanban-column {
+  background: rgba(0, 0, 0, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-xl);
+  padding: 14px 12px;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 2px 4px;
+}
+
+.kanban-column-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.8125rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+
+.kanban-column-pill.sih {
+  background: rgba(249, 115, 22, 0.18);
+  color: #FDBA74;
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+.kanban-column-pill.ctf {
+  background: rgba(34, 197, 94, 0.18);
+  color: #86EFAC;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.kanban-column-pill.open {
+  background: rgba(59, 130, 246, 0.18);
+  color: #93C5FD;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.kanban-column-pill.full {
+  background: rgba(168, 85, 247, 0.18);
+  color: #D8B4FE;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.kanban-count-badge {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  font-size: 0.75rem;
+  font-weight: 750;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.kanban-column-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+/* Vivid Hackathon Tag Pills */
+.hackathon-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.hackathon-tag-pill img {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.hackathon-tag-pill.sih {
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  color: #FED7AA;
+}
+
+.hackathon-tag-pill.ctf {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #BBF7D0;
+}
+
+/* Hackathon Selector in Create Team */
+.hackathon-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.hackathon-select-card {
+  background: rgba(0, 0, 0, 0.28);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hackathon-select-card:hover {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.hackathon-select-card.active.sih {
+  border-color: #F97316;
+  background: rgba(249, 115, 22, 0.12);
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.25);
+}
+
+.hackathon-select-card.active.ctf {
+  border-color: #22C55E;
+  background: rgba(34, 197, 94, 0.12);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
+}
+
+.hackathon-select-card img {
+  width: 52px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Desktop layout hide/show */
+@media (min-width: 769px) {
+  .app-sidebar-desktop {
+    display: none !important;
+  }
+  .app-widgets-desktop {
+    display: none !important;
+  }
+  .app-enclosure-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    max-width: 1540px !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    min-height: 100vh !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .app-main-workspace {
+    width: 100% !important;
+    max-width: 1540px !important;
+    margin: 0 auto !important;
+    padding: 28px 36px 60px !important;
+    flex: 1 !important;
+  }
+  .mobile-only-block {
+    display: none !important;
+  }
+  .desktop-only-flex {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-top-navbar {
+    display: none !important;
+  }
+  .desktop-only-flex {
+    display: none !important;
+  }
+  .mobile-only-block {
+    display: block !important;
+  }
+
+  /* REQUEST 3: MOBILE LOGIN & OTP VIEW REFINEMENT - ZERO SCROLLING */
+  .login-screen-wrap {
+    min-height: auto !important;
+    padding: 4px 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  .login-editorial-card {
+    padding: 18px 16px !important;
+    border-radius: 20px !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  .login-jnu-logo-box {
+    width: 44px !important;
+    height: 44px !important;
+    margin: 0 auto 8px !important;
+  }
+
+  .login-editorial-card h1 {
+    font-size: 1.3rem !important;
+    margin-bottom: 2px !important;
+  }
+
+  .login-editorial-card p {
+    font-size: 0.78rem !important;
+    margin-bottom: 14px !important;
+  }
+
+  .auth-profile-spotlight {
+    display: flex !important;
+    align-items: center !important;
+    text-align: left !important;
+    gap: 12px !important;
+    padding: 10px 12px !important;
+    margin-bottom: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .auth-avatar-large {
+    width: 44px !important;
+    height: 44px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .auth-profile-spotlight h2 {
+    font-size: 1rem !important;
+    margin-bottom: 2px !important;
+  }
+
+  .auth-otp-target-banner {
+    padding: 8px 12px !important;
+    margin-bottom: 12px !important;
+    border-radius: 12px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .auth-otp-target-banner .auth-otp-target-email {
+    font-size: 0.875rem !important;
+    margin: 2px 0 !important;
+  }
+
+  #otpCodeInput {
+    height: 48px !important;
+    font-size: 1.5rem !important;
+    letter-spacing: 0.25em !important;
+    margin-bottom: 8px !important;
   }
 }

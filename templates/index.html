@@ -40,7 +40,36 @@
         </div>
       </header>
 
-      <!-- ================= LEFT SIDEBAR NAVIGATION (DESKTOP) ================= -->
+      <!-- ================= DESKTOP TOP NAVIGATION BAR (AGROCONTROL LAYOUT) ================= -->
+      <header class="desktop-top-navbar" id="desktopTopNavbar">
+        <a href="/" class="desktop-top-brand">
+          <img src="{{ url_for('static', filename='img/jnu_logo.png') }}" alt="JNU Crest" class="desktop-crest-logo">
+          <div class="desktop-brand-title">
+            <span class="brand-wordmark-forest">JnuMate<span class="brand-dot">.</span></span>
+            <span class="brand-tagline-tiny">JAIPUR NATIONAL UNIVERSITY</span>
+          </div>
+        </a>
+
+        <!-- Center: Pill Capsule Navigation -->
+        <nav class="desktop-nav-capsule">
+          <a href="/" class="nav-capsule-link active" data-path="/">Discover</a>
+          <a href="/students" class="nav-capsule-link" data-path="/students">Directory</a>
+          <a href="/create-team" class="nav-capsule-link" data-path="/create-team">+ Create Team</a>
+          <a href="/about" class="nav-capsule-link" data-path="/about">About</a>
+          <a href="/profile" class="nav-capsule-link" data-path="/profile">Profile</a>
+        </nav>
+
+        <!-- Right: Notifications & Profile -->
+        <div class="desktop-top-right-cluster">
+          <button id="btnDesktopTopNotif" onclick="toggleNotificationsPanel()" class="desktop-icon-pill-btn" aria-label="Notifications" title="Notifications">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+            <span id="desktopTopNotifBadge" class="notif-badge" style="display:none;">0</span>
+          </button>
+          <div id="navUserSlotDesktopTop"></div>
+        </div>
+      </header>
+
+      <!-- ================= LEFT SIDEBAR NAVIGATION (DESKTOP FALLBACK) ================= -->
       <aside class="app-sidebar-desktop">
         <div>
           <!-- Brand Logo & Desktop Notification Bell -->
@@ -106,33 +135,66 @@
 
         <!-- VIEW 1: DISCOVER TEAMS -->
         <section id="viewDiscover" class="view-page-panel active">
-          <!-- Editorial Header (Short & Beautiful) -->
-          <div class="forest-header-section home-header-compact">
+          
+          <!-- Desktop Header Row (AgroControl Layout: Title Left, Action Right) -->
+          <div class="agro-header-row desktop-only-flex">
+            <div class="agro-title-cluster">
+              <h1 class="agro-main-title">Discover Teams</h1>
+              <p class="agro-subtitle-text">Explore SIH & CTF squads, browse project pitches, or assemble your 6-seat roster.</p>
+            </div>
+            <div class="agro-action-cluster">
+              <a href="/create-team" class="btn-agro-yellow-pill">
+                + Create Team
+              </a>
+            </div>
+          </div>
+
+          <!-- Mobile Editorial Header (Short & Beautiful) -->
+          <div class="forest-header-section home-header-compact mobile-only-block">
             <div class="home-header-title-box">
               <h1 class="home-quick-title">Find teammates for your team, or join any open team here.</h1>
             </div>
           </div>
 
-          <!-- Search & Filter Controls -->
-          <div class="forest-controls-bar">
-            <div class="search-pill-wrapper">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-              <input type="text" id="searchInput" placeholder="Search teams by title, pitch, or member..." class="search-pill-input" oninput="debounceDiscoverSearch()">
-            </div>
-            
-            <div class="controls-filter-action-row">
-              <div class="filter-segmented-pill">
-                <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active" data-filter="all">All Teams</button>
+          <!-- Controls Bar (AgroControl Layout: Search & Filter Left, View Switcher Right) -->
+          <div class="forest-controls-bar agro-controls-bar">
+            <div class="agro-controls-left">
+              <div class="search-pill-wrapper agro-search-box">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                <input type="text" id="searchInput" placeholder="Search teams, ideas, skills..." class="search-pill-input" oninput="debounceDiscoverSearch()">
+              </div>
+              
+              <!-- Filter Segmented Pill / Menu -->
+              <div class="filter-segmented-pill agro-filter-pill">
+                <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active" data-filter="all">All</button>
+                <button onclick="setDiscoverFilter('sih')" id="btnFilterSih" class="filter-btn" data-filter="sih">SIH</button>
+                <button onclick="setDiscoverFilter('ctf')" id="btnFilterCtf" class="filter-btn" data-filter="ctf">CTF</button>
                 <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open Slots</button>
               </div>
+            </div>
+
+            <div class="agro-controls-right">
+              <!-- View Switch Segmented Pill (Kanban vs List View matching Screenshot) -->
+              <div class="view-switch-segmented-pill desktop-only-flex">
+                <button id="btnViewKanban" onclick="setDiscoverLayoutMode('kanban')" class="view-switch-btn active" title="Kanban Columns View">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.5-15h15a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75A2.25 2.25 0 014.5 4.5z"/></svg>
+                  <span>Kanban view</span>
+                </button>
+                <button id="btnViewGrid" onclick="setDiscoverLayoutMode('grid')" class="view-switch-btn" title="Grid / List View">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+                  <span>List view</span>
+                </button>
+              </div>
+
+              <!-- Mobile Create Team Button -->
               <a href="/create-team" class="btn-black-pill sm mobile-create-team-btn">
                 + Create Team
               </a>
             </div>
           </div>
 
-          <!-- Teams Grid -->
-          <div id="teamsGridContainer" class="teams-forest-grid"></div>
+          <!-- Teams Grid / Kanban Columns -->
+          <div id="teamsGridContainer" class="teams-kanban-board"></div>
 
           <!-- Empty State -->
           <div id="emptyStateContainer" style="display:none; text-align:center; padding:60px 20px;">

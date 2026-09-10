@@ -721,6 +721,7 @@ def format_team_data(team_row, current_r_id=None, conn=None):
             t_wa = team_row["whatsapp_link"] if "whatsapp_link" in row_keys else None
             t_created = str(team_row["created_at"]) if "created_at" in row_keys else ""
             raw_seat_modes = team_row["seat_modes"] if "seat_modes" in row_keys else "request,request,request,request,request"
+            t_hackathon_type = team_row["hackathon_type"] if "hackathon_type" in row_keys and team_row["hackathon_type"] else "sih"
         elif isinstance(team_row, (list, tuple)):
             t_id = team_row[0]
             t_name = team_row[1] if len(team_row) > 1 else "Untitled Team"
@@ -729,6 +730,7 @@ def format_team_data(team_row, current_r_id=None, conn=None):
             t_wa = team_row[4] if len(team_row) > 4 else None
             t_created = str(team_row[5]) if len(team_row) > 5 else ""
             raw_seat_modes = team_row[6] if len(team_row) > 6 else "request,request,request,request,request"
+            t_hackathon_type = team_row[7] if len(team_row) > 7 and team_row[7] else "sih"
     except Exception as e:
         print(f"Error parsing team row: {e}")
 
@@ -835,7 +837,8 @@ def format_team_data(team_row, current_r_id=None, conn=None):
         "is_full": is_full,
         "has_female": has_female,
         "needs_female": not has_female,
-        "user_status": user_status
+        "user_status": user_status,
+        "hackathon_type": (t_hackathon_type or "sih").lower()
     }
 
 @app.route("/api/teams", methods=["GET"])
@@ -844,6 +847,7 @@ def get_teams():
         current_r_id = request.args.get("r_id", "").strip().upper()
         search = request.args.get("search", "").strip()
         filter_type = request.args.get("filter", "all")
+        hackathon_type = request.args.get("hackathon_type", "").strip().lower()
         p = get_placeholder()
 
         conn = get_db()
@@ -855,6 +859,10 @@ def get_teams():
         if search:
             query += f" AND (name LIKE {p} OR description LIKE {p})"
             params.extend([f"%{search}%", f"%{search}%"])
+
+        if hackathon_type in ["sih", "ctf"]:
+            query += f" AND (LOWER(hackathon_type) = {p} OR (hackathon_type IS NULL AND {p} = 'sih'))"
+            params.extend([hackathon_type, hackathon_type])
 
         query += " ORDER BY id DESC"
         cursor.execute(query, params)
@@ -898,6 +906,9 @@ def create_team():
     team_name = (data.get("title") or data.get("name") or "").strip()
     description = data.get("description", "").strip()
     whatsapp_link = data.get("whatsapp_link", "").strip()
+    hackathon_type = (data.get("hackathon_type") or "sih").strip().lower()
+    if hackathon_type not in ["sih", "ctf"]:
+        hackathon_type = "sih"
     friend_r_ids = data.get("initial_members") or data.get("friend_r_ids") or data.get("pre_added_members") or []
     p = get_placeholder()
 
@@ -954,15 +965,15 @@ def create_team():
 
     if is_postgres():
         cursor.execute(f"""
-            INSERT INTO teams (name, description, leader_r_id, whatsapp_link)
-            VALUES ({p}, {p}, {p}, {p}) RETURNING id
-        """, (team_name, description, leader_r_id, whatsapp_link))
+            INSERT INTO teams (name, description, leader_r_id, whatsapp_link, hackathon_type)
+            VALUES ({p}, {p}, {p}, {p}, {p}) RETURNING id
+        """, (team_name, description, leader_r_id, whatsapp_link, hackathon_type))
         team_id = cursor.fetchone()["id"]
     else:
         cursor.execute(f"""
-            INSERT INTO teams (name, description, leader_r_id, whatsapp_link)
-            VALUES ({p}, {p}, {p}, {p})
-        """, (team_name, description, leader_r_id, whatsapp_link))
+            INSERT INTO teams (name, description, leader_r_id, whatsapp_link, hackathon_type)
+            VALUES ({p}, {p}, {p}, {p}, {p})
+        """, (team_name, description, leader_r_id, whatsapp_link, hackathon_type))
         team_id = cursor.lastrowid
 
     cursor.execute(f"""

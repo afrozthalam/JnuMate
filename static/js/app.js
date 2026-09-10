@@ -219,6 +219,16 @@ function handleCurrentRoute() {
 function highlightActiveNavLinks() {
   const path = window.location.pathname;
 
+  // Desktop top navbar links (AgroControl layout)
+  document.querySelectorAll(".nav-capsule-link").forEach(link => {
+    const linkPath = link.getAttribute("data-path") || link.getAttribute("href");
+    if (linkPath === path || (linkPath !== "/" && path.startsWith(linkPath))) {
+      link.classList.add("active");
+    } else {
+      link.classList.remove("active");
+    }
+  });
+
   // Desktop sidebar nav links
   document.querySelectorAll(".sidebar-nav-item").forEach(item => {
     const itemPath = item.getAttribute("data-path") || item.getAttribute("href");
@@ -268,6 +278,7 @@ function loadUserFromSession(callback) {
 
 function renderNavUserSlots() {
   const dtSlot = document.getElementById("navUserSlotDesktop");
+  const topSlot = document.getElementById("navUserSlotDesktopTop");
 
   if (currentUser) {
     const rawName = (currentUser.name || currentUser.id || "Student") + "";
@@ -298,6 +309,15 @@ function renderNavUserSlots() {
       </div>
     `;
     if (dtSlot) dtSlot.innerHTML = userDtHtml;
+
+    if (topSlot) {
+      topSlot.innerHTML = `
+        <a href="/profile" class="desktop-top-user-pill" style="display:flex; align-items:center; gap:8px; text-decoration:none; padding:4px 14px 4px 6px; border-radius:var(--radius-pill); background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.1); transition:all var(--trans-fast);">
+          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(firstName)}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1.5px solid var(--badge-mint);" onerror="this.src='/static/img/jnu_logo.png';">
+          <span style="font-weight:750; font-size:0.8125rem; color:var(--text-white);">${escapeHtml(firstName)}</span>
+        </a>
+      `;
+    }
   } else {
     const loginDtHtml = `
       <a href="/login" class="btn-black-pill" style="width:100%; justify-content:center;">
@@ -305,6 +325,14 @@ function renderNavUserSlots() {
       </a>
     `;
     if (dtSlot) dtSlot.innerHTML = loginDtHtml;
+
+    if (topSlot) {
+      topSlot.innerHTML = `
+        <a href="/login" class="btn-black-pill sm" style="padding:6px 18px; font-size:0.8125rem;">
+          Sign In
+        </a>
+      `;
+    }
   }
 }
 
@@ -450,15 +478,45 @@ function loadDiscoverView() {
     });
 }
 
+let discoverLayoutMode = "kanban";
+
+function setDiscoverLayoutMode(mode) {
+  discoverLayoutMode = mode;
+  const btnKanban = document.getElementById("btnViewKanban");
+  const btnGrid = document.getElementById("btnViewGrid");
+  if (btnKanban) {
+    if (mode === "kanban") btnKanban.classList.add("active");
+    else btnKanban.classList.remove("active");
+  }
+  if (btnGrid) {
+    if (mode === "grid") btnGrid.classList.add("active");
+    else btnGrid.classList.remove("active");
+  }
+  if (clientCache.teamsList) {
+    renderFilteredTeams(clientCache.teamsList);
+  }
+}
+
 function setDiscoverFilter(type) {
   discoverFilter = type;
-  document.querySelectorAll(".filter-btn").forEach(btn => {
+  document.querySelectorAll(".filter-btn, .filter-menu-item").forEach(btn => {
     if (btn.getAttribute("data-filter") === type || (type === 'all' && btn.id === 'btnFilterAll') || (type === 'open' && btn.id === 'btnFilterOpen')) {
       btn.classList.add("active");
     } else {
       btn.classList.remove("active");
     }
   });
+
+  const labelSpan = document.getElementById("activeFilterLabel");
+  if (labelSpan) {
+    const labels = {
+      all: "Filter: All",
+      sih: "Filter: SIH",
+      ctf: "Filter: CTF",
+      open: "Filter: Open Slots"
+    };
+    labelSpan.innerText = labels[type] || "Filter: All";
+  }
 
   if (clientCache.teamsList) {
     renderFilteredTeams(clientCache.teamsList);
@@ -478,6 +536,77 @@ function debounceDiscoverSearch() {
   }, 80);
 }
 
+function renderSingleTeamCard(team) {
+  if (!team) return "";
+  const isFull = Boolean(team.is_full);
+  const count = team.member_count || (team.members ? team.members.length : 0);
+  const openSlots = Math.max(0, 6 - count);
+  const hackType = (team.hackathon_type || "sih").toLowerCase();
+  const isCtf = hackType === "ctf";
+
+  // Cache team for instant 0ms transition
+  clientCache.teamsMap[team.id] = team;
+
+  let statusPill = "";
+  if (isFull) {
+    statusPill = `<span class="status-capsule full-pill">● Full (6/6)</span>`;
+  } else {
+    statusPill = `<span class="status-capsule open-pill">● ${openSlots} Open Seats</span>`;
+  }
+
+  const hackBadgeHtml = isCtf
+    ? `<span class="hackathon-tag-pill ctf"><img src="/static/img/ctf_logo.jpg" alt="CTF"> CTF</span>`
+    : `<span class="hackathon-tag-pill sih"><img src="/static/img/sih_logo.jpg" alt="SIH"> SIH</span>`;
+
+  // 6 Pronounced Roster Avatars: filled member avatars + empty circle avatars
+  const members = team.members || [];
+  let rosterAvatarsHtml = "";
+  for (let i = 0; i < 6; i++) {
+    if (i < members.length && members[i]) {
+      const m = members[i];
+      const mName = (m.name || m.r_id || "Student") + "";
+      const cleanName = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
+      const isLeader = m.role === 'leader';
+      const avatarUrl = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}`;
+
+      rosterAvatarsHtml += `
+        <div class="roster-avatar-item filled" title="${escapeAttr(cleanName)}${isLeader ? ' (Leader)' : ''}">
+          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}';">
+        </div>
+      `;
+    } else {
+      rosterAvatarsHtml += `
+        <div class="roster-avatar-item empty" title="Open Seat">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+        </div>
+      `;
+    }
+  }
+
+  return `
+    <article class="team-forest-card" onclick="navigateTo('/team/${team.id}')" style="cursor:pointer;">
+      <div>
+        <div class="team-card-top-row" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+          ${hackBadgeHtml}
+          ${statusPill}
+        </div>
+
+        <h2 class="team-card-title">${escapeHtml(team.name || 'Untitled Team')}</h2>
+        <p class="team-card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution. Check out open seats and join our squad!")}</p>
+
+        <div class="team-card-roster-row">
+          ${rosterAvatarsHtml}
+        </div>
+      </div>
+
+      <div class="team-card-bottom-row" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-muted); display:flex; align-items:center; justify-content:space-between;">
+        <span class="meta-members-tag" style="font-size:0.75rem; color:var(--text-sage); font-weight:700;">${count} / 6 Members</span>
+        <span class="btn-black-pill sm">View Team ➔</span>
+      </div>
+    </article>
+  `;
+}
+
 function renderFilteredTeams(teams) {
   const grid = document.getElementById("teamsGridContainer");
   const emptyState = document.getElementById("emptyStateContainer");
@@ -491,6 +620,10 @@ function renderFilteredTeams(teams) {
 
   if (discoverFilter === "open") {
     filtered = filtered.filter(t => t && !t.is_full);
+  } else if (discoverFilter === "sih") {
+    filtered = filtered.filter(t => t && (t.hackathon_type || "sih").toLowerCase() === "sih");
+  } else if (discoverFilter === "ctf") {
+    filtered = filtered.filter(t => t && (t.hackathon_type || "").toLowerCase() === "ctf");
   }
 
   if (discoverSearchTerm) {
@@ -511,70 +644,44 @@ function renderFilteredTeams(teams) {
 
   if (emptyState) emptyState.style.display = "none";
 
-  grid.innerHTML = filtered.map(team => {
-    if (!team) return "";
-    const isFull = Boolean(team.is_full);
-    const count = team.member_count || (team.members ? team.members.length : 0);
-    const openSlots = Math.max(0, 6 - count);
+  const isMobile = window.innerWidth <= 768;
 
-    // Save to teamsMap cache for instant 0ms access
-    clientCache.teamsMap[team.id] = team;
+  // On mobile or if grid view is selected, render single grid
+  if (isMobile || discoverLayoutMode === "grid") {
+    grid.className = "teams-kanban-board grid-mode";
+    grid.innerHTML = filtered.map(renderSingleTeamCard).join("");
+    return;
+  }
 
-    let statusPill = "";
-    if (isFull) {
-      statusPill = `<span class="status-capsule full-pill">● Full (6/6)</span>`;
-    } else {
-      statusPill = `<span class="status-capsule open-pill">● ${openSlots} Open Seats</span>`;
-    }
+  // DESKTOP KANBAN MODE (4 CATEGORIZED COLUMNS MATCHING AGROCONTROL)
+  grid.className = "teams-kanban-board kanban-mode";
 
-    // 6 Pronounced Roster Avatars: filled member avatars + empty dashed circle avatars
-    const members = team.members || [];
-    let rosterAvatarsHtml = "";
-    for (let i = 0; i < 6; i++) {
-      if (i < members.length && members[i]) {
-        const m = members[i];
-        const mName = (m.name || m.r_id || "Student") + "";
-        const cleanName = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
-        const initial = cleanName.charAt(0).toUpperCase() || 'U';
-        const isLeader = m.role === 'leader';
-        const avatarUrl = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}`;
+  const colSih = filtered.filter(t => (t.hackathon_type || "sih").toLowerCase() === "sih");
+  const colCtf = filtered.filter(t => (t.hackathon_type || "").toLowerCase() === "ctf");
+  const colOpen = filtered.filter(t => !t.is_full);
+  const colFull = filtered.filter(t => t.is_full);
 
-        rosterAvatarsHtml += `
-          <div class="roster-avatar-item filled" title="${escapeAttr(cleanName)}${isLeader ? ' (Leader)' : ''}">
-            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}';">
-          </div>
-        `;
-      } else {
-        rosterAvatarsHtml += `
-          <div class="roster-avatar-item empty" title="Open Seat">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-          </div>
-        `;
-      }
-    }
+  const renderColumnHtml = (title, pillClass, list, emptyMsg) => `
+    <div class="kanban-column">
+      <div class="kanban-column-header">
+        <span class="kanban-column-pill ${pillClass}">${escapeHtml(title)}</span>
+        <span class="kanban-count-badge">${list.length}</span>
+      </div>
+      <div class="kanban-column-cards">
+        ${list.length > 0 
+          ? list.map(renderSingleTeamCard).join("") 
+          : `<div style="text-align:center; padding:36px 12px; color:var(--text-sage); font-size:0.8125rem;">${escapeHtml(emptyMsg)}</div>`
+        }
+      </div>
+    </div>
+  `;
 
-    return `
-      <article class="team-forest-card" onclick="navigateTo('/team/${team.id}')">
-        <div>
-          <div class="team-card-top-row">
-            ${statusPill}
-          </div>
-
-          <h2 class="team-card-title">${escapeHtml(team.name || 'Untitled Team')}</h2>
-          <p class="team-card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution. Check out open seats and join our squad!")}</p>
-
-          <div class="team-card-roster-row">
-            ${rosterAvatarsHtml}
-          </div>
-        </div>
-
-        <div class="team-card-bottom-row">
-          <span class="meta-members-tag">${count} / 6 Members</span>
-          <span class="btn-black-pill sm">View Team ➔</span>
-        </div>
-      </article>
-    `;
-  }).join("");
+  grid.innerHTML = `
+    ${renderColumnHtml("Smart India (SIH)", "sih", colSih, "No SIH teams matching search")}
+    ${renderColumnHtml("CTF Hackathon", "ctf", colCtf, "No CTF teams matching search")}
+    ${renderColumnHtml("Open Roster Slots", "open", colOpen, "No open slots right now")}
+    ${renderColumnHtml("Complete Squads", "full", colFull, "No complete squads right now")}
+  `;
 }
 
 function updateLeaderboardWidget(teams) {
@@ -773,9 +880,15 @@ function renderFullTeamDetail(team) {
       <div class="team-header-hero">
         <div class="team-header-top">
           <div class="team-title-cluster">
-            <span class="status-capsule ${isFull ? 'full-pill' : 'open-pill'}">
-              ${isFull ? '● Team Full (6/6)' : `● ${6 - count} Open Seats Available`}
-            </span>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+              <span class="hackathon-tag-pill ${(team.hackathon_type || 'sih').toLowerCase()}" style="font-size:0.75rem; padding:4px 12px;">
+                <img src="${(team.hackathon_type === 'ctf') ? '/static/img/ctf_logo.jpg' : '/static/img/sih_logo.jpg'}" alt="Logo">
+                ${(team.hackathon_type === 'ctf') ? 'Capture The Flag (CTF)' : 'Smart India Hackathon (SIH)'}
+              </span>
+              <span class="status-capsule ${isFull ? 'full-pill' : 'open-pill'}">
+                ${isFull ? '● Team Full (6/6)' : `● ${6 - count} Open Seats Available`}
+              </span>
+            </div>
             <h1 class="team-hero-name">${escapeHtml(team.name)}</h1>
           </div>
 
@@ -1410,28 +1523,28 @@ function renderFullProfile(prof, userTeams) {
     <div class="profile-pro-card">
       <div class="pro-card-header">
         <h3 class="font-serif" style="font-size:1.25rem;">Academic Credentials</h3>
-        <span style="font-size:0.75rem; color:var(--text-sage); text-transform:uppercase; letter-spacing:0.06em; font-weight:750;">Official Record</span>
+        <span style="font-size:0.75rem; color:var(--badge-mint); text-transform:uppercase; letter-spacing:0.06em; font-weight:800;">✓ Official Record</span>
       </div>
 
       <div class="pro-details-grid">
         <div class="pro-field-item">
-          <span class="pro-field-label">Enrolled Program / Degree</span>
-          <span class="pro-field-value" style="color:var(--badge-mint); font-weight:700;">${escapeHtml(prof.program || "Not Specified")}</span>
+          <span class="pro-field-label">🎓 Enrolled Program / Degree</span>
+          <span class="pro-field-value" style="color:var(--badge-mint); font-weight:750;">${escapeHtml(prof.program || "Not Specified")}</span>
         </div>
 
         <div class="pro-field-item">
-          <span class="pro-field-label">Semester / Session</span>
+          <span class="pro-field-label">📅 Semester / Session</span>
           <span class="pro-field-value">${escapeHtml(prof.semester_year || "Current Session")}</span>
         </div>
 
         <div class="pro-field-item">
-          <span class="pro-field-label">University Roll ID</span>
-          <span class="pro-field-value">${escapeHtml(prof.r_id || "N/A")}</span>
+          <span class="pro-field-label">🆔 University Roll ID</span>
+          <span class="pro-field-value" style="color:var(--badge-yellow); font-weight:750;">@${escapeHtml(prof.r_id || "N/A")}</span>
         </div>
 
         <div class="pro-field-item">
-          <span class="pro-field-label">Active Team Status</span>
-          <span class="pro-field-value">${userTeams.length > 0 ? `${userTeams.length} Registered Team` : "Free Agent"}</span>
+          <span class="pro-field-label">🏆 Active Team Status</span>
+          <span class="pro-field-value" style="color:#6EE7B7; font-weight:750;">${userTeams.length > 0 ? `${userTeams.length} Registered Team` : "Free Agent"}</span>
         </div>
       </div>
     </div>
@@ -1442,37 +1555,37 @@ function renderFullProfile(prof, userTeams) {
     <div class="profile-pro-card">
       <div class="pro-card-header">
         <h3 class="font-serif" style="font-size:1.25rem;">Personal & Contact Details</h3>
-        <span style="font-size:0.75rem; color:var(--text-sage); text-transform:uppercase; letter-spacing:0.06em; font-weight:750;">Verified Info</span>
+        <span style="font-size:0.75rem; color:var(--badge-mint); text-transform:uppercase; letter-spacing:0.06em; font-weight:800;">✓ Verified Info</span>
       </div>
 
       <div class="pro-details-grid">
         <div class="pro-field-item">
-          <span class="pro-field-label">University Email Address</span>
+          <span class="pro-field-label">✉ University Email Address</span>
           <span class="pro-field-value">${escapeHtml(prof.email || "N/A")}</span>
         </div>
 
         <div class="pro-field-item">
-          <span class="pro-field-label">Contact Phone Number</span>
+          <span class="pro-field-label">📱 Contact Phone Number</span>
           <span class="pro-field-value">${escapeHtml(prof.phone || "N/A")}</span>
         </div>
 
         <div class="pro-field-item">
-          <span class="pro-field-label">Date of Birth</span>
+          <span class="pro-field-label">🎂 Date of Birth</span>
           <span class="pro-field-value">${escapeHtml(prof.dob || "N/A")}</span>
         </div>
 
         <div class="pro-field-item">
-          <span class="pro-field-label">Gender</span>
+          <span class="pro-field-label">👤 Gender</span>
           <span class="pro-field-value">${escapeHtml(prof.gender || "Student")}</span>
         </div>
 
         <div class="pro-field-item">
-          <span class="pro-field-label">Father's Name</span>
+          <span class="pro-field-label">👨‍👦 Father's Name</span>
           <span class="pro-field-value">${escapeHtml(prof.father_name || "N/A")}</span>
         </div>
 
         <div class="pro-field-item" style="grid-column: 1 / -1;">
-          <span class="pro-field-label">Residential Address</span>
+          <span class="pro-field-label">🏠 Residential Address</span>
           <span class="pro-field-value">${escapeHtml(prof.address || "N/A")}</span>
         </div>
       </div>
@@ -1711,6 +1824,34 @@ function loadCreateTeamView() {
         </p>
 
         <div style="display:flex; flex-direction:column; gap:20px;">
+          <!-- Hackathon Category Selector (Point 1: SIH vs CTF) -->
+          <div>
+            <label class="form-label-forest" style="margin-bottom:8px;">Choose Hackathon Category *</label>
+            <div class="hackathon-selector-grid">
+              <div class="hackathon-select-card sih ${selectedHackathonType === 'sih' ? 'active' : ''}" onclick="selectHackathonType('sih')">
+                <img src="/static/img/sih_logo.jpg" alt="SIH Hackathon">
+                <div style="min-width:0; flex:1;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                    <span style="font-weight:750; font-size:0.9375rem; color:var(--text-white);">Smart India Hackathon (SIH)</span>
+                    <span class="hackathon-tag-pill sih" style="font-size:0.65rem; padding:2px 8px;">SIH</span>
+                  </div>
+                  <div style="font-size:0.75rem; color:var(--text-sage-light); line-height:1.4;">Hardware & Software editions • National 6-member squad</div>
+                </div>
+              </div>
+
+              <div class="hackathon-select-card ctf ${selectedHackathonType === 'ctf' ? 'active' : ''}" onclick="selectHackathonType('ctf')">
+                <img src="/static/img/ctf_logo.jpg" alt="CTF Hackathon">
+                <div style="min-width:0; flex:1;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                    <span style="font-weight:750; font-size:0.9375rem; color:var(--text-white);">Capture The Flag (CTF)</span>
+                    <span class="hackathon-tag-pill ctf" style="font-size:0.65rem; padding:2px 8px;">CTF</span>
+                  </div>
+                  <div style="font-size:0.75rem; color:var(--text-sage-light); line-height:1.4;">Cybersecurity, network defense & binary exploits • 6-member squad</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
             <div>
               <label class="form-label-forest">Team Title *</label>
@@ -2085,6 +2226,19 @@ function removeFriendFromTeam(rId) {
   renderCreateTeamSeats();
 }
 
+let selectedHackathonType = "sih";
+
+function selectHackathonType(type) {
+  selectedHackathonType = type;
+  document.querySelectorAll(".hackathon-select-card").forEach(c => {
+    if (c.classList.contains(type)) {
+      c.classList.add("active");
+    } else {
+      c.classList.remove("active");
+    }
+  });
+}
+
 function submitCreateTeam() {
   const nameInput = document.getElementById("teamNameInput");
   const descInput = document.getElementById("teamDescInput");
@@ -2113,6 +2267,7 @@ function submitCreateTeam() {
       name: name,
       description: desc,
       whatsapp_link: wa,
+      hackathon_type: selectedHackathonType,
       friend_r_ids: selectedFriends.map(f => f.id),
       pre_added_members: selectedFriends.map(f => f.id)
     })
@@ -2270,6 +2425,39 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   const avatarSrc = getStudentAvatarSrc(rawAvatar, student.r_id);
   const cleanName = (student.name || student.r_id || "Student").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
   const displayEmail = targetEmail || student.email || `${student.r_id}@student.edu`;
+  const isMobile = window.innerWidth <= 768;
+
+  if (isMobile) {
+    spotlightContainer.innerHTML = `
+      <div class="auth-profile-spotlight" style="display:flex; align-items:center; text-align:left; gap:12px; padding:10px 12px; margin-bottom:10px; background:rgba(0,0,0,0.25); border-radius:var(--radius-lg); border:1px solid rgba(255,255,255,0.1);">
+        <div class="auth-avatar-large" style="width:44px; height:44px; margin:0; flex-shrink:0;">
+          <img src="${escapeHtml(avatarSrc)}" 
+               data-raw-src="${escapeHtml(rawAvatar)}" 
+               alt="${escapeHtml(cleanName)}" 
+               loading="lazy" 
+               style="width:100%; height:100%; border-radius:50%; object-fit:cover;"
+               onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+        </div>
+        <div style="min-width:0; flex:1;">
+          <div style="font-weight:750; font-size:1rem; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escapeHtml(cleanName)}
+          </div>
+          <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+            <span class="student-rid-badge" style="font-size:0.6875rem; padding:1px 6px;">@${escapeHtml(student.r_id)}</span>
+            <span class="status-capsule member" style="font-size:0.625rem; padding:1px 6px;">${escapeHtml(student.program || 'Student')}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-otp-target-banner" style="padding:8px 12px; margin-bottom:12px; border-radius:var(--radius-md); font-size:0.75rem; background:rgba(62,168,108,0.12); border:1px solid rgba(62,168,108,0.3);">
+        <div style="font-size:0.6875rem; color:var(--badge-mint); font-weight:800; text-transform:uppercase;">
+          Code Sent To:
+        </div>
+        <div class="auth-otp-target-email" style="font-size:0.875rem; font-weight:750; color:var(--text-white);">${escapeHtml(displayEmail)}</div>
+      </div>
+    `;
+    return;
+  }
 
   spotlightContainer.innerHTML = `
     <div class="auth-profile-spotlight">
@@ -2419,6 +2607,18 @@ function showAuthStep(step) {
   const s1 = document.getElementById("authStep1");
   const sSync = document.getElementById("authStepSyncNotice");
   const s2 = document.getElementById("authStep2");
+  const logoBox = document.querySelector(".login-jnu-logo-box");
+  const cardTitle = document.querySelector(".login-editorial-card h1");
+  const cardSub = document.querySelector(".login-editorial-card p");
+  const cardSup = document.querySelector(".greeting-sup-text");
+
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    if (logoBox) logoBox.style.display = step === 2 ? "none" : "";
+    if (cardTitle) cardTitle.style.display = step === 2 ? "none" : "";
+    if (cardSub) cardSub.style.display = step === 2 ? "none" : "";
+    if (cardSup) cardSup.style.display = step === 2 ? "none" : "";
+  }
 
   if (s1) s1.style.display = step === 1 ? "block" : "none";
   if (sSync) sSync.style.display = step === 'sync' ? "block" : "none";
