@@ -74,6 +74,38 @@ function getStudentAvatarSrc(rawUrl, rId) {
   return rawUrl;
 }
 
+// Instagram-style white empty avatar silhouette for unlinked accounts
+const INSTAGRAM_EMPTY_AVATAR = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">' +
+  '<rect width="64" height="64" rx="32" fill="#143525"/>' +
+  '<circle cx="32" cy="23" r="11" fill="#FFFFFF" fill-opacity="0.9"/>' +
+  '<path d="M14 53 C14 41 22 36 32 36 C42 36 50 41 50 53" fill="#FFFFFF" fill-opacity="0.9"/>' +
+  '</svg>'
+);
+
+// Pure CSS Authentic iOS 12-Blade Activity Spinner Component
+function renderIosSpinner(size = '', text = '') {
+  return `
+    <div class="ios-spinner-wrap">
+      <div class="ios-spinner ${size}">
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div>
+      </div>
+      ${text ? `<div class="ios-spinner-text">${escapeHtml(text)}</div>` : ''}
+    </div>
+  `;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupRouter();
   loadUserFromSession(() => {
@@ -305,14 +337,14 @@ function renderDrawerUserSlot() {
     if (footer) {
       footer.innerHTML = `
         <button onclick="logoutUser()" class="btn-danger-pill" style="width:100%; padding:12px; font-size:0.875rem;">
-          Sign Out of HackMate
+          Sign Out of JnuMate
         </button>
       `;
     }
   } else {
     slot.innerHTML = `
       <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-surface); border-radius:var(--radius-xl); padding:16px; text-align:center;">
-        <div style="font-family:var(--font-serif); font-size:1.125rem; font-weight:700; margin-bottom:4px;">Join HackMate</div>
+        <div style="font-family:var(--font-serif); font-size:1.125rem; font-weight:700; margin-bottom:4px;">Join JnuMate</div>
         <p style="font-size:0.8125rem; color:var(--text-sage); margin-bottom:14px;">Sign in with your College R-ID to create or join teams.</p>
         <a href="/login" class="btn-black-pill" style="width:100%; justify-content:center;" onclick="closeMobileDrawer()">
           Sign In with R-ID
@@ -379,8 +411,8 @@ function loadDiscoverView() {
     }
   } else {
     grid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align:center; padding:48px 0;">
-        <p style="color:var(--text-sage); font-size:1rem;">Loading hackathon teams...</p>
+      <div style="grid-column: 1 / -1;">
+        ${renderIosSpinner('lg', 'Discovering hackathon teams...')}
       </div>
     `;
   }
@@ -594,7 +626,7 @@ function loadTeamDetailView(teamId) {
   } else {
     container.innerHTML = `
       <div style="text-align:center; padding:60px 20px;">
-        <p style="color:var(--text-sage); font-size:1rem;">Loading team details...</p>
+        ${renderIosSpinner('lg', 'Loading team roster...')}
       </div>
     `;
   }
@@ -835,7 +867,7 @@ function renderFullTeamDetail(team) {
                 </div>
               </div>
               <div id="pendingRequestsContainer" class="pending-requests-list">
-                <p style="color:var(--text-sage); font-size:0.8125rem;">Checking for applicants...</p>
+                ${renderIosSpinner('sm', 'Checking for applicants...')}
               </div>
             </div>
           ` : ''}
@@ -1321,7 +1353,7 @@ function loadProfileView() {
 
   container.innerHTML = `
     <div style="text-align:center; padding:60px 20px;">
-      <p style="color:var(--text-sage); font-size:1rem;">Loading your profile...</p>
+      ${renderIosSpinner('lg', 'Loading your profile...')}
     </div>
   `;
 
@@ -1557,7 +1589,7 @@ function showCoursePickerModal() {
 
   sheet.innerHTML = `
     <h3 class="forest-modal-title">Select Academic Program</h3>
-    <p class="forest-modal-message">Select your enrolled degree and course for your HackMate hackathon profile.</p>
+    <p class="forest-modal-message">Select your enrolled degree and course for your JnuMate hackathon profile.</p>
 
     <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;">
       <div>
@@ -1801,26 +1833,16 @@ let slotSearchDebounceTimer = null;
 
 let slotSearchAbortController = null;
 
-function loadInitialSearchSuggestions() {
-  const results = document.getElementById("slotStudentSearchResults");
-  if (!results) return;
-
-  if (studentSearchClientCache["__SUGGESTIONS__"]) {
-    renderSlotSearchResults(studentSearchClientCache["__SUGGESTIONS__"], "");
-    return;
-  }
-
-  fetch("/api/students/search?q=")
-    .then(res => res.json())
-    .then(data => {
-      const students = data.students || [];
-      studentSearchClientCache["__SUGGESTIONS__"] = students;
-      const input = document.getElementById("slotStudentSearchInput");
-      if (input && input.value.trim().length === 0) {
-        renderSlotSearchResults(students, "");
-      }
-    })
-    .catch(() => {});
+function getSearchEmptyStateHtml() {
+  return `
+    <div class="search-empty-state">
+      <div class="search-empty-icon-ring">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+      </div>
+      <h4 class="search-empty-title">Search University Directory</h4>
+      <p class="search-empty-desc">Type student College R-ID (e.g. <strong>R15006</strong>) or name to find verified peers</p>
+    </div>
+  `;
 }
 
 function openSlotStudentSearchModal(slotIndex) {
@@ -1831,15 +1853,16 @@ function openSlotStudentSearchModal(slotIndex) {
   const title = document.getElementById("studentSearchModalTitle");
   const subtitle = document.getElementById("studentSearchModalSubtitle");
   const input = document.getElementById("slotStudentSearchInput");
+  const results = document.getElementById("slotStudentSearchResults");
 
   if (!overlay) return;
 
   if (title) title.innerText = `Assign Teammate (Seat ${slotIndex + 2})`;
   if (subtitle) subtitle.innerText = "Search by College R-ID or Student Name from the university records database.";
   if (input) input.value = "";
+  if (results) results.innerHTML = getSearchEmptyStateHtml();
 
   overlay.classList.add("active");
-  loadInitialSearchSuggestions();
   setTimeout(() => { if (input) input.focus(); }, 80);
 }
 
@@ -1851,15 +1874,16 @@ function openSlotStudentSearchModalForTeam(teamId, seatNum) {
   const title = document.getElementById("studentSearchModalTitle");
   const subtitle = document.getElementById("studentSearchModalSubtitle");
   const input = document.getElementById("slotStudentSearchInput");
+  const results = document.getElementById("slotStudentSearchResults");
 
   if (!overlay) return;
 
   if (title) title.innerText = `Add Teammate to Seat ${seatNum}`;
   if (subtitle) subtitle.innerText = "Search by College R-ID or Student Name to directly add a verified member to your team.";
   if (input) input.value = "";
+  if (results) results.innerHTML = getSearchEmptyStateHtml();
 
   overlay.classList.add("active");
-  loadInitialSearchSuggestions();
   setTimeout(() => { if (input) input.focus(); }, 80);
 }
 
@@ -1887,7 +1911,7 @@ function debounceSlotStudentSearch() {
 
     const query = input.value.trim();
     if (!query) {
-      loadInitialSearchSuggestions();
+      results.innerHTML = getSearchEmptyStateHtml();
       return;
     }
 
@@ -1925,7 +1949,15 @@ function renderSlotSearchResults(students, query) {
   if (!results) return;
 
   if (students.length === 0) {
-    results.innerHTML = `<div style="text-align:center; padding:32px 16px; color:var(--text-sage);">No students found matching "${escapeHtml(query)}"</div>`;
+    results.innerHTML = `
+      <div class="search-empty-state">
+        <div class="search-empty-icon-ring" style="color:var(--badge-coral); background:rgba(240,83,66,0.1);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </div>
+        <h4 class="search-empty-title">No Students Found</h4>
+        <p class="search-empty-desc">No student matches "<strong>${escapeHtml(query)}</strong>". Try checking the R-ID or name spelling.</p>
+      </div>
+    `;
     return;
   }
 
@@ -1973,19 +2005,21 @@ function renderSlotSearchResults(students, query) {
             <div class="student-name-row">
               <span class="student-search-name">${escapeHtml(cleanName)}</span>
               <span class="student-rid-badge">@${escapeHtml(sRid)}</span>
-              <span class="college-verified-tag">✓ College DB</span>
-              ${isInTeam ? `<span class="already-in-team-badge">In: ${escapeHtml(teamName)}</span>` : ''}
+              ${isInTeam 
+                ? `<span class="already-in-team-badge" title="Enrolled in ${escapeAttr(teamName)}">⚠️ In: ${escapeHtml(teamName)}</span>`
+                : `<span class="college-verified-tag">✓ Verified Student</span>`
+              }
             </div>
 
-            <div class="student-academic-row">
-              <span class="academic-prog-tag">${escapeHtml(s.program || 'Student')}</span>
-              ${s.semester_year ? `<span class="academic-sem-tag">• ${escapeHtml(s.semester_year)}</span>` : ''}
+            <div class="student-academic-row" style="margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span class="student-academic-chip">${escapeHtml(s.program || 'Student')}</span>
+              ${s.semester_year ? `<span style="font-size:0.75rem; color:var(--text-sage); font-weight:600;">• ${escapeHtml(s.semester_year)}</span>` : ''}
             </div>
 
-            <div class="student-contact-row">
-              ${s.email ? `<span class="contact-item">✉ ${escapeHtml(s.email)}</span>` : ''}
-              ${s.phone && s.phone !== 'N/A' ? `<span class="contact-item">📞 ${escapeHtml(s.phone)}</span>` : ''}
-              ${s.gender ? `<span class="contact-item">• ${escapeHtml(s.gender)}</span>` : ''}
+            <div class="student-contact-row" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              ${s.email ? `<span class="student-contact-chip">✉ ${escapeHtml(s.email)}</span>` : ''}
+              ${s.gender ? `<span class="student-contact-chip">• ${escapeHtml(s.gender)}</span>` : ''}
+              ${s.dob && s.dob !== 'N/A' ? `<span class="student-contact-chip">• DOB: ${escapeHtml(s.dob)}</span>` : ''}
             </div>
           </div>
         </div>
@@ -2226,12 +2260,59 @@ function renderDirectorySearchResults(students, query) {
 let resendTimerInterval = null;
 let resendSecondsRemaining = 30;
 let isVerifyingOtp = false;
+let pendingStudentProfile = null;
+
+function renderAuthProfileSpotlight(student, targetEmail) {
+  const spotlightContainer = document.getElementById("authStep2ProfileSpotlight");
+  if (!spotlightContainer) return;
+
+  const rawAvatar = student.avatar_url || "";
+  const avatarSrc = getStudentAvatarSrc(rawAvatar, student.r_id);
+  const cleanName = (student.name || student.r_id || "Student").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
+  const displayEmail = targetEmail || student.email || `${student.r_id}@student.edu`;
+
+  spotlightContainer.innerHTML = `
+    <div class="auth-profile-spotlight">
+      <div class="auth-avatar-large">
+        <img src="${escapeHtml(avatarSrc)}" 
+             data-raw-src="${escapeHtml(rawAvatar)}" 
+             alt="${escapeHtml(cleanName)}" 
+             loading="lazy" 
+             decoding="async" 
+             onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+      </div>
+      <h2 class="font-serif" style="font-size:1.375rem; color:var(--text-white); margin-bottom:4px;">
+        ${escapeHtml(cleanName)}
+      </h2>
+      <div style="display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+        <span class="student-rid-badge">@${escapeHtml(student.r_id)}</span>
+        <span class="status-capsule member" style="font-size:0.6875rem;">${escapeHtml(student.program || 'Student')}</span>
+        ${student.semester ? `<span style="font-size:0.75rem; color:var(--text-sage); font-weight:600;">• ${escapeHtml(student.semester)}</span>` : ''}
+      </div>
+      <div style="font-size:0.8125rem; color:var(--text-sage); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
+        ${student.dob && student.dob !== 'N/A' ? `<span>DOB: ${escapeHtml(student.dob)}</span>` : ''}
+        ${student.gender ? `<span>• ${escapeHtml(student.gender)}</span>` : ''}
+      </div>
+    </div>
+
+    <div class="auth-otp-target-banner">
+      <div style="font-size:0.72rem; color:var(--badge-mint); font-weight:800; text-transform:uppercase; letter-spacing:0.06em;">
+        Verification Code Dispatched To:
+      </div>
+      <div class="auth-otp-target-email">${escapeHtml(displayEmail)}</div>
+      <div style="font-size:0.75rem; color:var(--text-sage); margin-top:4px;">
+        Please check your inbox and spam folder for your 6-digit verification code.
+      </div>
+    </div>
+  `;
+}
 
 function loadLoginView() {
   const container = document.getElementById("loginViewContainer");
   if (!container) return;
 
   pendingRegistrationData = null;
+  pendingStudentProfile = null;
   clearInterval(resendTimerInterval);
 
   const courseOptionsHtml = ACADEMIC_PROGRAMS.map(p => `
@@ -2248,37 +2329,40 @@ function loadLoginView() {
         </div>
 
         <div class="greeting-sup-text" style="color:var(--badge-yellow);">Official Hackathon Portal</div>
-        <h1 class="font-serif" style="font-size:1.875rem; margin-bottom:6px;">Sign In with College R-ID</h1>
+        <h1 class="font-serif" style="font-size:1.875rem; margin-bottom:6px;">Sign In to JnuMate</h1>
         <p style="color:var(--text-sage); font-size:0.875rem; margin-bottom:28px;">Find teammates, build 6-seat dream teams, and win hackathons!</p>
 
         <!-- Step 1: Input R-ID -->
         <div id="authStep1">
           <div class="form-group">
             <label class="form-label-forest" style="text-align:left;">College R-ID</label>
-            <input type="text" id="authRidInput" placeholder="e.g. R15006" class="input-forest" style="font-weight:750; text-transform:uppercase; font-size:1.125rem; letter-spacing:0.04em; text-align:center;">
+            <input type="text" id="authRidInput" placeholder="e.g. R15006" class="input-forest" style="font-weight:750; text-transform:uppercase; font-size:1.125rem; letter-spacing:0.04em; text-align:center;" onkeyup="if(event.key==='Enter') submitInitialRid()">
           </div>
 
           <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-black-pill lg" style="width:100%;">
-            Continue
+            Sign In ➔
           </button>
         </div>
 
-        <!-- Step 1B: Fallback when details sync is pending -->
+        <!-- Step 1B: Fallback when campus database is offline -->
         <div id="authStepSyncNotice" style="display:none; text-align:left;">
-          <div style="text-align:center; margin-bottom:16px;">
-            <span class="status-capsule open" style="font-size:0.8125rem; padding:6px 16px;">
+          <div style="text-align:center; margin-bottom:18px;">
+            <div class="auth-empty-avatar" title="No profile photo available">
+              <img src="${INSTAGRAM_EMPTY_AVATAR}" alt="No profile photo" style="width:100%; height:100%; border-radius:50%;">
+            </div>
+            <span class="student-rid-badge" style="font-size:0.875rem; padding:4px 14px;">
               R-ID: <strong id="syncRidBanner"></strong>
             </span>
           </div>
 
-          <div style="background:rgba(242,169,34,0.15); border:1px solid rgba(242,169,34,0.3); border-radius:var(--radius-lg); padding:12px 16px; margin-bottom:18px; font-size:0.8125rem; color:#FFD479; line-height:1.45;">
-            University records sync in progress for this R-ID. Please confirm your academic details below to continue.
+          <div style="background:rgba(242,169,34,0.12); border:1px solid rgba(242,169,34,0.3); border-radius:var(--radius-lg); padding:12px 16px; margin-bottom:18px; font-size:0.8125rem; color:#FFD479; line-height:1.45; text-align:center;">
+            Server couldn't connect to campus database. Please complete your registration details manually to continue.
           </div>
 
           <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px;">
             <div>
               <label class="form-label-forest">Full Name *</label>
-              <input type="text" id="syncNameInput" placeholder="Your full name as per records" class="input-forest">
+              <input type="text" id="syncNameInput" placeholder="Your full name as per college ID" class="input-forest">
             </div>
 
             <div>
@@ -2303,20 +2387,17 @@ function loadLoginView() {
           </button>
         </div>
 
-        <!-- Step 2: OTP Verification -->
+        <!-- Step 2: OTP Verification with Full Profile Spotlight -->
         <div id="authStep2" style="display:none;">
-          <div style="background:rgba(62,168,108,0.15); border:1px solid rgba(62,168,108,0.3); border-radius:var(--radius-lg); padding:12px 16px; margin-bottom:20px; text-align:left;">
-            <div style="font-size:0.75rem; color:var(--badge-mint); font-weight:700;">Verification code sent to:</div>
-            <div id="targetEmailDisplay" style="font-size:0.9375rem; font-weight:700; color:var(--text-white); margin-top:2px; word-break:break-all;"></div>
-          </div>
+          <div id="authStep2ProfileSpotlight"></div>
 
           <div class="form-group">
-            <label class="form-label-forest">Enter 6-Digit Code</label>
+            <label class="form-label-forest" style="text-align:center;">Enter 6-Digit Verification Code</label>
             <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" class="input-forest" style="height:56px; font-size:1.75rem; font-weight:800; text-align:center; letter-spacing:0.35em;" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
           </div>
 
           <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-black-pill lg" style="width:100%;">
-            Verify & Sign In
+            Verify & Sign In ➔
           </button>
 
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;">
@@ -2430,7 +2511,7 @@ function submitInitialRid() {
 
   const rid = ridInput.value.trim().toUpperCase();
   btn.disabled = true;
-  btn.innerText = "Checking...";
+  btn.innerText = "Signing you in...";
 
   fetch("/api/auth/request-otp", {
     method: "POST",
@@ -2440,11 +2521,12 @@ function submitInitialRid() {
     .then(res => res.json())
     .then(data => {
       btn.disabled = false;
-      btn.innerText = "Continue";
+      btn.innerText = "Sign In ➔";
 
       if (data.exists) {
         pendingRegistrationData = { rid: rid };
-        document.getElementById("targetEmailDisplay").innerText = data.masked_email || "your registered email";
+        pendingStudentProfile = data.student || { r_id: rid };
+        renderAuthProfileSpotlight(pendingStudentProfile, data.email);
         showAuthStep(2);
         showToast("Verification code sent!", "success");
       } else if (data.not_found) {
@@ -2457,7 +2539,7 @@ function submitInitialRid() {
     })
     .catch(() => {
       btn.disabled = false;
-      btn.innerText = "Continue";
+      btn.innerText = "Sign In ➔";
       showToast("Network error checking R-ID", "error");
     });
 }
@@ -2503,7 +2585,14 @@ function submitSyncDetailsAndSendOtp() {
           email: email,
           program: program
         };
-        document.getElementById("targetEmailDisplay").innerText = data.masked_email || email;
+        pendingStudentProfile = {
+          r_id: rid,
+          name: name,
+          email: email,
+          program: program,
+          avatar_url: null
+        };
+        renderAuthProfileSpotlight(pendingStudentProfile, email);
         showAuthStep(2);
         showToast("Verification code sent!", "success");
       } else {
@@ -2540,7 +2629,7 @@ function verifyEmailOtpCode() {
 
   isVerifyingOtp = true;
   btn.disabled = true;
-  btn.innerText = "Verifying...";
+  btn.innerText = "Signing you in...";
 
   const payload = {
     rid: rid,
@@ -2751,9 +2840,9 @@ function loadAboutView() {
       <!-- Editorial Header -->
       <div class="about-hero-section" style="margin-bottom:32px;">
         <div class="greeting-sup-text" style="color:var(--badge-mint);">Quick Student Guide</div>
-        <h1 class="font-serif" style="font-size:2.5rem; line-height:1.15; margin-bottom:12px;">How to Use HackMate in 4 Easy Steps</h1>
+        <h1 class="font-serif" style="font-size:2.5rem; line-height:1.15; margin-bottom:12px;">How to Use JnuMate in 4 Easy Steps</h1>
         <p style="font-size:1.0625rem; color:var(--text-sage-light); line-height:1.6;">
-          Looking to join a team or find great teammates for your hackathon project? HackMate makes it simple to team up, connect on WhatsApp, and start building together.
+          Looking to join a team or find great teammates for your hackathon project? JnuMate makes it simple to team up, connect on WhatsApp, and start building together.
         </p>
       </div>
 
@@ -2819,7 +2908,7 @@ function loadAboutView() {
         <div class="creator-badge">★ Creator Spotlight</div>
         <h2 class="creator-name-title">Designed & Built by Afroz Alam</h2>
         <p class="creator-pitch">
-          HackMate was designed and crafted by <strong>Afroz Alam</strong> to eliminate the chaos of hackathon team hunting. Built specifically for students, HackMate brings together instant discovery, verified student search, and seamless collaboration so you can spend less time looking for a team and more time building winning software.
+          JnuMate was designed and crafted by <strong>Afroz Alam</strong> to eliminate the chaos of hackathon team hunting. Built specifically for students, JnuMate brings together instant discovery, verified student search, and seamless collaboration so you can spend less time looking for a team and more time building winning software.
         </p>
       </div>
 

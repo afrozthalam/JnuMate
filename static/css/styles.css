@@ -5,12 +5,12 @@
    ========================================================================== */
 
 /* 1. GOOGLE FONTS & DESIGN TOKENS */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,600&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* Fonts */
   --font-serif: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Ambient Canvas Frame (Warm Peach / Salmon from Screenshot 3 & 4) */
   --bg-canvas-frame: #F6CDC4;
@@ -186,19 +186,47 @@ h1, h2, h3, h4, .font-serif {
   scrollbar-width: thin;
 }
 
-.brand-header-link {
+.sidebar-brand-lockup {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   text-decoration: none;
+  transition: transform var(--trans-fast);
+}
+
+.sidebar-brand-lockup:hover {
+  transform: translateX(2px);
+}
+
+.sidebar-crest-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.35));
+  flex-shrink: 0;
+}
+
+.sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
 }
 
 .brand-wordmark-forest {
   font-family: var(--font-serif);
-  font-size: 1.625rem;
+  font-size: 1.5625rem;
   font-weight: 800;
   color: var(--text-white);
   letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.brand-tagline-tiny {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--text-sage);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 2px;
 }
 
 .brand-dot {
@@ -2049,6 +2077,220 @@ textarea.input-forest {
 }
 
 /* ==========================================================================
+   14B. PURE CSS AUTHENTIC IOS 12-BLADE ACTIVITY SPINNER (POINT 5)
+   ========================================================================== */
+.ios-spinner-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px 20px;
+  width: 100%;
+}
+
+.ios-spinner {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: inline-block;
+}
+
+.ios-spinner.sm {
+  width: 20px;
+  height: 20px;
+}
+
+.ios-spinner.lg {
+  width: 44px;
+  height: 44px;
+}
+
+.ios-spinner-blade {
+  position: absolute;
+  left: 44.5%;
+  top: 0;
+  width: 11%;
+  height: 28%;
+  border-radius: 9999px;
+  background-color: var(--text-white);
+  opacity: 0.15;
+  transform-origin: center 178%;
+  animation: iosSpinnerFade 1s linear infinite;
+  will-change: opacity;
+}
+
+.ios-spinner-blade:nth-child(1)  { transform: rotate(0deg);   animation-delay: 0s; }
+.ios-spinner-blade:nth-child(2)  { transform: rotate(30deg);  animation-delay: -0.9167s; }
+.ios-spinner-blade:nth-child(3)  { transform: rotate(60deg);  animation-delay: -0.8333s; }
+.ios-spinner-blade:nth-child(4)  { transform: rotate(90deg);  animation-delay: -0.75s; }
+.ios-spinner-blade:nth-child(5)  { transform: rotate(120deg); animation-delay: -0.6667s; }
+.ios-spinner-blade:nth-child(6)  { transform: rotate(150deg); animation-delay: -0.5833s; }
+.ios-spinner-blade:nth-child(7)  { transform: rotate(180deg); animation-delay: -0.5s; }
+.ios-spinner-blade:nth-child(8)  { transform: rotate(210deg); animation-delay: -0.4167s; }
+.ios-spinner-blade:nth-child(9)  { transform: rotate(240deg); animation-delay: -0.3333s; }
+.ios-spinner-blade:nth-child(10) { transform: rotate(270deg); animation-delay: -0.25s; }
+.ios-spinner-blade:nth-child(11) { transform: rotate(300deg); animation-delay: -0.1667s; }
+.ios-spinner-blade:nth-child(12) { transform: rotate(330deg); animation-delay: -0.0833s; }
+
+@keyframes iosSpinnerFade {
+  0% { opacity: 1; }
+  100% { opacity: 0.15; }
+}
+
+.ios-spinner-text {
+  font-size: 0.875rem;
+  color: var(--text-sage);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ==========================================================================
+   14C. SEARCH EMPTY STATE & AESTHETIC STUDENT CARD POLISH (POINT 3)
+   ========================================================================== */
+.search-empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-empty-icon-ring {
+  width: 58px;
+  height: 58px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--badge-yellow);
+  margin-bottom: 14px;
+}
+
+.search-empty-icon-ring svg {
+  width: 26px;
+  height: 26px;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.search-empty-title {
+  font-family: var(--font-serif);
+  font-size: 1.1875rem;
+  color: var(--text-white);
+  margin-bottom: 6px;
+}
+
+.search-empty-desc {
+  font-size: 0.84rem;
+  color: var(--text-sage);
+  max-width: 320px;
+  line-height: 1.45;
+}
+
+.student-academic-chip {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #A3E5B9;
+  background: rgba(62, 168, 108, 0.16);
+  border: 1px solid rgba(62, 168, 108, 0.3);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  display: inline-block;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.student-contact-chip {
+  font-size: 0.75rem;
+  color: var(--text-sage);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ==========================================================================
+   14D. FULL-PROFILE OTP SPOTLIGHT & INSTAGRAM EMPTY PFP (POINT 4)
+   ========================================================================== */
+.auth-profile-spotlight {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-xl);
+  padding: 22px 18px;
+  margin-bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+.auth-avatar-large {
+  width: 86px;
+  height: 86px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-forest-900);
+  border: 3px solid var(--badge-yellow);
+  overflow: hidden;
+  margin-bottom: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.auth-empty-avatar {
+  width: 86px;
+  height: 86px;
+  border-radius: var(--radius-pill);
+  background: #143525;
+  border: 2px dashed rgba(255, 255, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.auth-empty-avatar svg {
+  width: 48px;
+  height: 48px;
+  fill: #FFFFFF;
+  opacity: 0.85;
+}
+
+.auth-otp-target-banner {
+  background: rgba(62, 168, 108, 0.15);
+  border: 1px solid rgba(62, 168, 108, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  text-align: left;
+  line-height: 1.45;
+}
+
+.auth-otp-target-email {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: var(--text-white);
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+/* ==========================================================================
    15. MODALS & TOASTS
    ========================================================================== */
 .forest-modal-overlay {
@@ -2224,11 +2466,27 @@ textarea.input-forest {
     z-index: 90;
   }
 
+  .mobile-brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .mobile-crest-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+    flex-shrink: 0;
+  }
+
   .mobile-brand {
     font-family: var(--font-serif);
-    font-size: 1.4375rem;
+    font-size: 1.375rem;
     font-weight: 800;
     color: var(--text-white);
+    letter-spacing: -0.01em;
   }
 
   .mobile-top-actions {
@@ -2321,30 +2579,167 @@ textarea.input-forest {
     padding: 24px 18px;
   }
 
+  .team-page-full-container {
+    padding-bottom: 40px;
+  }
+
   .team-header-hero {
-    padding: 22px 18px;
+    padding: 20px 16px;
+    border-radius: var(--radius-xl);
+    margin-bottom: 16px;
+  }
+
+  .team-header-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .team-title-cluster {
+    min-width: 0;
+    width: 100%;
   }
 
   .team-hero-name {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+
+  .team-header-actions {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+
+  .team-header-actions button {
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.8125rem;
+    padding: 8px 14px;
+  }
+
+  .team-pitch-quote-box {
+    padding: 14px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  .pitch-quote-text {
+    font-size: 0.875rem;
+    line-height: 1.5;
   }
 
   .team-detail-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 16px;
+  }
+
+  .team-wa-card {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px 16px;
+    gap: 14px;
+    border-radius: var(--radius-xl);
+  }
+
+  .team-wa-left {
+    min-width: 0;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .team-wa-icon-circle {
+    width: 40px;
+    height: 40px;
+  }
+
+  .btn-whatsapp-pill {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+    padding: 10px 18px;
+  }
+
+  .roster-section-card {
+    padding: 18px 16px;
+    border-radius: var(--radius-xl);
+  }
+
+  .roster-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 14px;
   }
 
   .roster-grid-6 {
     grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .roster-seat-card {
+    padding: 12px 14px;
+    gap: 10px;
+    border-radius: var(--radius-lg);
+  }
+
+  .seat-avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .seat-name {
+    font-size: 0.9375rem;
+  }
+
+  .roster-seat-card.empty-seat {
+    padding: 16px 12px;
+  }
+
+  .student-search-modal-sheet {
+    width: 96%;
+    max-height: 92vh;
+    padding: 20px 16px;
+    border-radius: var(--radius-xl);
+  }
+
+  .student-search-card-rich {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+    border-radius: var(--radius-lg);
+  }
+
+  .student-card-left {
+    width: 100%;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .student-card-action {
+    width: 100%;
+    display: flex;
+  }
+
+  .student-card-action button,
+  .student-card-action span {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+    display: flex;
+    padding: 8px 14px;
   }
 
   .form-card-centered, .login-editorial-card, .profile-pro-card, .creator-spotlight-banner {
-    padding: 24px 18px;
+    padding: 22px 16px;
     border-radius: var(--radius-xl);
   }
 
   .pro-details-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
   }
 }

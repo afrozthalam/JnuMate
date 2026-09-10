@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>HackMate — Team Matching & Teammate Discovery</title>
+  <title>JnuMate — Team Matching & Teammate Discovery</title>
   
-  <!-- Google Fonts: Fraunces (Editorial Display Serif) & Plus Jakarta Sans (Modern UI Sans) -->
+  <!-- Google Fonts: Fraunces (Editorial Display Serif) & Outfit (Ultra-Modern UI Sans) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
@@ -25,8 +25,9 @@
 
       <!-- ================= DEDICATED MOBILE TOP BAR (< 768px) ================= -->
       <header class="mobile-top-bar">
-        <a href="/" class="mobile-brand">
-          HackMate<span class="brand-dot">.</span>
+        <a href="/" class="mobile-brand-lockup">
+          <img src="{{ url_for('static', filename='img/jnu_logo.png') }}" alt="JNU Crest" class="mobile-crest-logo">
+          <span class="mobile-brand">JnuMate<span class="brand-dot">.</span></span>
         </a>
         <div class="mobile-top-actions">
           <button id="btnMobileNotif" onclick="toggleNotificationsPanel()" class="mobile-action-icon-btn" aria-label="Notifications">
@@ -43,9 +44,13 @@
       <aside class="app-sidebar-desktop">
         <div>
           <!-- Brand Logo & Desktop Notification Bell -->
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px;">
-            <a href="/" class="brand-header-link" style="margin-bottom:0;">
-              <span class="brand-wordmark-forest">HackMate<span class="brand-dot">.</span></span>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
+            <a href="/" class="sidebar-brand-lockup">
+              <img src="{{ url_for('static', filename='img/jnu_logo.png') }}" alt="JNU Crest" class="sidebar-crest-logo">
+              <div class="sidebar-brand-text">
+                <span class="brand-wordmark-forest">JnuMate<span class="brand-dot">.</span></span>
+                <span class="brand-tagline-tiny">Jaipur National University</span>
+              </div>
             </a>
             <button id="btnDesktopNotif" onclick="toggleNotificationsPanel()" class="desktop-notif-btn" aria-label="Notifications" title="Notifications">
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
@@ -206,8 +211,9 @@
   <div id="mobileDrawerOverlay" class="mobile-drawer-overlay" onclick="closeMobileDrawer()">
     <div class="mobile-drawer-sheet" onclick="event.stopPropagation()">
       <div class="mobile-drawer-header">
-        <a href="/" class="mobile-brand" onclick="closeMobileDrawer()">
-          HackMate<span class="brand-dot">.</span>
+        <a href="/" class="mobile-brand-lockup" onclick="closeMobileDrawer()">
+          <img src="{{ url_for('static', filename='img/jnu_logo.png') }}" alt="JNU Crest" class="mobile-crest-logo">
+          <span class="mobile-brand">JnuMate<span class="brand-dot">.</span></span>
         </a>
         <button onclick="closeMobileDrawer()" class="drawer-close-btn" aria-label="Close Menu">
           ✕
@@ -233,7 +239,7 @@
         </a>
         <a href="/about" class="drawer-nav-link" onclick="closeMobileDrawer()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-          <span>About HackMate</span>
+          <span>About JnuMate</span>
         </a>
         <a href="/profile" id="drawerProfileLink" class="drawer-nav-link" onclick="closeMobileDrawer()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
@@ -285,7 +291,13 @@
         <input type="text" id="slotStudentSearchInput" placeholder="Type R-ID (e.g. R15006) or Student Name..." class="search-pill-input" oninput="debounceSlotStudentSearch()" autocomplete="off">
       </div>
       <div id="slotStudentSearchResults" class="student-search-results-list">
-        <div style="text-align:center; padding:32px 16px; color:var(--text-sage);">Type at least 2 characters to search college database</div>
+        <div class="search-empty-state">
+          <div class="search-empty-icon-ring">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+          </div>
+          <h4 class="search-empty-title">Search University Directory</h4>
+          <p class="search-empty-desc">Type student College R-ID (e.g. <strong>R15006</strong>) or name to find verified peers</p>
+        </div>
       </div>
     </div>
   </div>

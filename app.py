@@ -42,7 +42,7 @@ SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp-relay.brevo.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
-SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER or "noreply@hackmate.edu")
+SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER or "noreply@jnumate.edu")
 
 EDUCATION_DB_PATH = os.path.join(os.path.dirname(__file__), "education_details.db")
 EDUCATION_DETAILS_MAP = {}
@@ -164,19 +164,19 @@ def get_student_course_details(r_id, cursor=None):
     return None, None
 
 def send_real_email_otp(target_email, r_id, otp_code):
-    subject = f"{otp_code} is your HackMate Verification Code"
+    subject = f"{otp_code} is your JnuMate Verification Code"
     
     html_body = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"></head>
-<body style="background-color: #F8F9FA; color: #202124; font-family: 'Google Sans', Roboto, sans-serif; padding: 40px 20px; margin: 0;">
+<body style="background-color: #F8F9FA; color: #202124; font-family: 'Outfit', sans-serif; padding: 40px 20px; margin: 0;">
     <div style="max-width: 420px; margin: 0 auto; background: #FFFFFF; border: 1px solid #DADCE0; border-radius: 20px; padding: 32px; box-shadow: 0 1px 3px rgba(60,64,67,0.15);">
-        <div style="font-size: 20px; font-weight: 700; margin-bottom: 16px;">
-            <span style="color:#1A73E8;">Hack</span><span style="color:#EA4335;">M</span><span style="color:#FBBC04;">a</span><span style="color:#34A853;">t</span><span style="color:#EA4335;">e</span>
+        <div style="font-size: 22px; font-weight: 800; color: #0D321F; margin-bottom: 16px;">
+            JnuMate<span style="color:#25D366;">.</span>
         </div>
         <div style="font-size: 14px; color: #5F6368; margin-bottom: 8px;">Verification Code for Student <b>{r_id}</b></div>
-        <div style="font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #1A73E8; margin: 20px 0; padding: 16px; background: #E8F0FE; border-radius: 12px; text-align: center;">{otp_code}</div>
-        <div style="font-size: 12px; color: #5F6368; line-height: 1.5;">This code will expire in 10 minutes. If you did not request this code, please ignore this email.</div>
+        <div style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #13432C; margin: 20px 0; padding: 16px; background: #E8F5E9; border-radius: 12px; text-align: center;">{otp_code}</div>
+        <div style="font-size: 12px; color: #5F6368; line-height: 1.5;">This code will expire in 15 minutes. If you did not request this code, please ignore this email.</div>
     </div>
 </body>
 </html>"""
@@ -185,7 +185,7 @@ def send_real_email_otp(target_email, r_id, otp_code):
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = f"HackMate <{SMTP_FROM}>"
+            msg["From"] = f"JnuMate <{SMTP_FROM}>"
             msg["To"] = target_email
             msg.attach(MIMEText(html_body, "html"))
 
@@ -285,21 +285,42 @@ def auth_send_otp():
         return jsonify({
             "success": False,
             "not_found": True,
-            "message": "University records sync in progress for this R-ID. Please confirm your academic details below to continue."
+            "message": "Server couldn't connect to campus database. Please enter your academic details manually to continue."
         }), 200
 
     student_dict = dict(student)
     email = student_dict.get("email") or f"{r_id}@student.edu"
+    name = student_dict.get("name") or "Student"
+    dob = student_dict.get("dob") or "N/A"
+    gender = student_dict.get("gender") or "Student"
+    avatar_url = student_dict.get("avatar_url") or student_dict.get("image_url")
+
+    # Enrich from memory cache if available
+    cached = STUDENT_CACHE_BY_RID.get(r_id)
+    prog = None
+    sem = None
+    if cached:
+        avatar_url = cached.get("avatar_url") or avatar_url
+        prog = cached.get("program")
+        sem = cached.get("semester_year")
+        if not dob or dob == "N/A":
+            dob = cached.get("dob") or dob
+        if not name or name == "Student":
+            name = cached.get("name") or name
+
+    if not prog:
+        p_val, s_val = EDUCATION_DETAILS_MAP.get(r_id, (None, None))
+        prog = p_val or student_dict.get("program") or "Student"
+        sem = s_val or student_dict.get("semester") or ""
 
     otp_code = f"{random.randint(100000, 999999)}"
-    expires_at = datetime.datetime.now() + datetime.timedelta(minutes=15)
+    expires_at = datetime.datetime.now() + datetime.timedelta(hours=24)
 
     print(f"\n==========================================")
     print(f" [OTP GENERATED] R-ID: {r_id} | Email: {email} | CODE: {otp_code}")
     print(f"==========================================\n")
 
     # Store OTP with generous 24h validity window
-    expires_at = datetime.datetime.now() + datetime.timedelta(hours=24)
     cursor.execute(f"""
         INSERT INTO email_otps (r_id, email, otp, expires_at, used)
         VALUES ({p}, {p}, {p}, {p}, 0)
@@ -312,9 +333,19 @@ def auth_send_otp():
     return jsonify({
         "success": True,
         "exists": True,
-        "message": f"Code sent to {email}",
+        "message": f"Verification code sent to {email}",
         "email": email,
-        "masked_email": mask_email(email)
+        "masked_email": email,  # User explicitly requested DO NOT CENSOR
+        "student": {
+            "r_id": r_id,
+            "name": name,
+            "dob": dob,
+            "gender": gender,
+            "email": email,
+            "avatar_url": avatar_url,
+            "program": prog or "Student",
+            "semester": sem or ""
+        }
     })
 
 @app.route("/api/auth/send-registration-otp", methods=["POST"])
@@ -351,7 +382,7 @@ def auth_send_registration_otp():
         "success": True,
         "message": f"Verification code sent to {email}",
         "email": email,
-        "masked_email": mask_email(email)
+        "masked_email": email
     })
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
@@ -606,18 +637,9 @@ def student_search():
     raw_query = request.args.get("q", "").strip()
     query = raw_query.upper()
 
-    # If empty or 1 character, return instant suggested candidates
-    if len(query) < 2:
-        suggested = SEARCHABLE_STUDENTS_LIST[:10]
-        enriched = []
-        for s in suggested:
-            item = dict(s)
-            tm = TEAM_MEMBERSHIP_MAP.get(item["r_id"])
-            item["in_team"] = bool(tm)
-            item["team_name"] = tm["team_name"] if tm else None
-            item["team_id"] = tm["team_id"] if tm else None
-            enriched.append(item)
-        return jsonify({"students": enriched})
+    # If query is empty, do not return random suggestions
+    if not query:
+        return jsonify({"students": []})
 
     results = []
     seen_rids = set()
