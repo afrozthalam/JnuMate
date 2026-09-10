@@ -279,11 +279,11 @@ function loadUserFromSession(callback) {
 function renderNavUserSlots() {
   const dtSlot = document.getElementById("navUserSlotDesktop");
   const topSlot = document.getElementById("navUserSlotDesktopTop");
+  const profileDropdown = document.getElementById("desktopProfileDropdown");
 
   if (currentUser) {
     const rawName = (currentUser.name || currentUser.id || "Student") + "";
     const cleanName = rawName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
-    const initial = cleanName.charAt(0).toUpperCase() || 'U';
     const firstName = cleanName.split(' ')[0] || cleanName;
     const avatarUrl = currentUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.id || 'Student')}`;
 
@@ -312,10 +312,46 @@ function renderNavUserSlots() {
 
     if (topSlot) {
       topSlot.innerHTML = `
-        <a href="/profile" class="desktop-top-user-pill" style="display:flex; align-items:center; gap:8px; text-decoration:none; padding:4px 14px 4px 6px; border-radius:var(--radius-pill); background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.1); transition:all var(--trans-fast);">
+        <button type="button" onclick="toggleDesktopProfileDropdown(event)" class="desktop-top-user-pill" style="display:flex; align-items:center; gap:8px; padding:4px 14px 4px 6px; border-radius:var(--radius-pill); background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.1); cursor:pointer; transition:all var(--trans-fast);" aria-label="Open Account Menu">
           <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(firstName)}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1.5px solid var(--badge-mint);" onerror="this.src='/static/img/jnu_logo.png';">
           <span style="font-weight:750; font-size:0.8125rem; color:var(--text-white);">${escapeHtml(firstName)}</span>
-        </a>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; color:var(--text-sage);"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+        </button>
+      `;
+    }
+
+    if (profileDropdown) {
+      profileDropdown.innerHTML = `
+        <div class="desktop-profile-menu-header">
+          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" class="desktop-profile-menu-avatar" onerror="this.src='/static/img/jnu_logo.png';">
+          <div style="min-width:0; flex:1;">
+            <div style="font-weight:750; font-size:0.9375rem; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${escapeHtml(cleanName)}
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-sage); margin-top:2px;">
+              @${escapeHtml(currentUser.id || 'Student')} • <span style="color:var(--badge-mint); font-weight:700;">Active</span>
+            </div>
+          </div>
+        </div>
+        <div class="desktop-menu-list">
+          <a href="/profile" class="desktop-menu-item" onclick="closeDesktopDropdowns()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+            <span>My Profile & Details</span>
+          </a>
+          <a href="/create-team" class="desktop-menu-item" onclick="closeDesktopDropdowns()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+            <span>Create / Manage Squad</span>
+          </a>
+          <button type="button" onclick="closeDesktopDropdowns(); showCoursePickerModal();" class="desktop-menu-item">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"/></svg>
+            <span>Change Degree / Program</span>
+          </button>
+          <div class="desktop-menu-divider"></div>
+          <button type="button" onclick="closeDesktopDropdowns(); logoutUser();" class="desktop-menu-item danger">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
+            <span>Sign Out of JnuMate</span>
+          </button>
+        </div>
       `;
     }
   } else {
@@ -328,13 +364,71 @@ function renderNavUserSlots() {
 
     if (topSlot) {
       topSlot.innerHTML = `
-        <a href="/login" class="btn-black-pill sm" style="padding:6px 18px; font-size:0.8125rem;">
+        <a href="/login" class="btn-black-pill sm" style="padding:7px 20px; font-size:0.875rem;">
           Sign In
         </a>
       `;
     }
+    if (profileDropdown) profileDropdown.innerHTML = "";
   }
 }
+
+function toggleDesktopProfileDropdown(e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  const notifDropdown = document.getElementById("desktopNotifDropdown");
+  if (notifDropdown) notifDropdown.classList.remove("active");
+
+  const profileDropdown = document.getElementById("desktopProfileDropdown");
+  if (profileDropdown) {
+    profileDropdown.classList.toggle("active");
+  }
+}
+
+function toggleDesktopNotifDropdown(e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  const profileDropdown = document.getElementById("desktopProfileDropdown");
+  if (profileDropdown) profileDropdown.classList.remove("active");
+
+  const notifDropdown = document.getElementById("desktopNotifDropdown");
+  if (notifDropdown) {
+    notifDropdown.classList.toggle("active");
+    if (notifDropdown.classList.contains("active")) {
+      loadNotifications();
+    }
+  }
+}
+
+function closeDesktopDropdowns() {
+  const p = document.getElementById("desktopProfileDropdown");
+  const n = document.getElementById("desktopNotifDropdown");
+  if (p) p.classList.remove("active");
+  if (n) n.classList.remove("active");
+}
+
+document.addEventListener("click", (e) => {
+  const pWrapper = document.getElementById("desktopProfileWrapper");
+  const nWrapper = document.getElementById("desktopNotifWrapper");
+  if (pWrapper && !pWrapper.contains(e.target)) {
+    const p = document.getElementById("desktopProfileDropdown");
+    if (p) p.classList.remove("active");
+  }
+  if (nWrapper && !nWrapper.contains(e.target)) {
+    const n = document.getElementById("desktopNotifDropdown");
+    if (n) n.classList.remove("active");
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeDesktopDropdowns();
+  }
+});
 
 function renderDrawerUserSlot() {
   const slot = document.getElementById("drawerUserSlot");
@@ -478,25 +572,6 @@ function loadDiscoverView() {
     });
 }
 
-let discoverLayoutMode = "kanban";
-
-function setDiscoverLayoutMode(mode) {
-  discoverLayoutMode = mode;
-  const btnKanban = document.getElementById("btnViewKanban");
-  const btnGrid = document.getElementById("btnViewGrid");
-  if (btnKanban) {
-    if (mode === "kanban") btnKanban.classList.add("active");
-    else btnKanban.classList.remove("active");
-  }
-  if (btnGrid) {
-    if (mode === "grid") btnGrid.classList.add("active");
-    else btnGrid.classList.remove("active");
-  }
-  if (clientCache.teamsList) {
-    renderFilteredTeams(clientCache.teamsList);
-  }
-}
-
 function setDiscoverFilter(type) {
   discoverFilter = type;
   document.querySelectorAll(".filter-btn, .filter-menu-item").forEach(btn => {
@@ -555,8 +630,8 @@ function renderSingleTeamCard(team) {
   }
 
   const hackBadgeHtml = isCtf
-    ? `<span class="hackathon-tag-pill ctf"><img src="/static/img/ctf_logo.jpg" alt="CTF"> CTF</span>`
-    : `<span class="hackathon-tag-pill sih"><img src="/static/img/sih_logo.jpg" alt="SIH"> SIH</span>`;
+    ? `<span class="hackathon-tag-pill ctf"><img src="/static/img/ctf_logo.jpg" alt="CTF"> CTF Hackathon</span>`
+    : `<span class="hackathon-tag-pill sih"><img src="/static/img/sih_logo.jpg" alt="SIH"> Smart India (SIH)</span>`;
 
   // 6 Pronounced Roster Avatars: filled member avatars + empty circle avatars
   const members = team.members || [];
@@ -644,44 +719,9 @@ function renderFilteredTeams(teams) {
 
   if (emptyState) emptyState.style.display = "none";
 
-  const isMobile = window.innerWidth <= 768;
-
-  // On mobile or if grid view is selected, render single grid
-  if (isMobile || discoverLayoutMode === "grid") {
-    grid.className = "teams-kanban-board grid-mode";
-    grid.innerHTML = filtered.map(renderSingleTeamCard).join("");
-    return;
-  }
-
-  // DESKTOP KANBAN MODE (4 CATEGORIZED COLUMNS MATCHING AGROCONTROL)
-  grid.className = "teams-kanban-board kanban-mode";
-
-  const colSih = filtered.filter(t => (t.hackathon_type || "sih").toLowerCase() === "sih");
-  const colCtf = filtered.filter(t => (t.hackathon_type || "").toLowerCase() === "ctf");
-  const colOpen = filtered.filter(t => !t.is_full);
-  const colFull = filtered.filter(t => t.is_full);
-
-  const renderColumnHtml = (title, pillClass, list, emptyMsg) => `
-    <div class="kanban-column">
-      <div class="kanban-column-header">
-        <span class="kanban-column-pill ${pillClass}">${escapeHtml(title)}</span>
-        <span class="kanban-count-badge">${list.length}</span>
-      </div>
-      <div class="kanban-column-cards">
-        ${list.length > 0 
-          ? list.map(renderSingleTeamCard).join("") 
-          : `<div style="text-align:center; padding:36px 12px; color:var(--text-sage); font-size:0.8125rem;">${escapeHtml(emptyMsg)}</div>`
-        }
-      </div>
-    </div>
-  `;
-
-  grid.innerHTML = `
-    ${renderColumnHtml("Smart India (SIH)", "sih", colSih, "No SIH teams matching search")}
-    ${renderColumnHtml("CTF Hackathon", "ctf", colCtf, "No CTF teams matching search")}
-    ${renderColumnHtml("Open Roster Slots", "open", colOpen, "No open slots right now")}
-    ${renderColumnHtml("Complete Squads", "full", colFull, "No complete squads right now")}
-  `;
+  // Clean cards list/grid view across all screen sizes (No Kanban columns)
+  grid.className = "teams-kanban-board grid-mode";
+  grid.innerHTML = filtered.map(renderSingleTeamCard).join("");
 }
 
 function updateLeaderboardWidget(teams) {
@@ -1490,197 +1530,55 @@ function renderFullProfile(prof, userTeams) {
   const cleanName = rawName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
   const avatarSrc = prof.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(prof.r_id || 'Student')}`;
 
-  // 1. Professional Profile Hero
-  const heroHtml = `
-    <div class="profile-pro-hero">
-      <div class="profile-pro-identity">
-        <div class="profile-avatar-pro">
-          <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cleanName)}" onerror="this.src='/static/img/jnu_logo.png';">
-        </div>
-
-        <div>
-          <h1 class="font-serif" style="font-size:2rem; line-height:1.2;">${escapeHtml(cleanName)}</h1>
-          <div style="display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap;">
-            <span class="status-capsule member" style="font-size:0.8125rem;">College ID: ${escapeHtml(prof.r_id || 'N/A')}</span>
-            <span class="status-capsule full" style="font-size:0.8125rem;">● Active Student</span>
-          </div>
-        </div>
+  // 1. Professional Profile Left Identity Spotlight Card
+  const identityCardHtml = `
+    <div class="profile-sticky-identity-card">
+      <div class="profile-identity-avatar-box">
+        <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cleanName)}" onerror="this.src='/static/img/jnu_logo.png';">
       </div>
 
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <button onclick="showCoursePickerModal()" class="btn-black-pill sm">
-          Edit Academic Course
+      <h2 class="font-serif" style="font-size:1.625rem; line-height:1.2; margin-bottom:4px;">${escapeHtml(cleanName)}</h2>
+      <div style="font-size:0.875rem; color:var(--badge-yellow); font-weight:750; margin-bottom:12px;">@${escapeHtml(prof.r_id || 'N/A')}</div>
+
+      <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+        <span class="status-capsule member" style="font-size:0.75rem;">${escapeHtml(prof.program || 'Student')}</span>
+        <span class="status-capsule full" style="font-size:0.75rem;">● Verified Student</span>
+      </div>
+
+      <div style="background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-xl); padding:14px; margin-bottom:20px; text-align:left;">
+        <div style="font-size:0.6875rem; color:var(--text-sage); text-transform:uppercase; font-weight:800; letter-spacing:0.06em; margin-bottom:6px;">Hackathon Status</div>
+        <div style="font-size:0.9375rem; font-weight:750; color:var(--badge-mint);">
+          ${userTeams.length > 0 ? `Active in ${userTeams.length} Team(s)` : 'Free Agent (Looking for Squad)'}
+        </div>
+        ${userTeams.length > 0 ? `<div style="font-size:0.75rem; color:var(--text-sage-light); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(userTeams[0].name)}</div>` : ''}
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <button onclick="showCoursePickerModal()" class="btn-black-pill sm" style="width:100%; justify-content:center;">
+          ✎ Edit Academic Course
         </button>
-        <button onclick="logoutUser()" class="btn-danger-pill">
-          Sign Out
+        <button onclick="logoutUser()" class="btn-danger-pill" style="width:100%; justify-content:center;">
+          Sign Out of JnuMate
         </button>
       </div>
     </div>
   `;
-
-  // 2. Professional Academic Credentials Card
-  const credentialsHtml = `
-    <div class="profile-pro-card">
-      <div class="pro-card-header">
-        <h3 class="font-serif" style="font-size:1.25rem;">Academic Credentials</h3>
-        <span style="font-size:0.75rem; color:var(--badge-mint); text-transform:uppercase; letter-spacing:0.06em; font-weight:800;">✓ Official Record</span>
-      </div>
-
-      <div class="pro-details-grid">
-        <div class="pro-field-item">
-          <span class="pro-field-label">🎓 Enrolled Program / Degree</span>
-          <span class="pro-field-value" style="color:var(--badge-mint); font-weight:750;">${escapeHtml(prof.program || "Not Specified")}</span>
-        </div>
-
-        <div class="pro-field-item">
-          <span class="pro-field-label">📅 Semester / Session</span>
-          <span class="pro-field-value">${escapeHtml(prof.semester_year || "Current Session")}</span>
-        </div>
-
-        <div class="pro-field-item">
-          <span class="pro-field-label">🆔 University Roll ID</span>
-          <span class="pro-field-value" style="color:var(--badge-yellow); font-weight:750;">@${escapeHtml(prof.r_id || "N/A")}</span>
-        </div>
-
-        <div class="pro-field-item">
-          <span class="pro-field-label">🏆 Active Team Status</span>
-          <span class="pro-field-value" style="color:#6EE7B7; font-weight:750;">${userTeams.length > 0 ? `${userTeams.length} Registered Team` : "Free Agent"}</span>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // 3. Personal & University Contact Details Card
-  const contactHtml = `
-    <div class="profile-pro-card">
-      <div class="pro-card-header">
-        <h3 class="font-serif" style="font-size:1.25rem;">Personal & Contact Details</h3>
-        <span style="font-size:0.75rem; color:var(--badge-mint); text-transform:uppercase; letter-spacing:0.06em; font-weight:800;">✓ Verified Info</span>
-      </div>
-
-      <div class="pro-details-grid">
-        <div class="pro-field-item">
-          <span class="pro-field-label">✉ University Email Address</span>
-          <span class="pro-field-value">${escapeHtml(prof.email || "N/A")}</span>
-        </div>
-
-        <div class="pro-field-item">
-          <span class="pro-field-label">📱 Contact Phone Number</span>
-          <span class="pro-field-value">${escapeHtml(prof.phone || "N/A")}</span>
-        </div>
-
-        <div class="pro-field-item">
-          <span class="pro-field-label">🎂 Date of Birth</span>
-          <span class="pro-field-value">${escapeHtml(prof.dob || "N/A")}</span>
-        </div>
-
-        <div class="pro-field-item">
-          <span class="pro-field-label">👤 Gender</span>
-          <span class="pro-field-value">${escapeHtml(prof.gender || "Student")}</span>
-        </div>
-
-        <div class="pro-field-item">
-          <span class="pro-field-label">👨‍👦 Father's Name</span>
-          <span class="pro-field-value">${escapeHtml(prof.father_name || "N/A")}</span>
-        </div>
-
-        <div class="pro-field-item" style="grid-column: 1 / -1;">
-          <span class="pro-field-label">🏠 Residential Address</span>
-          <span class="pro-field-value">${escapeHtml(prof.address || "N/A")}</span>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // 4. My Teams Section
-  let teamsHtml = "";
-  if (userTeams.length === 0) {
-    teamsHtml = `
-      <div class="profile-pro-card" style="text-align:center; padding:36px 20px;">
-        <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:6px;">My Teams (0)</h3>
-        <p style="color:var(--text-sage); margin-bottom:18px;">You haven't joined or created any hackathon teams yet.</p>
-        <div style="display:flex; justify-content:center; gap:10px;">
-          <a href="/" class="btn-black-pill">Discover Teams</a>
-          <a href="/create-team" class="btn-outline-pill">+ Create Team</a>
-        </div>
-      </div>
-    `;
-  } else {
-    const cards = userTeams.map(team => {
-      const isFull = Boolean(team.is_full);
-      const count = team.member_count || (team.members ? team.members.length : 0);
-      const openSlots = Math.max(0, 6 - count);
-
-      let statusPill = "";
-      if (isFull) {
-        statusPill = `<span class="status-capsule full-pill">● Full (6/6)</span>`;
-      } else {
-        statusPill = `<span class="status-capsule open-pill">● ${openSlots} Open Seats</span>`;
-      }
-
-      const members = team.members || [];
-      let rosterAvatarsHtml = "";
-      for (let i = 0; i < 6; i++) {
-        if (i < members.length && members[i]) {
-          const m = members[i];
-          const mName = (m.name || m.r_id || "Student") + "";
-          const cleanName = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
-          const isLeader = m.role === 'leader';
-          const avatarUrl = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}`;
-
-          rosterAvatarsHtml += `
-            <div class="roster-avatar-item filled" title="${escapeAttr(cleanName)}${isLeader ? ' (Leader)' : ''}">
-              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}';">
-            </div>
-          `;
-        } else {
-          rosterAvatarsHtml += `
-            <div class="roster-avatar-item empty" title="Open Seat">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-            </div>
-          `;
-        }
-      }
-
-      return `
-        <article class="team-forest-card" onclick="navigateTo('/team/${team.id}')">
-          <div>
-            <div class="team-card-top-row">
-              ${statusPill}
-            </div>
-
-            <h2 class="team-card-title">${escapeHtml(team.name || 'Untitled Team')}</h2>
-            <p class="team-card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution.")}</p>
-
-            <div class="team-card-roster-row">
-              ${rosterAvatarsHtml}
-            </div>
-          </div>
-
-          <div class="team-card-bottom-row">
-            <span class="meta-members-tag">${count} / 6 Members</span>
-            <span class="btn-black-pill sm">View Team ➔</span>
-          </div>
-        </article>
-      `;
-    }).join("");
-
-    teamsHtml = `
-      <div style="margin-top:8px;">
-        <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:16px;">My Teams (${userTeams.length})</h3>
-        <div class="teams-forest-grid">
-          ${cards}
-        </div>
-      </div>
-    `;
-  }
 
   container.innerHTML = `
     <div class="profile-pro-wrap">
-      ${heroHtml}
-      ${credentialsHtml}
-      ${contactHtml}
-      ${teamsHtml}
+      <div class="profile-two-column-layout">
+        <!-- Left Section: Sticky Identity Spotlight -->
+        <div>
+          ${identityCardHtml}
+        </div>
+
+        <!-- Right Section: Credentials, Personal Contact & Teams -->
+        <div class="profile-content-column">
+          ${credentialsHtml}
+          ${contactHtml}
+          ${teamsHtml}
+        </div>
+      </div>
     </div>
   `;
 }
@@ -1816,73 +1714,121 @@ function loadCreateTeamView() {
         </a>
       </div>
 
-      <div class="create-team-card">
-        <div class="greeting-sup-text" style="color:var(--badge-mint);">6-Seat Team Builder</div>
-        <h1 class="font-serif" style="font-size:2.25rem; margin-bottom:8px;">Create New Team</h1>
-        <p style="color:var(--text-sage); font-size:0.9375rem; margin-bottom:28px;">
-          Name your hackathon team, describe your project pitch, and assign teammates to slots or leave them open for applicants.
-        </p>
+        <div class="create-team-two-column">
+          <!-- Left Column: Team Creation Form Card -->
+          <div class="create-team-card">
+            <div class="greeting-sup-text" style="color:var(--badge-mint);">6-Seat Team Builder</div>
+            <h1 class="font-serif" style="font-size:2.25rem; margin-bottom:8px;">Create New Team</h1>
+            <p style="color:var(--text-sage); font-size:0.9375rem; margin-bottom:28px;">
+              Name your hackathon team, describe your project pitch, and assign teammates to slots or leave them open for applicants.
+            </p>
 
-        <div style="display:flex; flex-direction:column; gap:20px;">
-          <!-- Hackathon Category Selector (Point 1: SIH vs CTF) -->
-          <div>
-            <label class="form-label-forest" style="margin-bottom:8px;">Choose Hackathon Category *</label>
-            <div class="hackathon-selector-grid">
-              <div class="hackathon-select-card sih ${selectedHackathonType === 'sih' ? 'active' : ''}" onclick="selectHackathonType('sih')">
-                <img src="/static/img/sih_logo.jpg" alt="SIH Hackathon">
-                <div style="min-width:0; flex:1;">
-                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-                    <span style="font-weight:750; font-size:0.9375rem; color:var(--text-white);">Smart India Hackathon (SIH)</span>
-                    <span class="hackathon-tag-pill sih" style="font-size:0.65rem; padding:2px 8px;">SIH</span>
-                  </div>
-                  <div style="font-size:0.75rem; color:var(--text-sage-light); line-height:1.4;">Hardware & Software editions • National 6-member squad</div>
-                </div>
-              </div>
-
-              <div class="hackathon-select-card ctf ${selectedHackathonType === 'ctf' ? 'active' : ''}" onclick="selectHackathonType('ctf')">
-                <img src="/static/img/ctf_logo.jpg" alt="CTF Hackathon">
-                <div style="min-width:0; flex:1;">
-                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-                    <span style="font-weight:750; font-size:0.9375rem; color:var(--text-white);">Capture The Flag (CTF)</span>
-                    <span class="hackathon-tag-pill ctf" style="font-size:0.65rem; padding:2px 8px;">CTF</span>
-                  </div>
-                  <div style="font-size:0.75rem; color:var(--text-sage-light); line-height:1.4;">Cybersecurity, network defense & binary exploits • 6-member squad</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
-            <div>
-              <label class="form-label-forest">Team Title *</label>
-              <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, NeuroVision" class="input-forest">
-            </div>
-            <div>
-              <label class="form-label-forest">WhatsApp Group Link (Optional)</label>
-              <input type="text" id="teamWhatsappInput" placeholder="https://chat.whatsapp.com/..." class="input-forest">
-            </div>
-          </div>
-
-          <div>
-            <label class="form-label-forest">Project Pitch & Goals</label>
-            <textarea id="teamDescInput" rows="3" placeholder="Describe what you plan to build, required skills, and hackathon focus..." class="input-forest"></textarea>
-          </div>
-
-          <div style="padding-top:16px; border-top:1px solid var(--border-muted);">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; flex-direction:column; gap:20px;">
+              <!-- Hackathon Category Selector (Point 1: SIH vs CTF) -->
               <div>
-                <label class="form-label-forest" style="margin-bottom:2px;">6-Seat Team Roster</label>
-                <span style="font-size:0.8125rem; color:var(--text-sage);">Click any open seat to search and add a student by R-ID. Empty seats stay open for join requests.</span>
-              </div>
-              <span class="status-capsule open" id="createTeamFilledCount">1/6 Assigned</span>
-            </div>
+                <label class="form-label-forest" style="margin-bottom:8px;">Choose Hackathon Category *</label>
+                <div class="hackathon-selector-grid">
+                  <div class="hackathon-select-card sih ${selectedHackathonType === 'sih' ? 'active' : ''}" onclick="selectHackathonType('sih')">
+                    <img src="/static/img/sih_logo.jpg" alt="SIH Hackathon">
+                    <div style="min-width:0; flex:1;">
+                      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                        <span style="font-weight:750; font-size:0.9375rem; color:var(--text-white);">Smart India Hackathon (SIH)</span>
+                        <span class="hackathon-tag-pill sih" style="font-size:0.65rem; padding:2px 8px;">SIH</span>
+                      </div>
+                      <div style="font-size:0.75rem; color:var(--text-sage-light); line-height:1.4;">Hardware & Software editions • National 6-member squad</div>
+                    </div>
+                  </div>
 
-            <div id="createTeamSlotsContainer" class="create-slots-grid"></div>
+                  <div class="hackathon-select-card ctf ${selectedHackathonType === 'ctf' ? 'active' : ''}" onclick="selectHackathonType('ctf')">
+                    <img src="/static/img/ctf_logo.jpg" alt="CTF Hackathon">
+                    <div style="min-width:0; flex:1;">
+                      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
+                        <span style="font-weight:750; font-size:0.9375rem; color:var(--text-white);">Capture The Flag (CTF)</span>
+                        <span class="hackathon-tag-pill ctf" style="font-size:0.65rem; padding:2px 8px;">CTF</span>
+                      </div>
+                      <div style="font-size:0.75rem; color:var(--text-sage-light); line-height:1.4;">Cybersecurity, network defense & binary exploits • 6-member squad</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
+                <div>
+                  <label class="form-label-forest">Team Title *</label>
+                  <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, NeuroVision" class="input-forest">
+                </div>
+                <div>
+                  <label class="form-label-forest">Official Team WhatsApp Group Link</label>
+                  <input type="text" id="teamWaInput" placeholder="https://chat.whatsapp.com/..." class="input-forest">
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label-forest">Project Pitch / Hackathon Idea *</label>
+                <textarea id="teamDescInput" rows="3" placeholder="Briefly describe what problem statement you're tackling and what skills you are looking for..." class="input-forest"></textarea>
+              </div>
+
+              <!-- 6-Seat Team Builder -->
+              <div style="margin-top:10px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                  <div>
+                    <label class="form-label-forest" style="margin-bottom:2px;">6-Seat Team Roster</label>
+                    <span style="font-size:0.8125rem; color:var(--text-sage);">Click any open seat to search and add a student by R-ID. Empty seats stay open for join requests.</span>
+                  </div>
+                  <span class="status-capsule open" id="createTeamFilledCount">1/6 Assigned</span>
+                </div>
+
+                <div id="createTeamSlotsContainer" class="create-slots-grid"></div>
+              </div>
+
+              <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-black-pill lg" style="width:100%; margin-top:12px;">
+                Create & Publish Team ➔
+              </button>
+            </div>
           </div>
 
-          <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-black-pill lg" style="width:100%; margin-top:12px;">
-            Create & Publish Team ➔
-          </button>
+          <!-- Right Column: Hackathon Rules & Guidelines Sticky Sidebar -->
+          <div class="create-team-guide-sidebar">
+            <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:14px; color:var(--text-white);">Team Builder Guidelines</h3>
+            
+            <div style="display:flex; flex-direction:column; gap:16px;">
+              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
+                <div style="font-weight:750; font-size:0.875rem; color:var(--badge-mint); margin-bottom:4px;">
+                  🏆 6-Member Roster System
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
+                  Every hackathon team consists of 1 Leader plus up to 5 teammates. Any open slots remain searchable by fellow students looking to apply.
+                </div>
+              </div>
+
+              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
+                <div style="font-weight:750; font-size:0.875rem; color:#FDBA74; margin-bottom:4px;">
+                  🇮🇳 Smart India (SIH) Rule
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
+                  SIH regulations mandate at least one female teammate per 6-member squad. Ensure you balance backend, AI/ML, and UI/UX design skills.
+                </div>
+              </div>
+
+              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
+                <div style="font-weight:750; font-size:0.875rem; color:#86EFAC; margin-bottom:4px;">
+                  🛡️ CTF Challenge Squads
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
+                  Assemble specialists across Cryptography, Reverse Engineering, Binary Exploitation, Web Defense, and Digital Forensics for maximum coverage.
+                </div>
+              </div>
+
+              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
+                <div style="font-weight:750; font-size:0.875rem; color:var(--badge-yellow); margin-bottom:4px;">
+                  💬 Instant WhatsApp Invite
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
+                  Add your group link so admitted teammates can immediately access team discussions, meeting links, and shared files.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2915,10 +2861,12 @@ function loadNotifications() {
 
 function updateNotificationBadges(count) {
   const dtBadge = document.getElementById("desktopNotifBadge");
+  const dtTopBadge = document.getElementById("desktopTopNotifBadge");
   const mbBadge = document.getElementById("mobileNotifBadge");
   const totalBadge = document.getElementById("notifTotalBadge");
+  const dtUnread = document.getElementById("desktopNotifUnreadCount");
 
-  [dtBadge, mbBadge].forEach(b => {
+  [dtBadge, dtTopBadge, mbBadge].forEach(b => {
     if (!b) return;
     if (count > 0) {
       b.innerText = count > 9 ? "9+" : count;
@@ -2934,6 +2882,15 @@ function updateNotificationBadges(count) {
       totalBadge.style.display = "inline-flex";
     } else {
       totalBadge.style.display = "none";
+    }
+  }
+
+  if (dtUnread) {
+    if (count > 0) {
+      dtUnread.innerText = `${count} new`;
+      dtUnread.style.display = "inline-flex";
+    } else {
+      dtUnread.style.display = "none";
     }
   }
 }
@@ -2956,21 +2913,24 @@ function closeNotificationsPanel() {
 }
 
 function renderNotificationsList(notifications, unreadCount) {
-  const container = document.getElementById("notifListContainer");
-  if (!container) return;
+  const mobileContainer = document.getElementById("notifListContainer");
+  const desktopContainer = document.getElementById("desktopNotifListBody");
+
+  const emptyHtml = `
+    <div style="text-align:center; padding:36px 16px;">
+      <div style="font-size:1.75rem; margin-bottom:6px;">🔔</div>
+      <div style="font-family:var(--font-serif); font-size:1rem; font-weight:700; color:var(--text-white); margin-bottom:4px;">All Caught Up!</div>
+      <p style="font-size:0.75rem; color:var(--text-sage); margin:0;">You have no notifications right now.</p>
+    </div>
+  `;
 
   if (notifications.length === 0) {
-    container.innerHTML = `
-      <div style="text-align:center; padding:48px 16px;">
-        <div style="font-size:2rem; margin-bottom:8px;">🔔</div>
-        <div style="font-family:var(--font-serif); font-size:1.125rem; font-weight:700; color:var(--text-white); margin-bottom:4px;">All Caught Up!</div>
-        <p style="font-size:0.8125rem; color:var(--text-sage);">You have no notifications right now.</p>
-      </div>
-    `;
+    if (mobileContainer) mobileContainer.innerHTML = emptyHtml;
+    if (desktopContainer) desktopContainer.innerHTML = emptyHtml;
     return;
   }
 
-  container.innerHTML = notifications.map(n => {
+  const itemsHtml = notifications.map(n => {
     let icon = "🔔";
     if (n.type === "join_request") icon = "🤝";
     else if (n.type === "request_accepted" || n.type === "team_added") icon = "🎉";
@@ -2981,7 +2941,7 @@ function renderNotificationsList(notifications, unreadCount) {
     const linkAction = n.link ? `onclick="handleNotificationClick('${escapeAttr(n.id)}', '${escapeAttr(n.link)}')"` : `onclick="handleNotificationClick('${escapeAttr(n.id)}', null)"`;
 
     return `
-      <div class="notif-item-box ${isUnread ? 'unread' : ''}" ${linkAction}>
+      <div class="notif-item-box ${isUnread ? 'unread' : ''}" ${linkAction} style="cursor:pointer;">
         <div class="notif-icon-circle">${icon}</div>
         <div style="flex:1; min-width:0;">
           <div class="notif-title">${escapeHtml(n.title)}</div>
@@ -2991,9 +2951,14 @@ function renderNotificationsList(notifications, unreadCount) {
       </div>
     `;
   }).join("");
+
+  if (mobileContainer) mobileContainer.innerHTML = itemsHtml;
+  if (desktopContainer) desktopContainer.innerHTML = itemsHtml;
 }
 
 function handleNotificationClick(notifId, link) {
+  closeDesktopDropdowns();
+  closeNotificationsPanel();
   fetch("/api/notifications/mark-read", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -3004,6 +2969,11 @@ function handleNotificationClick(notifId, link) {
   }).then(() => {
     loadNotifications();
   }).catch(() => {});
+
+  if (link) {
+    navigateTo(link);
+  }
+}
 
   if (link) {
     closeNotificationsPanel();

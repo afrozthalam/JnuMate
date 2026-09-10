@@ -40,7 +40,7 @@
         </div>
       </header>
 
-      <!-- ================= DESKTOP TOP NAVIGATION BAR (AGROCONTROL LAYOUT) ================= -->
+      <!-- ================= DESKTOP TOP NAVIGATION BAR ================= -->
       <header class="desktop-top-navbar" id="desktopTopNavbar">
         <a href="/" class="desktop-top-brand">
           <img src="{{ url_for('static', filename='img/jnu_logo.png') }}" alt="JNU Crest" class="desktop-crest-logo">
@@ -50,22 +50,39 @@
           </div>
         </a>
 
-        <!-- Center: Pill Capsule Navigation -->
+        <!-- Center: Refined Pill Capsule Navigation (Discover & About) -->
         <nav class="desktop-nav-capsule">
           <a href="/" class="nav-capsule-link active" data-path="/">Discover</a>
-          <a href="/students" class="nav-capsule-link" data-path="/students">Directory</a>
-          <a href="/create-team" class="nav-capsule-link" data-path="/create-team">+ Create Team</a>
           <a href="/about" class="nav-capsule-link" data-path="/about">About</a>
-          <a href="/profile" class="nav-capsule-link" data-path="/profile">Profile</a>
         </nav>
 
-        <!-- Right: Notifications & Profile -->
+        <!-- Right: Notifications & Profile with Floating Dropdown Windows -->
         <div class="desktop-top-right-cluster">
-          <button id="btnDesktopTopNotif" onclick="toggleNotificationsPanel()" class="desktop-icon-pill-btn" aria-label="Notifications" title="Notifications">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
-            <span id="desktopTopNotifBadge" class="notif-badge" style="display:none;">0</span>
-          </button>
-          <div id="navUserSlotDesktopTop"></div>
+          <!-- Notification Dropdown Wrapper -->
+          <div class="desktop-dropdown-wrapper" id="desktopNotifWrapper">
+            <button id="btnDesktopTopNotif" onclick="toggleDesktopNotifDropdown(event)" class="desktop-icon-pill-btn" aria-label="Notifications" title="Notifications">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+              <span id="desktopTopNotifBadge" class="notif-badge" style="display:none;">0</span>
+            </button>
+            <div id="desktopNotifDropdown" class="desktop-floating-dropdown desktop-notif-window">
+              <div class="desktop-notif-header">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-weight:800; font-size:0.9375rem; color:var(--text-white);">Notifications</span>
+                  <span id="desktopNotifUnreadCount" class="status-capsule open" style="display:none; font-size:0.6875rem;">0 new</span>
+                </div>
+                <button onclick="markAllNotificationsAsRead()" class="btn-outline-pill" style="padding:4px 10px; font-size:0.75rem;">Mark all read</button>
+              </div>
+              <div id="desktopNotifListBody" class="desktop-notif-body">
+                <div style="text-align:center; padding:32px 16px; color:var(--text-sage); font-size:0.875rem;">Loading notifications...</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Profile Dropdown Wrapper -->
+          <div class="desktop-dropdown-wrapper" id="desktopProfileWrapper">
+            <div id="navUserSlotDesktopTop"></div>
+            <div id="desktopProfileDropdown" class="desktop-floating-dropdown desktop-profile-menu"></div>
+          </div>
         </div>
       </header>
 
@@ -98,7 +115,7 @@
               </li>
               <li>
                 <a href="/students" class="sidebar-nav-item" data-path="/students">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
                   <span>Directory</span>
                 </a>
               </li>
@@ -116,7 +133,7 @@
               </li>
               <li>
                 <a href="/profile" class="sidebar-nav-item" data-path="/profile">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                   <span>Profile</span>
                 </a>
               </li>
@@ -124,27 +141,26 @@
           </nav>
         </div>
 
-        <!-- Sidebar Bottom: User Session Slot & Controls -->
-        <div class="sidebar-footer-box">
-          <div id="navUserSlotDesktop"></div>
-        </div>
+        <!-- Sidebar User Profile Footer Slot -->
+        <div id="navUserSlotDesktop" class="sidebar-user-footer"></div>
       </aside>
 
-      <!-- ================= CENTER MAIN WORKSPACE ================= -->
-      <main class="app-main-workspace">
+      <!-- ================= MAIN CENTER CONTENT WORKSPACE ================= -->
+      <main class="app-main-workspace" id="mainWorkspaceArea">
 
         <!-- VIEW 1: DISCOVER TEAMS -->
         <section id="viewDiscover" class="view-page-panel active">
           
-          <!-- Desktop Header Row (AgroControl Layout: Title Left, Action Right) -->
+          <!-- Desktop Editorial Header (AgroControl UI Architecture) -->
           <div class="agro-header-row desktop-only-flex">
-            <div class="agro-title-cluster">
+            <div>
               <h1 class="agro-main-title">Discover Teams</h1>
-              <p class="agro-subtitle-text">Explore SIH & CTF squads, browse project pitches, or assemble your 6-seat roster.</p>
+              <p class="agro-subtitle-text">Find teammates for your team, or join any open hackathon squad.</p>
             </div>
-            <div class="agro-action-cluster">
+            <div>
               <a href="/create-team" class="btn-agro-yellow-pill">
-                + Create Team
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:18px; height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                <span>Create Team</span>
               </a>
             </div>
           </div>
@@ -156,7 +172,7 @@
             </div>
           </div>
 
-          <!-- Controls Bar (AgroControl Layout: Search & Filter Left, View Switcher Right) -->
+          <!-- Controls Bar (Search & Filters, Clean List View) -->
           <div class="forest-controls-bar agro-controls-bar">
             <div class="agro-controls-left">
               <div class="search-pill-wrapper agro-search-box">
@@ -174,18 +190,6 @@
             </div>
 
             <div class="agro-controls-right">
-              <!-- View Switch Segmented Pill (Kanban vs List View matching Screenshot) -->
-              <div class="view-switch-segmented-pill desktop-only-flex">
-                <button id="btnViewKanban" onclick="setDiscoverLayoutMode('kanban')" class="view-switch-btn active" title="Kanban Columns View">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.5-15h15a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75A2.25 2.25 0 014.5 4.5z"/></svg>
-                  <span>Kanban view</span>
-                </button>
-                <button id="btnViewGrid" onclick="setDiscoverLayoutMode('grid')" class="view-switch-btn" title="Grid / List View">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
-                  <span>List view</span>
-                </button>
-              </div>
-
               <!-- Mobile Create Team Button -->
               <a href="/create-team" class="btn-black-pill sm mobile-create-team-btn">
                 + Create Team
