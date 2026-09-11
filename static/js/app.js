@@ -68,11 +68,22 @@ const DEFAULT_STUDENT_AVATAR = "data:image/svg+xml," + encodeURIComponent(
   '</svg>'
 );
 
+function isValidAvatarUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  const u = url.trim();
+  if (u.length < 8) return false;
+  if (u.endsWith('/')) return false;
+  if (u.includes('demo/avatars')) return false;
+  if (u.includes('SIGNATURE')) return false;
+  if (failedAvatarUrls.has(u)) return false;
+  return true;
+}
+
 function getStudentAvatarSrc(rawUrl, rId) {
-  if (!rawUrl || failedAvatarUrls.has(rawUrl)) {
+  if (!isValidAvatarUrl(rawUrl)) {
     return DEFAULT_STUDENT_AVATAR;
   }
-  return rawUrl;
+  return rawUrl.trim();
 }
 
 // Instagram-style white empty avatar silhouette for unlinked accounts
@@ -645,11 +656,11 @@ function renderSingleTeamCard(team) {
       const mName = (m.name || m.r_id || "Student") + "";
       const cleanName = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
       const isLeader = m.role === 'leader';
-      const avatarUrl = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}`;
+      const avatarUrl = getStudentAvatarSrc(m.avatar_url, m.r_id);
 
       rosterAvatarsHtml += `
         <div class="roster-avatar-item filled" title="${escapeAttr(cleanName)}${isLeader ? ' (Leader)' : ''}">
-          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(m.r_id || 'Student')}';">
+          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" loading="lazy" onerror="failedAvatarUrls.add(this.src); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
         </div>
       `;
     } else {
@@ -893,6 +904,8 @@ function renderFullTeamDetail(team) {
   const isFull = Boolean(team.is_full || count >= 6);
   const isLeader = Boolean(currentUser && currentUser.id && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentUser.id.toUpperCase()));
   const isMember = Boolean(currentUser && currentUser.id && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentUser.id.toUpperCase())));
+  const isSih = (team.hackathon_type || 'sih').toLowerCase() === 'sih';
+  const hasFemale = Boolean(team.has_female);
 
   // 6-Seat Visual Roster Cards
   const members = team.members || [];
@@ -905,72 +918,70 @@ function renderFullTeamDetail(team) {
       const mRid = (m.r_id || m.student_r_id || "") + "";
       const mName = (m.name || mRid || "Student") + "";
       const cleanName = mName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
-      const initial = cleanName.charAt(0).toUpperCase() || 'U';
       const isYou = Boolean(currentUser && currentUser.id && mRid && (mRid.toUpperCase() === (currentUser.id + '').toUpperCase()));
       const isTeamLeader = m.role === 'leader';
-      const roleCapsule = isTeamLeader
-        ? `<span class="status-capsule leader">Leader</span>`
-        : `<span class="status-capsule member">Member</span>`;
-      const avatarUrl = m.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mRid || 'Student')}`;
+      const avatarUrl = getStudentAvatarSrc(m.avatar_url, mRid, mName);
 
       rosterCardsHtml += `
-        <div class="roster-seat-card">
-          <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
-            <div class="seat-avatar">
-              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(mName)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(mRid || 'Student')}';">
+        <div class="squad-member-card ${isTeamLeader ? 'is-lead-card' : ''}">
+          <div class="squad-member-header">
+            <div class="squad-avatar-box">
+              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(mName)}" loading="lazy" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
             </div>
 
-            <div style="min-width:0; flex:1;">
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <span class="seat-name">${escapeHtml(cleanName)}</span>
-                ${isYou ? `<span class="status-capsule" style="background:var(--badge-mint); color:#fff; font-size:0.6875rem;">(You)</span>` : ""}
-                ${roleCapsule}
+            <div class="squad-member-info">
+              <div class="squad-member-name-row">
+                <span class="squad-member-name">${escapeHtml(cleanName)}</span>
+                ${isYou ? `<span class="squad-badge-you">You</span>` : ""}
               </div>
-
-              <div class="seat-meta">
-                @${escapeHtml(mRid)} ${m.gender ? `• ${escapeHtml(m.gender)}` : ""}
-                ${m.dob && m.dob !== 'N/A' ? ` • DOB: ${escapeHtml(m.dob)}` : ""}
+              <div class="squad-member-submeta">
+                <span class="squad-rid-tag">@${escapeHtml(mRid)}</span>
+                ${m.gender ? `<span class="squad-meta-bullet">•</span><span class="squad-gender-tag">${escapeHtml(m.gender)}</span>` : ""}
               </div>
+            </div>
 
-              ${m.program ? `
-                <div style="margin-top:4px;">
-                  <span class="status-capsule member" style="font-size:0.6875rem;">${escapeHtml(m.program)}</span>
-                </div>
-              ` : ''}
-
-              ${m.email ? `
-                <div style="margin-top:4px;">
-                  <a href="mailto:${escapeHtml(m.email)}" style="font-size:0.75rem; color:var(--badge-blue); text-decoration:underline;">
-                    ${escapeHtml(m.email)}
-                  </a>
-                </div>
-              ` : ''}
+            <div class="squad-role-tag ${isTeamLeader ? 'tag-captain' : 'tag-core'}">
+              ${isTeamLeader ? 'Squad Captain' : 'Core Engineer'}
             </div>
           </div>
 
-          ${isLeader && !isTeamLeader ? `
-            <button onclick="confirmRemoveMember('${team.id}', '${escapeAttr(mRid)}', '${escapeAttr(cleanName)}')" class="btn-danger-pill" style="padding:4px 10px; font-size:0.6875rem;">
-              Remove
-            </button>
-          ` : ''}
+          <div class="squad-member-footer">
+            <div class="squad-academic-text">
+              ${m.program ? escapeHtml(m.program) : 'JNU Engineering'}
+              ${m.semester_year ? ` • Sem ${escapeHtml(m.semester_year)}` : ''}
+            </div>
+
+            <div class="squad-member-actions">
+              ${m.email ? `
+                <a href="mailto:${escapeHtml(m.email)}" class="squad-email-btn" title="Email Teammate">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                </a>
+              ` : ''}
+              ${isLeader && !isTeamLeader ? `
+                <button onclick="confirmRemoveMember('${team.id}', '${escapeAttr(mRid)}', '${escapeAttr(cleanName)}')" class="btn-clean-remove" title="Remove Teammate">
+                  Remove
+                </button>
+              ` : ''}
+            </div>
+          </div>
         </div>
       `;
     } else {
       const seatNum = i + 1;
       rosterCardsHtml += `
-        <div class="roster-seat-card empty-seat">
-          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-            <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-sage);">
-              Seat ${seatNum} • Open
-            </span>
-            ${isLeader ? `
-              <button onclick="openSlotStudentSearchModalForTeam('${team.id}', ${seatNum})" class="btn-black-pill sm" style="margin-top:4px;">
-                + Add Teammate
-              </button>
-            ` : `
-              <span style="font-size:0.8125rem; color:var(--text-sage-light);">Open for join requests</span>
-            `}
-          </div>
+        <div class="squad-member-card empty-slot">
+          <div class="slot-badge">Seat 0${seatNum}</div>
+          <div class="slot-title">Open Squad Vacancy</div>
+          <p class="slot-subtitle">
+            ${isLeader ? 'Search student database by R-ID or Name to fill this seat.' : 'Available for verified applicants to join.'}
+          </p>
+          ${isLeader ? `
+            <button onclick="openSlotStudentSearchModalForTeam('${team.id}', ${seatNum})" class="btn-slot-assign">
+              + Assign Teammate
+            </button>
+          ` : `
+            <span class="slot-status-indicator">Accepting Applications</span>
+          `}
         </div>
       `;
     }
@@ -978,113 +989,134 @@ function renderFullTeamDetail(team) {
 
   container.innerHTML = `
     <div class="team-page-full-container">
-      <div style="margin-bottom:20px;">
-        <a href="/" class="btn-outline-pill">
-          ← Back to Discover
+      <!-- Breadcrumb Nav -->
+      <div class="squad-workspace-nav">
+        <a href="/" class="btn-clean-back">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+          <span>Squad Directory</span>
         </a>
+        <span class="squad-crumb-sep">/</span>
+        <span class="squad-crumb-track">${isSih ? 'Smart India Hackathon' : 'CTF Cyber Defense'}</span>
+        <span class="squad-crumb-sep">/</span>
+        <span class="squad-crumb-current">${escapeHtml(team.name)}</span>
       </div>
 
-      <!-- Hero Header -->
-      <div class="team-header-hero">
-        <div class="team-header-top">
-          <div class="team-title-cluster">
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-              <span class="hackathon-tag-pill ${(team.hackathon_type || 'sih').toLowerCase()}" style="font-size:0.75rem; padding:4px 12px;">
-                <img src="${(team.hackathon_type === 'ctf') ? '/static/img/ctf_logo.jpg' : '/static/img/sih_logo.jpg'}" alt="Logo">
-                ${(team.hackathon_type === 'ctf') ? 'Capture The Flag (CTF)' : 'Smart India Hackathon (SIH)'}
+      <!-- Squad Header Command Surface -->
+      <div class="squad-command-header">
+        <div class="squad-command-main">
+          <div class="squad-badge-strip">
+            <span class="hackathon-tag-pill ${(team.hackathon_type || 'sih').toLowerCase()}">
+              <img src="${(team.hackathon_type === 'ctf') ? '/static/img/ctf_logo.jpg' : '/static/img/sih_logo.jpg'}" alt="Hackathon">
+              <span>${(team.hackathon_type === 'ctf') ? 'Capture The Flag (CTF)' : 'Smart India Hackathon (SIH)'}</span>
+            </span>
+            <span class="squad-status-capsule ${isFull ? 'status-complete' : 'status-recruiting'}">
+              ${isFull ? '● Roster Locked (6/6)' : `● ${6 - count} Open ${6 - count === 1 ? 'Slot' : 'Slots'}`}
+            </span>
+            ${isSih ? `
+              <span class="squad-status-capsule ${hasFemale ? 'status-diversity-pass' : 'status-diversity-warn'}">
+                ${hasFemale ? '✓ 1+ Female Teammate (SIH Rule Met)' : '⚠️ 1 Female Required (SIH Rule)'}
               </span>
-              <span class="status-capsule ${isFull ? 'full-pill' : 'open-pill'}">
-                ${isFull ? '● Team Full (6/6)' : `● ${6 - count} Open Seats Available`}
-              </span>
-            </div>
-            <h1 class="team-hero-name">${escapeHtml(team.name)}</h1>
-          </div>
-
-          <div class="team-header-actions">
-            ${isLeader ? `
-              <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-black-pill sm">
-                ✎ Edit Team
-              </button>
-              <button onclick="confirmDisbandTeam('${team.id}')" class="btn-danger-pill">
-                Disband Team
-              </button>
-            ` : ''}
-
-            ${(isMember && !isLeader) ? `
-              <button onclick="confirmLeaveTeam('${team.id}')" class="btn-danger-pill">
-                Leave Team
-              </button>
             ` : ''}
           </div>
-        </div>
 
-        <div class="team-pitch-quote-box">
-          <div class="pitch-quote-label">PROJECT PITCH & GOAL</div>
-          <p class="pitch-quote-text">
-            ${escapeHtml(team.description || "Building an innovative hackathon solution. Check out our open seats and join the squad!")}
-          </p>
-        </div>
-      </div>
+          <h1 class="squad-headline-title">${escapeHtml(team.name)}</h1>
 
-      <!-- 2-Column Team Workspace Layout -->
-      <div class="team-detail-grid">
-        <!-- LEFT COLUMN: WhatsApp Card & 6-Seat Roster -->
-        <div class="team-detail-left-col">
-          <!-- WhatsApp Group Card -->
-          <div class="team-wa-card">
-            <div class="team-wa-left">
-              <div class="team-wa-icon-circle">
-                <svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.67 12.05 3.67Z"/></svg>
-              </div>
-              <div>
-                <div class="team-wa-title">Official Team WhatsApp Chat</div>
-                <div class="team-wa-subtitle">
-                  ${team.whatsapp_link ? 'Connect directly with confirmed teammates for standups and coding sessions.' : (isLeader ? 'You haven\'t linked a WhatsApp group yet. Add one so members can coordinate!' : 'No WhatsApp link provided yet by team leader.')}
-                </div>
-              </div>
-            </div>
-            <div>
-              ${team.whatsapp_link ? `
-                <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" class="btn-whatsapp-pill">
-                  Join WhatsApp ➔
-                </a>
-              ` : (isLeader ? `
-                <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-outline-pill">
-                  + Add Link
-                </button>
-              ` : `<span style="font-size:0.8125rem; color:var(--text-sage);">Not set</span>`)}
-            </div>
-          </div>
-
-          <!-- 6-Seat Roster Section -->
-          <div class="roster-section-card">
-            <div class="roster-section-header">
-              <div>
-                <h3 class="font-serif" style="font-size:1.375rem;">Official Team Roster</h3>
-                <p style="font-size:0.8125rem; color:var(--text-sage); margin-top:2px;">
-                  ${count} of 6 seats filled (${6 - count} open)
-                </p>
-              </div>
-              <span class="status-capsule ${isFull ? 'full' : 'open'}">
-                ${isFull ? 'Roster Complete' : `${6 - count} Open Slots`}
+          <!-- Architectural Project Brief -->
+          <div class="squad-brief-card">
+            <div class="brief-kicker">Project Objectives &amp; Technical Problem Statement</div>
+            <p class="brief-body-text">
+              ${escapeHtml(team.description || "Building an engineering solution for the upcoming hackathon. Check out our open seats and join the squad.")}
+            </p>
+            <div class="brief-meta-row">
+              <span class="brief-meta-item">
+                <strong>Track:</strong> ${(team.hackathon_type === 'ctf') ? 'Capture The Flag' : 'Smart India Hackathon'}
+              </span>
+              <span class="meta-dot">•</span>
+              <span class="brief-meta-item">
+                <strong>Captain:</strong> ${escapeHtml(team.leader_r_id || 'Assigned')}
+              </span>
+              <span class="meta-dot">•</span>
+              <span class="brief-meta-item">
+                <strong>Roster Capacity:</strong> ${count} / 6 Confirmed
               </span>
             </div>
-
-            <div class="roster-grid-6">
-              ${rosterCardsHtml}
-            </div>
           </div>
         </div>
 
-        <!-- RIGHT COLUMN: Pending Requests & Team Info -->
-        <div class="team-detail-right-col">
-          <!-- IF LEADER: Pending Join Requests Panel (PROMINENT AT TOP!) -->
+        <div class="squad-command-actions">
           ${isLeader ? `
-            <div class="pending-requests-card">
-              <div class="pending-requests-header">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <h3 class="font-serif" style="font-size:1.25rem;">Pending Join Requests</h3>
-                  <span id="pendingReqCountBadge" class="status-capsule open" style="font-size:0.6875rem;">0</span>
+            <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-dark-action">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
+              <span>Edit Details</span>
+            </button>
+            <button onclick="confirmDisbandTeam('${team.id}')" class="btn-danger-action">
+              <span>Disband Squad</span>
+            </button>
+          ` : ''}
+
+          ${(isMember && !isLeader) ? `
+            <button onclick="confirmLeaveTeam('${team.id}')" class="btn-danger-action">
+              <span>Leave Squad</span>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+
+      <!-- WhatsApp Squad Collaboration Banner -->
+      <div class="squad-wa-banner">
+        <div class="squad-wa-info">
+          <div class="squad-wa-logo">
+            <svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.67 12.05 3.67Z"/></svg>
+          </div>
+          <div>
+            <div class="squad-wa-title">Official Squad WhatsApp Channel</div>
+            <div class="squad-wa-desc">
+              ${team.whatsapp_link ? 'Direct collaboration channel for confirmed teammates to coordinate GitHub repos, tasks, and standups.' : (isLeader ? 'You have not linked a WhatsApp group yet. Connect your squad chat so confirmed teammates can coordinate.' : 'The team captain will unlock the private WhatsApp coordination link here.')}
+            </div>
+          </div>
+        </div>
+        <div class="squad-wa-action">
+          ${team.whatsapp_link ? `
+            <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-wa-connect">
+              <span>Launch WhatsApp</span>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+            </a>
+          ` : (isLeader ? `
+            <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-wa-outline">
+              + Add WhatsApp Link
+            </button>
+          ` : `<span class="wa-unlinked-pill">Link Pending</span>`)}
+        </div>
+      </div>
+
+      <!-- Workspace 2-Column Split -->
+      <div class="squad-workspace-grid">
+        <!-- LEFT COLUMN: 6-Seat Roster Deck -->
+        <div class="squad-roster-column">
+          <div class="squad-column-header">
+            <div>
+              <h2 class="squad-column-title">Squad Roster</h2>
+              <p class="squad-column-subtitle">${count} of 6 seats locked (${6 - count} open vacancies)</p>
+            </div>
+            <div class="roster-progress-track">
+              <div class="roster-progress-fill" style="width: ${(count / 6) * 100}%;"></div>
+            </div>
+          </div>
+
+          <div class="squad-seats-grid">
+            ${rosterCardsHtml}
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Applicant Review / Join Card / Scorecard -->
+        <div class="squad-sidebar-column">
+          <!-- IF LEADER: Prominent Applicant Review Deck -->
+          ${isLeader ? `
+            <div class="squad-deck-card applicant-deck">
+              <div class="deck-header">
+                <div class="deck-title-group">
+                  <h3 class="deck-title">Applicant Inquiries</h3>
+                  <span id="pendingReqCountBadge" class="deck-counter">0 Pending</span>
                 </div>
               </div>
               <div id="pendingRequestsContainer" class="pending-requests-list">
@@ -1093,45 +1125,71 @@ function renderFullTeamDetail(team) {
             </div>
           ` : ''}
 
-          <!-- IF NON-MEMBER & NOT FULL: Join Team Card -->
+          <!-- IF NON-MEMBER & NOT FULL: Join Squad Card -->
           ${(!isMember && !isFull) ? `
-            <div class="join-team-action-card">
-              <div class="widget-title-row" style="margin-bottom:12px;">
-                <span class="widget-label-tiny">Join Team</span>
-                <span style="font-size:0.75rem; color:var(--badge-mint); font-weight:750;">● Open for Applications</span>
+            <div class="squad-deck-card join-deck">
+              <div class="deck-header">
+                <div class="deck-kicker">Roster Enrolment</div>
+                <h3 class="deck-title">Apply to Join ${escapeHtml(team.name)}</h3>
               </div>
-              <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:6px;">Want to join ${escapeHtml(team.name)}?</h3>
-              <p style="font-size:0.8125rem; color:var(--text-sage-light); line-height:1.45; margin-bottom:14px;">
-                Send a direct join request to the team leader. Introduce yourself or highlight your technical skills.
+              <p class="join-deck-prompt">
+                Introduce yourself and highlight your stack (e.g. React, Python, UI/UX, Cloud, CTF reversing):
               </p>
               ${currentUser ? `
-                <textarea id="joinMessageInput" rows="3" placeholder="e.g. Hey! I'm proficient in React, Node, and UI design. Would love to join..." class="input-forest" style="margin-bottom:12px;"></textarea>
-                <button onclick="submitJoinRequest('${team.id}')" class="btn-black-pill" style="width:100%;">
-                  Send Join Request ➔
+                <textarea id="joinMessageInput" rows="3" placeholder="Hey! I'm proficient in Python and React. Would love to contribute to this hackathon project..." class="input-forest squad-apply-textarea"></textarea>
+                <button onclick="submitJoinRequest('${team.id}')" class="btn-squad-apply">
+                  <span>Submit Join Application</span>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
                 </button>
               ` : `
-                <div style="background:rgba(0,0,0,0.25); border-radius:var(--radius-lg); padding:14px; text-align:center;">
-                  <p style="font-size:0.8125rem; color:var(--text-sage); margin-bottom:10px;">Sign in with your College R-ID to request joining this team.</p>
-                  <a href="/login" class="btn-black-pill sm">Sign In to Apply</a>
+                <div class="apply-signin-prompt">
+                  <p>Sign in with your University R-ID to request joining this squad.</p>
+                  <a href="/login" class="btn-slot-assign" style="display:inline-block; margin-top:8px;">Sign In to Apply</a>
                 </div>
               `}
             </div>
           ` : ''}
 
-          <!-- Team Guidelines Card -->
-          <div class="team-guide-side-card">
-            <h4 class="font-serif" style="font-size:1.0625rem; margin-bottom:10px;">Team Guidelines</h4>
-            <ul style="list-style:none; display:flex; flex-direction:column; gap:10px; font-size:0.8125rem; color:var(--text-sage-light);">
-              <li style="display:flex; gap:8px;">
-                <span style="color:var(--badge-mint);">✓</span> <span>Max 6 members per hackathon squad.</span>
-              </li>
-              <li style="display:flex; gap:8px;">
-                <span style="color:var(--badge-mint);">✓</span> <span>Leaders can directly invite peers via R-ID or accept applications.</span>
-              </li>
-              <li style="display:flex; gap:8px;">
-                <span style="color:var(--badge-mint);">✓</span> <span>Join the official WhatsApp chat to coordinate immediately.</span>
-              </li>
-            </ul>
+          <!-- Hackathon Compliance & Readiness Scorecard -->
+          <div class="squad-deck-card scorecard-deck">
+            <div class="deck-kicker">Compliance Engine</div>
+            <h3 class="deck-title">Hackathon Readiness</h3>
+
+            <div class="scorecard-checklist">
+              <div class="scorecard-row">
+                <span class="score-icon ${count >= 2 ? 'is-pass' : 'is-pending'}">${count >= 2 ? '✓' : '●'}</span>
+                <div class="score-meta">
+                  <span class="score-title">Roster Minimums</span>
+                  <span class="score-desc">${count >= 6 ? 'Full 6-seat roster complete' : `${count}/6 confirmed teammates`}</span>
+                </div>
+              </div>
+
+              ${isSih ? `
+                <div class="scorecard-row">
+                  <span class="score-icon ${hasFemale ? 'is-pass' : 'is-warn'}">${hasFemale ? '✓' : '!'}</span>
+                  <div class="score-meta">
+                    <span class="score-title">SIH Gender Diversity Rule</span>
+                    <span class="score-desc">${hasFemale ? 'Rule satisfied (Female teammate confirmed)' : 'Requirement: At least 1 female teammate'}</span>
+                  </div>
+                </div>
+              ` : ''}
+
+              <div class="scorecard-row">
+                <span class="score-icon ${team.whatsapp_link ? 'is-pass' : 'is-pending'}">${team.whatsapp_link ? '✓' : '●'}</span>
+                <div class="score-meta">
+                  <span class="score-title">Team Comm Channel</span>
+                  <span class="score-desc">${team.whatsapp_link ? 'WhatsApp connected for sync' : 'Group chat link pending'}</span>
+                </div>
+              </div>
+
+              <div class="scorecard-row">
+                <span class="score-icon is-pass">✓</span>
+                <div class="score-meta">
+                  <span class="score-title">Student Record Verification</span>
+                  <span class="score-desc">All teammates verified via JNU R-ID</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1162,7 +1220,7 @@ function loadTeamJoinRequests(teamId) {
           <div class="pending-request-item">
             <div style="display:flex; align-items:center; gap:10px;">
               <div class="seat-avatar" style="width:36px; height:36px;">
-                <img src="${escapeHtml(req.avatar_url || '')}" alt="${escapeHtml(applicantName)}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(req.r_id || 'Student')}';">
+                <img src="${escapeHtml(getStudentAvatarSrc(req.avatar_url, req.r_id, applicantName))}" alt="${escapeHtml(applicantName)}" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
               </div>
               <div style="min-width:0; flex:1;">
                 <div style="font-weight:750; font-size:0.875rem; color:var(--text-white);">${escapeHtml(applicantName)}</div>

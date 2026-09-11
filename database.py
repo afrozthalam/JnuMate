@@ -272,6 +272,14 @@ def init_db():
             );
         """)
 
+        # Performance Indexes for sub-millisecond query execution
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(team_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_team_members_student_rid ON team_members(student_r_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_join_requests_team_id ON join_requests(team_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_join_requests_student_rid ON join_requests(student_r_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_r_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_teams_hackathon_type ON teams(hackathon_type);")
+
         conn.commit()
         conn.close()
         print("SQLite database initialized successfully!")

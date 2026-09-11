@@ -86,7 +86,11 @@ def build_student_search_index():
         dob = (personal.get("Date of Birth") or "N/A").strip()
         gender_clean = "Female" if "Female" in gender or "F" == gender else ("Male" if "Male" in gender or "M" == gender else "Other")
         image_urls = item.get("image_urls") or []
-        avatar_url = image_urls[0] if image_urls else f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id_key}"
+        first_img = image_urls[0] if image_urls else ""
+        if first_img and not first_img.endswith("/") and "demo/avatars" not in first_img and "SIGNATURE" not in first_img:
+            avatar_url = first_img
+        else:
+            avatar_url = None
         
         prog, sem = EDUCATION_DETAILS_MAP.get(r_id_key, (None, None))
         
@@ -746,46 +750,57 @@ def format_team_data(team_row, current_r_id=None, conn=None):
     p = get_placeholder()
     members = []
     user_status = "none"
-
     try:
-        # Query all team members with LEFT JOIN so no teammate is ever dropped
+        # Query team members directly with index lookup (sub-millisecond)
         cursor.execute(f"""
-            SELECT tm.role, tm.student_r_id, tm.joined_at,
-                   s.name, s.gender, s.dob, s.avatar_url, s.phone, s.email, s.program, s.semester_year
-            FROM team_members tm
-            LEFT JOIN students s ON UPPER(tm.student_r_id) = UPPER(s.r_id)
-            WHERE tm.team_id = {p}
-            ORDER BY CASE WHEN tm.role = 'leader' THEN 0 ELSE 1 END ASC, tm.joined_at ASC
+            SELECT role, student_r_id, joined_at
+            FROM team_members
+            WHERE team_id = {p}
+            ORDER BY CASE WHEN role = 'leader' THEN 0 ELSE 1 END ASC, joined_at ASC
         """, (t_id,))
         for r in cursor.fetchall():
             m = dict(r)
-            m_rid = (m.get("student_r_id") or m.get("r_id") or "").strip().upper()
+            m_rid = (m.get("student_r_id") or "").strip().upper()
             m["r_id"] = m_rid
 
-            # If student record is incomplete in students table, fallback to cached JSON
-            if not m.get("name") or m.get("name") == "Unknown Student":
-                json_item = STUDENT_PROFILES_MAP.get(m_rid)
-                if json_item:
-                    m["name"] = json_item.get("name") or m_rid
-                    p_det = json_item.get("personal_details", {}) or {}
-                    m["email"] = m.get("email") or p_det.get("EmailID") or f"{m_rid}@student.edu"
-                    m["gender"] = m.get("gender") or p_det.get("Gender") or "Student"
-                    m["dob"] = m.get("dob") or p_det.get("Date of Birth") or "N/A"
-                    imgs = json_item.get("image_urls") or []
-                    if imgs and not m.get("avatar_url"):
-                        m["avatar_url"] = imgs[0]
+            # Instant memory cache lookup
+            cached_s = STUDENT_CACHE_BY_RID.get(m_rid)
+            if cached_s:
+                m["name"] = cached_s.get("name") or m_rid
+                m["email"] = cached_s.get("email") or f"{m_rid}@student.edu"
+                m["gender"] = cached_s.get("gender") or "Student"
+                m["dob"] = cached_s.get("dob") or "N/A"
+                m["program"] = cached_s.get("program") or "Student"
+                m["semester_year"] = cached_s.get("semester_year") or ""
+                m["avatar_url"] = cached_s.get("avatar_url")
+            else:
+                cursor.execute(f"SELECT * FROM students WHERE r_id = {p}", (m_rid,))
+                s_row = cursor.fetchone()
+                if s_row:
+                    s_dict = dict(s_row)
+                    m["name"] = s_dict.get("name") or m_rid
+                    m["email"] = s_dict.get("email") or f"{m_rid}@student.edu"
+                    m["gender"] = s_dict.get("gender") or "Student"
+                    m["dob"] = s_dict.get("dob") or "N/A"
+                    m["program"] = s_dict.get("program") or "Student"
+                    m["semester_year"] = s_dict.get("semester_year") or ""
+                    m["avatar_url"] = s_dict.get("avatar_url")
                 else:
-                    m["name"] = m.get("name") or f"Student {m_rid}"
-                    m["gender"] = m.get("gender") or "Student"
+                    p_val, s_val = EDUCATION_DETAILS_MAP.get(m_rid, ("Student", ""))
+                    m["name"] = m_rid
+                    m["email"] = f"{m_rid}@student.edu"
+                    m["gender"] = "Student"
+                    m["dob"] = "N/A"
+                    m["program"] = p_val or "Student"
+                    m["semester_year"] = s_val or ""
+                    m["avatar_url"] = None
 
-            # Always ensure a working avatar URL
-            if not m.get("avatar_url") or "demo/avatars/1.jpg" in str(m.get("avatar_url")):
-                m["avatar_url"] = f"https://api.dicebear.com/7.x/avataaars/svg?seed={m_rid}"
-
-            if not m.get("program"):
-                prog, sem = get_student_course_details(m_rid, cursor)
-                m["program"] = prog
-                m["semester_year"] = sem
+            # Sanitize avatar URL to eliminate slow/hanging network requests
+            raw_avatar = str(m.get("avatar_url") or "").strip()
+            if not raw_avatar or raw_avatar.endswith("/") or "demo/avatars" in raw_avatar or "SIGNATURE" in raw_avatar:
+                m["avatar_url"] = None
+            else:
+                m["avatar_url"] = raw_avatar
 
             members.append(m)
 
