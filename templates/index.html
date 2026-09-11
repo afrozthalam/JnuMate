@@ -174,22 +174,20 @@
 
           <!-- Controls Bar (Search & Filters, Clean List View) -->
           <div class="forest-controls-bar agro-controls-bar">
-            <div class="agro-controls-left">
-              <div class="search-pill-wrapper agro-search-box">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                <input type="text" id="searchInput" placeholder="Search teams, ideas, skills..." class="search-pill-input" oninput="debounceDiscoverSearch()">
-              </div>
-              
+            <div class="search-pill-wrapper agro-search-box">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+              <input type="text" id="searchInput" placeholder="Search teams, ideas, skills..." class="search-pill-input" oninput="debounceDiscoverSearch()">
+            </div>
+
+            <div class="agro-controls-action-row">
               <!-- Filter Segmented Pill / Menu -->
               <div class="filter-segmented-pill agro-filter-pill">
                 <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active" data-filter="all">All</button>
                 <button onclick="setDiscoverFilter('sih')" id="btnFilterSih" class="filter-btn" data-filter="sih">SIH</button>
                 <button onclick="setDiscoverFilter('ctf')" id="btnFilterCtf" class="filter-btn" data-filter="ctf">CTF</button>
-                <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open Slots</button>
+                <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open</button>
               </div>
-            </div>
 
-            <div class="agro-controls-right">
               <!-- Mobile Create Team Button -->
               <a href="/create-team" class="btn-black-pill sm mobile-create-team-btn">
                 + Create Team

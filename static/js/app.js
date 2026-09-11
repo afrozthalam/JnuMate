@@ -2975,12 +2975,6 @@ function handleNotificationClick(notifId, link) {
   }
 }
 
-  if (link) {
-    closeNotificationsPanel();
-    navigateTo(link);
-  }
-}
-
 function markAllNotificationsAsRead() {
   fetch("/api/notifications/mark-read", {
     method: "POST",
