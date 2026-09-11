@@ -18,6 +18,7 @@ let friendSearchDebounce = null;
 let dirSearchDebounce = null;
 let seatSearchDebounce = null;
 let unreadNotificationsCount = 0;
+let postLoginRedirect = null;
 
 // Ranked Academic Programs
 const ACADEMIC_PROGRAMS = [
@@ -205,11 +206,8 @@ function handleCurrentRoute() {
       loadStudentsView();
     }
   } else if (path === "/about") {
-    const p = document.getElementById("viewAbout");
-    if (p) {
-      p.classList.add("active");
-      loadAboutView();
-    }
+    history.replaceState(null, "", "/");
+    handleCurrentRoute();
   } else {
     history.replaceState(null, "", "/");
     handleCurrentRoute();
@@ -574,6 +572,7 @@ function loadDiscoverView() {
 
 function setDiscoverFilter(type) {
   discoverFilter = type;
+  discoverCurrentPage = 1;
   document.querySelectorAll(".filter-btn, .filter-menu-item").forEach(btn => {
     if (btn.getAttribute("data-filter") === type || (type === 'all' && btn.id === 'btnFilterAll') || (type === 'open' && btn.id === 'btnFilterOpen')) {
       btn.classList.add("active");
@@ -598,12 +597,16 @@ function setDiscoverFilter(type) {
   }
 }
 
+let discoverCurrentPage = 1;
+const TEAMS_PER_PAGE = 10;
+
 function debounceDiscoverSearch() {
   clearTimeout(discoverSearchDebounce);
   discoverSearchDebounce = setTimeout(() => {
     const input = document.getElementById("searchInput");
     if (input) {
       discoverSearchTerm = input.value.trim().toLowerCase();
+      discoverCurrentPage = 1;
       if (clientCache.teamsList) {
         renderFilteredTeams(clientCache.teamsList);
       }
@@ -624,14 +627,14 @@ function renderSingleTeamCard(team) {
 
   let statusPill = "";
   if (isFull) {
-    statusPill = `<span class="status-capsule full-pill">● Full (6/6)</span>`;
+    statusPill = `<span class="status-capsule full-pill" style="font-size:0.6875rem; padding:2px 8px;">● Full (6/6)</span>`;
   } else {
-    statusPill = `<span class="status-capsule open-pill">● ${openSlots} Open Seats</span>`;
+    statusPill = `<span class="status-capsule open-pill" style="font-size:0.6875rem; padding:2px 8px;">● ${openSlots} Open Seats</span>`;
   }
 
   const hackBadgeHtml = isCtf
-    ? `<span class="hackathon-tag-pill ctf"><img src="/static/img/ctf_logo.jpg" alt="CTF"> CTF Hackathon</span>`
-    : `<span class="hackathon-tag-pill sih"><img src="/static/img/sih_logo.jpg" alt="SIH"> Smart India (SIH)</span>`;
+    ? `<span class="hackathon-tag-pill ctf" style="font-size:0.6875rem; padding:3px 9px;"><img src="/static/img/ctf_logo.jpg" alt="CTF" style="width:16px; height:16px;"> CTF Hackathon</span>`
+    : `<span class="hackathon-tag-pill sih" style="font-size:0.6875rem; padding:3px 9px;"><img src="/static/img/sih_logo.jpg" alt="SIH" style="width:16px; height:16px;"> Smart India (SIH)</span>`;
 
   // 6 Pronounced Roster Avatars: filled member avatars + empty circle avatars
   const members = team.members || [];
@@ -661,7 +664,7 @@ function renderSingleTeamCard(team) {
   return `
     <article class="team-forest-card" onclick="navigateTo('/team/${team.id}')" style="cursor:pointer;">
       <div>
-        <div class="team-card-top-row" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <div class="team-card-top-row">
           ${hackBadgeHtml}
           ${statusPill}
         </div>
@@ -674,9 +677,9 @@ function renderSingleTeamCard(team) {
         </div>
       </div>
 
-      <div class="team-card-bottom-row" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border-muted); display:flex; align-items:center; justify-content:space-between;">
-        <span class="meta-members-tag" style="font-size:0.75rem; color:var(--text-sage); font-weight:700;">${count} / 6 Members</span>
-        <span class="btn-black-pill sm">View Team ➔</span>
+      <div class="team-card-bottom-row">
+        <span class="meta-members-tag" style="font-size:0.72rem; color:var(--text-sage); font-weight:700;">${count} / 6 Members</span>
+        <span class="btn-black-pill sm" style="font-size:0.75rem; padding:5px 12px;">View Team ➔</span>
       </div>
     </article>
   `;
@@ -685,6 +688,7 @@ function renderSingleTeamCard(team) {
 function renderFilteredTeams(teams) {
   const grid = document.getElementById("teamsGridContainer");
   const emptyState = document.getElementById("emptyStateContainer");
+  const paginationContainer = document.getElementById("discoverPagination");
   if (!grid) return;
 
   if (!Array.isArray(teams)) {
@@ -714,14 +718,78 @@ function renderFilteredTeams(teams) {
   if (filtered.length === 0) {
     grid.innerHTML = "";
     if (emptyState) emptyState.style.display = "block";
+    if (paginationContainer) paginationContainer.innerHTML = "";
     return;
   }
 
   if (emptyState) emptyState.style.display = "none";
 
-  // Clean cards list/grid view across all screen sizes (No Kanban columns)
+  const totalTeams = filtered.length;
+  const totalPages = Math.ceil(totalTeams / TEAMS_PER_PAGE) || 1;
+  if (discoverCurrentPage > totalPages) {
+    discoverCurrentPage = 1;
+  }
+
+  const startIdx = (discoverCurrentPage - 1) * TEAMS_PER_PAGE;
+  const pageTeams = filtered.slice(startIdx, startIdx + TEAMS_PER_PAGE);
+
+  // Clean cards list/grid view across all screen sizes
   grid.className = "teams-kanban-board grid-mode";
-  grid.innerHTML = filtered.map(renderSingleTeamCard).join("");
+  grid.innerHTML = pageTeams.map(renderSingleTeamCard).join("");
+
+  renderDiscoverPagination(totalTeams, totalPages, discoverCurrentPage);
+}
+
+function renderDiscoverPagination(totalCount, totalPages, currentPage) {
+  const container = document.getElementById("discoverPagination");
+  if (!container) return;
+
+  if (totalCount === 0) {
+    container.innerHTML = "";
+    return;
+  }
+
+  let pageButtonsHtml = "";
+  for (let p = 1; p <= totalPages; p++) {
+    if (totalPages <= 7 || p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)) {
+      pageButtonsHtml += `
+        <button onclick="goToDiscoverPage(${p})" class="pagination-btn ${p === currentPage ? 'active' : ''}" aria-label="Page ${p}">
+          ${p}
+        </button>
+      `;
+    } else if (p === currentPage - 2 || p === currentPage + 2) {
+      pageButtonsHtml += `<span style="color:var(--text-sage); padding:0 4px; font-size:0.875rem;">…</span>`;
+    }
+  }
+
+  container.innerHTML = `
+    <div class="pagination-cluster">
+      <button onclick="goToDiscoverPage(${currentPage - 1})" class="pagination-btn" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Previous Page" title="Previous Page">
+        ‹
+      </button>
+
+      ${pageButtonsHtml}
+
+      <button onclick="goToDiscoverPage(${currentPage + 1})" class="pagination-btn" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Next Page" title="Next Page">
+        ›
+      </button>
+
+      <span class="pagination-info-tag">
+        Page ${currentPage} of ${totalPages} (${totalCount} teams)
+      </span>
+    </div>
+  `;
+}
+
+function goToDiscoverPage(pageNumber) {
+  discoverCurrentPage = pageNumber;
+  if (clientCache.teamsList) {
+    renderFilteredTeams(clientCache.teamsList);
+  }
+  const grid = document.getElementById("teamsGridContainer");
+  if (grid) {
+    grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }
 
 function updateLeaderboardWidget(teams) {
@@ -1696,13 +1764,8 @@ function loadCreateTeamView() {
   if (!container) return;
 
   if (!currentUser) {
-    container.innerHTML = `
-      <div class="form-card-centered" style="text-align:center;">
-        <h2 class="font-serif" style="font-size:1.625rem; margin-bottom:8px;">Sign In Required</h2>
-        <p style="color:var(--text-sage); margin-bottom:20px;">Sign in with your College R-ID to create and publish a hackathon team.</p>
-        <a href="/login" class="btn-black-pill lg" style="width:100%;">Sign In with R-ID</a>
-      </div>
-    `;
+    postLoginRedirect = "/create-team";
+    navigateTo("/login");
     return;
   }
 
@@ -2371,72 +2434,33 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   const avatarSrc = getStudentAvatarSrc(rawAvatar, student.r_id);
   const cleanName = (student.name || student.r_id || "Student").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
   const displayEmail = targetEmail || student.email || `${student.r_id}@student.edu`;
-  const isMobile = window.innerWidth <= 768;
-
-  if (isMobile) {
-    spotlightContainer.innerHTML = `
-      <div class="auth-profile-spotlight" style="display:flex; align-items:center; text-align:left; gap:12px; padding:10px 12px; margin-bottom:10px; background:rgba(0,0,0,0.25); border-radius:var(--radius-lg); border:1px solid rgba(255,255,255,0.1);">
-        <div class="auth-avatar-large" style="width:44px; height:44px; margin:0; flex-shrink:0;">
-          <img src="${escapeHtml(avatarSrc)}" 
-               data-raw-src="${escapeHtml(rawAvatar)}" 
-               alt="${escapeHtml(cleanName)}" 
-               loading="lazy" 
-               style="width:100%; height:100%; border-radius:50%; object-fit:cover;"
-               onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
-        </div>
-        <div style="min-width:0; flex:1;">
-          <div style="font-weight:750; font-size:1rem; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            ${escapeHtml(cleanName)}
-          </div>
-          <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
-            <span class="student-rid-badge" style="font-size:0.6875rem; padding:1px 6px;">@${escapeHtml(student.r_id)}</span>
-            <span class="status-capsule member" style="font-size:0.625rem; padding:1px 6px;">${escapeHtml(student.program || 'Student')}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="auth-otp-target-banner" style="padding:8px 12px; margin-bottom:12px; border-radius:var(--radius-md); font-size:0.75rem; background:rgba(62,168,108,0.12); border:1px solid rgba(62,168,108,0.3);">
-        <div style="font-size:0.6875rem; color:var(--badge-mint); font-weight:800; text-transform:uppercase;">
-          Code Sent To:
-        </div>
-        <div class="auth-otp-target-email" style="font-size:0.875rem; font-weight:750; color:var(--text-white);">${escapeHtml(displayEmail)}</div>
-      </div>
-    `;
-    return;
-  }
+  const program = student.program || "Student";
+  const metaParts = [];
+  if (student.dob && student.dob !== 'N/A') metaParts.push(`DOB: ${student.dob}`);
+  if (student.gender) metaParts.push(student.gender);
+  const metaText = metaParts.join(" • ");
 
   spotlightContainer.innerHTML = `
-    <div class="auth-profile-spotlight">
-      <div class="auth-avatar-large">
-        <img src="${escapeHtml(avatarSrc)}" 
-             data-raw-src="${escapeHtml(rawAvatar)}" 
-             alt="${escapeHtml(cleanName)}" 
-             loading="lazy" 
-             decoding="async" 
-             onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
-      </div>
-      <h2 class="font-serif" style="font-size:1.375rem; color:var(--text-white); margin-bottom:4px;">
-        ${escapeHtml(cleanName)}
-      </h2>
-      <div style="display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-        <span class="student-rid-badge">@${escapeHtml(student.r_id)}</span>
-        <span class="status-capsule member" style="font-size:0.6875rem;">${escapeHtml(student.program || 'Student')}</span>
-        ${student.semester ? `<span style="font-size:0.75rem; color:var(--text-sage); font-weight:600;">• ${escapeHtml(student.semester)}</span>` : ''}
-      </div>
-      <div style="font-size:0.8125rem; color:var(--text-sage); display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap;">
-        ${student.dob && student.dob !== 'N/A' ? `<span>DOB: ${escapeHtml(student.dob)}</span>` : ''}
-        ${student.gender ? `<span>• ${escapeHtml(student.gender)}</span>` : ''}
+    <div class="auth-compact-spotlight">
+      <img src="${escapeHtml(avatarSrc)}" 
+           data-raw-src="${escapeHtml(rawAvatar)}" 
+           alt="${escapeHtml(cleanName)}" 
+           class="auth-compact-avatar"
+           loading="lazy"
+           onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+      <div class="auth-compact-meta">
+        <div class="auth-compact-name">${escapeHtml(cleanName)}</div>
+        <div class="auth-compact-badges">
+          <span class="student-rid-badge" style="font-size:0.6875rem; padding:1px 7px;">@${escapeHtml(student.r_id)}</span>
+          <span class="status-capsule member" style="font-size:0.625rem; padding:1px 7px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(program)}</span>
+          ${metaText ? `<span style="font-size:0.6875rem; color:var(--text-sage);">${escapeHtml(metaText)}</span>` : ""}
+        </div>
       </div>
     </div>
 
-    <div class="auth-otp-target-banner">
-      <div style="font-size:0.72rem; color:var(--badge-mint); font-weight:800; text-transform:uppercase; letter-spacing:0.06em;">
-        Verification Code Dispatched To:
-      </div>
-      <div class="auth-otp-target-email">${escapeHtml(displayEmail)}</div>
-      <div style="font-size:0.75rem; color:var(--text-sage); margin-top:4px;">
-        Please check your inbox and spam folder for your 6-digit verification code.
-      </div>
+    <div class="auth-compact-email-pill">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:13px; height:13px; color:var(--badge-mint); flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+      <span>Sent to: <strong style="color:#FFFFFF;">${escapeHtml(displayEmail)}</strong></span>
     </div>
   `;
 }
@@ -2448,6 +2472,12 @@ function loadLoginView() {
   pendingRegistrationData = null;
   pendingStudentProfile = null;
   clearInterval(resendTimerInterval);
+
+  const isCreateTeamIntent = postLoginRedirect === "/create-team";
+  const authSupText = isCreateTeamIntent ? "Team Leader Authorization" : "Official Hackathon Portal";
+  const authMainTitle = isCreateTeamIntent ? "Sign In to Create Team" : "Sign In to JnuMate";
+  const authSubText = isCreateTeamIntent ? "Verify your College R-ID to lead a 6-seat hackathon squad and invite teammates." : "Find teammates, build 6-seat dream teams, and win hackathons!";
+  const btnActionText = isCreateTeamIntent ? "Sign In & Continue ➔" : "Sign In ➔";
 
   const courseOptionsHtml = ACADEMIC_PROGRAMS.map(p => `
     <option value="${escapeAttr(p)}">${escapeHtml(p)}</option>
@@ -2462,25 +2492,31 @@ function loadLoginView() {
           <img src="/static/img/jnu_logo.png" alt="Jaipur National University Logo" class="jnu-signin-logo" onerror="this.src='/static/img/jnu_logo.jpg';">
         </div>
 
-        <div class="greeting-sup-text" style="color:var(--badge-yellow);">Official Hackathon Portal</div>
-        <h1 class="font-serif" style="font-size:1.875rem; margin-bottom:6px;">Sign In to JnuMate</h1>
-        <p style="color:var(--text-sage); font-size:0.875rem; margin-bottom:28px;">Find teammates, build 6-seat dream teams, and win hackathons!</p>
+        <div class="greeting-sup-text" id="authPortalSupText" style="color:var(--badge-yellow);">${escapeHtml(authSupText)}</div>
+        <h1 class="font-serif" id="authPortalMainTitle" style="font-size:1.875rem; margin-bottom:6px;">${escapeHtml(authMainTitle)}</h1>
+        <p id="authPortalSubtext" style="color:var(--text-sage); font-size:0.875rem; margin-bottom:20px;">${escapeHtml(authSubText)}</p>
+
+        ${isCreateTeamIntent ? `
+          <div id="authCreateTeamBanner" style="display:inline-flex; align-items:center; gap:6px; background:rgba(62,168,108,0.15); border:1px solid rgba(62,168,108,0.3); border-radius:var(--radius-pill); padding:4px 12px; margin-bottom:18px; font-size:0.75rem; color:var(--badge-mint); font-weight:750;">
+            <span>🛡️</span> Team Leader Verification Required
+          </div>
+        ` : ''}
 
         <!-- Step 1: Input R-ID -->
         <div id="authStep1">
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom:16px;">
             <label class="form-label-forest" style="text-align:left;">College R-ID</label>
             <input type="text" id="authRidInput" placeholder="e.g. R15006" class="input-forest" style="font-weight:750; text-transform:uppercase; font-size:1.125rem; letter-spacing:0.04em; text-align:center;" onkeyup="if(event.key==='Enter') submitInitialRid()">
           </div>
 
           <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-black-pill lg" style="width:100%;">
-            Sign In ➔
+            ${btnActionText}
           </button>
         </div>
 
         <!-- Step 1B: Fallback when campus database is offline -->
         <div id="authStepSyncNotice" style="display:none; text-align:left;">
-          <div style="text-align:center; margin-bottom:18px;">
+          <div style="text-align:center; margin-bottom:14px;">
             <div class="auth-empty-avatar" title="No profile photo available">
               <img src="${INSTAGRAM_EMPTY_AVATAR}" alt="No profile photo" style="width:100%; height:100%; border-radius:50%;">
             </div>
@@ -2489,11 +2525,11 @@ function loadLoginView() {
             </span>
           </div>
 
-          <div style="background:rgba(242,169,34,0.12); border:1px solid rgba(242,169,34,0.3); border-radius:var(--radius-lg); padding:12px 16px; margin-bottom:18px; font-size:0.8125rem; color:#FFD479; line-height:1.45; text-align:center;">
+          <div style="background:rgba(242,169,34,0.12); border:1px solid rgba(242,169,34,0.3); border-radius:var(--radius-lg); padding:10px 14px; margin-bottom:14px; font-size:0.8125rem; color:#FFD479; line-height:1.45; text-align:center;">
             Server couldn't connect to campus database. Please complete your registration details manually to continue.
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px;">
+          <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
             <div>
               <label class="form-label-forest">Full Name *</label>
               <input type="text" id="syncNameInput" placeholder="Your full name as per college ID" class="input-forest">
@@ -2516,29 +2552,29 @@ function loadLoginView() {
             Send Verification Code
           </button>
 
-          <button onclick="showAuthStep(1)" class="btn-outline-pill" style="width:100%; margin-top:10px;">
+          <button onclick="showAuthStep(1)" class="btn-outline-pill" style="width:100%; margin-top:8px;">
             ← Change R-ID
           </button>
         </div>
 
-        <!-- Step 2: OTP Verification with Full Profile Spotlight -->
+        <!-- Step 2: Compact Zero-Scroll OTP Verification with Profile Spotlight -->
         <div id="authStep2" style="display:none;">
           <div id="authStep2ProfileSpotlight"></div>
 
-          <div class="form-group">
-            <label class="form-label-forest" style="text-align:center;">Enter 6-Digit Verification Code</label>
-            <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" class="input-forest" style="height:56px; font-size:1.75rem; font-weight:800; text-align:center; letter-spacing:0.35em;" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label-forest" style="text-align:center; margin-bottom:6px; font-size:0.75rem;">Enter 6-Digit Verification Code</label>
+            <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" class="input-forest" style="height:48px; font-size:1.6rem; font-weight:800; text-align:center; letter-spacing:0.35em;" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
           </div>
 
-          <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-black-pill lg" style="width:100%;">
+          <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-black-pill lg" style="width:100%; height:44px; font-size:0.9375rem;">
             Verify & Sign In ➔
           </button>
 
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px;">
-            <button type="button" id="btnResendOtp" onclick="handleResendOtp()" style="font-size:0.8125rem; color:var(--badge-yellow); font-weight:700;" disabled>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px;">
+            <button type="button" id="btnResendOtp" onclick="handleResendOtp()" style="font-size:0.78rem; color:var(--badge-yellow); font-weight:700; background:none; border:none; cursor:pointer;" disabled>
               Resend Code (<span id="resendCountdown">30</span>s)
             </button>
-            <button type="button" onclick="showAuthStep(1)" style="font-size:0.8125rem; color:var(--text-sage); font-weight:700;">
+            <button type="button" onclick="showAuthStep(1)" style="font-size:0.78rem; color:var(--text-sage); font-weight:700; background:none; border:none; cursor:pointer;">
               ← Change R-ID
             </button>
           </div>
@@ -2554,23 +2590,24 @@ function showAuthStep(step) {
   const sSync = document.getElementById("authStepSyncNotice");
   const s2 = document.getElementById("authStep2");
   const logoBox = document.querySelector(".login-jnu-logo-box");
-  const cardTitle = document.querySelector(".login-editorial-card h1");
-  const cardSub = document.querySelector(".login-editorial-card p");
-  const cardSup = document.querySelector(".greeting-sup-text");
+  const cardTitle = document.getElementById("authPortalMainTitle") || document.querySelector(".login-editorial-card h1");
+  const cardSub = document.getElementById("authPortalSubtext") || document.querySelector(".login-editorial-card p");
+  const cardSup = document.getElementById("authPortalSupText") || document.querySelector(".greeting-sup-text");
+  const bannerIntent = document.getElementById("authCreateTeamBanner");
 
-  const isMobile = window.innerWidth <= 768;
-  if (isMobile) {
-    if (logoBox) logoBox.style.display = step === 2 ? "none" : "";
-    if (cardTitle) cardTitle.style.display = step === 2 ? "none" : "";
-    if (cardSub) cardSub.style.display = step === 2 ? "none" : "";
-    if (cardSup) cardSup.style.display = step === 2 ? "none" : "";
-  }
+  const isOtpStep = step === 2;
+  // Always hide top elements on step 2 across all screen sizes for zero vertical scrolling
+  if (logoBox) logoBox.style.display = isOtpStep ? "none" : "";
+  if (cardTitle) cardTitle.style.display = isOtpStep ? "none" : "";
+  if (cardSub) cardSub.style.display = isOtpStep ? "none" : "";
+  if (cardSup) cardSup.style.display = isOtpStep ? "none" : "";
+  if (bannerIntent) bannerIntent.style.display = isOtpStep ? "none" : "";
 
   if (s1) s1.style.display = step === 1 ? "block" : "none";
   if (sSync) sSync.style.display = step === 'sync' ? "block" : "none";
   if (s2) {
-    s2.style.display = step === 2 ? "block" : "none";
-    if (step === 2) {
+    s2.style.display = isOtpStep ? "block" : "none";
+    if (isOtpStep) {
       startResendTimer();
       setTimeout(() => {
         const input = document.getElementById("otpCodeInput");
@@ -2819,7 +2856,11 @@ function verifyEmailOtpCode() {
         showToast("Signed in successfully!", "success");
 
         try {
-          if (data.needs_program) {
+          if (postLoginRedirect) {
+            const redirectDest = postLoginRedirect;
+            postLoginRedirect = null;
+            navigateTo(redirectDest);
+          } else if (data.needs_program) {
             showCoursePickerModal();
           } else {
             navigateTo("/profile");

@@ -50,11 +50,11 @@
           </div>
         </a>
 
-        <!-- Center: Refined Pill Capsule Navigation (Discover & About) -->
-        <nav class="desktop-nav-capsule">
-          <a href="/" class="nav-capsule-link active" data-path="/">Discover</a>
-          <a href="/about" class="nav-capsule-link" data-path="/about">About</a>
-        </nav>
+        <!-- Center: Top Header Title & Pitch -->
+        <div class="desktop-top-header-center">
+          <h1 class="top-nav-discover-title">Discover Teams</h1>
+          <p class="top-nav-discover-sub">Find teammates for your team, or join any open hackathon squad.</p>
+        </div>
 
         <!-- Right: Notifications & Profile with Floating Dropdown Windows -->
         <div class="desktop-top-right-cluster">
@@ -126,12 +126,6 @@
                 </a>
               </li>
               <li>
-                <a href="/about" class="sidebar-nav-item" data-path="/about">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-                  <span>About</span>
-                </a>
-              </li>
-              <li>
                 <a href="/profile" class="sidebar-nav-item" data-path="/profile">
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                   <span>Profile</span>
@@ -151,20 +145,6 @@
         <!-- VIEW 1: DISCOVER TEAMS -->
         <section id="viewDiscover" class="view-page-panel active">
           
-          <!-- Desktop Editorial Header (AgroControl UI Architecture) -->
-          <div class="agro-header-row desktop-only-flex">
-            <div>
-              <h1 class="agro-main-title">Discover Teams</h1>
-              <p class="agro-subtitle-text">Find teammates for your team, or join any open hackathon squad.</p>
-            </div>
-            <div>
-              <a href="/create-team" class="btn-agro-yellow-pill">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:18px; height:18px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                <span>Create Team</span>
-              </a>
-            </div>
-          </div>
-
           <!-- Mobile Editorial Header (Short & Beautiful) -->
           <div class="forest-header-section home-header-compact mobile-only-block">
             <div class="home-header-title-box">
@@ -172,31 +152,36 @@
             </div>
           </div>
 
-          <!-- Controls Bar (Search & Filters, Clean List View) -->
-          <div class="forest-controls-bar agro-controls-bar">
-            <div class="search-pill-wrapper agro-search-box">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-              <input type="text" id="searchInput" placeholder="Search teams, ideas, skills..." class="search-pill-input" oninput="debounceDiscoverSearch()">
+          <!-- Unified Controls Bar: Left Filter | Center Search | Right Create Team -->
+          <div class="homescreen-unified-controls-bar">
+            <!-- Left: Filter Segmented Pill with All, SIH, CTF, Open Slots -->
+            <div class="filter-segmented-pill homescreen-filter-pill">
+              <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active" data-filter="all">All</button>
+              <button onclick="setDiscoverFilter('sih')" id="btnFilterSih" class="filter-btn" data-filter="sih">SIH</button>
+              <button onclick="setDiscoverFilter('ctf')" id="btnFilterCtf" class="filter-btn" data-filter="ctf">CTF</button>
+              <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open Slots</button>
             </div>
 
-            <div class="agro-controls-action-row">
-              <!-- Filter Segmented Pill / Menu -->
-              <div class="filter-segmented-pill agro-filter-pill">
-                <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active" data-filter="all">All</button>
-                <button onclick="setDiscoverFilter('sih')" id="btnFilterSih" class="filter-btn" data-filter="sih">SIH</button>
-                <button onclick="setDiscoverFilter('ctf')" id="btnFilterCtf" class="filter-btn" data-filter="ctf">CTF</button>
-                <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open</button>
-              </div>
+            <!-- Center: Search Input -->
+            <div class="search-pill-wrapper homescreen-search-box">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+              <input type="text" id="searchInput" placeholder="Search teams, ideas, skills, R-IDs..." class="search-pill-input" oninput="debounceDiscoverSearch()">
+            </div>
 
-              <!-- Mobile Create Team Button -->
-              <a href="/create-team" class="btn-black-pill sm mobile-create-team-btn">
-                + Create Team
+            <!-- Right: Create Team Button -->
+            <div class="homescreen-create-action">
+              <a href="/create-team" class="btn-agro-yellow-pill">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px; height:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                <span>Create Team</span>
               </a>
             </div>
           </div>
 
-          <!-- Teams Grid / Kanban Columns -->
+          <!-- Teams Grid Cards Container -->
           <div id="teamsGridContainer" class="teams-kanban-board"></div>
+
+          <!-- Pagination Controls -->
+          <div id="discoverPagination" class="discover-pagination-wrapper"></div>
 
           <!-- Empty State -->
           <div id="emptyStateContainer" style="display:none; text-align:center; padding:60px 20px;">
@@ -206,6 +191,78 @@
               + Create New Team
             </a>
           </div>
+
+          <!-- Informative Footer & Quick-Guide (Afroz Alam) -->
+          <footer class="homescreen-editorial-footer" id="homescreenFooter">
+            <!-- Diagrammatic 4-Step Quick Walkthrough -->
+            <div class="footer-guide-section">
+              <div class="footer-guide-header">
+                <span class="greeting-sup-text" style="color:var(--badge-mint);">Quick Walkthrough</span>
+                <h2 class="font-serif" style="font-size:1.75rem; color:#FFFFFF; margin:4px 0 6px;">How JnuMate Works</h2>
+                <p style="font-size:0.875rem; color:var(--text-sage); margin:0;">4 easy steps to find teammates, build balanced squads, and compete.</p>
+              </div>
+
+              <div class="diagrammatic-flow-grid">
+                <!-- Step 1 -->
+                <div class="diagram-step-card">
+                  <div class="diagram-step-badge">01</div>
+                  <div class="diagram-step-icon">🪪</div>
+                  <h3 class="diagram-step-title">Enter College R-ID</h3>
+                  <p class="diagram-step-desc">Instant verification with your verified student record. No passwords to remember.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="diagram-step-card">
+                  <div class="diagram-step-badge">02</div>
+                  <div class="diagram-step-icon">🔍</div>
+                  <h3 class="diagram-step-title">Explore Hackathons</h3>
+                  <p class="diagram-step-desc">Filter squads by Smart India Hackathon (SIH) or Capture The Flag (CTF) challenges.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="diagram-step-card">
+                  <div class="diagram-step-badge">03</div>
+                  <div class="diagram-step-icon">🤝</div>
+                  <h3 class="diagram-step-title">Join or Assemble</h3>
+                  <p class="diagram-step-desc">1-click apply to any open roster slot or launch and lead your own 6-seat team.</p>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="diagram-step-card">
+                  <div class="diagram-step-badge">04</div>
+                  <div class="diagram-step-icon">💬</div>
+                  <h3 class="diagram-step-title">Coordinate on WhatsApp</h3>
+                  <p class="diagram-step-desc">Direct group chat link for confirmed teammates to coordinate standups and code.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Creator Spotlight & Contact Bar -->
+            <div class="footer-creator-bar">
+              <div class="creator-left-lockup">
+                <img src="/static/img/jnu_logo.png" alt="JNU Logo" class="footer-jnu-crest">
+                <div>
+                  <div class="creator-signature">
+                    Designed & Built with ❤️ by <span class="creator-name-glow">Afroz Alam</span>
+                  </div>
+                  <div class="creator-subtext">
+                    For any queries, bug reports, feature requests, or project collaborations, feel free to email me.
+                  </div>
+                </div>
+              </div>
+
+              <div class="creator-contact-links">
+                <a href="mailto:inbox.afrozalam@gmail.com" class="footer-contact-pill" title="Send Email">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                  <span>inbox.afrozalam@gmail.com</span>
+                </a>
+                <a href="https://github.com/afrozthalam" target="_blank" rel="noopener noreferrer" class="footer-contact-pill github" title="GitHub Profile">
+                  <svg fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+                  <span>GitHub</span>
+                </a>
+              </div>
+            </div>
+          </footer>
         </section>
 
         <!-- VIEW 2: TEAM DETAIL -->
@@ -232,12 +289,6 @@
         <section id="viewStudents" class="view-page-panel">
           <div id="studentsViewContainer"></div>
         </section>
-
-        <!-- VIEW 7: ABOUT PAGE & QUICK GUIDE (AFROZ ALAM) -->
-        <section id="viewAbout" class="view-page-panel">
-          <div id="aboutViewContainer"></div>
-        </section>
-
       </main>
 
       <!-- ================= RIGHT WIDGET COLUMN (DESKTOP) ================= -->
@@ -300,10 +351,6 @@
         <a href="/create-team" class="drawer-nav-link" onclick="closeMobileDrawer()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
           <span>Create Team</span>
-        </a>
-        <a href="/about" class="drawer-nav-link" onclick="closeMobileDrawer()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-          <span>About JnuMate</span>
         </a>
         <a href="/profile" id="drawerProfileLink" class="drawer-nav-link" onclick="closeMobileDrawer()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>

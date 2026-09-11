@@ -553,8 +553,8 @@ h1, h2, h3, h4, .font-serif {
   background: #FFFFFF;
   color: #111827;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: var(--radius-xl);
-  padding: 18px 20px;
+  border-radius: 16px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -566,53 +566,53 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .team-forest-card:hover, .team-card-forest:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.16), 0 0 0 1.5px rgba(60, 166, 106, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.14), 0 0 0 1.5px rgba(60, 166, 106, 0.35);
 }
 
 .team-card-top-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   position: relative;
   z-index: 2;
 }
 
 .team-card-title {
   font-family: var(--font-serif);
-  font-size: 1.1875rem;
+  font-size: 1.0625rem;
   font-weight: 800;
   color: #0B2B1B;
-  margin-bottom: 5px;
-  line-height: 1.3;
+  margin-bottom: 4px;
+  line-height: 1.25;
   letter-spacing: -0.015em;
 }
 
 .team-card-pitch {
-  font-size: 0.8125rem;
+  font-size: 0.78rem;
   color: #4B5563;
-  line-height: 1.5;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 /* 6-Roster Compact Pronounced Avatars Row */
 .team-card-roster-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 5px;
+  margin-bottom: 10px;
   flex-wrap: nowrap;
   overflow: hidden;
 }
 
 .roster-avatar-item {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--radius-pill);
   position: relative;
   transition: transform 0.18s ease;
@@ -2821,37 +2821,30 @@ textarea.input-forest {
   flex-direction: column;
 }
 
-.desktop-nav-capsule {
+.desktop-top-header-center {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-pill);
-  padding: 4px 6px;
+  justify-content: center;
+  text-align: center;
 }
 
-.nav-capsule-link {
-  text-decoration: none;
-  font-size: 0.9375rem;
-  font-weight: 650;
-  color: var(--text-sage);
-  padding: 8px 24px;
-  border-radius: var(--radius-pill);
-  transition: all var(--trans-fast);
+.top-nav-discover-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 750;
+  color: #FFFFFF;
+  line-height: 1.15;
+  margin: 0 0 2px 0;
+  letter-spacing: -0.015em;
 }
 
-.nav-capsule-link:hover {
-  color: var(--text-white);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.nav-capsule-link.active {
-  background: #FFFFFF;
-  color: #0B2B1B;
-  font-weight: 800;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+.top-nav-discover-sub {
+  font-size: 0.78rem;
+  color: var(--text-sage-light);
+  margin: 0;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .desktop-top-right-cluster {
@@ -3086,29 +3079,29 @@ textarea.input-forest {
   color: #1A2E05;
 }
 
-/* AgroControl Controls Bar */
-.agro-controls-bar {
+/* Homescreen Unified Controls Bar: Left Filter | Center Search | Right Create Team */
+.homescreen-unified-controls-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 22px;
   gap: 16px;
-}
-
-.agro-search-box {
-  max-width: 380px;
   width: 100%;
 }
 
-.agro-controls-action-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.homescreen-filter-pill {
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
-.agro-filter-pill {
-  background: rgba(0, 0, 0, 0.32);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.homescreen-search-box {
+  flex: 1;
+  max-width: 480px;
+}
+
+.homescreen-create-action {
+  flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -3120,8 +3113,8 @@ textarea.input-forest {
 
 .teams-kanban-board.grid-mode, .teams-kanban-board {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 16px;
 }
 
 /* REDESIGNED VIVID HACKATHON BADGES */
@@ -3387,58 +3380,52 @@ textarea.input-forest {
     display: none !important;
   }
 
-  /* REQUEST 2: MOBILE CONTROLS BAR: SEARCH TOP + FILTER & CREATE TEAM ON SAME ROW */
-  .agro-controls-bar {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
+  /* HOMESCREEN UNIFIED CONTROLS BAR ON MOBILE (Search top, Filter & Create Team in row 2) */
+  .homescreen-unified-controls-bar {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    gap: 10px !important;
     margin-bottom: 18px !important;
   }
 
-  .agro-search-box {
+  .homescreen-search-box {
+    grid-column: 1 / -1 !important;
     max-width: 100% !important;
     width: 100% !important;
   }
 
-  .agro-controls-action-row {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    width: 100% !important;
-    gap: 8px !important;
-  }
-
-  .agro-filter-pill {
+  .homescreen-filter-pill {
+    grid-column: 1 !important;
     display: inline-flex !important;
     padding: 3px !important;
     gap: 2px !important;
   }
 
-  .agro-filter-pill .filter-btn {
-    padding: 6px 10px !important;
-    font-size: 0.75rem !important;
+  .homescreen-filter-pill .filter-btn {
+    padding: 5px 8px !important;
+    font-size: 0.7rem !important;
   }
 
-  .mobile-create-team-btn {
-    display: inline-flex !important;
+  .homescreen-create-action {
+    grid-column: 2 !important;
+    display: flex !important;
     align-items: center !important;
-    justify-content: center !important;
-    white-space: nowrap !important;
-    font-size: 0.8125rem !important;
-    padding: 7px 14px !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  .homescreen-create-action .btn-agro-yellow-pill {
+    padding: 7px 13px !important;
+    font-size: 0.78rem !important;
   }
 
   /* Responsive Clean Team Cards on Mobile */
   .teams-kanban-board, .teams-kanban-board.grid-mode {
     grid-template-columns: 1fr !important;
-    gap: 14px !important;
+    gap: 12px !important;
   }
 
   .team-forest-card {
-    padding: 16px 16px !important;
-    border-radius: var(--radius-xl) !important;
+    padding: 13px 14px !important;
+    border-radius: 14px !important;
   }
 
   .home-header-compact {
@@ -3450,75 +3437,364 @@ textarea.input-forest {
     line-height: 1.3 !important;
   }
 
-  /* REQUEST 3: MOBILE LOGIN & OTP VIEW REFINEMENT - ZERO SCROLLING */
+  /* ZERO-SCROLL MOBILE LOGIN & OTP VIEW */
   .login-screen-wrap {
     min-height: auto !important;
-    padding: 4px 0 !important;
+    padding: 10px 0 !important;
     margin: 0 !important;
     width: 100% !important;
   }
 
   .login-editorial-card {
-    padding: 18px 16px !important;
+    padding: 16px 16px !important;
     border-radius: 20px !important;
     margin: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
   }
 
   .login-jnu-logo-box {
-    width: 44px !important;
-    height: 44px !important;
-    margin: 0 auto 8px !important;
+    width: 42px !important;
+    height: 42px !important;
+    margin: 0 auto 6px !important;
   }
 
-  .login-editorial-card h1 {
-    font-size: 1.3rem !important;
-    margin-bottom: 2px !important;
-  }
-
-  .login-editorial-card p {
-    font-size: 0.78rem !important;
-    margin-bottom: 14px !important;
-  }
-
-  .auth-profile-spotlight {
-    display: flex !important;
-    align-items: center !important;
-    text-align: left !important;
-    gap: 12px !important;
-    padding: 10px 12px !important;
+  .auth-compact-spotlight {
+    padding: 8px 10px !important;
     margin-bottom: 10px !important;
-    border-radius: 14px !important;
   }
 
-  .auth-avatar-large {
-    width: 44px !important;
-    height: 44px !important;
-    margin: 0 !important;
-    flex-shrink: 0 !important;
+  .auth-compact-avatar {
+    width: 40px !important;
+    height: 40px !important;
   }
 
-  .auth-profile-spotlight h2 {
-    font-size: 1rem !important;
-    margin-bottom: 2px !important;
+  .auth-compact-name {
+    font-size: 0.9375rem !important;
   }
 
-  .auth-otp-target-banner {
-    padding: 8px 12px !important;
-    margin-bottom: 12px !important;
-    border-radius: 12px !important;
-    font-size: 0.78rem !important;
-  }
-
-  .auth-otp-target-banner .auth-otp-target-email {
-    font-size: 0.875rem !important;
-    margin: 2px 0 !important;
+  .auth-compact-email-pill {
+    padding: 5px 10px !important;
+    font-size: 0.72rem !important;
+    margin-bottom: 10px !important;
   }
 
   #otpCodeInput {
-    height: 48px !important;
-    font-size: 1.5rem !important;
-    letter-spacing: 0.25em !important;
-    margin-bottom: 8px !important;
+    height: 44px !important;
+    font-size: 1.35rem !important;
+    letter-spacing: 0.22em !important;
+    margin-bottom: 4px !important;
   }
+
+  .footer-creator-bar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+  }
+}
+
+/* ==========================================================================
+   17. HOMESCREEN PAGINATION, EDITORIAL FOOTER & ZERO-SCROLL AUTH STYLES
+   ========================================================================== */
+.discover-pagination-wrapper {
+  margin: 28px 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(10, 35, 22, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-pill);
+  padding: 6px 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.pagination-info-tag {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-sage);
+  padding: 0 10px;
+}
+
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-white);
+  border: 1px solid transparent;
+  font-size: 0.84rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+
+.pagination-btn.active {
+  background: #FACC15;
+  color: #1A2E05;
+  border-color: #FACC15;
+  box-shadow: 0 2px 8px rgba(250, 204, 21, 0.35);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Homescreen Editorial Footer */
+.homescreen-editorial-footer {
+  margin-top: 36px;
+  padding-top: 36px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer-guide-section {
+  margin-bottom: 32px;
+}
+
+.footer-guide-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.diagrammatic-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.diagram-step-card {
+  background: rgba(14, 46, 29, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+  padding: 18px 16px;
+  position: relative;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.diagram-step-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(62, 168, 108, 0.4);
+  background: rgba(18, 56, 36, 0.85);
+}
+
+.diagram-step-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--badge-mint);
+  background: rgba(62, 168, 108, 0.15);
+  border: 1px solid rgba(62, 168, 108, 0.3);
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+}
+
+.diagram-step-icon {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.diagram-step-title {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 750;
+  color: #FFFFFF;
+  margin-bottom: 5px;
+}
+
+.diagram-step-desc {
+  font-size: 0.78rem;
+  color: var(--text-sage);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.footer-creator-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 0 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.creator-left-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-jnu-crest {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  flex-shrink: 0;
+}
+
+.creator-signature {
+  font-size: 0.875rem;
+  font-weight: 650;
+  color: var(--text-white);
+}
+
+.creator-name-glow {
+  color: #FACC15;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.creator-subtext {
+  font-size: 0.72rem;
+  color: var(--text-sage);
+  margin-top: 2px;
+}
+
+.creator-contact-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.footer-contact-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-white);
+  font-size: 0.78rem;
+  font-weight: 650;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.footer-contact-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.footer-contact-pill svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Zero-Scroll Compact Login & OTP Styles */
+.login-screen-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  padding: 10px;
+  width: 100%;
+}
+
+.login-editorial-card {
+  background: rgba(12, 42, 26, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-2xl);
+  padding: 22px 26px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.login-jnu-logo-box {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 8px;
+}
+
+.jnu-signin-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.auth-compact-spotlight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xl);
+  margin-bottom: 10px;
+}
+
+.auth-compact-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--badge-mint);
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(62, 168, 108, 0.3);
+}
+
+.auth-compact-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.auth-compact-name {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  font-weight: 750;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.auth-compact-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.auth-compact-email-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(62, 168, 108, 0.12);
+  border: 1px solid rgba(62, 168, 108, 0.3);
+  font-size: 0.75rem;
+  color: var(--text-white);
+  margin-bottom: 12px;
 }
