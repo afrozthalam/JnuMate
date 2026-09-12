@@ -48,6 +48,33 @@ const ACADEMIC_PROGRAMS = [
   "Other Academic Program"
 ];
 
+// Deterministic Academic Year and Admission Batch inference based on College R-ID ranges
+function getAcademicYearByRid(studentId) {
+  if (!studentId) return "Student";
+  const digits = String(studentId).replace(/\D/g, '');
+  if (!digits) return "Student";
+  const num = parseInt(digits, 10);
+  if (isNaN(num)) return "Student";
+  if (num <= 42260) return "Passed Out Student";
+  if (num <= 50190) return "Final Year Student";
+  if (num <= 54323) return "3rd Year Student";
+  if (num <= 59643) return "2nd Year Student";
+  return "1st Year Student";
+}
+
+function getAdmissionYearByRid(studentId) {
+  if (!studentId) return "";
+  const digits = String(studentId).replace(/\D/g, '');
+  if (!digits) return "";
+  const num = parseInt(digits, 10);
+  if (isNaN(num)) return "";
+  if (num <= 42260) return "Prior to 2023";
+  if (num <= 50190) return "2023";
+  if (num <= 54323) return "2024";
+  if (num <= 59643) return "2025";
+  return "2026";
+}
+
 // In-Memory Client Cache for Instant (0ms) Navigation
 const clientCache = {
   teamsList: null,
@@ -351,10 +378,6 @@ function renderNavUserSlots() {
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
             <span>Create / Manage Squad</span>
           </a>
-          <button type="button" onclick="closeDesktopDropdowns(); showCoursePickerModal();" class="desktop-menu-item">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"/></svg>
-            <span>Change Degree / Program</span>
-          </button>
           <div class="desktop-menu-divider"></div>
           <button type="button" onclick="closeDesktopDropdowns(); logoutUser();" class="desktop-menu-item danger">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
@@ -1654,7 +1677,13 @@ function renderFullProfile(prof, userTeams) {
 
   const rawName = prof.name || prof.r_id || "Student";
   const cleanName = rawName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
-  const avatarSrc = prof.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(prof.r_id || 'Student')}`;
+  const rId = prof.r_id || prof.id || "N/A";
+  const avatarSrc = prof.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(rId)}`;
+  const academicYear = prof.academic_year || getAcademicYearByRid(rId);
+  const admissionYear = prof.admission_year || getAdmissionYearByRid(rId);
+  const email = prof.email || `${rId}@student.edu`;
+  const gender = prof.gender || "Not Specified";
+  const program = prof.program || "Bachelor of Technology";
 
   // 1. Professional Profile Left Identity Spotlight Card
   const identityCardHtml = `
@@ -1664,29 +1693,134 @@ function renderFullProfile(prof, userTeams) {
       </div>
 
       <h2 class="font-serif" style="font-size:1.625rem; line-height:1.2; margin-bottom:4px;">${escapeHtml(cleanName)}</h2>
-      <div style="font-size:0.875rem; color:var(--badge-yellow); font-weight:750; margin-bottom:12px;">@${escapeHtml(prof.r_id || 'N/A')}</div>
+      <div style="font-size:0.875rem; color:var(--badge-yellow); font-weight:750; margin-bottom:12px;">@${escapeHtml(rId)}</div>
 
       <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
-        <span class="status-capsule member" style="font-size:0.75rem;">${escapeHtml(prof.program || 'Student')}</span>
+        <span class="status-capsule member" style="font-size:0.75rem;">${escapeHtml(academicYear)}</span>
         <span class="status-capsule full" style="font-size:0.75rem;">● Verified Student</span>
       </div>
 
       <div style="background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-xl); padding:14px; margin-bottom:20px; text-align:left;">
         <div style="font-size:0.6875rem; color:var(--text-sage); text-transform:uppercase; font-weight:800; letter-spacing:0.06em; margin-bottom:6px;">Hackathon Status</div>
         <div style="font-size:0.9375rem; font-weight:750; color:var(--badge-mint);">
-          ${userTeams.length > 0 ? `Active in ${userTeams.length} Team(s)` : 'Free Agent (Looking for Squad)'}
+          ${userTeams.length > 0 ? `Active in ${userTeams.length} Squad(s)` : 'Free Agent (Available for Squads)'}
         </div>
         ${userTeams.length > 0 ? `<div style="font-size:0.75rem; color:var(--text-sage-light); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(userTeams[0].name)}</div>` : ''}
       </div>
 
       <div style="display:flex; flex-direction:column; gap:10px;">
-        <button onclick="showCoursePickerModal()" class="btn-black-pill sm" style="width:100%; justify-content:center;">
-          ✎ Edit Academic Course
-        </button>
+        <a href="/create-team" class="btn-agro-yellow-pill" style="width:100%; justify-content:center;">
+          + Create New Squad
+        </a>
         <button onclick="logoutUser()" class="btn-danger-pill" style="width:100%; justify-content:center;">
           Sign Out of JnuMate
         </button>
       </div>
+    </div>
+  `;
+
+  // 2. Right Section: Academic & University Standing Credentials
+  const credentialsHtml = `
+    <div class="profile-section-card">
+      <div class="profile-section-header">
+        <h3 class="profile-section-title">Academic & University Credentials</h3>
+        <span class="status-capsule full">Deterministic Verification</span>
+      </div>
+      <div class="profile-details-grid">
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">College R-ID</span>
+          <span class="profile-cell-value" style="color:var(--badge-yellow); font-weight:800;">@${escapeHtml(rId)}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Student Name</span>
+          <span class="profile-cell-value">${escapeHtml(cleanName)}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Academic Year</span>
+          <span class="profile-cell-value highlight">${escapeHtml(academicYear)}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Admission Batch</span>
+          <span class="profile-cell-value">${escapeHtml(admissionYear || 'Campus Verified')}</span>
+        </div>
+        <div class="profile-detail-cell full-width">
+          <span class="profile-cell-label">Degree Program</span>
+          <span class="profile-cell-value">${escapeHtml(program)}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 3. Right Section: Contact & Identity Info
+  const contactHtml = `
+    <div class="profile-section-card">
+      <div class="profile-section-header">
+        <h3 class="profile-section-title">Contact & University Records</h3>
+        <span class="status-capsule member">Official Records</span>
+      </div>
+      <div class="profile-details-grid">
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Official University Email</span>
+          <span class="profile-cell-value">${escapeHtml(email)}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Gender</span>
+          <span class="profile-cell-value">${escapeHtml(gender)}</span>
+        </div>
+        <div class="profile-detail-cell full-width">
+          <span class="profile-cell-label">Hackathon Eligibility</span>
+          <span class="profile-cell-value" style="color:var(--badge-mint);">● Verified for Smart India Hackathon (SIH) and Capture The Flag (CTF) squads</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 4. Right Section: User's Teams
+  let teamsListHtml = '';
+  if (!userTeams || userTeams.length === 0) {
+    teamsListHtml = `
+      <div class="profile-empty-teams" style="padding:24px 16px; text-align:center; background:rgba(0,0,0,0.2); border-radius:var(--radius-lg);">
+        <p style="color:var(--text-sage); font-size:0.875rem; margin-bottom:16px;">You are not currently enrolled in any hackathon teams.</p>
+        <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+          <a href="/create-team" class="btn-agro-yellow-pill">+ Create a Squad</a>
+          <a href="/" class="btn-outline-pill">Explore Open Teams</a>
+        </div>
+      </div>
+    `;
+  } else {
+    teamsListHtml = `
+      <div class="profile-teams-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px;">
+        ${userTeams.map(t => {
+          const isLeader = (currentUser && currentUser.id) && (t.leader_id === currentUser.id || (t.leader && t.leader.id === currentUser.id));
+          const hType = (t.hackathon_type || 'sih').toLowerCase();
+          const memberCount = (t.members && t.members.length) || 1;
+          const maxSize = t.max_size || 6;
+          return `
+            <div class="profile-team-card" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-lg); padding:16px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <span class="hackathon-tag-pill ${hType}" style="font-size:0.6875rem; padding:2px 8px;">${hType.toUpperCase()}</span>
+                <span class="status-capsule ${isLeader ? 'leader' : 'member'}" style="font-size:0.6875rem; padding:2px 8px;">${isLeader ? 'Leader' : 'Member'}</span>
+              </div>
+              <h4 style="font-family:var(--font-serif); font-size:1.125rem; font-weight:750; color:var(--text-white); margin-bottom:6px;">${escapeHtml(t.name)}</h4>
+              <p style="font-size:0.8125rem; color:var(--text-sage); line-height:1.4; margin-bottom:14px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(t.description || 'No project pitch provided.')}</p>
+              <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
+                <span style="font-size:0.75rem; color:var(--text-sage);">${memberCount}/${maxSize} Members</span>
+                <a href="/team/${t.id}" class="btn-outline-pill" style="padding:4px 10px; font-size:0.75rem;">View Squad ➔</a>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  const teamsHtml = `
+    <div class="profile-section-card">
+      <div class="profile-section-header">
+        <h3 class="profile-section-title">Enrolled Hackathon Squads (${userTeams.length})</h3>
+        <a href="/create-team" class="btn-outline-pill" style="font-size:0.75rem; padding:4px 12px;">+ Build New Squad</a>
+      </div>
+      ${teamsListHtml}
     </div>
   `;
 
@@ -1908,44 +2042,44 @@ function loadCreateTeamView() {
             </div>
           </div>
 
-          <!-- Right Column: Hackathon Rules & Guidelines Sticky Sidebar -->
+          <!-- Right Column: 4 Practical Squad Formation Instructions -->
           <div class="create-team-guide-sidebar">
-            <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:14px; color:var(--text-white);">Team Builder Guidelines</h3>
+            <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:14px; color:var(--text-white);">Squad Formation Guide</h3>
             
-            <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; flex-direction:column; gap:14px;">
               <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
                 <div style="font-weight:750; font-size:0.875rem; color:var(--badge-mint); margin-bottom:4px;">
-                  🏆 6-Member Roster System
+                  01 • Squad Roles &amp; Captaincy
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  Every hackathon team consists of 1 Leader plus up to 5 teammates. Any open slots remain searchable by fellow students looking to apply.
+                  As team captain, you define the project mission, review incoming join requests, and direct team strategy throughout the hackathon.
                 </div>
               </div>
 
               <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
                 <div style="font-weight:750; font-size:0.875rem; color:#FDBA74; margin-bottom:4px;">
-                  🇮🇳 Smart India (SIH) Rule
+                  02 • Balanced Engineering Talent
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  SIH regulations mandate at least one female teammate per 6-member squad. Ensure you balance backend, AI/ML, and UI/UX design skills.
+                  Assemble a versatile squad by combining backend engineers with AI/ML specialists, frontend developers, and UI/UX designers.
                 </div>
               </div>
 
               <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
                 <div style="font-weight:750; font-size:0.875rem; color:#86EFAC; margin-bottom:4px;">
-                  🛡️ CTF Challenge Squads
+                  03 • Reserve Open Slots for Talent
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  Assemble specialists across Cryptography, Reverse Engineering, Binary Exploitation, Web Defense, and Digital Forensics for maximum coverage.
+                  Leave unassigned seats open so verified campus peers can discover your team and apply directly with their university credentials.
                 </div>
               </div>
 
               <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
                 <div style="font-weight:750; font-size:0.875rem; color:var(--badge-yellow); margin-bottom:4px;">
-                  💬 Instant WhatsApp Invite
+                  04 • Direct WhatsApp Coordination
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  Add your group link so admitted teammates can immediately access team discussions, meeting links, and shared files.
+                  Provide your team's WhatsApp group link so admitted members can immediately join internal discussions, standups, and repo planning.
                 </div>
               </div>
             </div>
@@ -1966,7 +2100,8 @@ function renderCreateTeamSeats() {
   const totalFilled = 1 + selectedFriends.length;
   if (countBadge) countBadge.innerText = `${totalFilled}/6 Assigned`;
 
-  const leaderInitial = currentUser ? (currentUser.name || currentUser.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U' : 'L';
+  const leaderAvatar = getStudentAvatarSrc((currentUser && currentUser.avatar_url), (currentUser && currentUser.id));
+  const leaderAcademicYear = (currentUser && (currentUser.academic_year || getAcademicYearByRid(currentUser.id))) || "Student";
 
   let seatsHtml = `
     <!-- Slot 1: Team Leader -->
@@ -1976,15 +2111,15 @@ function renderCreateTeamSeats() {
         <span class="status-capsule leader" style="font-size:0.625rem; padding:2px 8px;">Leader</span>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
-        <div class="seat-avatar" style="width:38px; height:38px;">
-          <img src="${escapeHtml((currentUser && currentUser.avatar_url) || '')}" alt="${escapeHtml((currentUser && currentUser.name) || '')}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent((currentUser && currentUser.id) || 'Leader')}';">
+        <div class="seat-avatar">
+          <img src="${escapeHtml(leaderAvatar)}" alt="${escapeHtml((currentUser && currentUser.name) || '')}" onerror="this.src=DEFAULT_STUDENT_AVATAR;">
         </div>
         <div style="min-width:0; flex:1;">
           <div style="font-size:0.875rem; font-weight:750; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
             ${escapeHtml((currentUser && currentUser.name) || 'Leader')}
           </div>
           <div style="font-size:0.6875rem; color:var(--text-sage);">
-            @${escapeHtml((currentUser && currentUser.id) || '')} ${currentUser && currentUser.program ? `• ${escapeHtml(currentUser.program)}` : ''}
+            @${escapeHtml((currentUser && currentUser.id) || '')} • ${escapeHtml(leaderAcademicYear)}
           </div>
         </div>
       </div>
@@ -1994,7 +2129,8 @@ function renderCreateTeamSeats() {
   for (let i = 0; i < 5; i++) {
     if (i < selectedFriends.length) {
       const f = selectedFriends[i];
-      const initial = (f.name || f.id).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
+      const friendAvatar = getStudentAvatarSrc(f.avatar_url, f.id);
+      const friendAcademicYear = f.academic_year || getAcademicYearByRid(f.id);
       seatsHtml += `
         <div class="create-slot-box filled">
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
@@ -2004,15 +2140,15 @@ function renderCreateTeamSeats() {
             </button>
           </div>
           <div style="display:flex; align-items:center; gap:10px;">
-            <div class="seat-avatar" style="width:38px; height:38px;">
-              <img src="${escapeHtml(f.avatar_url || '')}" alt="${escapeHtml(f.name)}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(f.id || 'Student')}';">
+            <div class="seat-avatar">
+              <img src="${escapeHtml(friendAvatar)}" alt="${escapeHtml(f.name)}" onerror="this.src=DEFAULT_STUDENT_AVATAR;">
             </div>
             <div style="min-width:0; flex:1;">
               <div style="font-size:0.875rem; font-weight:750; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                 ${escapeHtml(f.name)}
               </div>
               <div style="font-size:0.6875rem; color:var(--text-sage);">
-                @${escapeHtml(f.id)} ${f.program ? `• ${escapeHtml(f.program)}` : ''}
+                @${escapeHtml(f.id)} • ${escapeHtml(friendAcademicYear)}
               </div>
             </div>
           </div>
@@ -2493,32 +2629,50 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   const cleanName = (student.name || student.r_id || "Student").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
   const displayEmail = targetEmail || student.email || `${student.r_id}@student.edu`;
   const program = student.program || "Student";
-  const metaParts = [];
-  if (student.dob && student.dob !== 'N/A') metaParts.push(`DOB: ${student.dob}`);
-  if (student.gender) metaParts.push(student.gender);
-  const metaText = metaParts.join(" • ");
+  const academicYear = student.academic_year || getAcademicYearByRid(student.r_id);
+  const admissionYear = student.admission_year || getAdmissionYearByRid(student.r_id);
+  const gender = student.gender || "";
 
   spotlightContainer.innerHTML = `
-    <div class="auth-compact-spotlight">
-      <img src="${escapeHtml(avatarSrc)}" 
-           data-raw-src="${escapeHtml(rawAvatar)}" 
-           alt="${escapeHtml(cleanName)}" 
-           class="auth-compact-avatar"
-           loading="lazy"
-           onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
-      <div class="auth-compact-meta">
-        <div class="auth-compact-name">${escapeHtml(cleanName)}</div>
-        <div class="auth-compact-badges">
-          <span class="student-rid-badge" style="font-size:0.6875rem; padding:1px 7px;">@${escapeHtml(student.r_id)}</span>
-          <span class="status-capsule member" style="font-size:0.625rem; padding:1px 7px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(program)}</span>
-          ${metaText ? `<span style="font-size:0.6875rem; color:var(--text-sage);">${escapeHtml(metaText)}</span>` : ""}
+    <div class="auth-student-spotlight-card">
+      <div class="auth-spotlight-header">
+        <div class="auth-spotlight-avatar">
+          <img src="${escapeHtml(avatarSrc)}" 
+               data-raw-src="${escapeHtml(rawAvatar)}" 
+               alt="${escapeHtml(cleanName)}" 
+               onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+        </div>
+        <div class="auth-spotlight-meta">
+          <h3 class="auth-spotlight-name">${escapeHtml(cleanName)}</h3>
+          <div class="auth-spotlight-rid">College R-ID: <strong>@${escapeHtml(student.r_id)}</strong></div>
         </div>
       </div>
-    </div>
 
-    <div class="auth-compact-email-pill">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:13px; height:13px; color:var(--badge-mint); flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
-      <span>Sent to: <strong style="color:#FFFFFF;">${escapeHtml(displayEmail)}</strong></span>
+      <div class="auth-spotlight-details-grid">
+        <div class="auth-spotlight-detail-item">
+          <span class="auth-detail-key">Academic Year</span>
+          <span class="auth-detail-val highlight">${escapeHtml(academicYear)}</span>
+        </div>
+        <div class="auth-spotlight-detail-item">
+          <span class="auth-detail-key">Admission Batch</span>
+          <span class="auth-detail-val">${escapeHtml(admissionYear || 'Verified')}</span>
+        </div>
+        ${gender ? `
+        <div class="auth-spotlight-detail-item">
+          <span class="auth-detail-key">Gender</span>
+          <span class="auth-detail-val">${escapeHtml(gender)}</span>
+        </div>
+        ` : ''}
+        <div class="auth-spotlight-detail-item full-width">
+          <span class="auth-detail-key">Program</span>
+          <span class="auth-detail-val truncate">${escapeHtml(program)}</span>
+        </div>
+      </div>
+
+      <div class="auth-spotlight-email-bar">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; color:var(--badge-mint); flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+        <span>Verification Code sent to: <strong>${escapeHtml(displayEmail)}</strong></span>
+      </div>
     </div>
   `;
 }
@@ -2654,8 +2808,11 @@ function showAuthStep(step) {
   const bannerIntent = document.getElementById("authCreateTeamBanner");
 
   const isOtpStep = step === 2;
-  // Always hide top elements on step 2 across all screen sizes for zero vertical scrolling
-  if (logoBox) logoBox.style.display = isOtpStep ? "none" : "";
+  // Keep official JNU Crest logo visible on step 2 for institutional branding
+  if (logoBox) {
+    logoBox.style.display = "block";
+    logoBox.style.marginBottom = isOtpStep ? "12px" : "18px";
+  }
   if (cardTitle) cardTitle.style.display = isOtpStep ? "none" : "";
   if (cardSub) cardSub.style.display = isOtpStep ? "none" : "";
   if (cardSup) cardSup.style.display = isOtpStep ? "none" : "";
@@ -2667,13 +2824,11 @@ function showAuthStep(step) {
     s2.style.display = isOtpStep ? "block" : "none";
     if (isOtpStep) {
       startResendTimer();
-      setTimeout(() => {
-        const input = document.getElementById("otpCodeInput");
-        if (input) {
-          input.value = "";
-          input.focus();
-        }
-      }, 150);
+      const input = document.getElementById("otpCodeInput");
+      if (input) {
+        input.value = "";
+        input.focus();
+      }
     }
   }
 }
@@ -2716,7 +2871,7 @@ function handleResendOtp() {
     }
     if (btn) {
       btn.disabled = true;
-      btn.innerText = "Resending...";
+      btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;">${renderIosSpinner('sm')} <span>Resending...</span></span>`;
     }
     fetch("/api/auth/request-otp", {
       method: "POST",
@@ -2750,9 +2905,12 @@ function submitInitialRid() {
     return;
   }
 
+  const isCreateTeamIntent = postLoginRedirect === "/create-team";
+  const defaultBtnText = isCreateTeamIntent ? "Sign In & Continue ➔" : "Sign In ➔";
+
   const rid = ridInput.value.trim().toUpperCase();
   btn.disabled = true;
-  btn.innerText = "Signing you in...";
+  btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Connecting...</span></span>`;
 
   fetch("/api/auth/request-otp", {
     method: "POST",
@@ -2762,7 +2920,7 @@ function submitInitialRid() {
     .then(res => res.json())
     .then(data => {
       btn.disabled = false;
-      btn.innerText = "Sign In ➔";
+      btn.innerHTML = defaultBtnText;
 
       if (data.exists) {
         pendingRegistrationData = { rid: rid };
@@ -2780,7 +2938,7 @@ function submitInitialRid() {
     })
     .catch(() => {
       btn.disabled = false;
-      btn.innerText = "Sign In ➔";
+      btn.innerHTML = defaultBtnText;
       showToast("Network error checking R-ID", "error");
     });
 }
@@ -2802,7 +2960,7 @@ function submitSyncDetailsAndSendOtp() {
   }
 
   btn.disabled = true;
-  btn.innerText = "Sending Code...";
+  btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Sending Code...</span></span>`;
 
   fetch("/api/auth/send-registration-otp", {
     method: "POST",
@@ -2870,7 +3028,7 @@ function verifyEmailOtpCode() {
 
   isVerifyingOtp = true;
   btn.disabled = true;
-  btn.innerText = "Signing you in...";
+  btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Verifying...</span></span>`;
 
   const payload = {
     rid: rid,
@@ -2900,7 +3058,7 @@ function verifyEmailOtpCode() {
     .then(data => {
       isVerifyingOtp = false;
       btn.disabled = false;
-      btn.innerText = "Verify & Sign In";
+      btn.innerText = "Verify & Sign In ➔";
 
       if (data && data.success) {
         currentUser = data.user || { id: rid, name: "Student" };
@@ -2918,8 +3076,6 @@ function verifyEmailOtpCode() {
             const redirectDest = postLoginRedirect;
             postLoginRedirect = null;
             navigateTo(redirectDest);
-          } else if (data.needs_program) {
-            showCoursePickerModal();
           } else {
             navigateTo("/profile");
           }

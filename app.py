@@ -3,6 +3,7 @@ import json
 import random
 import datetime
 import smtplib
+import threading
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, jsonify, session
@@ -68,6 +69,28 @@ def load_education_details():
 
 load_education_details()
 
+# DETERMINISTIC ACADEMIC YEAR INFERENCE FROM R-ID
+def get_academic_year_by_rid(student_id):
+    if not student_id:
+        return "Student", None
+    s_id = str(student_id).strip().upper()
+    if s_id.startswith("R"):
+        try:
+            id_num = int(s_id[1:])
+            if 0 <= id_num <= 42260:
+                return "Passed Out Student", None
+            elif 42261 <= id_num <= 50190:
+                return "Final Year Student", "2023"
+            elif 50191 <= id_num <= 54323:
+                return "3rd Year Student", "2024"
+            elif 54324 <= id_num <= 59643:
+                return "2nd Year Student", "2025"
+            elif id_num >= 59644:
+                return "1st Year Student", "2026"
+        except ValueError:
+            pass
+    return "Student", None
+
 # PRE-INDEXED FAST STUDENT SEARCH CACHE
 SEARCHABLE_STUDENTS_LIST = []
 STUDENT_CACHE_BY_RID = {}
@@ -93,6 +116,7 @@ def build_student_search_index():
             avatar_url = None
         
         prog, sem = EDUCATION_DETAILS_MAP.get(r_id_key, (None, None))
+        acad_yr, adm_yr = get_academic_year_by_rid(r_id_key)
         
         student_obj = {
             "r_id": r_id_key,
@@ -104,7 +128,9 @@ def build_student_search_index():
             "dob": dob,
             "avatar_url": avatar_url,
             "program": prog or "Student",
-            "semester_year": sem or ""
+            "semester_year": sem or "",
+            "academic_year": acad_yr,
+            "admission_year": adm_yr
         }
         SEARCHABLE_STUDENTS_LIST.append(student_obj)
         STUDENT_CACHE_BY_RID[r_id_key] = student_obj
@@ -332,7 +358,9 @@ def auth_send_otp():
     conn.commit()
     conn.close()
 
-    sent_ok, msg = send_real_email_otp(email, r_id, otp_code)
+    acad_yr, adm_yr = get_academic_year_by_rid(r_id)
+    # Dispatch email asynchronously in background thread so HTTP response is instant (<10ms)
+    threading.Thread(target=send_real_email_otp, args=(email, r_id, otp_code), daemon=True).start()
 
     return jsonify({
         "success": True,
@@ -348,7 +376,9 @@ def auth_send_otp():
             "email": email,
             "avatar_url": avatar_url,
             "program": prog or "Student",
-            "semester": sem or ""
+            "semester": sem or "",
+            "academic_year": acad_yr,
+            "admission_year": adm_yr
         }
     })
 
@@ -380,7 +410,7 @@ def auth_send_registration_otp():
     conn.commit()
     conn.close()
 
-    send_real_email_otp(email, r_id, otp_code)
+    threading.Thread(target=send_real_email_otp, args=(email, r_id, otp_code), daemon=True).start()
 
     return jsonify({
         "success": True,
@@ -801,6 +831,10 @@ def format_team_data(team_row, current_r_id=None, conn=None):
                 m["avatar_url"] = None
             else:
                 m["avatar_url"] = raw_avatar
+
+            acad_yr, adm_yr = get_academic_year_by_rid(m_rid)
+            m["academic_year"] = acad_yr
+            m["admission_year"] = adm_yr
 
             members.append(m)
 
@@ -1458,7 +1492,9 @@ def get_user_profile():
         "mother_name": family.get("Mother's Name") or "N/A",
         "religion": personal.get("Religion") or "N/A",
         "category": personal.get("Category") or "General",
-        "address": full_address
+        "address": full_address,
+        "academic_year": get_academic_year_by_rid(r_id)[0],
+        "admission_year": get_academic_year_by_rid(r_id)[1]
     }
 
     cursor.execute(f"""

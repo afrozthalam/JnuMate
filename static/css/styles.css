@@ -58,13 +58,13 @@
   --badge-mint: #3EA86C;
   --badge-violet: #8C68CD;
 
-  /* Radii */
-  --radius-pill: 9999px;
-  --radius-3xl: 32px;
-  --radius-2xl: 24px;
-  --radius-xl: 18px;
-  --radius-lg: 14px;
-  --radius-md: 10px;
+  /* Radii - Clean Executive Engineering Corners */
+  --radius-pill: 8px;
+  --radius-3xl: 20px;
+  --radius-2xl: 16px;
+  --radius-xl: 12px;
+  --radius-lg: 10px;
+  --radius-md: 8px;
   --radius-sm: 6px;
 
   /* Transitions & Shadows */
@@ -72,8 +72,8 @@
   --trans-fast: 0.15s ease;
   --trans-smooth: 0.25s var(--spring-ease);
   --shadow-app-frame: 0 25px 60px -15px rgba(0, 0, 0, 0.55);
-  --shadow-card: 0 8px 24px -4px rgba(5, 20, 13, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  --shadow-card-hover: 0 18px 40px -8px rgba(5, 20, 13, 0.55), 0 0 20px rgba(60, 166, 106, 0.22);
+  --shadow-card: 0 4px 16px -2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --shadow-card-hover: 0 12px 28px -6px rgba(0, 0, 0, 0.45);
 }
 
 /* ==========================================================================
@@ -93,26 +93,28 @@ html, body {
   background-color: var(--bg-forest-950);
   color: var(--text-white);
   overflow-x: hidden;
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Sleek Emerald Scrollbar */
+/* Custom Sleek Emerald Scrollbar - Crisp 4px Radius */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
   background: rgba(8, 32, 19, 0.7);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(62, 168, 108, 0.35);
-  border-radius: 9999px;
-  border: 2px solid transparent;
+  background: rgba(62, 168, 108, 0.4);
+  border-radius: 4px;
+  border: 1px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(62, 168, 108, 0.65);
+  background: rgba(62, 168, 108, 0.7);
 }
 * {
   scrollbar-width: thin;
@@ -377,11 +379,15 @@ h1, h2, h3, h4, .font-serif {
    5. CENTER MAIN WORKSPACE
    ========================================================================== */
 .app-main-workspace {
-  background-color: var(--bg-forest-850);
-  padding: 32px 36px 48px;
-  overflow-y: auto;
-  height: 100%;
-  max-height: 100%;
+  background-color: transparent;
+  padding: 24px 20px 48px;
+  min-height: calc(100vh - 72px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: visible;
+  height: auto;
+  max-height: none;
 }
 
 .view-page-panel {
@@ -3654,7 +3660,7 @@ textarea.input-forest {
   background: rgba(249, 115, 22, 0.22);
   border: 1.5px solid #F97316;
   color: #FED7AA;
-  box-shadow: 0 0 12px rgba(249, 115, 22, 0.25);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
 .team-header-hero .hackathon-tag-pill.ctf,
@@ -3663,7 +3669,7 @@ textarea.input-forest {
   background: rgba(34, 197, 94, 0.22);
   border: 1.5px solid #22C55E;
   color: #BBF7D0;
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
 /* Refined Team Card Titles & Badges on White Cards */
@@ -3727,13 +3733,13 @@ textarea.input-forest {
 .hackathon-select-card.active.sih {
   border-color: #F97316;
   background: rgba(249, 115, 22, 0.12);
-  box-shadow: 0 0 20px rgba(249, 115, 22, 0.25);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .hackathon-select-card.active.ctf {
   border-color: #22C55E;
   background: rgba(34, 197, 94, 0.12);
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .hackathon-select-card img {
@@ -3756,15 +3762,13 @@ textarea.input-forest {
 
 .profile-sticky-identity-card {
   background: rgba(18, 56, 36, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-lg);
   padding: 32px 22px;
   text-align: center;
   position: sticky;
   top: 96px;
-  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.45);
 }
 
 .profile-identity-avatar-box {
@@ -3773,7 +3777,8 @@ textarea.input-forest {
   margin: 0 auto 16px;
   border-radius: 50%;
   position: relative;
-  box-shadow: 0 0 24px rgba(62, 168, 108, 0.35);
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .profile-identity-avatar-box img {
@@ -3782,6 +3787,7 @@ textarea.input-forest {
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid var(--badge-mint);
+  display: block;
 }
 
 .profile-content-column {
@@ -3852,6 +3858,9 @@ textarea.input-forest {
     margin: 0 auto !important;
     padding: 28px 36px 60px !important;
     flex: 1 !important;
+    overflow-y: visible !important;
+    height: auto !important;
+    max-height: none !important;
   }
   .mobile-only-block {
     display: none !important;
@@ -3862,6 +3871,12 @@ textarea.input-forest {
 }
 
 @media (max-width: 768px) {
+  .app-main-workspace {
+    padding: 16px 14px 40px !important;
+    overflow-y: visible !important;
+    height: auto !important;
+    max-height: none !important;
+  }
   .desktop-top-navbar {
     display: none !important;
   }
@@ -4054,15 +4069,19 @@ textarea.input-forest {
 }
 
 /* ==========================================================================
-   HOMESCREEN EDITORIAL FOOTER: PITCH-BLACK COMPACT 2-COLUMN
+   HOMESCREEN EDITORIAL FOOTER: FLUSH EXECUTIVE 2-COLUMN SITE FOOTER
    ========================================================================== */
 .homescreen-editorial-footer {
-  margin-top: 32px;
-  background: #060e09;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-2xl);
-  padding: 24px 28px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  margin-top: 48px;
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 0;
+  padding: 32px 0 20px 0;
+  box-shadow: none;
+  width: 100%;
 }
 
 .footer-split-container {
@@ -4073,9 +4092,13 @@ textarea.input-forest {
 }
 
 @media (max-width: 860px) {
+  .homescreen-editorial-footer {
+    margin-top: 28px;
+    padding: 20px 0 16px 0;
+  }
   .footer-split-container {
     grid-template-columns: 1fr;
-    gap: 22px;
+    gap: 20px;
   }
 }
 
@@ -4241,86 +4264,232 @@ textarea.input-forest {
 }
 
 .login-editorial-card {
-  background: rgba(12, 42, 26, 0.88);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--radius-2xl);
-  padding: 22px 26px;
-  max-width: 420px;
+  background: rgba(12, 42, 26, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 24px 28px;
+  max-width: 440px;
   width: 100%;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   text-align: center;
 }
 
 .login-jnu-logo-box {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 8px;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .jnu-signin-logo {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.45));
 }
 
-.auth-compact-spotlight {
+/* Executive Student Spotlight Card on Step 2 */
+.auth-student-spotlight-card {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.auth-spotlight-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  text-align: left;
-  padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.32);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-xl);
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
-.auth-compact-avatar {
-  width: 46px;
-  height: 46px;
+.auth-spotlight-avatar {
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--badge-mint);
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.15);
   flex-shrink: 0;
-  box-shadow: 0 0 12px rgba(62, 168, 108, 0.3);
+  background: #143525;
 }
 
-.auth-compact-meta {
+.auth-spotlight-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.auth-spotlight-meta {
   min-width: 0;
   flex: 1;
 }
 
-.auth-compact-name {
+.auth-spotlight-name {
   font-family: var(--font-serif);
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   font-weight: 750;
-  color: #FFFFFF;
+  color: var(--text-white);
+  line-height: 1.25;
+  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.2;
 }
 
-.auth-compact-badges {
+.auth-spotlight-rid {
+  font-size: 0.8125rem;
+  color: var(--badge-yellow);
+}
+
+.auth-spotlight-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.auth-spotlight-detail-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.auth-spotlight-detail-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.auth-detail-key {
+  display: block;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-sage);
+  margin-bottom: 2px;
+}
+
+.auth-detail-val {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--text-white);
+}
+
+.auth-detail-val.highlight {
+  color: var(--badge-mint);
+}
+
+.auth-detail-val.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-spotlight-email-bar {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 3px;
+  gap: 8px;
+  background: rgba(62, 168, 108, 0.1);
+  border: 1px solid rgba(62, 168, 108, 0.25);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.75rem;
+  color: var(--text-sage-light);
+}
+
+.auth-spotlight-email-bar strong {
+  color: #FFFFFF;
+}
+
+/* Strictly Enforced Seat Avatar Dimensions (Zero Image Blowout) */
+.seat-avatar {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  max-width: 38px !important;
+  max-height: 38px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  background: var(--bg-surface-elevated, #1a2f23);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.seat-avatar img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  border-radius: 50% !important;
+}
+
+/* Executive Profile Section Cards */
+.profile-section-card {
+  background: rgba(18, 56, 36, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.profile-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-.auth-compact-email-pill {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  background: rgba(62, 168, 108, 0.12);
-  border: 1px solid rgba(62, 168, 108, 0.3);
-  font-size: 0.75rem;
+.profile-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 750;
   color: var(--text-white);
-  margin-bottom: 12px;
 }
+
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.profile-detail-cell {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.profile-detail-cell.full-width {
+  grid-column: 1 / -1;
+}
+
+.profile-cell-label {
+  display: block;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-sage);
+  margin-bottom: 4px;
+}
+
+.profile-cell-value {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-white);
+}
+
+.profile-cell-value.highlight {
+  color: var(--badge-mint);
+}
+
