@@ -10,7 +10,10 @@ from flask import Flask, render_template, request, jsonify, session
 from database import get_db, init_db, is_postgres, get_system_setting, set_system_setting
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "hackmate_liquid_glass_2026")
+app.secret_key = os.environ.get("SECRET_KEY") or os.environ.get("FLASK_SECRET_KEY") or "jnumate_liquid_permanent_secret_key_2026_prod"
+app.permanent_session_lifetime = datetime.timedelta(days=365)
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
 
 # Initialize database
 try:
@@ -354,41 +357,50 @@ def admin_stats():
     if not session.get("is_admin"):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
-    conn = get_db()
-    cursor = conn.cursor()
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
 
-    cursor.execute("SELECT COUNT(*) FROM students WHERE is_registered = 1")
-    reg_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM students WHERE is_registered = 1")
+        reg_count = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM teams")
-    teams_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM teams")
+        teams_count = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM teams WHERE LOWER(hackathon_type) = 'sih'")
-    sih_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM teams WHERE LOWER(hackathon_type) = 'sih'")
+        sih_count = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM teams WHERE LOWER(hackathon_type) = 'ctf'")
-    ctf_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM teams WHERE LOWER(hackathon_type) = 'ctf'")
+        ctf_count = cursor.fetchone()[0]
 
-    cursor.execute("SELECT COUNT(*) FROM team_members")
-    members_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM team_members")
+        members_count = cursor.fetchone()[0]
 
-    # Calculate open slots across all teams
-    cursor.execute("SELECT t.id, t.seat_modes, COUNT(tm.id) as filled FROM teams t LEFT JOIN team_members tm ON t.id = tm.team_id GROUP BY t.id")
-    team_seat_rows = cursor.fetchall()
-    open_slots_count = 0
-    for row in team_seat_rows:
-        r_dict = dict(row)
-        modes_str = r_dict.get("seat_modes") or "request,request,request,request,request"
-        modes = [m.strip().lower() for m in modes_str.split(",") if m.strip()]
-        filled = r_dict.get("filled", 1)
-        total_seats = 1 + len(modes)
-        open_seats = max(0, total_seats - filled)
-        open_slots_count += open_seats
+        # Calculate open slots across all teams (Postgres compatible GROUP BY t.id, t.seat_modes)
+        cursor.execute("SELECT t.id, t.seat_modes, COUNT(tm.id) as filled FROM teams t LEFT JOIN team_members tm ON t.id = tm.team_id GROUP BY t.id, t.seat_modes")
+        team_seat_rows = cursor.fetchall()
+        open_slots_count = 0
+        for row in team_seat_rows:
+            r_dict = dict(row)
+            modes_str = r_dict.get("seat_modes") or "request,request,request,request,request"
+            modes = [m.strip().lower() for m in modes_str.split(",") if m.strip()]
+            filled = r_dict.get("filled", 1)
+            total_seats = 1 + len(modes)
+            open_seats = max(0, total_seats - filled)
+            open_slots_count += open_seats
 
-    cursor.execute("SELECT id, r_id, email, used, created_at FROM email_otps ORDER BY id DESC LIMIT 15")
-    otp_rows = [dict(r) for r in cursor.fetchall()]
-
-    conn.close()
+        cursor.execute("SELECT id, r_id, email, used, created_at FROM email_otps ORDER BY id DESC LIMIT 15")
+        otp_rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+    except Exception as e:
+        print(f"[ADMIN STATS NOTICE] {e}")
+        reg_count = 0
+        teams_count = 0
+        sih_count = 0
+        ctf_count = 0
+        members_count = 0
+        open_slots_count = 0
+        otp_rows = []
 
     otp_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
     bypass_code = get_system_setting("default_bypass_otp", "123456")
@@ -665,6 +677,7 @@ def auth_verify_otp():
     conn.close()
 
     session["user_rid"] = r_id
+    session.permanent = True
 
     student_name = (updated_student.get("name") or f"Student {r_id}").strip()
     user_payload = {
@@ -750,6 +763,7 @@ def auth_register():
         return jsonify({"success": False, "message": "R-ID already registered"}), 400
 
     session["user_rid"] = r_id
+    session.permanent = True
 
     user_payload = {
         "id": r_id,
@@ -817,6 +831,45 @@ def auth_me():
 def auth_logout():
     session.clear()
     return jsonify({"success": True, "message": "Logged out successfully"})
+
+@app.route("/api/auth/restore-session", methods=["POST"])
+def auth_restore_session():
+    data = request.json or {}
+    r_id = (data.get("r_id") or data.get("rid") or "").strip().upper()
+    if not r_id:
+        return jsonify({"success": False, "message": "R-ID required"}), 400
+
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+    student = cursor.fetchone()
+    if not student:
+        student = auto_import_student_from_json(r_id, conn, cursor)
+    prog, sem = get_student_course_details(r_id, cursor)
+    conn.close()
+
+    if not student:
+        return jsonify({"success": False, "message": "Student record not found"}), 404
+
+    session["user_rid"] = r_id
+    session.permanent = True
+    s_dict = dict(student)
+    return jsonify({
+        "success": True,
+        "authenticated": True,
+        "user": {
+            "id": s_dict["r_id"],
+            "name": s_dict["name"],
+            "email": s_dict["email"],
+            "gender": s_dict["gender"],
+            "dob": s_dict["dob"],
+            "avatar_url": s_dict["avatar_url"],
+            "program": prog,
+            "semester_year": sem,
+            "needs_program": not bool(prog)
+        }
+    })
 
 # --- STUDENT SEARCH (WITH DOB, EMAIL, PHOTO & DETAILS) ---
 
@@ -1675,9 +1728,8 @@ def get_user_profile():
         ORDER BY t.id DESC
     """, (r_id,))
     team_rows = cursor.fetchall()
+    teams_list = [format_team_data(t, r_id, conn=conn) for t in team_rows]
     conn.close()
-
-    teams_list = [format_team_data(t, r_id) for t in team_rows]
 
     return jsonify({
         "success": True,
