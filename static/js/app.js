@@ -140,15 +140,15 @@ function renderIosSpinner(size = '', text = '') {
         <div class="ios-spinner-blade"></div>
         <div class="ios-spinner-blade"></div>
       </div>
-      ${text ? `<div class="ios-spinner-text">${escapeHtml(text)}</div>` : ''}
     </div>
   `;
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   setupRouter();
+  // Run route handler IMMEDIATELY so correct view renders with 0ms delay and no homescreen flash
+  handleCurrentRoute();
   loadUserFromSession(() => {
-    handleCurrentRoute();
     loadNotifications();
   });
 });
@@ -176,13 +176,33 @@ function setupRouter() {
   window.addEventListener("popstate", () => {
     closeMobileDrawer();
     closeNotificationsPanel();
+    const modal = document.getElementById("teamDetailModal");
+    if (modal && !window.location.pathname.startsWith("/team/")) {
+      modal.style.display = "none";
+      document.body.classList.remove("scroll-locked");
+    }
     handleCurrentRoute();
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      closeTeamDetailModal();
+      closeStudentSearchModal();
+      closeMobileDrawer();
+      closeNotificationsPanel();
+    }
   });
 }
 
 function navigateTo(path) {
   closeMobileDrawer();
   closeNotificationsPanel();
+  if (path.startsWith("/team/")) {
+    const teamId = path.split("/")[2];
+    openTeamDetailModal(teamId);
+    return;
+  }
+  closeTeamDetailModal(false);
   if (window.location.pathname !== path) {
     history.pushState(null, "", path);
     handleCurrentRoute();
@@ -200,14 +220,25 @@ function handleCurrentRoute() {
   // Toggle layout mode: show right widgets ONLY on discover home (/), hide on all other views
   const appShell = document.getElementById("appEnclosureFrame");
   if (appShell) {
-    if (path !== "/") {
+    if (path !== "/" && !path.startsWith("/team/")) {
       appShell.classList.add("two-column-mode");
     } else {
       appShell.classList.remove("two-column-mode");
     }
   }
 
+  // Hide discover top header pitch on interior views (login, admin, profile, etc.)
+  const topHeaderCenter = document.querySelector(".desktop-top-header-center");
+  if (topHeaderCenter) {
+    if (path === "/" || path.startsWith("/team/")) {
+      topHeaderCenter.style.display = "";
+    } else {
+      topHeaderCenter.style.display = "none";
+    }
+  }
+
   if (path === "/") {
+    closeTeamDetailModal(false);
     const p = document.getElementById("viewDiscover");
     if (p) {
       p.classList.add("active");
@@ -215,11 +246,12 @@ function handleCurrentRoute() {
     }
   } else if (path.startsWith("/team/")) {
     const teamId = path.split("/")[2];
-    const p = document.getElementById("viewTeamDetail");
+    const p = document.getElementById("viewDiscover");
     if (p) {
       p.classList.add("active");
-      loadTeamDetailView(teamId);
+      loadDiscoverView();
     }
+    openTeamDetailModal(teamId);
   } else if (path === "/create-team") {
     const p = document.getElementById("viewCreateTeam");
     if (p) {
@@ -379,16 +411,16 @@ function renderNavUserSlots() {
         <div class="desktop-menu-list">
           <a href="/profile" class="desktop-menu-item" onclick="closeDesktopDropdowns()">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
-            <span>My Profile & Details</span>
+            <span>My Profile</span>
           </a>
           <a href="/create-team" class="desktop-menu-item" onclick="closeDesktopDropdowns()">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
-            <span>Create / Manage Squad</span>
+            <span>Create Team</span>
           </a>
           <div class="desktop-menu-divider"></div>
           <button type="button" onclick="closeDesktopDropdowns(); logoutUser();" class="desktop-menu-item danger">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
-            <span>Sign Out of JnuMate</span>
+            <span>Sign Out</span>
           </button>
         </div>
       `;
@@ -498,7 +530,7 @@ function renderDrawerUserSlot() {
     if (footer) {
       footer.innerHTML = `
         <button onclick="logoutUser()" class="btn-danger-pill" style="width:100%; padding:12px; font-size:0.875rem;">
-          Sign Out of JnuMate
+          Sign Out
         </button>
       `;
     }
@@ -545,6 +577,14 @@ function toggleMobileDrawer() {
   const drawer = document.getElementById("mobileDrawerOverlay");
   if (drawer) {
     drawer.classList.toggle("active");
+    if (drawer.classList.contains("active")) {
+      document.body.classList.add("scroll-locked");
+    } else {
+      const modal = document.getElementById("teamDetailModal");
+      if (!modal || modal.style.display === "none") {
+        document.body.classList.remove("scroll-locked");
+      }
+    }
   }
 }
 
@@ -552,6 +592,10 @@ function closeMobileDrawer() {
   const drawer = document.getElementById("mobileDrawerOverlay");
   if (drawer) {
     drawer.classList.remove("active");
+  }
+  const modal = document.getElementById("teamDetailModal");
+  if (!modal || modal.style.display === "none") {
+    document.body.classList.remove("scroll-locked");
   }
 }
 
@@ -573,7 +617,7 @@ function loadDiscoverView() {
   } else {
     grid.innerHTML = `
       <div style="grid-column: 1 / -1;">
-        ${renderIosSpinner('lg', 'Discovering hackathon teams...')}
+        ${renderIosSpinner('lg')}
       </div>
     `;
   }
@@ -816,7 +860,7 @@ function renderDiscoverPagination(totalCount, totalPages, currentPage) {
       </button>
 
       <span class="pagination-info-tag">
-        Page ${currentPage} of ${totalPages} (${totalCount} teams)
+        Page ${currentPage} of ${totalPages}
       </span>
     </div>
   `;
@@ -867,22 +911,32 @@ function updateLeaderboardWidget(teams) {
 /* ==========================================================================
    4. TEAM DETAIL VIEW (INSTANT 0ms RENDER FROM CACHE)
    ========================================================================== */
-function loadTeamDetailView(teamId) {
-  const container = document.getElementById("teamDetailViewContainer");
-  if (!container) return;
+function openTeamDetailModal(teamId) {
+  const modal = document.getElementById("teamDetailModal");
+  const container = document.getElementById("teamDetailModalContainer");
+  if (!modal || !container) return;
 
-  // 1. INSTANT ZERO-LATENCY RENDER: Check in-memory cache first!
+  // Lock background body scroll
+  document.body.classList.add("scroll-locked");
+  modal.style.display = "block";
+
+  // Update browser URL without page reload
+  const targetPath = `/team/${teamId}`;
+  if (window.location.pathname !== targetPath) {
+    history.pushState(null, "", targetPath);
+  }
+
+  // 1. INSTANT ZERO-LATENCY RENDER from cache
   const cachedTeam = clientCache.teamsMap[teamId] || (clientCache.teamsList ? clientCache.teamsList.find(t => t && t.id == teamId) : null);
   if (cachedTeam) {
     renderFullTeamDetail(cachedTeam);
-    // Only fetch join requests if user is team leader!
     if (currentUser && cachedTeam.leader_r_id && (cachedTeam.leader_r_id.toUpperCase() === currentUser.id.toUpperCase())) {
       loadTeamJoinRequests(teamId);
     }
   } else {
     container.innerHTML = `
-      <div style="text-align:center; padding:60px 20px;">
-        ${renderIosSpinner('lg', 'Loading team roster...')}
+      <div style="text-align:center; padding:120px 20px;">
+        ${renderIosSpinner('lg')}
       </div>
     `;
   }
@@ -898,10 +952,10 @@ function loadTeamDetailView(teamId) {
       if (!team) {
         if (!cachedTeam) {
           container.innerHTML = `
-            <div style="text-align:center; padding:60px 20px;">
-              <div style="font-family:var(--font-serif); font-size:1.5rem; margin-bottom:8px;">Team Not Found</div>
-              <p style="color:var(--text-sage); margin-bottom:18px;">The requested hackathon team does not exist or has been disbanded.</p>
-              <a href="/" class="btn-black-pill">← Back to Discover</a>
+            <div style="text-align:center; padding:80px 20px;">
+              <h2 style="font-family:var(--font-serif); font-size:1.75rem; margin-bottom:8px; color:#fff;">Team Not Found</h2>
+              <p style="color:var(--text-sage); margin-bottom:24px;">The requested hackathon team does not exist or has been disbanded.</p>
+              <button onclick="closeTeamDetailModal()" class="btn-black-pill">Close Window</button>
             </div>
           `;
         }
@@ -916,18 +970,34 @@ function loadTeamDetailView(teamId) {
     .catch(() => {
       if (!cachedTeam) {
         container.innerHTML = `
-          <div style="text-align:center; padding:60px 20px;">
-            <div style="font-family:var(--font-serif); font-size:1.5rem; margin-bottom:8px;">Unable to Load Team</div>
-            <p style="color:var(--text-sage); margin-bottom:18px;">Please check your connection and try again.</p>
-            <a href="/" class="btn-black-pill">← Back to Discover</a>
+          <div style="text-align:center; padding:80px 20px;">
+            <h2 style="font-family:var(--font-serif); font-size:1.75rem; margin-bottom:8px; color:#fff;">Unable to Load Team</h2>
+            <p style="color:var(--text-sage); margin-bottom:24px;">Please check your connection and try again.</p>
+            <button onclick="closeTeamDetailModal()" class="btn-black-pill">Close Window</button>
           </div>
         `;
       }
     });
 }
 
+function closeTeamDetailModal(restoreUrl = true) {
+  const modal = document.getElementById("teamDetailModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+  document.body.classList.remove("scroll-locked");
+  if (restoreUrl && window.location.pathname.startsWith("/team/")) {
+    history.pushState(null, "", "/");
+    highlightActiveNavLinks();
+  }
+}
+
+function loadTeamDetailView(teamId) {
+  openTeamDetailModal(teamId);
+}
+
 function renderFullTeamDetail(team) {
-  const container = document.getElementById("teamDetailViewContainer");
+  const container = document.getElementById("teamDetailModalContainer") || document.getElementById("teamDetailViewContainer");
   if (!container) return;
 
   const count = team.member_count || (team.members ? team.members.length : 0);
@@ -936,11 +1006,9 @@ function renderFullTeamDetail(team) {
   const isMember = Boolean(currentUser && currentUser.id && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentUser.id.toUpperCase())));
   const isSih = (team.hackathon_type || 'sih').toLowerCase() === 'sih';
   const hasFemale = Boolean(team.has_female);
-
-  // 6-Seat Visual Roster Cards
   const members = team.members || [];
-  let rosterCardsHtml = "";
 
+  let rosterRowsHtml = "";
   for (let i = 0; i < 6; i++) {
     if (i < members.length) {
       const m = members[i];
@@ -952,272 +1020,221 @@ function renderFullTeamDetail(team) {
       const isTeamLeader = m.role === 'leader';
       const avatarUrl = getStudentAvatarSrc(m.avatar_url, mRid, mName);
 
-      rosterCardsHtml += `
-        <div class="squad-member-card ${isTeamLeader ? 'is-lead-card' : ''}">
-          <div class="squad-member-header">
-            <div class="squad-avatar-box">
-              <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(mName)}" loading="lazy" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
+      rosterRowsHtml += `
+        <div class="team-roster-row ${isTeamLeader ? 'is-lead-row' : ''}">
+          <div class="roster-avatar-box">
+            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" loading="lazy" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
+          </div>
+          <div class="roster-info-box">
+            <div class="roster-name-line">
+              <span class="roster-name">${escapeHtml(cleanName)}</span>
+              ${isYou ? `<span class="roster-badge-you">You</span>` : ""}
+              <span class="roster-role-text ${isTeamLeader ? 'lead' : ''}">${isTeamLeader ? 'Captain' : 'Member'}</span>
             </div>
-
-            <div class="squad-member-info">
-              <div class="squad-member-name-row">
-                <span class="squad-member-name">${escapeHtml(cleanName)}</span>
-                ${isYou ? `<span class="squad-badge-you">You</span>` : ""}
-              </div>
-              <div class="squad-member-submeta">
-                <span class="squad-rid-tag">@${escapeHtml(mRid)}</span>
-                ${m.gender ? `<span class="squad-meta-bullet">•</span><span class="squad-gender-tag">${escapeHtml(m.gender)}</span>` : ""}
-              </div>
-            </div>
-
-            <div class="squad-role-tag ${isTeamLeader ? 'tag-captain' : 'tag-core'}">
-              ${isTeamLeader ? 'Squad Captain' : 'Core Engineer'}
+            <div class="roster-meta-line">
+              <span class="roster-rid">@${escapeHtml(mRid)}</span>
+              ${m.gender ? `<span class="roster-dot">•</span><span>${escapeHtml(m.gender)}</span>` : ""}
+              ${m.program ? `<span class="roster-dot">•</span><span>${escapeHtml(m.program)}</span>` : ""}
+              ${m.semester_year ? `<span>(Sem ${escapeHtml(m.semester_year)})</span>` : ""}
             </div>
           </div>
-
-          <div class="squad-member-footer">
-            <div class="squad-academic-text">
-              ${m.program ? escapeHtml(m.program) : 'JNU Engineering'}
-              ${m.semester_year ? ` • Sem ${escapeHtml(m.semester_year)}` : ''}
-            </div>
-
-            <div class="squad-member-actions">
-              ${m.email ? `
-                <a href="mailto:${escapeHtml(m.email)}" class="squad-email-btn" title="Email Teammate">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
-                </a>
-              ` : ''}
-              ${isLeader && !isTeamLeader ? `
-                <button onclick="confirmRemoveMember('${team.id}', '${escapeAttr(mRid)}', '${escapeAttr(cleanName)}')" class="btn-clean-remove" title="Remove Teammate">
-                  Remove
-                </button>
-              ` : ''}
-            </div>
+          <div class="roster-actions-box">
+            ${m.email ? `
+              <a href="mailto:${escapeHtml(m.email)}" class="roster-icon-btn" title="Email ${escapeAttr(cleanName)}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+              </a>
+            ` : ''}
+            ${isLeader && !isTeamLeader ? `
+              <button onclick="confirmRemoveMember('${team.id}', '${escapeAttr(mRid)}', '${escapeAttr(cleanName)}')" class="roster-remove-btn" title="Remove Teammate">
+                Remove
+              </button>
+            ` : ''}
           </div>
         </div>
       `;
     } else {
       const seatNum = i + 1;
-      rosterCardsHtml += `
-        <div class="squad-member-card empty-slot">
-          <div class="slot-badge">Seat 0${seatNum}</div>
-          <div class="slot-title">Open Squad Slot</div>
-          <p class="slot-subtitle">
-            ${isLeader ? 'Click to assign a teammate, or keep as is to accept join requests from other students.' : 'Open for students to send join requests.'}
-          </p>
-          ${isLeader ? `
-            <button onclick="openSlotStudentSearchModalForTeam('${team.id}', ${seatNum})" class="btn-slot-assign">
-              + Assign Teammate
-            </button>
-            <span style="font-size:0.75rem; color:var(--text-sage); margin-top:6px; display:block;">Or leave open for requests</span>
-          ` : `
-            <span class="slot-status-indicator">Open for Requests</span>
-          `}
+      rosterRowsHtml += `
+        <div class="team-roster-row is-empty-seat">
+          <div class="roster-empty-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+          <div class="roster-info-box">
+            <div class="roster-name-line">
+              <span class="roster-name" style="color:var(--text-sage);">Seat 0${seatNum}</span>
+            </div>
+            <div class="roster-meta-line" style="color:var(--text-sage);">
+              ${isLeader ? 'Assign a student or wait for join requests' : 'Available for student requests'}
+            </div>
+          </div>
+          <div class="roster-actions-box">
+            ${isLeader ? `
+              <button onclick="openSlotStudentSearchModalForTeam('${team.id}', ${seatNum})" class="btn-roster-assign">
+                + Add Teammate
+              </button>
+            ` : `
+              <span class="roster-open-indicator">Open</span>
+            `}
+          </div>
         </div>
       `;
     }
   }
 
   container.innerHTML = `
-    <div class="team-page-full-container">
-      <!-- Breadcrumb Nav -->
-      <div class="squad-workspace-nav">
-        <a href="/" class="btn-clean-back">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
-          <span>Squad Directory</span>
-        </a>
-        <span class="squad-crumb-sep">/</span>
-        <span class="squad-crumb-track">${isSih ? 'Smart India Hackathon' : 'CTF Cyber Defense'}</span>
-        <span class="squad-crumb-sep">/</span>
-        <span class="squad-crumb-current">${escapeHtml(team.name)}</span>
-      </div>
+    <div class="clean-team-modal-layout">
+      <!-- Team Header -->
+      <div class="clean-team-header">
+        <div class="clean-team-track-line">
+          <span class="clean-track-badge ${(team.hackathon_type || 'sih').toLowerCase()}">
+            <span class="clean-track-dot"></span>
+            ${isSih ? 'Smart India Hackathon' : 'Capture The Flag'}
+          </span>
+          <span class="clean-status-text">${isFull ? 'Roster Full (6/6)' : `${6 - count} open ${6 - count === 1 ? 'spot' : 'spots'}`}</span>
+          ${isSih ? `
+            <span class="clean-status-text" style="color:${hasFemale ? 'var(--badge-mint)' : 'var(--badge-coral)'};">
+              ${hasFemale ? '• 1+ Female (Rule Met)' : '• 1 Female Required'}
+            </span>
+          ` : ''}
+        </div>
 
-      <!-- Squad Header Command Surface -->
-      <div class="squad-command-header">
-        <div class="squad-command-main">
-          <div class="squad-badge-strip">
-            <span class="hackathon-tag-pill ${(team.hackathon_type || 'sih').toLowerCase()}">
-              <img src="${(team.hackathon_type === 'ctf') ? '/static/img/ctf_logo.jpg' : '/static/img/sih_logo.jpg'}" alt="Hackathon">
-              <span>${(team.hackathon_type === 'ctf') ? 'Capture The Flag (CTF)' : 'Smart India Hackathon (SIH)'}</span>
-            </span>
-            <span class="squad-status-capsule ${isFull ? 'status-complete' : 'status-recruiting'}">
-              ${isFull ? '● Roster Locked (6/6)' : `● ${6 - count} Open ${6 - count === 1 ? 'Slot' : 'Slots'}`}
-            </span>
-            ${isSih ? `
-              <span class="squad-status-capsule ${hasFemale ? 'status-diversity-pass' : 'status-diversity-warn'}">
-                ${hasFemale ? '✓ 1+ Female Teammate (SIH Rule Met)' : '⚠️ 1 Female Required (SIH Rule)'}
-              </span>
+        <h1 class="clean-team-title">${escapeHtml(team.name)}</h1>
+
+        <div class="clean-team-desc">
+          ${escapeHtml(team.description || "Looking for teammates for the upcoming hackathon.")}
+        </div>
+
+        <div class="clean-team-meta-bar">
+          <div class="clean-meta-item">
+            <span class="clean-meta-label">Captain</span>
+            <span class="clean-meta-val">@${escapeHtml(team.leader_r_id || 'Assigned')}</span>
+          </div>
+          <div class="clean-meta-item">
+            <span class="clean-meta-label">Track</span>
+            <span class="clean-meta-val">${isSih ? 'SIH Software' : 'Cyber Defense'}</span>
+          </div>
+          <div class="clean-meta-item">
+            <span class="clean-meta-label">Roster</span>
+            <span class="clean-meta-val">${count} / 6 Confirmed</span>
+          </div>
+
+          <div class="clean-meta-item" style="margin-left:auto; display:flex; align-items:center; gap:10px;">
+            ${team.whatsapp_link ? `
+              <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-wa-clean">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.67 12.05 3.67Z"/></svg>
+                <span>WhatsApp Group</span>
+              </a>
+            ` : (isLeader ? `
+              <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-wa-clean-add">
+                + Add WhatsApp Group
+              </button>
+            ` : '')}
+
+            ${isLeader ? `
+              <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-clean-action">
+                Edit
+              </button>
+              <button onclick="confirmDisbandTeam('${team.id}')" class="btn-clean-danger">
+                Disband
+              </button>
+            ` : ''}
+
+            ${(isMember && !isLeader) ? `
+              <button onclick="confirmLeaveTeam('${team.id}')" class="btn-clean-danger">
+                Leave Team
+              </button>
             ` : ''}
           </div>
-
-          <h1 class="squad-headline-title">${escapeHtml(team.name)}</h1>
-
-          <!-- Project Brief -->
-          <div class="squad-brief-card">
-            <div class="brief-kicker">Project Description</div>
-            <p class="brief-body-text">
-              ${escapeHtml(team.description || "Looking for teammates for the upcoming hackathon.")}
-            </p>
-            <div class="brief-meta-row">
-              <span class="brief-meta-item">
-                <strong>Track:</strong> ${(team.hackathon_type === 'ctf') ? 'Capture The Flag' : 'Smart India Hackathon'}
-              </span>
-              <span class="meta-dot">•</span>
-              <span class="brief-meta-item">
-                <strong>Captain:</strong> ${escapeHtml(team.leader_r_id || 'Assigned')}
-              </span>
-              <span class="meta-dot">•</span>
-              <span class="brief-meta-item">
-                <strong>Roster Capacity:</strong> ${count} / 6 Confirmed
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div class="squad-command-actions">
-          ${isLeader ? `
-            <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-dark-action">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
-              <span>Edit Details</span>
-            </button>
-            <button onclick="confirmDisbandTeam('${team.id}')" class="btn-danger-action">
-              <span>Disband Squad</span>
-            </button>
-          ` : ''}
-
-          ${(isMember && !isLeader) ? `
-            <button onclick="confirmLeaveTeam('${team.id}')" class="btn-danger-action">
-              <span>Leave Squad</span>
-            </button>
-          ` : ''}
         </div>
       </div>
 
-      <!-- WhatsApp Squad Collaboration Banner -->
-      <div class="squad-wa-banner">
-        <div class="squad-wa-info">
-          <div class="squad-wa-logo">
-            <svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.67 12.05 3.67Z"/></svg>
-          </div>
-          <div>
-            <div class="squad-wa-title">Official Squad WhatsApp Channel</div>
-            <div class="squad-wa-desc">
-              ${team.whatsapp_link ? 'Direct collaboration channel for confirmed teammates to coordinate GitHub repos, tasks, and standups.' : (isLeader ? 'You have not linked a WhatsApp group yet. Connect your squad chat so confirmed teammates can coordinate.' : 'The team captain will unlock the private WhatsApp coordination link here.')}
-            </div>
-          </div>
-        </div>
-        <div class="squad-wa-action">
-          ${team.whatsapp_link ? `
-            <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-wa-connect">
-              <span>Launch WhatsApp</span>
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
-            </a>
-          ` : (isLeader ? `
-            <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-wa-outline">
-              + Add WhatsApp Link
-            </button>
-          ` : `<span class="wa-unlinked-pill">Link Pending</span>`)}
-        </div>
-      </div>
-
-      <!-- Workspace 2-Column Split -->
-      <div class="squad-workspace-grid">
-        <!-- LEFT COLUMN: 6-Seat Roster Deck -->
-        <div class="squad-roster-column">
-          <div class="squad-column-header">
-            <div>
-              <h2 class="squad-column-title">Squad Roster</h2>
-              <p class="squad-column-subtitle">${count} of 6 seats locked (${6 - count} open vacancies)</p>
-            </div>
-            <div class="roster-progress-track">
-              <div class="roster-progress-fill" style="width: ${(count / 6) * 100}%;"></div>
-            </div>
+      <!-- Main Columns -->
+      <div class="clean-team-grid">
+        <!-- Roster Column -->
+        <div class="clean-roster-column">
+          <div class="clean-section-header">
+            <h2 class="clean-section-title">Team Roster</h2>
+            <span class="clean-section-sub">${count} of 6 seats locked</span>
           </div>
 
-          <div class="squad-seats-grid">
-            ${rosterCardsHtml}
+          <div class="clean-roster-list">
+            ${rosterRowsHtml}
           </div>
         </div>
 
-        <!-- RIGHT COLUMN: Applicant Review / Join Card / Scorecard -->
-        <div class="squad-sidebar-column">
-          <!-- IF LEADER: Prominent Applicant Review Deck -->
+        <!-- Sidebar Column -->
+        <div class="clean-sidebar-column">
           ${isLeader ? `
-            <div class="squad-deck-card applicant-deck">
-              <div class="deck-header">
-                <div class="deck-title-group">
-                  <h3 class="deck-title">Applicant Inquiries</h3>
-                  <span id="pendingReqCountBadge" class="deck-counter">0 Pending</span>
-                </div>
+            <div class="clean-sidebar-section">
+              <div class="clean-section-header">
+                <h3 class="clean-section-title" style="font-size:1.125rem;">Join Requests</h3>
+                <span id="pendingReqCountBadge" class="clean-counter-badge">0 Pending</span>
               </div>
-              <div id="pendingRequestsContainer" class="pending-requests-list">
-                ${renderIosSpinner('sm', 'Checking for applicants...')}
+              <div id="pendingRequestsContainer" class="clean-requests-list">
+                ${renderIosSpinner('sm')}
               </div>
             </div>
           ` : ''}
 
-          <!-- IF NON-MEMBER & NOT FULL: Join Squad Card -->
           ${(!isMember && !isFull) ? `
-            <div class="squad-deck-card join-deck">
-              <div class="deck-header">
-                <div class="deck-kicker">Roster Enrolment</div>
-                <h3 class="deck-title">Apply to Join ${escapeHtml(team.name)}</h3>
+            <div class="clean-sidebar-section">
+              <div class="clean-section-header">
+                <h3 class="clean-section-title" style="font-size:1.125rem;">Apply to Join</h3>
               </div>
-              <p class="join-deck-prompt">
-                Introduce yourself and highlight your stack (e.g. React, Python, UI/UX, Cloud, CTF reversing):
+              <p style="font-size:0.875rem; color:var(--text-sage); margin-bottom:12px;">
+                Introduce yourself and your skills (e.g. React, Python, UI/UX, Cloud, CTF):
               </p>
               ${currentUser ? `
-                <textarea id="joinMessageInput" rows="3" placeholder="Hey! I'm proficient in Python and React. Would love to contribute to this hackathon project..." class="input-forest squad-apply-textarea"></textarea>
-                <button onclick="submitJoinRequest('${team.id}')" class="btn-squad-apply">
-                  <span>Submit Join Application</span>
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+                <textarea id="joinMessageInput" rows="3" placeholder="Hi! I'd like to join your team. I work with..." class="input-forest" style="width:100%; margin-bottom:12px; resize:vertical;"></textarea>
+                <button onclick="submitJoinRequest('${team.id}')" class="btn-black-pill" style="width:100%; justify-content:center;">
+                  Submit Request
                 </button>
               ` : `
-                <div class="apply-signin-prompt">
-                  <p>Sign in with your University R-ID to request joining this squad.</p>
-                  <a href="/login" class="btn-slot-assign" style="display:inline-block; margin-top:8px;">Sign In to Apply</a>
+                <div style="padding:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:12px; text-align:center;">
+                  <p style="font-size:0.875rem; color:var(--text-sage); margin-bottom:10px;">Sign in with your College R-ID to send a join request.</p>
+                  <a href="/login" class="btn-black-pill" style="display:inline-flex;">Sign In to Apply</a>
                 </div>
               `}
             </div>
           ` : ''}
 
-          <!-- Hackathon Compliance & Readiness Scorecard -->
-          <div class="squad-deck-card scorecard-deck">
-            <div class="deck-kicker">Compliance Engine</div>
-            <h3 class="deck-title">Hackathon Readiness</h3>
-
-            <div class="scorecard-checklist">
-              <div class="scorecard-row">
-                <span class="score-icon ${count >= 2 ? 'is-pass' : 'is-pending'}">${count >= 2 ? '✓' : '●'}</span>
-                <div class="score-meta">
-                  <span class="score-title">Roster Minimums</span>
-                  <span class="score-desc">${count >= 6 ? 'Full 6-seat roster complete' : `${count}/6 confirmed teammates`}</span>
+          <!-- Checklist -->
+          <div class="clean-sidebar-section">
+            <div class="clean-section-header">
+              <h3 class="clean-section-title" style="font-size:1.125rem;">Checklist</h3>
+            </div>
+            <div class="clean-checklist">
+              <div class="clean-checklist-row">
+                <span class="checklist-status-dot ${count >= 2 ? 'pass' : 'wait'}">${count >= 2 ? '✓' : '●'}</span>
+                <div>
+                  <div class="checklist-title">Roster Minimums</div>
+                  <div class="checklist-desc">${count >= 6 ? 'Full team (6/6)' : `${count}/6 confirmed members`}</div>
                 </div>
               </div>
 
               ${isSih ? `
-                <div class="scorecard-row">
-                  <span class="score-icon ${hasFemale ? 'is-pass' : 'is-warn'}">${hasFemale ? '✓' : '!'}</span>
-                  <div class="score-meta">
-                    <span class="score-title">SIH Gender Diversity Rule</span>
-                    <span class="score-desc">${hasFemale ? 'Rule satisfied (Female teammate confirmed)' : 'Requirement: At least 1 female teammate'}</span>
+                <div class="clean-checklist-row">
+                  <span class="checklist-status-dot ${hasFemale ? 'pass' : 'warn'}">${hasFemale ? '✓' : '!'}</span>
+                  <div>
+                    <div class="checklist-title">Gender Diversity</div>
+                    <div class="checklist-desc">${hasFemale ? 'At least 1 female teammate confirmed' : 'Required: 1 female teammate'}</div>
                   </div>
                 </div>
               ` : ''}
 
-              <div class="scorecard-row">
-                <span class="score-icon ${team.whatsapp_link ? 'is-pass' : 'is-pending'}">${team.whatsapp_link ? '✓' : '●'}</span>
-                <div class="score-meta">
-                  <span class="score-title">Team Comm Channel</span>
-                  <span class="score-desc">${team.whatsapp_link ? 'WhatsApp connected for sync' : 'Group chat link pending'}</span>
+              <div class="clean-checklist-row">
+                <span class="checklist-status-dot ${team.whatsapp_link ? 'pass' : 'wait'}">${team.whatsapp_link ? '✓' : '●'}</span>
+                <div>
+                  <div class="checklist-title">Team Group Chat</div>
+                  <div class="checklist-desc">${team.whatsapp_link ? 'WhatsApp connected' : 'Link not added yet'}</div>
                 </div>
               </div>
 
-              <div class="scorecard-row">
-                <span class="score-icon is-pass">✓</span>
-                <div class="score-meta">
-                  <span class="score-title">Student Record Verification</span>
-                  <span class="score-desc">All teammates verified via JNU R-ID</span>
+              <div class="clean-checklist-row">
+                <span class="checklist-status-dot pass">✓</span>
+                <div>
+                  <div class="checklist-title">Student Verification</div>
+                  <div class="checklist-desc">All members verified by College R-ID</div>
                 </div>
               </div>
             </div>
@@ -1240,37 +1257,35 @@ function loadTeamJoinRequests(teamId) {
       if (badge) badge.innerText = `${requests.length} Pending`;
 
       if (requests.length === 0) {
-        container.innerHTML = `<p style="font-size:0.8125rem; color:var(--text-sage); text-align:center; padding:12px 0;">No pending join requests right now.</p>`;
+        container.innerHTML = `<p style="font-size:0.8125rem; color:var(--text-sage); text-align:center; padding:16px 0;">No pending join requests.</p>`;
         return;
       }
 
       container.innerHTML = requests.map(req => {
         const applicantName = (req.name || req.student_name || req.r_id || "Student") + "";
-        const initial = applicantName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().charAt(0).toUpperCase() || 'U';
+        const cleanName = applicantName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
         return `
-          <div class="pending-request-item">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <div class="seat-avatar" style="width:36px; height:36px;">
-                <img src="${escapeHtml(getStudentAvatarSrc(req.avatar_url, req.r_id, applicantName))}" alt="${escapeHtml(applicantName)}" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
-              </div>
+          <div class="clean-request-row">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <img src="${escapeHtml(getStudentAvatarSrc(req.avatar_url, req.r_id, applicantName))}" alt="${escapeHtml(cleanName)}" style="width:34px; height:34px; border-radius:50%; object-fit:cover;" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
               <div style="min-width:0; flex:1;">
-                <div style="font-weight:750; font-size:0.875rem; color:var(--text-white);">${escapeHtml(applicantName)}</div>
-                <div style="font-size:0.6875rem; color:var(--text-sage);">@${escapeHtml(req.r_id)} ${req.gender ? `• ${escapeHtml(req.gender)}` : ''}</div>
+                <div style="font-weight:600; font-size:0.875rem; color:#fff;">${escapeHtml(cleanName)}</div>
+                <div style="font-size:0.75rem; color:var(--text-sage);">@${escapeHtml(req.r_id)} ${req.gender ? `• ${escapeHtml(req.gender)}` : ''}</div>
               </div>
             </div>
 
             ${req.message ? `
-              <div style="font-size:0.8125rem; color:var(--text-sage-light); background:rgba(0,0,0,0.25); padding:8px 12px; border-radius:var(--radius-md); font-style:italic;">
+              <div style="font-size:0.8125rem; color:rgba(255,255,255,0.75); margin-bottom:10px; line-height:1.4;">
                 "${escapeHtml(req.message)}"
               </div>
             ` : ""}
 
             <div style="display:flex; gap:8px; justify-content:flex-end;">
-              <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'reject')" class="btn-outline-pill" style="padding:5px 12px; font-size:0.75rem;">
+              <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'reject')" class="btn-clean-action" style="font-size:0.75rem; padding:4px 10px;">
                 Decline
               </button>
-              <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'accept')" class="btn-black-pill sm" style="background:var(--badge-mint); color:#fff; border-color:var(--badge-mint);">
-                ✓ Accept
+              <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'accept')" class="btn-black-pill sm" style="font-size:0.75rem; padding:4px 12px; background:var(--badge-mint); color:#000;">
+                Accept
               </button>
             </div>
           </div>
@@ -1278,7 +1293,7 @@ function loadTeamJoinRequests(teamId) {
       }).join("");
     })
     .catch(() => {
-      container.innerHTML = `<p style="color:var(--badge-coral); font-size:0.875rem;">Failed to load requests.</p>`;
+      container.innerHTML = `<p style="color:var(--badge-coral); font-size:0.8125rem;">Failed to load requests.</p>`;
     });
 }
 
@@ -1651,19 +1666,13 @@ function loadProfileView() {
   if (!container) return;
 
   if (!currentUser) {
-    container.innerHTML = `
-      <div class="form-card-centered" style="text-align:center;">
-        <h2 class="font-serif" style="font-size:1.625rem; margin-bottom:8px;">Sign In Required</h2>
-        <p style="color:var(--text-sage); margin-bottom:20px;">Sign in with your College R-ID to view your hackathon profile and teams.</p>
-        <a href="/login" class="btn-black-pill lg" style="width:100%;">Sign In with R-ID</a>
-      </div>
-    `;
+    navigateTo("/login");
     return;
   }
 
   container.innerHTML = `
     <div style="text-align:center; padding:60px 20px;">
-      ${renderIosSpinner('lg', 'Loading your profile...')}
+      ${renderIosSpinner('lg')}
     </div>
   `;
 
@@ -1717,10 +1726,10 @@ function renderFullProfile(prof, userTeams) {
 
       <div style="display:flex; flex-direction:column; gap:10px;">
         <a href="/create-team" class="btn-agro-yellow-pill" style="width:100%; justify-content:center;">
-          + Create New Squad
+          Create Team
         </a>
         <button onclick="logoutUser()" class="btn-danger-pill" style="width:100%; justify-content:center;">
-          Sign Out of JnuMate
+          Sign Out
         </button>
       </div>
     </div>
@@ -2740,36 +2749,61 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   const rawAvatar = student.avatar_url || "";
   const avatarSrc = getStudentAvatarSrc(rawAvatar, student.r_id);
   const cleanName = (student.name || student.r_id || "Student").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
-  const displayEmail = targetEmail || student.email || `${student.r_id}@student.edu`;
-  const program = student.program || "Student";
-  const academicYear = student.academic_year || getAcademicYearByRid(student.r_id);
+  const displayEmail = student.jnu_email || targetEmail || student.email || `${student.r_id}@student.edu`;
+  const academicYear = student.current_year || student.academic_year || getAcademicYearByRid(student.r_id);
+  const dob = student.dob || "Not Provided";
+  const gender = student.gender || "Not Specified";
+  const state = student.state || "Not Provided";
 
   spotlightContainer.innerHTML = `
-    <!-- SECTION 1: STUDENT DETAILS (CLEAN HORIZONTAL STRIP) -->
-    <div class="auth-student-id-strip">
-      <div class="auth-strip-avatar">
-        <img src="${escapeHtml(avatarSrc)}" 
-             data-raw-src="${escapeHtml(rawAvatar)}" 
-             alt="${escapeHtml(cleanName)}" 
-             onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
-      </div>
-      <div class="auth-strip-info">
-        <div class="auth-strip-name">${escapeHtml(cleanName)}</div>
-        <div class="auth-strip-tags">
-          <span class="auth-badge-rid">@${escapeHtml(student.r_id)}</span>
-          <span class="auth-badge-year">${escapeHtml(academicYear)}</span>
-          <span class="auth-badge-prog truncate">${escapeHtml(program)}</span>
+    <!-- BIG PROPERLY ALIGNED STUDENT PHOTO (NO JNU LOGO ON STEP 2) -->
+    <div class="auth-student-big-avatar-box">
+      <img src="${escapeHtml(avatarSrc)}" 
+           data-raw-src="${escapeHtml(rawAvatar)}" 
+           alt="${escapeHtml(cleanName)}" 
+           class="auth-student-big-avatar"
+           onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+    </div>
+
+    <!-- STUDENT IDENTITY DETAILS (CLEAN TYPOGRAPHY, NO BOXES, NO PILLS) -->
+    <div class="auth-student-details-sheet">
+      <h2 class="auth-student-fullname font-serif">${escapeHtml(cleanName)}</h2>
+      
+      <div class="auth-details-fields-table">
+        <div class="auth-field-row">
+          <span class="auth-field-label">College R-ID</span>
+          <span class="auth-field-value highlight">@${escapeHtml(student.r_id)}</span>
+        </div>
+        <div class="auth-field-row">
+          <span class="auth-field-label">Current Year</span>
+          <span class="auth-field-value">${escapeHtml(academicYear)}</span>
+        </div>
+        <div class="auth-field-row">
+          <span class="auth-field-label">Date of Birth</span>
+          <span class="auth-field-value">${escapeHtml(dob)}</span>
+        </div>
+        <div class="auth-field-row">
+          <span class="auth-field-label">Gender</span>
+          <span class="auth-field-value">${escapeHtml(gender)}</span>
+        </div>
+        <div class="auth-field-row">
+          <span class="auth-field-label">State</span>
+          <span class="auth-field-value">${escapeHtml(state)}</span>
+        </div>
+        <div class="auth-field-row full-width">
+          <span class="auth-field-label">JNU Email</span>
+          <span class="auth-field-value truncate">${escapeHtml(displayEmail)}</span>
         </div>
       </div>
     </div>
 
-    <!-- SECTION 2: WHERE OTP IS SENT (DEDICATED DISPATCH BANNER) -->
-    <div class="auth-dispatch-banner">
+    <!-- SEPARATE DEDICATED DISPATCH NOTICE -->
+    <div class="auth-dispatch-notice-bar">
       <div class="auth-dispatch-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px; height:15px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
       </div>
-      <div class="auth-dispatch-content">
-        <span class="auth-dispatch-prompt">Verification code sent to</span>
+      <div class="auth-dispatch-text">
+        <span>Verification code sent to</span>
         <strong class="auth-dispatch-email">${escapeHtml(displayEmail)}</strong>
       </div>
     </div>
@@ -2784,12 +2818,6 @@ function loadLoginView() {
   pendingStudentProfile = null;
   clearInterval(resendTimerInterval);
 
-  const isCreateTeamIntent = postLoginRedirect === "/create-team";
-  const authSupText = isCreateTeamIntent ? "Team Leader Authorization" : "Official Hackathon Portal";
-  const authMainTitle = isCreateTeamIntent ? "Sign In to Create Team" : "Sign In to JnuMate";
-  const authSubText = isCreateTeamIntent ? "Verify your College R-ID to lead a 6-seat hackathon squad and invite teammates." : "Find teammates, build 6-seat dream teams, and win hackathons!";
-  const btnActionText = isCreateTeamIntent ? "Sign In & Continue ➔" : "Sign In ➔";
-
   const courseOptionsHtml = ACADEMIC_PROGRAMS.map(p => `
     <option value="${escapeAttr(p)}">${escapeHtml(p)}</option>
   `).join("");
@@ -2798,20 +2826,13 @@ function loadLoginView() {
     <div class="login-screen-wrap">
       <div class="login-editorial-card">
         
-        <!-- Official JNU Transparent Logo Merged with Portal -->
+        <!-- Official JNU Transparent Logo Merged with Portal (Hidden on Step 2) -->
         <div class="login-jnu-logo-box">
           <img src="/static/img/jnu_logo.png" alt="Jaipur National University Logo" class="jnu-signin-logo" onerror="this.src='/static/img/jnu_logo.jpg';">
         </div>
 
-        <div class="greeting-sup-text" id="authPortalSupText" style="color:var(--badge-yellow);">${escapeHtml(authSupText)}</div>
-        <h1 class="font-serif" id="authPortalMainTitle" style="font-size:1.875rem; margin-bottom:6px;">${escapeHtml(authMainTitle)}</h1>
-        <p id="authPortalSubtext" style="color:var(--text-sage); font-size:0.875rem; margin-bottom:20px;">${escapeHtml(authSubText)}</p>
-
-        ${isCreateTeamIntent ? `
-          <div id="authCreateTeamBanner" style="display:inline-flex; align-items:center; gap:6px; background:rgba(62,168,108,0.15); border:1px solid rgba(62,168,108,0.3); border-radius:6px; padding:4px 12px; margin-bottom:18px; font-size:0.75rem; color:var(--badge-mint); font-weight:750;">
-            <span>🛡️</span> Team Leader Verification Required
-          </div>
-        ` : ''}
+        <h1 class="font-serif login-portal-title" style="font-size:1.875rem; margin-bottom:6px;">Student Sign In</h1>
+        <p class="login-portal-subtitle" style="color:var(--text-sage); font-size:0.875rem; margin-bottom:20px;">Enter your College R-ID to continue</p>
 
         <!-- Step 1: Input R-ID -->
         <div id="authStep1">
@@ -2821,7 +2842,7 @@ function loadLoginView() {
           </div>
 
           <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-auth-submit" style="width:100%;">
-            ${btnActionText}
+            Sign In ➔
           </button>
         </div>
 
@@ -2868,9 +2889,9 @@ function loadLoginView() {
           </button>
         </div>
 
-        <!-- Step 2: Zero-Scroll OTP Verification (3-part Engineering Layout) -->
+        <!-- Step 2: Zero-Scroll OTP Verification (Clean Unboxed Layout) -->
         <div id="authStep2" style="display:none;">
-          <!-- Section 1 (Student Details) and Section 2 (Where OTP is Sent) rendered here -->
+          <!-- Big photo, clean details, and dedicated dispatch notice rendered here -->
           <div id="authStep2ProfileSpotlight"></div>
 
           <!-- SECTION 3: OTP ENTER SECTION -->
@@ -2905,21 +2926,16 @@ function showAuthStep(step) {
   const sSync = document.getElementById("authStepSyncNotice");
   const s2 = document.getElementById("authStep2");
   const logoBox = document.querySelector(".login-jnu-logo-box");
-  const cardTitle = document.getElementById("authPortalMainTitle") || document.querySelector(".login-editorial-card h1");
-  const cardSub = document.getElementById("authPortalSubtext") || document.querySelector(".login-editorial-card p");
-  const cardSup = document.getElementById("authPortalSupText") || document.querySelector(".greeting-sup-text");
-  const bannerIntent = document.getElementById("authCreateTeamBanner");
+  const cardTitle = document.querySelector(".login-portal-title");
+  const cardSub = document.querySelector(".login-portal-subtitle");
 
   const isOtpStep = step === 2;
-  // Keep official JNU Crest logo visible on step 2 for institutional branding
+  // HIDE official JNU Crest logo on step 2 so big student photo takes focus
   if (logoBox) {
-    logoBox.style.display = "block";
-    logoBox.style.marginBottom = isOtpStep ? "12px" : "18px";
+    logoBox.style.display = isOtpStep ? "none" : "block";
   }
   if (cardTitle) cardTitle.style.display = isOtpStep ? "none" : "";
   if (cardSub) cardSub.style.display = isOtpStep ? "none" : "";
-  if (cardSup) cardSup.style.display = isOtpStep ? "none" : "";
-  if (bannerIntent) bannerIntent.style.display = isOtpStep ? "none" : "";
 
   if (s1) s1.style.display = step === 1 ? "block" : "none";
   if (sSync) sSync.style.display = step === 'sync' ? "block" : "none";
@@ -2930,7 +2946,7 @@ function showAuthStep(step) {
       const input = document.getElementById("otpCodeInput");
       if (input) {
         input.value = "";
-        input.focus();
+        setTimeout(() => input.focus(), 150);
       }
     }
   }
@@ -3258,7 +3274,13 @@ function toggleNotificationsPanel() {
   if (overlay) {
     overlay.classList.toggle("active");
     if (overlay.classList.contains("active")) {
+      document.body.classList.add("scroll-locked");
       loadNotifications();
+    } else {
+      const modal = document.getElementById("teamDetailModal");
+      if (!modal || modal.style.display === "none") {
+        document.body.classList.remove("scroll-locked");
+      }
     }
   }
 }
@@ -3267,6 +3289,10 @@ function closeNotificationsPanel() {
   const overlay = document.getElementById("notifOverlay");
   if (overlay) {
     overlay.classList.remove("active");
+  }
+  const modal = document.getElementById("teamDetailModal");
+  if (!modal || modal.style.display === "none") {
+    document.body.classList.remove("scroll-locked");
   }
 }
 
@@ -3517,11 +3543,11 @@ function loadAdminView() {
 
   container.innerHTML = `
     <div class="admin-loading-wrap">
-      ${renderIosSpinner('lg', 'Checking administration credentials...')}
+      ${renderIosSpinner('lg')}
     </div>
   `;
 
-  fetch("/api/admin/status")
+  fetch("/api/admin/status", { credentials: "same-origin" })
     .then(res => res.json())
     .then(data => {
       if (data.authenticated) {
@@ -3545,7 +3571,6 @@ function renderAdminLoginForm() {
         <div class="admin-auth-crest">
           <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="jnu-admin-logo" onerror="this.src='/static/img/jnu_logo.jpg';">
         </div>
-        <div class="admin-auth-badge">Executive Security Gateway</div>
         <h2 class="admin-auth-title font-serif">JnuMate Administration</h2>
         <p class="admin-auth-subtitle">Enter administrator credentials to access platform controls.</p>
 
@@ -3557,11 +3582,11 @@ function renderAdminLoginForm() {
 
           <div class="form-group" style="margin-bottom:20px; text-align:left;">
             <label class="form-label-forest">Admin Password</label>
-            <input type="password" id="adminPasswordInput" class="input-forest" placeholder="Enter password" required autocomplete="current-password">
+            <input type="password" id="adminPasswordInput" class="input-forest" placeholder="Enter password" required autocomplete="current-password" onkeyup="if(event.key==='Enter') submitAdminLogin()">
           </div>
 
           <button type="submit" id="btnAdminLogin" class="btn-auth-submit" style="width:100%;">
-            Authenticate into Console ➔
+            Sign In ➔
           </button>
         </form>
       </div>
@@ -3576,7 +3601,7 @@ function submitAdminLogin() {
   if (!userEl || !passEl) return;
 
   const username = userEl.value.trim();
-  const password = passEl.value;
+  const password = passEl.value.trim();
 
   if (!username || !password) {
     showToast("Please enter User ID and Password", "error");
@@ -3591,6 +3616,7 @@ function submitAdminLogin() {
   fetch("/api/admin/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify({ user_id: username, password: password })
   })
     .then(res => res.json())
@@ -3601,7 +3627,7 @@ function submitAdminLogin() {
       } else {
         if (btn) {
           btn.disabled = false;
-          btn.innerText = "Authenticate into Console ➔";
+          btn.innerText = "Sign In ➔";
         }
         showToast(data.message || "Invalid admin credentials", "error");
       }
@@ -3609,7 +3635,7 @@ function submitAdminLogin() {
     .catch(() => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Authenticate into Console ➔";
+        btn.innerText = "Sign In ➔";
       }
       showToast("Connection error authenticating admin", "error");
     });
@@ -3621,7 +3647,7 @@ function loadAdminDashboardData() {
 
   container.innerHTML = `
     <div class="admin-loading-wrap">
-      ${renderIosSpinner('lg', 'Loading system metrics and controls...')}
+      ${renderIosSpinner('lg')}
     </div>
   `;
 

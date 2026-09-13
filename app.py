@@ -306,8 +306,9 @@ def admin_login():
     data = request.json or {}
     username = (data.get("username") or data.get("user_id") or "").strip()
     password = (data.get("password") or "").strip()
-    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+    if username.lower() == ADMIN_USERNAME.lower() and password == ADMIN_PASSWORD:
         session["is_admin"] = True
+        session.permanent = True
         return jsonify({"success": True, "message": "Admin authenticated successfully"})
     return jsonify({"success": False, "message": "Invalid admin user ID or password"}), 401
 
@@ -476,6 +477,28 @@ def auth_send_otp():
     conn.close()
 
     acad_yr, adm_yr = get_academic_year_by_rid(r_id)
+    json_item = STUDENT_PROFILES_MAP.get(r_id) or {}
+    personal_data = json_item.get("personal_details", {}) or {}
+    addr_data = json_item.get("address_details", {}) or {}
+    
+    state_val = addr_data.get("Correspondence State") or addr_data.get("Permanent State") or "Not Provided"
+    if not state_val or str(state_val).strip() in ["", "None", "-1", "null"]:
+        state_val = "Not Provided"
+    else:
+        state_val = str(state_val).strip()
+
+    dob_val = personal_data.get("Date of Birth") or dob or "Not Provided"
+    if not dob_val or str(dob_val).strip() in ["", "None", "-1", "null"]:
+        dob_val = "Not Provided"
+    else:
+        dob_val = str(dob_val).strip()
+
+    gender_val = personal_data.get("Gender") or gender or "Not Specified"
+    if not gender_val or str(gender_val).strip() in ["", "None", "-1", "null"]:
+        gender_val = "Not Specified"
+    else:
+        gender_val = str(gender_val).strip()
+
     # Check if admin has enabled real email dispatch
     is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
     if is_email_on:
@@ -493,12 +516,15 @@ def auth_send_otp():
         "student": {
             "r_id": r_id,
             "name": name,
-            "dob": dob,
-            "gender": gender,
+            "dob": dob_val,
+            "gender": gender_val,
             "email": email,
+            "jnu_email": email,
+            "state": state_val,
             "avatar_url": avatar_url,
             "program": prog or "Student",
             "semester": sem or "",
+            "current_year": acad_yr,
             "academic_year": acad_yr,
             "admission_year": adm_yr
         }

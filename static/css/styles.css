@@ -574,7 +574,8 @@ h1, h2, h3, h4, .font-serif {
 
 .team-forest-card:hover, .team-card-forest:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.14), 0 0 0 1.5px rgba(60, 166, 106, 0.35);
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 .team-card-top-row {
@@ -5267,4 +5268,518 @@ input:checked + .admin-slider:before {
   line-height: 1.45;
   margin-bottom: 22px;
 }
+
+/* Scroll Lock for Modals & Mobile Drawer */
+body.scroll-locked {
+  overflow: hidden !important;
+  touch-action: none;
+}
+
+/* Full-Screen Team Overlay Window */
+.fullscreen-team-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #07150d;
+  z-index: 10000;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fullscreen-modal-close-btn {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10001;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.fullscreen-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.05);
+}
+
+.fullscreen-team-content {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 50px 24px 80px;
+}
+
+/* Clean Team Modal Layout (No Box Obsession, Professional & Elegant) */
+.clean-team-modal-layout {
+  width: 100%;
+}
+
+.clean-team-header {
+  margin-bottom: 36px;
+}
+
+.clean-team-track-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.clean-track-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--badge-yellow);
+}
+
+.clean-track-badge.ctf {
+  color: var(--badge-coral);
+}
+
+.clean-track-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.clean-status-text {
+  font-size: 0.8125rem;
+  color: var(--text-sage);
+}
+
+.clean-team-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 500;
+  color: #FFFFFF;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+
+.clean-team-desc {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 800px;
+  margin-bottom: 24px;
+}
+
+.clean-team-meta-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.clean-meta-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+
+.clean-meta-label {
+  color: var(--text-sage);
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.clean-meta-val {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.btn-wa-clean {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: #25D366;
+  color: #05160c;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.btn-wa-clean:hover {
+  opacity: 0.9;
+}
+
+.btn-wa-clean-add {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-sage-light);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.btn-clean-action {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.btn-clean-danger {
+  background: rgba(240, 83, 66, 0.1);
+  border: 1px solid rgba(240, 83, 66, 0.25);
+  color: var(--badge-coral);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+/* Main Grid */
+.clean-team-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 40px;
+}
+
+@media (max-width: 860px) {
+  .clean-team-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .fullscreen-team-content {
+    padding: 40px 16px 60px;
+  }
+  .fullscreen-modal-close-btn {
+    top: 14px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+  }
+}
+
+.clean-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.clean-section-title {
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+.clean-section-sub {
+  font-size: 0.8125rem;
+  color: var(--text-sage);
+}
+
+/* Clean Roster Rows */
+.clean-roster-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.team-roster-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  transition: background 0.12s ease;
+}
+
+.team-roster-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.roster-avatar-box {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.roster-avatar-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.roster-empty-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-sage);
+}
+
+.roster-info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.roster-name-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}
+
+.roster-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.roster-badge-you {
+  font-size: 0.6875rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(242, 169, 34, 0.15);
+  color: var(--badge-yellow);
+  font-weight: 700;
+}
+
+.roster-role-text {
+  font-size: 0.75rem;
+  color: var(--text-sage);
+  margin-left: auto;
+}
+
+.roster-role-text.lead {
+  color: var(--badge-mint);
+  font-weight: 600;
+}
+
+.roster-meta-line {
+  font-size: 0.8125rem;
+  color: var(--text-sage);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.roster-dot {
+  opacity: 0.4;
+}
+
+.roster-actions-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roster-icon-btn {
+  color: var(--text-sage);
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.12s ease;
+}
+
+.roster-icon-btn:hover {
+  color: #FFFFFF;
+}
+
+.roster-remove-btn {
+  background: none;
+  border: none;
+  color: var(--badge-coral);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.btn-roster-assign {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.btn-roster-assign:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.roster-open-indicator {
+  font-size: 0.75rem;
+  color: var(--text-sage);
+}
+
+/* Sidebar sections */
+.clean-sidebar-section {
+  margin-bottom: 28px;
+}
+
+.clean-counter-badge {
+  font-size: 0.75rem;
+  color: var(--badge-yellow);
+}
+
+.clean-request-row {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.clean-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.clean-checklist-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.checklist-status-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.checklist-status-dot.pass {
+  background: rgba(62, 168, 108, 0.2);
+  color: var(--badge-mint);
+}
+
+.checklist-status-dot.warn {
+  background: rgba(240, 83, 66, 0.2);
+  color: var(--badge-coral);
+}
+
+.checklist-status-dot.wait {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-sage);
+}
+
+.checklist-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.checklist-desc {
+  font-size: 0.75rem;
+  color: var(--text-sage);
+}
+
+/* Centered View Container for Login & Admin (Holds footer below fold) */
+#viewLogin.active,
+#viewAdmin.active {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px 60px;
+}
+
+/* OTP Step 2 Redesign: Big Student Photo, Unboxed Details, Dedicated Dispatch Bar */
+.auth-student-big-avatar-box {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.auth-student-big-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.auth-student-details-sheet {
+  margin-bottom: 20px;
+}
+
+.auth-details-fields-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.auth-details-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.auth-details-label {
+  padding: 7px 4px;
+  font-size: 0.8125rem;
+  color: var(--text-sage);
+  font-weight: 500;
+  text-align: left;
+  width: 40%;
+}
+
+.auth-details-val {
+  padding: 7px 4px;
+  font-size: 0.8125rem;
+  color: #FFFFFF;
+  font-weight: 600;
+  text-align: right;
+}
+
+.auth-dispatch-notice-bar {
+  background: rgba(62, 168, 108, 0.09);
+  border: 1px solid rgba(62, 168, 108, 0.22);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.8125rem;
+  color: #B8D8C4;
+  margin-bottom: 18px;
+  line-height: 1.4;
+  text-align: center;
+}
+
 

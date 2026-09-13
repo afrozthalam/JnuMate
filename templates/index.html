@@ -11,6 +11,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <script>
+    (function() {
+      var p = window.location.pathname;
+      var activeId = "viewDiscover";
+      if (p === "/admin") activeId = "viewAdmin";
+      else if (p === "/login") activeId = "viewLogin";
+      else if (p === "/profile") activeId = "viewProfile";
+      else if (p === "/create-team") activeId = "viewCreateTeam";
+      else if (p === "/students") activeId = "viewStudents";
+      window.__initialActiveViewId = activeId;
+    })();
+  </script>
 </head>
 <body>
 
@@ -143,7 +155,7 @@
       <main class="app-main-workspace" id="mainWorkspaceArea">
 
         <!-- VIEW 1: DISCOVER TEAMS -->
-        <section id="viewDiscover" class="view-page-panel active">
+        <section id="viewDiscover" class="view-page-panel">
           
           <!-- Mobile Editorial Header (Short & Beautiful) -->
           <div class="forest-header-section home-header-compact mobile-only-block">
@@ -234,33 +246,25 @@
                 <div class="footer-step-row">
                   <span class="step-num">01</span>
                   <div class="step-content">
-                    <strong class="step-label">Verify College R-ID</strong>
-                    <span class="step-sep">—</span>
-                    <span class="step-desc">Instant verification to university student records without passwords.</span>
+                    <strong class="step-label">Sign in with College R-ID</strong>
                   </div>
                 </div>
                 <div class="footer-step-row">
                   <span class="step-num">02</span>
                   <div class="step-content">
-                    <strong class="step-label">Explore Squads</strong>
-                    <span class="step-sep">—</span>
-                    <span class="step-desc">Filter SIH or CTF hackathons with live open seat status and track tags.</span>
+                    <strong class="step-label">Find a team or create one</strong>
                   </div>
                 </div>
                 <div class="footer-step-row">
                   <span class="step-num">03</span>
                   <div class="step-content">
-                    <strong class="step-label">Join or Assemble</strong>
-                    <span class="step-sep">—</span>
-                    <span class="step-desc">Apply to open roles or create and captain your own 6-seat roster.</span>
+                    <strong class="step-label">Connect with teammates</strong>
                   </div>
                 </div>
                 <div class="footer-step-row">
                   <span class="step-num">04</span>
                   <div class="step-content">
-                    <strong class="step-label">Sync on WhatsApp</strong>
-                    <span class="step-sep">—</span>
-                    <span class="step-desc">Instant group link for confirmed teammates to coordinate code & standups.</span>
+                    <strong class="step-label">Compete in hackathons</strong>
                   </div>
                 </div>
               </div>
@@ -415,6 +419,17 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ================= FULL-SCREEN TEAM DETAIL OVERLAY WINDOW ================= -->
+  <div id="teamDetailModal" class="fullscreen-team-overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Team Details">
+    <button class="fullscreen-modal-close-btn" onclick="closeTeamDetailModal()" aria-label="Close Team Window">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    <div id="teamDetailModalContainer" class="fullscreen-team-content"></div>
   </div>
 
   <!-- JavaScript SPA Engine -->
