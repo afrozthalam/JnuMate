@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>JnuMate — Team Matching & Teammate Discovery</title>
-  
+  <title>JnuMate</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/jnu_logo.png') }}">
+
   <!-- Google Fonts: Fraunces (Editorial Display Serif) & Outfit (Ultra-Modern UI Sans) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,600&family=Outfit:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <script>
-    (function() {
+    (function () {
       var p = window.location.pathname;
       var activeId = "viewDiscover";
       if (p === "/admin") activeId = "viewAdmin";
@@ -24,6 +28,7 @@
     })();
   </script>
 </head>
+
 <body>
 
   <!-- Toast Notification Container -->
@@ -31,7 +36,7 @@
 
   <!-- Ambient Outer Surround Desktop Canvas -->
   <div class="app-desktop-surround">
-    
+
     <!-- Main App Enclosure Shell -->
     <div class="app-enclosure-shell" id="appEnclosureFrame">
 
@@ -42,12 +47,19 @@
           <span class="mobile-brand">JnuMate<span class="brand-dot">.</span></span>
         </a>
         <div class="mobile-top-actions">
-          <button id="btnMobileNotif" onclick="toggleNotificationsPanel()" class="mobile-action-icon-btn" aria-label="Notifications">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+          <button id="btnMobileNotif" onclick="toggleNotificationsPanel()" class="mobile-action-icon-btn"
+            aria-label="Notifications">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+            </svg>
             <span id="mobileNotifBadge" class="notif-badge" style="display:none;">0</span>
           </button>
-          <button id="btnMobileMenuToggle" onclick="toggleMobileDrawer()" class="mobile-menu-btn" aria-label="Open Menu">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/></svg>
+          <button id="btnMobileMenuToggle" onclick="toggleMobileDrawer()" class="mobile-menu-btn"
+            aria-label="Open Menu">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+            </svg>
           </button>
         </div>
       </header>
@@ -62,30 +74,31 @@
           </div>
         </a>
 
-        <!-- Center: Top Header Title & Pitch -->
-        <div class="desktop-top-header-center">
-          <h1 class="top-nav-discover-title">Discover Teams</h1>
-          <p class="top-nav-discover-sub">Find teammates for your team, or join any open hackathon squad.</p>
-        </div>
-
         <!-- Right: Notifications & Profile with Floating Dropdown Windows -->
         <div class="desktop-top-right-cluster">
           <!-- Notification Dropdown Wrapper -->
           <div class="desktop-dropdown-wrapper" id="desktopNotifWrapper">
-            <button id="btnDesktopTopNotif" onclick="toggleDesktopNotifDropdown(event)" class="desktop-icon-pill-btn" aria-label="Notifications" title="Notifications">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+            <button id="btnDesktopTopNotif" onclick="toggleDesktopNotifDropdown(event)" class="desktop-icon-pill-btn"
+              aria-label="Notifications" title="Notifications">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+              </svg>
               <span id="desktopTopNotifBadge" class="notif-badge" style="display:none;">0</span>
             </button>
             <div id="desktopNotifDropdown" class="desktop-floating-dropdown desktop-notif-window">
               <div class="desktop-notif-header">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span style="font-weight:800; font-size:0.9375rem; color:var(--text-white);">Notifications</span>
-                  <span id="desktopNotifUnreadCount" class="status-capsule open" style="display:none; font-size:0.6875rem;">0 new</span>
+                  <span id="desktopNotifUnreadCount" class="status-capsule open"
+                    style="display:none; font-size:0.6875rem;">0 new</span>
                 </div>
-                <button onclick="markAllNotificationsAsRead()" class="btn-outline-pill" style="padding:4px 10px; font-size:0.75rem;">Mark all read</button>
+                <button onclick="markAllNotificationsAsRead()" class="btn-outline-pill"
+                  style="padding:4px 10px; font-size:0.75rem;">Mark all read</button>
               </div>
               <div id="desktopNotifListBody" class="desktop-notif-body">
-                <div style="text-align:center; padding:32px 16px; color:var(--text-sage); font-size:0.875rem;">Loading notifications...</div>
+                <div style="text-align:center; padding:32px 16px; color:var(--text-sage); font-size:0.875rem;">Loading
+                  notifications...</div>
               </div>
             </div>
           </div>
@@ -104,14 +117,19 @@
           <!-- Brand Logo & Desktop Notification Bell -->
           <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:28px;">
             <a href="/" class="sidebar-brand-lockup">
-              <img src="{{ url_for('static', filename='img/jnu_logo.png') }}" alt="JNU Crest" class="sidebar-crest-logo">
+              <img src="{{ url_for('static', filename='img/jnu_logo.png') }}" alt="JNU Crest"
+                class="sidebar-crest-logo">
               <div class="sidebar-brand-text">
                 <span class="brand-wordmark-forest">JnuMate<span class="brand-dot">.</span></span>
                 <span class="brand-tagline-tiny">Jaipur National University</span>
               </div>
             </a>
-            <button id="btnDesktopNotif" onclick="toggleNotificationsPanel()" class="desktop-notif-btn" aria-label="Notifications" title="Notifications">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+            <button id="btnDesktopNotif" onclick="toggleNotificationsPanel()" class="desktop-notif-btn"
+              aria-label="Notifications" title="Notifications">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+              </svg>
               <span id="desktopNotifBadge" class="notif-badge" style="display:none;">0</span>
             </button>
           </div>
@@ -121,25 +139,36 @@
             <ul class="sidebar-nav-list">
               <li>
                 <a href="/" class="sidebar-nav-item active" data-path="/">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+                  </svg>
                   <span>Discover</span>
                 </a>
               </li>
               <li>
                 <a href="/students" class="sidebar-nav-item" data-path="/students">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                  </svg>
                   <span>Directory</span>
                 </a>
               </li>
               <li>
                 <a href="/create-team" class="sidebar-nav-item" data-path="/create-team">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
                   <span>Create Team</span>
                 </a>
               </li>
               <li>
                 <a href="/profile" class="sidebar-nav-item" data-path="/profile">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
                   <span>Profile</span>
                 </a>
               </li>
@@ -156,7 +185,7 @@
 
         <!-- VIEW 1: DISCOVER TEAMS -->
         <section id="viewDiscover" class="view-page-panel">
-          
+
           <!-- Mobile Editorial Header (Short & Beautiful) -->
           <div class="forest-header-section home-header-compact mobile-only-block">
             <div class="home-header-title-box">
@@ -168,22 +197,32 @@
           <div class="homescreen-unified-controls-bar">
             <!-- Left: Filter Segmented Pill with All, SIH, CTF, Open Slots -->
             <div class="filter-segmented-pill homescreen-filter-pill">
-              <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active" data-filter="all">All</button>
-              <button onclick="setDiscoverFilter('sih')" id="btnFilterSih" class="filter-btn" data-filter="sih">SIH</button>
-              <button onclick="setDiscoverFilter('ctf')" id="btnFilterCtf" class="filter-btn" data-filter="ctf">CTF</button>
-              <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open Slots</button>
+              <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active"
+                data-filter="all">All</button>
+              <button onclick="setDiscoverFilter('sih')" id="btnFilterSih" class="filter-btn"
+                data-filter="sih">SIH</button>
+              <button onclick="setDiscoverFilter('ctf')" id="btnFilterCtf" class="filter-btn"
+                data-filter="ctf">CTF</button>
+              <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open
+                Slots</button>
             </div>
 
             <!-- Center: Search Input -->
             <div class="search-pill-wrapper homescreen-search-box">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-              <input type="text" id="searchInput" placeholder="Search teams, ideas, skills, R-IDs..." class="search-pill-input" oninput="debounceDiscoverSearch()">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <input type="text" id="searchInput" placeholder="Search teams, ideas, skills, R-IDs..."
+                class="search-pill-input" oninput="debounceDiscoverSearch()">
             </div>
 
             <!-- Right: Create Team Button -->
             <div class="homescreen-create-action">
               <a href="/create-team" class="btn-agro-yellow-pill">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px; height:16px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px; height:16px;">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
                 <span>Create Team</span>
               </a>
             </div>
@@ -197,8 +236,10 @@
 
           <!-- Empty State -->
           <div id="emptyStateContainer" style="display:none; text-align:center; padding:60px 20px;">
-            <div style="font-family:var(--font-serif); font-size:1.5rem; font-weight:700; margin-bottom:8px;">No teams found</div>
-            <p style="color:var(--text-sage); margin-bottom:20px;">Be the first to build an unstoppable hackathon team!</p>
+            <div style="font-family:var(--font-serif); font-size:1.5rem; font-weight:700; margin-bottom:8px;">No teams
+              found</div>
+            <p style="color:var(--text-sage); margin-bottom:20px;">Be the first to build an unstoppable hackathon team!
+            </p>
             <a href="/create-team" class="btn-black-pill">
               + Create New Team
             </a>
@@ -275,6 +316,21 @@
               <div class="footer-dev-statement-clean">
                 Created by <strong class="footer-dev-highlight">Afroz Alam</strong>
               </div>
+              <div class="footer-contact-links-row">
+                <a href="https://github.com/afrozthalam" target="_blank" rel="noopener noreferrer" class="footer-contact-item">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="flex-shrink:0;">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                  </svg>
+                  <span>GitHub</span>
+                </a>
+                <a href="mailto:afrozalam@jnumate.edu" class="footer-contact-item">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                  </svg>
+                  <span>Email</span>
+                </a>
+              </div>
               <div class="footer-meta-copyright">
                 <span>© 2026 JnuMate</span>
               </div>
@@ -291,8 +347,10 @@
             <span class="widget-label-tiny">Hackathon Status</span>
             <span style="font-size:0.75rem; color:var(--badge-mint); font-weight:750;">● Live</span>
           </div>
-          <h3 style="font-family:var(--font-serif); font-size:1.125rem; font-weight:700; margin-bottom:6px;">Build Your Team</h3>
-          <p style="font-size:0.8125rem; color:var(--text-sage); line-height:1.45; margin-bottom:16px;">Assemble your 6-seat team with balanced engineering & design talent before registrations close.</p>
+          <h3 style="font-family:var(--font-serif); font-size:1.125rem; font-weight:700; margin-bottom:6px;">Build Your
+            Team</h3>
+          <p style="font-size:0.8125rem; color:var(--text-sage); line-height:1.45; margin-bottom:16px;">Assemble your
+            6-seat team with balanced engineering & design talent before registrations close.</p>
           <a href="/create-team" class="btn-black-pill" style="width:100%;">
             Create Team Now
           </a>
@@ -333,15 +391,23 @@
       <!-- Drawer Nav List -->
       <nav class="drawer-nav-list">
         <a href="/" class="drawer-nav-link" onclick="closeMobileDrawer()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+          </svg>
           <span>Discover Teams</span>
         </a>
         <a href="/create-team" class="drawer-nav-link" onclick="closeMobileDrawer()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
           <span>Create Team</span>
         </a>
         <a href="/profile" id="drawerProfileLink" class="drawer-nav-link" onclick="closeMobileDrawer()">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          </svg>
           <span>My Profile</span>
         </a>
       </nav>
@@ -357,11 +423,14 @@
       <div class="notif-center-header">
         <div style="display:flex; align-items:center; gap:8px;">
           <h3 class="font-serif" style="font-size:1.25rem;">Notifications</h3>
-          <span id="notifTotalBadge" class="status-capsule open" style="display:none; font-size:0.6875rem;">0 unread</span>
+          <span id="notifTotalBadge" class="status-capsule open" style="display:none; font-size:0.6875rem;">0
+            unread</span>
         </div>
         <div style="display:flex; align-items:center; gap:8px;">
-          <button onclick="markAllNotificationsAsRead()" class="btn-outline-pill" style="padding:4px 12px; font-size:0.75rem;">Mark all read</button>
-          <button onclick="closeNotificationsPanel()" class="drawer-close-btn" aria-label="Close Notifications">✕</button>
+          <button onclick="markAllNotificationsAsRead()" class="btn-outline-pill"
+            style="padding:4px 12px; font-size:0.75rem;">Mark all read</button>
+          <button onclick="closeNotificationsPanel()" class="drawer-close-btn"
+            aria-label="Close Notifications">✕</button>
         </div>
       </div>
       <div id="notifListContainer" class="notif-list-body">
@@ -381,30 +450,41 @@
       <div class="student-search-modal-header">
         <div>
           <h3 id="studentSearchModalTitle" class="forest-modal-title" style="margin-bottom:4px;">Add Teammate</h3>
-          <p id="studentSearchModalSubtitle" class="forest-modal-message" style="margin-bottom:0;">Search by R-ID or Student Name to assign to this roster slot.</p>
+          <p id="studentSearchModalSubtitle" class="forest-modal-message" style="margin-bottom:0;">Search by R-ID or
+            Student Name to assign to this roster slot.</p>
         </div>
         <button onclick="closeStudentSearchModal()" class="drawer-close-btn" aria-label="Close">✕</button>
       </div>
       <div class="student-search-input-wrapper">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-        <input type="text" id="slotStudentSearchInput" placeholder="Type R-ID (e.g. R15006) or Student Name..." class="search-pill-input" oninput="debounceSlotStudentSearch()" autocomplete="off">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <input type="text" id="slotStudentSearchInput" placeholder="Type R-ID (e.g. R15006) or Student Name..."
+          class="search-pill-input" oninput="debounceSlotStudentSearch()" autocomplete="off">
       </div>
       <div id="slotStudentSearchResults" class="student-search-results-list">
         <div class="search-empty-state">
           <div class="search-empty-icon-ring">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
           </div>
           <h4 class="search-empty-title">Search University Directory</h4>
-          <p class="search-empty-desc">Type student College R-ID (e.g. <strong>R15006</strong>) or name to find verified peers</p>
+          <p class="search-empty-desc">Type student College R-ID (e.g. <strong>R15006</strong>) or name to find verified
+            peers</p>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ================= FULL-SCREEN TEAM DETAIL OVERLAY WINDOW ================= -->
-  <div id="teamDetailModal" class="fullscreen-team-overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="Team Details">
+  <div id="teamDetailModal" class="fullscreen-team-overlay" style="display:none;" role="dialog" aria-modal="true"
+    aria-label="Team Details">
     <button class="fullscreen-modal-close-btn" onclick="closeTeamDetailModal()" aria-label="Close Team Window">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
@@ -415,4 +495,5 @@
   <!-- JavaScript SPA Engine -->
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
+
 </html>

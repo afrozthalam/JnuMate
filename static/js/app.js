@@ -1099,6 +1099,11 @@ function renderFullTeamDetail(team) {
                 Remove
               </button>
             ` : ''}
+            ${isYou && !isTeamLeader ? `
+              <button onclick="confirmLeaveTeam('${team.id}')" class="btn-paper-danger" style="padding:5px 12px; font-weight:700;" title="Leave this squad">
+                Leave Team
+              </button>
+            ` : ''}
           </div>
         </div>
       `;
@@ -1195,8 +1200,9 @@ function renderFullTeamDetail(team) {
             ` : ''}
 
             ${(isMember && !isLeader) ? `
-              <button onclick="confirmLeaveTeam('${team.id}')" class="btn-paper-danger">
-                Leave Team
+              <button onclick="confirmLeaveTeam('${team.id}')" class="btn-leave-team-prominent" title="Leave this hackathon team">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span>Leave Team</span>
               </button>
             ` : ''}
           </div>
@@ -1992,7 +1998,12 @@ function renderFullProfile(prof, userTeams) {
               <p style="font-size:0.8125rem; color:var(--text-sage); line-height:1.4; margin-bottom:14px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${escapeHtml(t.description || 'No project pitch provided.')}</p>
               <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
                 <span style="font-size:0.75rem; color:var(--text-sage);">${memberCount}/${maxSize} Members</span>
-                <a href="/team/${t.id}" class="btn-outline-pill" style="padding:4px 10px; font-size:0.75rem;">View Squad ➔</a>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  ${(!isLeader) ? `
+                    <button onclick="confirmLeaveTeam('${t.id}')" class="btn-danger-pill" style="padding:4px 12px; font-size:0.75rem;">Leave Team</button>
+                  ` : ''}
+                  <a href="/team/${t.id}" class="btn-outline-pill" style="padding:4px 10px; font-size:0.75rem;">View Squad ➔</a>
+                </div>
               </div>
             </div>
           `;
@@ -2153,129 +2164,98 @@ function loadCreateTeamView() {
 
   container.innerHTML = `
     <div class="create-team-container">
-      <div style="margin-bottom:20px;">
+      <div style="margin-bottom:16px;">
         <a href="/" class="btn-outline-pill">
           ← Cancel & Back to Discover
         </a>
       </div>
 
-        <div class="create-team-two-column">
-          <!-- Left Column: Team Creation Form Card -->
-          <div class="create-team-card">
-            <div class="greeting-sup-text" style="color:var(--badge-mint);">6-Seat Team Builder</div>
-            <h1 class="font-serif" style="font-size:2.25rem; margin-bottom:8px;">Create New Team</h1>
-            <p style="color:var(--text-sage); font-size:0.9375rem; margin-bottom:28px;">
-              Name your hackathon team, describe your project pitch, and assign teammates to slots or leave them open for applicants.
-            </p>
+      <div class="create-team-wide-layout">
+        <!-- Left Column: Team Details & Pitch Form -->
+        <div class="create-team-col-form">
+          <div class="greeting-sup-text" style="color:var(--badge-mint);">6-Seat Team Builder</div>
+          <h1 class="font-serif" style="font-size:2rem; margin-bottom:6px;">Create New Team</h1>
+          <p style="color:var(--text-sage); font-size:0.875rem; margin-bottom:18px;">
+            Name your squad, select your hackathon track, and assign teammates or leave slots open for applicants.
+          </p>
 
-            <div style="display:flex; flex-direction:column; gap:20px;">
-              <!-- Hackathon Category Selector (Point 1: SIH vs CTF) -->
-              <div>
-                <label class="form-label-forest" style="margin-bottom:8px;">Choose Hackathon Category *</label>
-                <div class="hackathon-selector-grid">
-                  <div class="hackathon-select-card sih ${selectedHackathonType === 'sih' ? 'active' : ''}" onclick="selectHackathonType('sih')">
-                    <img src="/static/img/sih_logo.jpg" alt="SIH Hackathon">
-                    <div style="min-width:0; flex:1;">
-                      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-                        <span style="font-weight:750; font-size:0.9375rem; color:var(--text-white);">Smart India Hackathon (SIH)</span>
-                        <span class="hackathon-tag-pill sih" style="font-size:0.65rem; padding:2px 8px;">SIH</span>
-                      </div>
-                      <div style="font-size:0.75rem; color:var(--text-sage-light); line-height:1.4;">Hardware & Software editions • National 6-member squad</div>
-                    </div>
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <!-- Category Selector -->
+            <div>
+              <label class="form-label-forest" style="margin-bottom:8px;">Choose Hackathon Category *</label>
+              <div class="hackathon-selector-grid compact">
+                <div class="hackathon-select-card sih ${selectedHackathonType === 'sih' ? 'active' : ''}" onclick="selectHackathonType('sih')">
+                  <img src="/static/img/sih_logo.jpg" alt="SIH Hackathon">
+                  <div style="min-width:0; flex:1;">
+                    <div style="font-weight:750; font-size:0.875rem; color:var(--text-white);">Smart India Hackathon (SIH)</div>
+                    <div style="font-size:0.6875rem; color:var(--text-sage-light);">Hardware & Software editions</div>
                   </div>
+                </div>
 
-                  <div class="hackathon-select-card ctf ${selectedHackathonType === 'ctf' ? 'active' : ''}" onclick="selectHackathonType('ctf')">
-                    <img src="/static/img/ctf_logo.jpg" alt="CTF Hackathon">
-                    <div style="min-width:0; flex:1;">
-                      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;">
-                        <span style="font-weight:750; font-size:0.9375rem; color:var(--text-white);">Capture The Flag (CTF)</span>
-                        <span class="hackathon-tag-pill ctf" style="font-size:0.65rem; padding:2px 8px;">CTF</span>
-                      </div>
-                      <div style="font-size:0.75rem; color:var(--text-sage-light); line-height:1.4;">Cybersecurity, network defense & binary exploits • 6-member squad</div>
-                    </div>
+                <div class="hackathon-select-card ctf ${selectedHackathonType === 'ctf' ? 'active' : ''}" onclick="selectHackathonType('ctf')">
+                  <img src="/static/img/ctf_logo.jpg" alt="CTF Hackathon">
+                  <div style="min-width:0; flex:1;">
+                    <div style="font-weight:750; font-size:0.875rem; color:var(--text-white);">Capture The Flag (CTF)</div>
+                    <div style="font-size:0.6875rem; color:var(--text-sage-light);">Cybersecurity & Defense</div>
                   </div>
                 </div>
               </div>
-
-              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
-                <div>
-                  <label class="form-label-forest">Team Title *</label>
-                  <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, NeuroVision" class="input-forest">
-                </div>
-                <div>
-                  <label class="form-label-forest">Official Team WhatsApp Group Link</label>
-                  <input type="text" id="teamWaInput" placeholder="https://chat.whatsapp.com/..." class="input-forest">
-                </div>
-              </div>
-
-              <div>
-                <label class="form-label-forest">Project Pitch / Hackathon Idea *</label>
-                <textarea id="teamDescInput" rows="3" placeholder="Briefly describe what problem statement you're tackling and what skills you are looking for..." class="input-forest"></textarea>
-              </div>
-
-              <!-- 6-Seat Team Builder -->
-              <div style="margin-top:10px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
-                  <div>
-                    <label class="form-label-forest" style="margin-bottom:2px;">6-Seat Team Roster</label>
-                    <span style="font-size:0.8125rem; color:var(--text-sage);">Click any open seat to search and add a student by R-ID. Empty seats stay open for join requests.</span>
-                  </div>
-                  <span class="status-capsule open" id="createTeamFilledCount">1/6 Assigned</span>
-                </div>
-
-                <div id="createTeamSlotsContainer" class="create-slots-grid"></div>
-              </div>
-
-              <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-black-pill lg" style="width:100%; margin-top:12px;">
-                Create & Publish Team ➔
-              </button>
             </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
+              <div>
+                <label class="form-label-forest">Team Title *</label>
+                <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, NeuroVision" class="input-forest">
+              </div>
+              <div>
+                <label class="form-label-forest">Official Team WhatsApp Link</label>
+                <input type="text" id="teamWaInput" placeholder="https://chat.whatsapp.com/..." class="input-forest">
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label-forest">Project Pitch / Hackathon Idea *</label>
+              <textarea id="teamDescInput" rows="3" placeholder="Briefly describe what problem statement you're tackling and what skills you are looking for..." class="input-forest"></textarea>
+            </div>
+
+            <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-black-pill lg" style="width:100%; margin-top:6px;">
+              Create & Publish Team ➔
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Interactive 6-Seat Team Builder & Tips -->
+        <div class="create-team-col-roster">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            <div>
+              <div class="form-label-forest" style="margin-bottom:2px; font-size:0.9375rem;">6-Seat Team Roster</div>
+              <span style="font-size:0.75rem; color:var(--text-sage);">Click open seats to assign teammates by R-ID. Empty seats stay open for join requests.</span>
+            </div>
+            <span class="status-capsule open" id="createTeamFilledCount">1/6 Assigned</span>
           </div>
 
-          <!-- Right Column: Practical Instructions -->
-          <div class="create-team-guide-sidebar">
-            <h3 class="font-serif" style="font-size:1.15rem; margin-bottom:14px; color:var(--text-white);">Team Creation Tips</h3>
-            
-            <div style="display:flex; flex-direction:column; gap:12px;">
-              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
-                <div style="font-weight:750; font-size:0.875rem; color:var(--badge-mint); margin-bottom:4px;">
-                  01 • Adding Teammates
-                </div>
-                <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  Click on any empty seat below to search the student directory by R-ID or name and assign an existing member.
-                </div>
-              </div>
+          <div id="createTeamSlotsContainer" class="create-slots-grid"></div>
 
-              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
-                <div style="font-weight:750; font-size:0.875rem; color:#FDBA74; margin-bottom:4px;">
-                  02 • Leaving Slots Open
-                </div>
-                <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  Keep seats unassigned to leave them open on the Discover board so other students can find your team and request to join.
-                </div>
-              </div>
-
-              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
-                <div style="font-weight:750; font-size:0.875rem; color:#86EFAC; margin-bottom:4px;">
-                  03 • Team WhatsApp Link
-                </div>
-                <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  Add your team's WhatsApp group link so accepted members can instantly connect for project discussions and coordination.
-                </div>
-              </div>
-
-              <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
-                <div style="font-weight:750; font-size:0.875rem; color:var(--badge-yellow); margin-bottom:4px;">
-                  04 • SIH Diversity Rule
-                </div>
-                <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  Official Smart India Hackathon rules require a total of 6 members with at least 1 female teammate in the squad.
-                </div>
-              </div>
+          <!-- Compact Horizontal Tips Bar -->
+          <div class="create-team-tips-banner">
+            <div class="tip-item">
+              <span class="tip-bullet">01</span>
+              <span>Click open seat to assign from directory</span>
+            </div>
+            <div class="tip-item">
+              <span class="tip-bullet">02</span>
+              <span>Leave slots unassigned to accept join requests</span>
+            </div>
+            <div class="tip-item">
+              <span class="tip-bullet">03</span>
+              <span>Add WhatsApp link so members connect instantly</span>
+            </div>
+            <div class="tip-item">
+              <span class="tip-bullet">04</span>
+              <span>SIH requires 6 members with 1+ female participant</span>
             </div>
           </div>
         </div>
-      </div>
     </div>
   `;
 
@@ -2677,7 +2657,23 @@ function submitCreateTeam() {
         showToast("Team published successfully!", "success");
         clientCache.teamsList = null;
         clientCache.teamsMap = {};
-        navigateTo(`/team/${data.team_id}`);
+        selectedFriends = [];
+
+        // Clear form inputs
+        if (nameInput) nameInput.value = "";
+        if (descInput) descInput.value = "";
+        if (waInput) waInput.value = "";
+
+        // Reset underlying navigation to homepage so closing team modal returns to home
+        document.querySelectorAll(".view-page-panel").forEach(p => p.classList.remove("active"));
+        const discoverPanel = document.getElementById("viewDiscover");
+        if (discoverPanel) discoverPanel.classList.add("active");
+        const appShell = document.getElementById("appEnclosureFrame");
+        if (appShell) appShell.classList.remove("two-column-mode");
+        loadDiscoverView();
+
+        // Display the newly created team full-screen window
+        openTeamDetailModal(data.team_id);
       } else {
         showToast(data.message || "Failed to create team", "error");
       }
@@ -2819,6 +2815,7 @@ let pendingStudentProfile = null;
 
 function renderAuthProfileSpotlight(student, targetEmail) {
   const spotlightContainer = document.getElementById("authStep2ProfileSpotlight");
+  const bannerContainer = document.getElementById("authStep2DispatchBanner");
   if (!spotlightContainer) return;
 
   const rawAvatar = student.avatar_url || "";
@@ -2830,59 +2827,67 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   const gender = student.gender || "Not Specified";
   const state = student.state || "Not Provided";
 
-  spotlightContainer.innerHTML = `
-    <!-- BIG PROPERLY ALIGNED STUDENT PHOTO (NO JNU LOGO ON STEP 2) -->
-    <div class="auth-student-big-avatar-box">
-      <img src="${escapeHtml(avatarSrc)}" 
-           data-raw-src="${escapeHtml(rawAvatar)}" 
-           alt="${escapeHtml(cleanName)}" 
-           class="auth-student-big-avatar"
-           onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
-    </div>
+  const isBlankAvatar = !rawAvatar || rawAvatar.includes("dicebear") || rawAvatar.includes("data:image") || !STUDENT_PROFILES_MAP[student.r_id];
 
-    <!-- STUDENT IDENTITY DETAILS (CLEAN TYPOGRAPHY, NO BOXES, NO PILLS) -->
-    <div class="auth-student-details-sheet">
-      <h2 class="auth-student-fullname font-serif">${escapeHtml(cleanName)}</h2>
-      
-      <div class="auth-details-fields-table">
-        <div class="auth-field-row">
-          <span class="auth-field-label">College R-ID</span>
-          <span class="auth-field-value highlight">@${escapeHtml(student.r_id)}</span>
+  spotlightContainer.innerHTML = `
+    <div class="auth-spotlight-profile-inner">
+      <div class="auth-student-big-avatar-box">
+        ${isBlankAvatar ? `
+          <div class="auth-instagram-avatar-circle">
+            <img src="${INSTAGRAM_EMPTY_AVATAR}" alt="Default avatar" class="auth-student-big-avatar" style="border-radius:50%;">
+          </div>
+        ` : `
+          <img src="${escapeHtml(avatarSrc)}" 
+               data-raw-src="${escapeHtml(rawAvatar)}" 
+               alt="${escapeHtml(cleanName)}" 
+               class="auth-student-big-avatar"
+               onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+        `}
+      </div>
+
+      <div class="auth-student-details-sheet">
+        <h2 class="auth-student-fullname font-serif">${escapeHtml(cleanName)}</h2>
+        <div style="margin-bottom:12px;">
+          <span class="student-rid-badge highlight">@${escapeHtml(student.r_id)}</span>
         </div>
-        <div class="auth-field-row">
-          <span class="auth-field-label">Current Year</span>
-          <span class="auth-field-value">${escapeHtml(academicYear)}</span>
-        </div>
-        <div class="auth-field-row">
-          <span class="auth-field-label">Date of Birth</span>
-          <span class="auth-field-value">${escapeHtml(dob)}</span>
-        </div>
-        <div class="auth-field-row">
-          <span class="auth-field-label">Gender</span>
-          <span class="auth-field-value">${escapeHtml(gender)}</span>
-        </div>
-        <div class="auth-field-row">
-          <span class="auth-field-label">State</span>
-          <span class="auth-field-value">${escapeHtml(state)}</span>
-        </div>
-        <div class="auth-field-row full-width">
-          <span class="auth-field-label">JNU Email</span>
-          <span class="auth-field-value truncate">${escapeHtml(displayEmail)}</span>
+
+        <div class="auth-unboxed-details">
+          <div class="auth-unboxed-row">
+            <span class="auth-unboxed-label">Academic Year</span>
+            <span class="auth-unboxed-value">${escapeHtml(academicYear)}</span>
+          </div>
+          <div class="auth-unboxed-row">
+            <span class="auth-unboxed-label">Date of Birth</span>
+            <span class="auth-unboxed-value">${escapeHtml(dob)}</span>
+          </div>
+          <div class="auth-unboxed-row">
+            <span class="auth-unboxed-label">Gender</span>
+            <span class="auth-unboxed-value">${escapeHtml(gender)}</span>
+          </div>
+          <div class="auth-unboxed-row">
+            <span class="auth-unboxed-label">State</span>
+            <span class="auth-unboxed-value">${escapeHtml(state)}</span>
+          </div>
+          <div class="auth-unboxed-row full-width">
+            <span class="auth-unboxed-label">Official Email</span>
+            <span class="auth-unboxed-value truncate">${escapeHtml(displayEmail)}</span>
+          </div>
         </div>
       </div>
     </div>
+  `;
 
-    <!-- SEPARATE DEDICATED DISPATCH NOTICE -->
-    <div class="auth-dispatch-notice-bar">
+  if (bannerContainer) {
+    bannerContainer.innerHTML = `
       <div class="auth-dispatch-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px; flex-shrink:0;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
       </div>
       <div class="auth-dispatch-text">
         <span>Verification code sent to</span>
         <strong class="auth-dispatch-email">${escapeHtml(displayEmail)}</strong>
       </div>
-    </div>
-  `;
+    `;
+  }
 }
 
 function loadLoginView() {
@@ -2899,9 +2904,9 @@ function loadLoginView() {
 
   container.innerHTML = `
     <div class="login-screen-wrap">
-      <div class="login-editorial-card">
+      <div class="login-editorial-card" id="loginCardFrame">
         
-        <!-- Official JNU Transparent Logo Merged with Portal (Hidden on Step 2) -->
+        <!-- Official JNU Transparent Logo Merged with Portal (Hidden on Step 2 & Course Select) -->
         <div class="login-jnu-logo-box">
           <img src="/static/img/jnu_logo.png" alt="Jaipur National University Logo" class="jnu-signin-logo" onerror="this.src='/static/img/jnu_logo.jpg';">
         </div>
@@ -2910,7 +2915,7 @@ function loadLoginView() {
         <p class="login-portal-subtitle" style="color:var(--text-sage); font-size:0.875rem; margin-bottom:20px;">Enter your College R-ID to continue</p>
 
         <!-- Step 1: Input R-ID -->
-        <div id="authStep1">
+        <div id="authStep1" class="auth-step-panel">
           <div class="form-group" style="margin-bottom:16px;">
             <label class="form-label-forest" style="text-align:left;">College R-ID</label>
             <input type="text" id="authRidInput" placeholder="e.g. R15006" class="input-forest" style="font-weight:750; text-transform:uppercase; font-size:1.125rem; letter-spacing:0.04em; text-align:center;" onkeyup="if(event.key==='Enter') submitInitialRid()">
@@ -2921,42 +2926,44 @@ function loadLoginView() {
           </button>
         </div>
 
-        <!-- Step 1B: Fallback when campus database is offline -->
-        <div id="authStepSyncNotice" style="display:none; text-align:left;">
-          <div style="text-align:center; margin-bottom:14px;">
-            <div class="auth-empty-avatar" title="No profile photo available">
-              <img src="${INSTAGRAM_EMPTY_AVATAR}" alt="No profile photo" style="width:100%; height:100%; border-radius:50%;">
+        <!-- Step 1B: Fallback when campus database is offline or unlisted (Case 2) -->
+        <div id="authStepSyncNotice" class="auth-step-panel" style="display:none; text-align:left;">
+          <div style="text-align:center; margin-bottom:16px;">
+            <div class="auth-instagram-avatar-box">
+              <img id="syncAvatarImg" src="${INSTAGRAM_EMPTY_AVATAR}" alt="No profile photo" style="width:76px; height:76px; border-radius:50%; border:2px solid rgba(255,255,255,0.15); box-shadow:0 4px 16px rgba(0,0,0,0.3);">
             </div>
-            <span class="student-rid-badge" style="font-size:0.875rem; padding:4px 14px;">
-              R-ID: <strong id="syncRidBanner"></strong>
-            </span>
+            <div style="margin-top:8px;">
+              <span class="student-rid-badge" style="font-size:0.875rem; padding:4px 14px;">
+                R-ID: <strong id="syncRidBanner"></strong>
+              </span>
+            </div>
           </div>
 
-          <div style="background:rgba(242,169,34,0.12); border:1px solid rgba(242,169,34,0.3); border-radius:6px; padding:10px 14px; margin-bottom:14px; font-size:0.8125rem; color:#FFD479; line-height:1.45; text-align:center;">
-            Server couldn't connect to campus database. Please complete your registration details manually to continue.
+          <div class="auth-sync-text" style="background:rgba(242,169,34,0.1); border:1px solid rgba(242,169,34,0.25); border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:0.8125rem; color:#FFD479; line-height:1.45; text-align:center;">
+            Due to server load we couldn't fetch your data. Enter your details manually to continue.
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+          <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
             <div>
               <label class="form-label-forest">Full Name *</label>
               <input type="text" id="syncNameInput" placeholder="Your full name as per college ID" class="input-forest">
             </div>
 
             <div>
-              <label class="form-label-forest">College Email *</label>
-              <input type="email" id="syncEmailInput" placeholder="name@student.jnujaipur.ac.in" class="input-forest">
-            </div>
-
-            <div>
-              <label class="form-label-forest">Academic Program *</label>
+              <label class="form-label-forest">Course / Degree Program *</label>
               <select id="syncCourseSelect" class="input-forest">
                 ${courseOptionsHtml}
               </select>
             </div>
+
+            <div>
+              <label class="form-label-forest">College Email *</label>
+              <input type="email" id="syncEmailInput" placeholder="name@student.jnujaipur.ac.in" class="input-forest">
+            </div>
           </div>
 
           <button onclick="submitSyncDetailsAndSendOtp()" id="btnSendSyncOtp" class="btn-auth-submit" style="width:100%;">
-            Send Verification Code
+            Send Verification Code ➔
           </button>
 
           <button onclick="showAuthStep(1)" class="btn-auth-secondary" style="width:100%; margin-top:8px;">
@@ -2964,31 +2971,64 @@ function loadLoginView() {
           </button>
         </div>
 
-        <!-- Step 2: Zero-Scroll OTP Verification (Clean Unboxed Layout) -->
-        <div id="authStep2" style="display:none;">
-          <!-- Big photo, clean details, and dedicated dispatch notice rendered here -->
-          <div id="authStep2ProfileSpotlight"></div>
+        <!-- Step 2: Zero-Scroll OTP Verification (Clean Split Grid on Desktop) -->
+        <div id="authStep2" class="auth-step-panel" style="display:none;">
+          <div class="auth-otp-split-grid">
+            <!-- Left Column: Student Identity Spotlight -->
+            <div id="authStep2ProfileSpotlight" class="auth-otp-left-col"></div>
 
-          <!-- SECTION 3: OTP ENTER SECTION -->
-          <div class="auth-otp-entry-section">
-            <div class="form-group" style="margin-bottom:12px;">
-              <label class="form-label-forest" style="text-align:center; font-size:0.75rem; margin-bottom:6px; letter-spacing:0.04em;">Enter 6-Digit Code</label>
-              <input type="text" id="otpCodeInput" placeholder="••••••" maxlength="6" class="input-forest otp-code-input" autocomplete="one-time-code" inputmode="numeric" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
-            </div>
+            <!-- Right Column: OTP Code Entry & Actions -->
+            <div class="auth-otp-right-col">
+              <div id="authStep2DispatchBanner" class="auth-dispatch-notice-bar"></div>
 
-            <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-auth-submit" style="width:100%;">
-              Verify & Sign In ➔
-            </button>
+              <div class="form-group" style="margin-bottom:14px;">
+                <label class="form-label-forest" style="text-align:center; font-size:0.75rem; margin-bottom:6px; letter-spacing:0.04em;">Enter 6-Digit Code</label>
+                <input type="text" id="otpCodeInput" placeholder="••••••" maxlength="6" class="input-forest otp-code-input" autocomplete="one-time-code" inputmode="numeric" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
+              </div>
 
-            <div class="auth-otp-footer-row">
-              <button type="button" id="btnResendOtp" onclick="handleResendOtp()" class="auth-link-btn" disabled>
-                Resend Code (<span id="resendCountdown">30</span>s)
+              <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-auth-submit" style="width:100%;">
+                Verify & Sign In ➔
               </button>
-              <button type="button" onclick="showAuthStep(1)" class="auth-link-btn change-rid">
-                ← Change R-ID
-              </button>
+
+              <div class="auth-otp-footer-row">
+                <button type="button" id="btnResendOtp" onclick="handleResendOtp()" class="auth-link-btn" disabled>
+                  Resend Code (<span id="resendCountdown">30</span>s)
+                </button>
+                <button type="button" onclick="showAuthStep(1)" class="auth-link-btn change-rid">
+                  ← Change R-ID
+                </button>
+              </div>
             </div>
           </div>
+        </div>
+
+        <!-- Step 2B: Post-Login Education Course Selection (Case 1B) -->
+        <div id="authStepCourseSelect" class="auth-step-panel" style="display:none; text-align:left;">
+          <div style="text-align:center; margin-bottom:16px;">
+            <div class="auth-student-big-avatar-box" style="margin-bottom:8px;">
+              <img id="courseSelectAvatar" src="${DEFAULT_STUDENT_AVATAR}" alt="Student" class="auth-student-big-avatar" style="width:76px; height:76px; border-radius:50%;">
+            </div>
+            <h2 id="courseSelectStudentName" class="font-serif" style="font-size:1.35rem; color:#FFFFFF; margin-bottom:4px;"></h2>
+            <span class="student-rid-badge" style="font-size:0.8125rem; padding:3px 12px;">
+              R-ID: <strong id="courseSelectRid"></strong>
+            </span>
+          </div>
+
+          <div style="background:rgba(62,168,108,0.1); border:1px solid rgba(62,168,108,0.25); border-radius:8px; padding:12px 16px; margin-bottom:16px; text-align:center;">
+            <div style="font-weight:700; color:#B8D8C4; font-size:0.875rem; margin-bottom:2px;">Select Your Academic Program</div>
+            <div style="font-size:0.75rem; color:var(--text-sage);">Please choose your course to finish setting up your student profile.</div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:18px;">
+            <label class="form-label-forest">Degree / Academic Program *</label>
+            <select id="authCourseSelectInput" class="input-forest" style="font-size:0.9375rem; padding:12px 14px;">
+              ${courseOptionsHtml}
+            </select>
+          </div>
+
+          <button onclick="submitUserCourseSelection()" id="btnSubmitCourseSelect" class="btn-auth-submit" style="width:100%;">
+            Save & Continue to Profile ➔
+          </button>
         </div>
 
       </div>
@@ -3000,20 +3040,32 @@ function showAuthStep(step) {
   const s1 = document.getElementById("authStep1");
   const sSync = document.getElementById("authStepSyncNotice");
   const s2 = document.getElementById("authStep2");
+  const sCourse = document.getElementById("authStepCourseSelect");
+  const cardFrame = document.getElementById("loginCardFrame");
   const logoBox = document.querySelector(".login-jnu-logo-box");
   const cardTitle = document.querySelector(".login-portal-title");
   const cardSub = document.querySelector(".login-portal-subtitle");
 
+  const isStep1 = step === 1;
   const isOtpStep = step === 2;
-  // HIDE official JNU Crest logo on step 2 so big student photo takes focus
-  if (logoBox) {
-    logoBox.style.display = isOtpStep ? "none" : "block";
-  }
-  if (cardTitle) cardTitle.style.display = isOtpStep ? "none" : "";
-  if (cardSub) cardSub.style.display = isOtpStep ? "none" : "";
+  const isSyncStep = step === 'sync';
+  const isCourseStep = step === 'course_select';
 
-  if (s1) s1.style.display = step === 1 ? "block" : "none";
-  if (sSync) sSync.style.display = step === 'sync' ? "block" : "none";
+  if (cardFrame) {
+    if (isOtpStep) {
+      cardFrame.classList.add("wide-step");
+    } else {
+      cardFrame.classList.remove("wide-step");
+    }
+  }
+
+  // HIDE official JNU Crest logo and default titles on Step 2, sync, and course_select
+  if (logoBox) logoBox.style.display = isStep1 ? "block" : "none";
+  if (cardTitle) cardTitle.style.display = isStep1 ? "block" : "none";
+  if (cardSub) cardSub.style.display = isStep1 ? "block" : "none";
+
+  if (s1) s1.style.display = isStep1 ? "block" : "none";
+  if (sSync) sSync.style.display = isSyncStep ? "block" : "none";
   if (s2) {
     s2.style.display = isOtpStep ? "block" : "none";
     if (isOtpStep) {
@@ -3023,6 +3075,17 @@ function showAuthStep(step) {
         input.value = "";
         setTimeout(() => input.focus(), 150);
       }
+    }
+  }
+  if (sCourse) {
+    sCourse.style.display = isCourseStep ? "block" : "none";
+    if (isCourseStep && currentUser) {
+      const nameEl = document.getElementById("courseSelectStudentName");
+      const ridEl = document.getElementById("courseSelectRid");
+      const avatarEl = document.getElementById("courseSelectAvatar");
+      if (nameEl) nameEl.innerText = currentUser.name || "Student";
+      if (ridEl) ridEl.innerText = currentUser.id || "";
+      if (avatarEl) avatarEl.src = getStudentAvatarSrc(currentUser.avatar_url, currentUser.id);
     }
   }
 }
@@ -3256,6 +3319,7 @@ function verifyEmailOtpCode() {
 
       if (data && data.success) {
         currentUser = data.user || { id: rid, name: "Student" };
+        currentUser.rid = currentUser.id || rid;
         try { localStorage.setItem("jnumate_user", JSON.stringify(currentUser)); } catch (e) {}
         try {
           renderNavUserSlots();
@@ -3264,6 +3328,13 @@ function verifyEmailOtpCode() {
         } catch (renderErr) {
           console.warn("renderNavUserSlots notice:", renderErr);
         }
+        // Case 1B: If education details (program) are missing, show course selection prompt
+        const needsCourse = Boolean(data.needs_program || !currentUser.program || currentUser.program === "Student");
+        if (needsCourse && (!pendingRegistrationData || !pendingRegistrationData.program)) {
+          showAuthStep('course_select');
+          return;
+        }
+
         showToast("Signed in successfully!", "success");
 
         try {
@@ -3286,9 +3357,61 @@ function verifyEmailOtpCode() {
     .catch(err => {
       isVerifyingOtp = false;
       btn.disabled = false;
-      btn.innerText = "Verify & Sign In";
+      btn.innerText = "Verify & Sign In ➔";
       console.error("verify-otp error:", err);
       showToast("Cannot connect to server. Please check your connection and retry.", "error");
+    });
+}
+
+function submitUserCourseSelection() {
+  const select = document.getElementById("authCourseSelectInput");
+  const btn = document.getElementById("btnSubmitCourseSelect");
+  if (!select || !select.value) {
+    showToast("Please select your academic program", "error");
+    return;
+  }
+  const program = select.value;
+  const rid = currentUser ? currentUser.id : "";
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Saving...</span></span>`;
+  }
+
+  fetch("/api/user/update-program", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ r_id: rid, program: program })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Save & Continue to Profile ➔";
+      }
+      if (data.success) {
+        if (currentUser) {
+          currentUser.program = program;
+          try { localStorage.setItem("jnumate_user", JSON.stringify(currentUser)); } catch (e) {}
+        }
+        showToast("Academic program updated successfully!", "success");
+        if (postLoginRedirect) {
+          const redirectDest = postLoginRedirect;
+          postLoginRedirect = null;
+          navigateTo(redirectDest);
+        } else {
+          navigateTo("/profile");
+        }
+      } else {
+        showToast(data.message || "Failed to update program", "error");
+      }
+    })
+    .catch(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Save & Continue to Profile ➔";
+      }
+      showToast("Network error updating program", "error");
     });
 }
 

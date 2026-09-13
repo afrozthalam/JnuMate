@@ -5302,7 +5302,7 @@ body.scroll-locked {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: #07150d;
+  background: radial-gradient(circle at 50% 0%, #174E34 0%, #0D321F 50%, #082013 100%) !important;
   z-index: 10000;
   overflow-y: auto !important;
   overflow-x: hidden;
@@ -6109,86 +6109,297 @@ body.scroll-locked {
   box-sizing: border-box !important;
 }
 
-/* OTP Step 2 Redesign: Big Student Photo, Unboxed Details, Dedicated Dispatch Bar */
-.auth-student-big-avatar-box {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
+/* Zero-Scroll App-Like Auth & OTP Experience */
+.login-editorial-card {
+  max-width: 480px;
+  width: 100%;
+  transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1), padding 0.25s ease;
+  box-sizing: border-box;
 }
 
-.auth-student-big-avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+.login-editorial-card.wide-step {
+  max-width: 740px !important;
+  padding: 32px 36px !important;
 }
 
-.auth-student-details-sheet {
-  margin-bottom: 20px;
-}
-
-.auth-details-fields-table {
+/* 2-Column Split Layout for OTP Step 2 on Desktop */
+.auth-otp-split-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 12px;
-  margin: 16px 0;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 28px;
+  align-items: center;
   text-align: left;
 }
 
-.auth-field-row {
+.auth-spotlight-profile-inner {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.auth-student-big-avatar-box {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid rgba(62, 168, 108, 0.45);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  background: #0E3421;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-student-big-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.auth-student-details-sheet {
+  min-width: 0;
+  flex: 1;
+}
+
+.auth-student-fullname {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 4px;
+  line-height: 1.25;
+}
+
+/* Unboxed Clean Typography for Student Metadata (No Border Boxes) */
+.auth-unboxed-details {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  padding: 8px 12px;
-  border-radius: 8px;
+  gap: 5px;
+  margin-top: 8px;
 }
 
-.auth-field-row.full-width {
-  grid-column: 1 / -1;
+.auth-unboxed-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 0.8125rem;
 }
 
-.auth-field-label {
+.auth-unboxed-label {
+  color: var(--text-sage);
   font-size: 0.6875rem;
   font-weight: 700;
+  min-width: 84px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-sage);
+  flex-shrink: 0;
 }
 
-.auth-field-value {
-  font-size: 0.875rem;
-  font-weight: 600;
+.auth-unboxed-value {
   color: #FFFFFF;
+  font-weight: 600;
 }
 
-.auth-field-value.highlight {
+.auth-unboxed-value.highlight {
   color: var(--badge-mint);
   font-weight: 750;
-  display: inline-flex;
-  align-items: center;
 }
 
-.auth-field-value.truncate {
+.auth-unboxed-value.truncate {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
 }
 
+/* Instagram-Style Empty Avatar Silhouette */
+.auth-instagram-avatar-circle,
+.auth-instagram-avatar-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-instagram-avatar-box img {
+  border-radius: 50%;
+}
+
+/* Dedicated Dispatch Banner */
 .auth-dispatch-notice-bar {
-  background: rgba(62, 168, 108, 0.09);
-  border: 1px solid rgba(62, 168, 108, 0.22);
-  border-radius: 6px;
-  padding: 10px 12px;
-  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(62, 168, 108, 0.1);
+  border: 1px solid rgba(62, 168, 108, 0.25);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
   color: #B8D8C4;
-  margin-bottom: 18px;
-  line-height: 1.4;
-  text-align: center;
+  margin-bottom: 14px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.auth-dispatch-icon {
+  flex-shrink: 0;
+  color: var(--badge-mint);
+}
+
+.auth-dispatch-email {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* Prominent High-Contrast Leave Team Button */
+.btn-leave-team-prominent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #DC2626;
+  color: #FFFFFF !important;
+  font-size: 0.9375rem;
+  font-weight: 750;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: 1px solid #EF4444;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-leave-team-prominent:hover {
+  background: #B91C1C;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.45);
+}
+
+/* Wide Ergonomic Create Team Desktop Layout */
+.create-team-wide-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.create-team-col-form,
+.create-team-col-roster {
+  background: rgba(12, 42, 26, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 24px 28px;
+}
+
+.hackathon-selector-grid.compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.hackathon-selector-grid.compact .hackathon-select-card {
+  padding: 10px 12px;
+}
+
+.hackathon-selector-grid.compact .hackathon-select-card img {
+  width: 38px;
+  height: 38px;
+}
+
+.create-team-tips-banner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tip-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-sage);
+  line-height: 1.35;
+}
+
+.tip-bullet {
+  font-weight: 800;
+  color: var(--badge-mint);
+  font-size: 0.6875rem;
+  background: rgba(62, 168, 108, 0.12);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* Footer Contact Details Row */
+.footer-contact-links-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+
+.footer-contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-sage);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.footer-contact-item:hover {
+  color: #FFFFFF;
+}
+
+/* Mobile Responsiveness for Zero-Scroll Experience */
+@media (max-width: 768px) {
+  .login-editorial-card.wide-step {
+    max-width: 440px !important;
+    padding: 22px 18px !important;
+  }
+
+  .auth-otp-split-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .auth-spotlight-profile-inner {
+    gap: 14px;
+  }
+
+  .auth-student-big-avatar-box {
+    width: 68px;
+    height: 68px;
+  }
+
+  .auth-student-fullname {
+    font-size: 1.1rem;
+  }
+
+  .auth-unboxed-row {
+    gap: 6px;
+    font-size: 0.75rem;
+  }
+
+  .auth-unboxed-label {
+    min-width: 76px;
+    font-size: 0.65rem;
+  }
+
+  .create-team-wide-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .create-team-tips-banner {
+    grid-template-columns: 1fr;
+  }
 }
 
 

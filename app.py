@@ -4,6 +4,7 @@ import random
 import datetime
 import smtplib
 import threading
+import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, jsonify, session
@@ -135,11 +136,94 @@ def build_student_search_index():
             "academic_year": acad_yr,
             "admission_year": adm_yr
         }
-        SEARCHABLE_STUDENTS_LIST.append(student_obj)
-        STUDENT_CACHE_BY_RID[r_id_key] = student_obj
+    # Also synchronize any students from database (e.g. manual registrations or updated profiles)
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT r_id, name, email, phone, gender, dob, avatar_url, program, semester_year FROM students")
+        db_students = cursor.fetchall()
+        for row in db_students:
+            r = dict(row)
+            rid = str(r.get("r_id") or "").strip().upper()
+            if not rid:
+                continue
+            name = (r.get("name") or "Student").strip()
+            email = (r.get("email") or f"{rid}@student.edu").strip()
+            phone = (r.get("phone") or "").strip()
+            gender = r.get("gender") or "Other"
+            dob = (r.get("dob") or "N/A").strip()
+            gender_clean = "Female" if "Female" in gender or "F" == gender else ("Male" if "Male" in gender or "M" == gender else "Other")
+            avatar_url = r.get("avatar_url")
+            prog = r.get("program")
+            sem = r.get("semester_year")
+            acad_yr, adm_yr = get_academic_year_by_rid(rid)
+
+            if rid in STUDENT_CACHE_BY_RID:
+                cached = STUDENT_CACHE_BY_RID[rid]
+                if prog and (not cached.get("program") or cached.get("program") == "Student"):
+                    cached["program"] = prog
+                if sem and not cached.get("semester_year"):
+                    cached["semester_year"] = sem
+                if email and not cached.get("email"):
+                    cached["email"] = email
+            else:
+                student_obj = {
+                    "r_id": rid,
+                    "name": name,
+                    "name_upper": name.upper(),
+                    "email": email,
+                    "phone": phone,
+                    "gender": gender_clean,
+                    "dob": dob,
+                    "avatar_url": avatar_url,
+                    "program": prog or "Student",
+                    "semester_year": sem or "",
+                    "academic_year": acad_yr,
+                    "admission_year": adm_yr
+                }
+                SEARCHABLE_STUDENTS_LIST.append(student_obj)
+                STUDENT_CACHE_BY_RID[rid] = student_obj
+        conn.close()
+    except Exception as e:
+        print(f"Notice syncing DB students into search index: {e}")
+
     print(f"[SEARCH INDEX BUILT] Pre-indexed {len(SEARCHABLE_STUDENTS_LIST)} students for instant sub-millisecond search.")
 
 build_student_search_index()
+
+def add_or_update_student_in_search_index(rid, name, email, program=None, avatar_url=None, gender=None, dob=None):
+    global SEARCHABLE_STUDENTS_LIST, STUDENT_CACHE_BY_RID
+    clean_rid = str(rid).strip().upper()
+    acad_yr, adm_yr = get_academic_year_by_rid(clean_rid)
+    if clean_rid in STUDENT_CACHE_BY_RID:
+        s = STUDENT_CACHE_BY_RID[clean_rid]
+        if name:
+            s["name"] = name
+            s["name_upper"] = name.upper()
+        if email:
+            s["email"] = email
+        if program:
+            s["program"] = program
+        if avatar_url:
+            s["avatar_url"] = avatar_url
+    else:
+        gender_clean = "Female" if gender and ("Female" in gender or "F" == gender) else "Male"
+        s = {
+            "r_id": clean_rid,
+            "name": name,
+            "name_upper": name.upper(),
+            "email": email or f"{clean_rid}@student.edu",
+            "phone": "",
+            "gender": gender_clean,
+            "dob": dob or "N/A",
+            "avatar_url": avatar_url,
+            "program": program or "Student",
+            "semester_year": "",
+            "academic_year": acad_yr,
+            "admission_year": adm_yr
+        }
+        SEARCHABLE_STUDENTS_LIST.append(s)
+        STUDENT_CACHE_BY_RID[clean_rid] = s
 
 # ZERO-LATENCY IN-MEMORY TEAM MEMBERSHIP CACHE
 TEAM_MEMBERSHIP_MAP = {}
@@ -445,7 +529,7 @@ def auth_send_otp():
         return jsonify({
             "success": False,
             "not_found": True,
-            "message": "Server couldn't connect to campus database. Please enter your academic details manually to continue."
+            "message": "Due to server load we couldn't fetch your data. Enter your details manually to continue."
         }), 200
 
     student_dict = dict(student)
@@ -692,6 +776,19 @@ def auth_verify_otp():
         "needs_program": not bool(prog)
     }
 
+    try:
+        add_or_update_student_in_search_index(
+            r_id,
+            student_name,
+            user_payload["email"],
+            program=prog,
+            avatar_url=user_payload["avatar_url"],
+            gender=user_payload["gender"],
+            dob=user_payload["dob"]
+        )
+    except Exception as e:
+        print(f"Notice updating search index on verify: {e}")
+
     return jsonify({
         "success": True,
         "message": "Signed in successfully",
@@ -722,6 +819,12 @@ def update_user_program():
     conn.commit()
     conn.close()
 
+    EDUCATION_DETAILS_MAP[r_id] = (program, semester_year or "")
+    if r_id in STUDENT_CACHE_BY_RID:
+        STUDENT_CACHE_BY_RID[r_id]["program"] = program
+        if semester_year:
+            STUDENT_CACHE_BY_RID[r_id]["semester_year"] = semester_year
+
     return jsonify({
         "success": True,
         "message": "Program updated successfully",
@@ -739,6 +842,7 @@ def auth_register():
     phone = data.get("phone", "").strip()
     gender = data.get("gender", "").strip().capitalize()
     dob = data.get("dob", "").strip() or "N/A"
+    program = (data.get("program") or "").strip()
     p = get_placeholder()
 
     if not r_id or not name or not gender or not email:
@@ -753,9 +857,9 @@ def auth_register():
     cursor = conn.cursor()
     try:
         cursor.execute(f"""
-            INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, is_registered)
-            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, 1)
-        """, (r_id, name, email, phone, gender, dob, avatar_url))
+            INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, program, is_registered)
+            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, 1)
+        """, (r_id, name, email, phone, gender, dob, avatar_url, program))
         conn.commit()
         conn.close()
     except Exception:
@@ -764,6 +868,19 @@ def auth_register():
 
     session["user_rid"] = r_id
     session.permanent = True
+
+    try:
+        add_or_update_student_in_search_index(
+            r_id,
+            name,
+            email,
+            program=program,
+            avatar_url=avatar_url,
+            gender=gender,
+            dob=dob
+        )
+    except Exception as e:
+        print(f"Notice updating search index on register: {e}")
 
     user_payload = {
         "id": r_id,
@@ -876,54 +993,104 @@ def auth_restore_session():
 @app.route("/api/students/search", methods=["GET"])
 def student_search():
     raw_query = request.args.get("q", "").strip()
-    query = raw_query.upper()
-
-    # If query is empty, do not return random suggestions
-    if not query:
+    if not raw_query:
         return jsonify({"students": []})
 
-    results = []
-    seen_rids = set()
+    query = raw_query.upper()
+    tokens = [t for t in re.split(r'[\s\-_,.]+', query) if t]
+    if not tokens:
+        return jsonify({"students": []})
 
-    # Priority 0: Exact R-ID match (Sub-millisecond 0.001ms instant lookup)
-    exact_student = STUDENT_CACHE_BY_RID.get(query)
-    if exact_student:
-        results.append(dict(exact_student))
-        seen_rids.add(query)
+    scored_candidates = []
 
-    # Priority 1: Prefix R-ID match (Instant break at 15)
     for s in SEARCHABLE_STUDENTS_LIST:
         rid = s["r_id"]
-        if rid.startswith(query) and rid not in seen_rids:
-            results.append(dict(s))
-            seen_rids.add(rid)
-            if len(results) >= 15:
+        name_upper = s["name_upper"]
+        clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', name_upper).strip()
+        name_words = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
+
+        score = 0
+
+        # 1. Exact R-ID match (Highest confidence)
+        if rid == query:
+            score += 12000
+        # 2. R-ID prefix match
+        elif rid.startswith(query):
+            score += 7000 + int((len(query) / max(len(rid), 1)) * 1000)
+        # 3. R-ID substring match
+        elif query in rid:
+            score += 4000
+
+        # 4. Exact Full Clean Name match
+        if clean_name == query or name_upper == query:
+            score += 10000
+        # 5. Clean Name starts with full query string
+        elif clean_name.startswith(query) or name_upper.startswith(query):
+            score += 6000
+        # 6. Full query as contiguous substring in clean name
+        elif query in clean_name or query in name_upper:
+            score += 4500
+
+        # 7. Multi-token evaluation across individual name words and R-ID
+        matched_token_count = 0
+        token_prefix_points = 0
+
+        for t in tokens:
+            t_matched = False
+            for nw in name_words:
+                if nw == t:
+                    token_prefix_points += 3000
+                    t_matched = True
+                    break
+                elif nw.startswith(t):
+                    token_prefix_points += 2000
+                    t_matched = True
+                    break
+                elif t in nw:
+                    token_prefix_points += 1000
+                    t_matched = True
+                    break
+            
+            if t_matched or (t in rid):
+                matched_token_count += 1
+
+        if matched_token_count == len(tokens):
+            score += 5000 + token_prefix_points
+        elif matched_token_count > 0:
+            score += (matched_token_count * 1200) + token_prefix_points
+
+        if score > 0:
+            # Prefer available students slightly so active squad builders see open peers first
+            is_in_team = bool(TEAM_MEMBERSHIP_MAP.get(rid))
+            if not is_in_team:
+                score += 200
+
+            scored_candidates.append((score, s))
+
+    # Sort descending by score, then clean name
+    scored_candidates.sort(key=lambda item: (-item[0], item[1]["name_upper"]))
+
+    results = []
+    seen = set()
+    for _, s in scored_candidates:
+        if s["r_id"] not in seen:
+            seen.add(s["r_id"])
+            c_copy = dict(s)
+            c_copy["rid"] = c_copy.get("r_id", "")
+            tm = TEAM_MEMBERSHIP_MAP.get(c_copy["r_id"])
+            if tm:
+                c_copy["in_team"] = True
+                c_copy["team_name"] = tm["team_name"]
+                c_copy["team_id"] = tm["team_id"]
+            else:
+                c_copy["in_team"] = False
+                c_copy["team_name"] = None
+                c_copy["team_id"] = None
+            results.append(c_copy)
+            if len(results) >= 40:
                 break
 
-    # Priority 2: Name match (Starts with or contains query)
-    if len(results) < 15:
-        for s in SEARCHABLE_STUDENTS_LIST:
-            rid = s["r_id"]
-            if rid not in seen_rids:
-                if query in s["name_upper"]:
-                    results.append(dict(s))
-                    seen_rids.add(rid)
-                    if len(results) >= 15:
-                        break
-
-    # Attach team membership in 0.0001ms from in-memory cache
-    for s in results:
-        tm = TEAM_MEMBERSHIP_MAP.get(s["r_id"])
-        if tm:
-            s["in_team"] = True
-            s["team_name"] = tm["team_name"]
-            s["team_id"] = tm["team_id"]
-        else:
-            s["in_team"] = False
-            s["team_name"] = None
-            s["team_id"] = None
-
-    return jsonify({"students": results[:15]})
+    return jsonify({"students": results})
 
 # --- NOTIFICATION ENGINE ---
 
