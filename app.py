@@ -874,7 +874,7 @@ def format_team_data(team_row, current_r_id=None, conn=None):
     return {
         "id": t_id,
         "name": t_name or "Untitled Team",
-        "description": t_desc or "Building an innovative hackathon solution.",
+        "description": t_desc or "Looking for teammates for the upcoming hackathon.",
         "leader_r_id": t_leader,
         "whatsapp_link": t_wa if (user_status in ["leader", "member"]) else None,
         "has_whatsapp": bool(t_wa),

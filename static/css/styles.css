@@ -67,13 +67,13 @@
   --radius-md: 8px;
   --radius-sm: 6px;
 
-  /* Transitions & Shadows */
-  --spring-ease: cubic-bezier(0.2, 0.9, 0.3, 1);
-  --trans-fast: 0.15s ease;
-  --trans-smooth: 0.25s var(--spring-ease);
+  /* Transitions & Shadows - Instant & Snappy */
+  --spring-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --trans-fast: 0.1s ease;
+  --trans-smooth: 0.15s ease;
   --shadow-app-frame: 0 25px 60px -15px rgba(0, 0, 0, 0.55);
   --shadow-card: 0 4px 16px -2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --shadow-card-hover: 0 12px 28px -6px rgba(0, 0, 0, 0.45);
+  --shadow-card-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
 }
 
 /* ==========================================================================
@@ -93,7 +93,6 @@ html, body {
   background-color: var(--bg-forest-950);
   color: var(--text-white);
   overflow-x: hidden;
-  scroll-behavior: smooth;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -380,9 +379,11 @@ h1, h2, h3, h4, .font-serif {
    ========================================================================== */
 .app-main-workspace {
   background-color: transparent;
-  padding: 24px 20px 48px;
+  padding: 28px 40px 60px 40px;
   min-height: calc(100vh - 72px);
   width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   overflow-y: visible;
@@ -1692,11 +1693,11 @@ h1, h2, h3, h4, .font-serif {
 }
 
 .slot-subtitle {
-  font-size: 0.78rem;
-  color: var(--text-sage);
-  line-height: 1.4;
+  font-size: 0.8125rem;
+  color: var(--text-sage-light);
+  line-height: 1.45;
   margin: 0;
-  max-width: 220px;
+  max-width: 280px;
 }
 
 .btn-slot-assign {
@@ -2001,12 +2002,13 @@ h1, h2, h3, h4, .font-serif {
 }
 
 /* ==========================================================================
-   10B. STUDENT SEARCH MODAL & GORGEOUS STUDENT CARD (POINT 9)
+/* ==========================================================================
+   10B. STUDENT SEARCH MODAL & EXPANDED PROFESSIONAL STUDENT CARD
    ========================================================================== */
 .student-search-modal-sheet {
-  max-width: 680px;
-  width: 94%;
-  max-height: 88vh;
+  max-width: 820px;
+  width: 95%;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
 }
@@ -2016,7 +2018,7 @@ h1, h2, h3, h4, .font-serif {
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 16px;
-  padding-bottom: 12px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--border-muted);
 }
 
@@ -2046,47 +2048,43 @@ h1, h2, h3, h4, .font-serif {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 480px;
+  max-height: 520px;
   padding-right: 4px;
   scrollbar-width: thin;
-  contain: content;
-  will-change: scroll-position;
 }
 
 .student-search-card-rich {
-  background: rgba(0, 0, 0, 0.32);
-  border: 1px solid var(--border-surface);
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--radius-xl);
-  padding: 16px 18px;
+  background: rgba(10, 26, 17, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  transition: transform 0.15s ease, background 0.15s ease;
-  contain: layout style;
+  gap: 18px;
+  transition: border-color 0.12s ease, background 0.12s ease, transform 0.12s ease;
 }
 
 .student-search-card-rich:hover {
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(14, 35, 24, 0.9);
   border-color: var(--badge-mint);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .student-card-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   min-width: 0;
   flex: 1;
 }
 
 .student-search-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-pill);
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
   background: var(--bg-forest-900);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -2096,7 +2094,6 @@ h1, h2, h3, h4, .font-serif {
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: 50%;
 }
 
 .student-search-info {
@@ -2109,12 +2106,12 @@ h1, h2, h3, h4, .font-serif {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .student-search-name {
   font-family: var(--font-serif);
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   font-weight: 750;
   color: var(--text-white);
 }
@@ -2126,17 +2123,59 @@ h1, h2, h3, h4, .font-serif {
   background: rgba(242, 169, 34, 0.15);
   border: 1px solid rgba(242, 169, 34, 0.3);
   padding: 2px 8px;
-  border-radius: var(--radius-pill);
+  border-radius: 6px;
 }
 
-.college-verified-tag {
-  font-size: 0.6875rem;
-  font-weight: 750;
+.student-year-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
   color: var(--badge-mint);
   background: rgba(62, 168, 108, 0.15);
   border: 1px solid rgba(62, 168, 108, 0.3);
   padding: 2px 8px;
-  border-radius: var(--radius-pill);
+  border-radius: 6px;
+}
+
+.student-available-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--badge-mint);
+  background: rgba(62, 168, 108, 0.12);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.student-program-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.825rem;
+  color: var(--text-sage);
+  margin-bottom: 4px;
+}
+
+.student-program-text {
+  color: var(--text-white);
+  font-weight: 550;
+}
+
+.student-batch-text {
+  color: var(--text-sage-light);
+}
+
+.student-meta-details-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.student-detail-chip {
+  font-size: 0.78rem;
+  color: var(--text-sage-light);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .already-in-team-badge {
@@ -2146,7 +2185,7 @@ h1, h2, h3, h4, .font-serif {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.35);
   padding: 2px 8px;
-  border-radius: var(--radius-pill);
+  border-radius: 6px;
 }
 
 .btn-in-team-badge {
@@ -2154,7 +2193,7 @@ h1, h2, h3, h4, .font-serif {
   color: #FCA5A5;
   border: 1px solid rgba(239, 68, 68, 0.3);
   cursor: pointer;
-  padding: 7px 14px;
+  padding: 8px 14px;
   border-radius: var(--radius-pill);
   font-size: 0.8125rem;
   font-weight: 700;
@@ -2164,39 +2203,6 @@ h1, h2, h3, h4, .font-serif {
 .btn-in-team-badge:hover {
   background: rgba(239, 68, 68, 0.22);
   border-color: #F87171;
-}
-
-.student-academic-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-  font-size: 0.8125rem;
-  color: var(--text-sage-light);
-}
-
-.academic-prog-tag {
-  font-weight: 600;
-  color: var(--text-white);
-}
-
-.academic-sem-tag {
-  color: var(--text-sage);
-}
-
-.student-contact-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  font-size: 0.75rem;
-  color: var(--text-sage);
-}
-
-.contact-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
 }
 
 .student-card-action {
@@ -2901,6 +2907,12 @@ textarea.input-forest {
   animation: modalScaleUp 0.22s var(--spring-ease);
 }
 
+.forest-modal-sheet.student-search-modal-sheet {
+  max-width: 820px !important;
+  width: 95% !important;
+  padding: 28px 30px !important;
+}
+
 @keyframes modalScaleUp {
   from { opacity: 0; transform: scale(0.92); }
   to { opacity: 1; transform: scale(1); }
@@ -3290,9 +3302,7 @@ textarea.input-forest {
   justify-content: space-between;
   height: 72px;
   padding: 0 40px;
-  background: rgba(8, 32, 19, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #081d12;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: sticky;
   top: 0;
@@ -3390,14 +3400,12 @@ textarea.input-forest {
   top: calc(100% + 12px);
   right: 0;
   z-index: 1200;
-  background: rgba(10, 35, 22, 0.97);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #0a2115;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-2xl);
-  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.75), 0 0 20px rgba(62, 168, 108, 0.15);
+  box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.75);
   display: none;
-  animation: dropdownFadeSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: dropdownFadeSlide 0.15s ease;
   overflow: hidden;
 }
 
@@ -3814,10 +3822,8 @@ textarea.input-forest {
 }
 
 .create-team-guide-sidebar {
-  background: rgba(18, 56, 36, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0f2e1e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-2xl);
   padding: 26px 22px;
   position: sticky;
@@ -4017,9 +4023,7 @@ textarea.input-forest {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(10, 35, 22, 0.85);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: #092014;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-pill);
   padding: 6px 12px;

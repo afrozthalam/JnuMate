@@ -190,6 +190,7 @@ function navigateTo(path) {
 }
 
 function handleCurrentRoute() {
+  window.scrollTo(0, 0);
   const path = window.location.pathname;
   highlightActiveNavLinks();
 
@@ -704,7 +705,7 @@ function renderSingleTeamCard(team) {
         </div>
 
         <h2 class="team-card-title">${escapeHtml(team.name || 'Untitled Team')}</h2>
-        <p class="team-card-pitch">${escapeHtml(team.description || "Building an innovative hackathon solution. Check out open seats and join our squad!")}</p>
+        <p class="team-card-pitch">${escapeHtml(team.description || "Looking for teammates for the upcoming hackathon.")}</p>
 
         <div class="team-card-roster-row">
           ${rosterAvatarsHtml}
@@ -994,16 +995,17 @@ function renderFullTeamDetail(team) {
       rosterCardsHtml += `
         <div class="squad-member-card empty-slot">
           <div class="slot-badge">Seat 0${seatNum}</div>
-          <div class="slot-title">Open Squad Vacancy</div>
+          <div class="slot-title">Open Squad Slot</div>
           <p class="slot-subtitle">
-            ${isLeader ? 'Search student database by R-ID or Name to fill this seat.' : 'Available for verified applicants to join.'}
+            ${isLeader ? 'Click to assign a teammate, or keep as is to accept join requests from other students.' : 'Open for students to send join requests.'}
           </p>
           ${isLeader ? `
             <button onclick="openSlotStudentSearchModalForTeam('${team.id}', ${seatNum})" class="btn-slot-assign">
               + Assign Teammate
             </button>
+            <span style="font-size:0.75rem; color:var(--text-sage); margin-top:6px; display:block;">Or leave open for requests</span>
           ` : `
-            <span class="slot-status-indicator">Accepting Applications</span>
+            <span class="slot-status-indicator">Open for Requests</span>
           `}
         </div>
       `;
@@ -1044,11 +1046,11 @@ function renderFullTeamDetail(team) {
 
           <h1 class="squad-headline-title">${escapeHtml(team.name)}</h1>
 
-          <!-- Architectural Project Brief -->
+          <!-- Project Brief -->
           <div class="squad-brief-card">
-            <div class="brief-kicker">Project Objectives &amp; Technical Problem Statement</div>
+            <div class="brief-kicker">Project Description</div>
             <p class="brief-body-text">
-              ${escapeHtml(team.description || "Building an engineering solution for the upcoming hackathon. Check out our open seats and join the squad.")}
+              ${escapeHtml(team.description || "Looking for teammates for the upcoming hackathon.")}
             </p>
             <div class="brief-meta-row">
               <span class="brief-meta-item">
@@ -1697,7 +1699,6 @@ function renderFullProfile(prof, userTeams) {
 
       <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
         <span class="status-capsule member" style="font-size:0.75rem;">${escapeHtml(academicYear)}</span>
-        <span class="status-capsule full" style="font-size:0.75rem;">● Verified Student</span>
       </div>
 
       <div style="background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius-xl); padding:14px; margin-bottom:20px; text-align:left;">
@@ -1719,12 +1720,11 @@ function renderFullProfile(prof, userTeams) {
     </div>
   `;
 
-  // 2. Right Section: Academic & University Standing Credentials
+  // 2. Right Section: Academic Credentials
   const credentialsHtml = `
     <div class="profile-section-card">
       <div class="profile-section-header">
-        <h3 class="profile-section-title">Academic & University Credentials</h3>
-        <span class="status-capsule full">Deterministic Verification</span>
+        <h3 class="profile-section-title">Academic Credentials</h3>
       </div>
       <div class="profile-details-grid">
         <div class="profile-detail-cell">
@@ -2042,44 +2042,44 @@ function loadCreateTeamView() {
             </div>
           </div>
 
-          <!-- Right Column: 4 Practical Squad Formation Instructions -->
+          <!-- Right Column: Practical Instructions -->
           <div class="create-team-guide-sidebar">
-            <h3 class="font-serif" style="font-size:1.25rem; margin-bottom:14px; color:var(--text-white);">Squad Formation Guide</h3>
+            <h3 class="font-serif" style="font-size:1.15rem; margin-bottom:14px; color:var(--text-white);">Team Creation Tips</h3>
             
-            <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="display:flex; flex-direction:column; gap:12px;">
               <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
                 <div style="font-weight:750; font-size:0.875rem; color:var(--badge-mint); margin-bottom:4px;">
-                  01 • Squad Roles &amp; Captaincy
+                  01 • Adding Teammates
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  As team captain, you define the project mission, review incoming join requests, and direct team strategy throughout the hackathon.
+                  Click on any empty seat below to search the student directory by R-ID or name and assign an existing member.
                 </div>
               </div>
 
               <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
                 <div style="font-weight:750; font-size:0.875rem; color:#FDBA74; margin-bottom:4px;">
-                  02 • Balanced Engineering Talent
+                  02 • Leaving Slots Open
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  Assemble a versatile squad by combining backend engineers with AI/ML specialists, frontend developers, and UI/UX designers.
+                  Keep seats unassigned to leave them open on the Discover board so other students can find your team and request to join.
                 </div>
               </div>
 
               <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
                 <div style="font-weight:750; font-size:0.875rem; color:#86EFAC; margin-bottom:4px;">
-                  03 • Reserve Open Slots for Talent
+                  03 • Team WhatsApp Link
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  Leave unassigned seats open so verified campus peers can discover your team and apply directly with their university credentials.
+                  Add your team's WhatsApp group link so accepted members can instantly connect for project discussions and coordination.
                 </div>
               </div>
 
               <div style="background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:12px 14px;">
                 <div style="font-weight:750; font-size:0.875rem; color:var(--badge-yellow); margin-bottom:4px;">
-                  04 • Direct WhatsApp Coordination
+                  04 • SIH Diversity Rule
                 </div>
                 <div style="font-size:0.78rem; color:var(--text-sage-light); line-height:1.45;">
-                  Provide your team's WhatsApp group link so admitted members can immediately join internal discussions, standups, and repo planning.
+                  Official Smart India Hackathon rules require a total of 6 members with at least 1 female teammate in the squad.
                 </div>
               </div>
             </div>
@@ -2156,10 +2156,10 @@ function renderCreateTeamSeats() {
       `;
     } else {
       seatsHtml += `
-        <div class="create-slot-box empty" onclick="openSlotStudentSearchModal(${i})" title="Click to add student by R-ID">
+        <div class="create-slot-box empty" onclick="openSlotStudentSearchModal(${i})" title="Click to assign teammate, or leave open">
           <div class="slot-empty-icon">+</div>
           <div class="slot-empty-title">Seat ${i + 2} • Open Slot</div>
-          <div class="slot-empty-subtitle">Click to search & add teammate</div>
+          <div class="slot-empty-subtitle">Click to add teammate, or leave open for join requests</div>
         </div>
       `;
     }
@@ -2314,22 +2314,24 @@ function renderSlotSearchResults(students, query) {
     const avatarSrc = getStudentAvatarSrc(rawAvatar, sRid);
     const isInTeam = Boolean(s.in_team);
     const teamName = s.team_name || "Another Team";
+    const academicYear = s.academic_year || getAcademicYearByRid(sRid);
+    const admissionYear = s.admission_year || getAdmissionYearByRid(sRid);
 
     let actionButtonHtml = "";
     if (isMe) {
       actionButtonHtml = `<span class="badge-selected">You (Leader)</span>`;
     } else if (isAlreadySelected) {
-      actionButtonHtml = `<span class="badge-selected">Already Selected</span>`;
+      actionButtonHtml = `<span class="badge-selected">Already Added</span>`;
     } else if (isInTeam) {
       actionButtonHtml = `
-        <button onclick="handleInTeamStudentClick('${escapeAttr(cleanName)}', '${escapeAttr(sRid)}', '${escapeAttr(teamName)}')" class="btn-in-team-badge" title="Click to view details">
+        <button onclick="handleInTeamStudentClick('${escapeAttr(cleanName)}', '${escapeAttr(sRid)}', '${escapeAttr(teamName)}')" class="btn-in-team-badge" title="Already enrolled in another team">
           In Team ⚠️
         </button>
       `;
     } else {
       actionButtonHtml = `
         <button onclick="selectStudentForSlot('${escapeAttr(sRid)}', '${escapeAttr(cleanName)}', '${escapeAttr(avatarSrc)}', '${escapeAttr(s.program || '')}', '${escapeAttr(s.semester_year || '')}')" class="btn-black-pill sm">
-          + Select Teammate
+          + Add Teammate
         </button>
       `;
     }
@@ -2349,21 +2351,21 @@ function renderSlotSearchResults(students, query) {
             <div class="student-name-row">
               <span class="student-search-name">${escapeHtml(cleanName)}</span>
               <span class="student-rid-badge">@${escapeHtml(sRid)}</span>
+              <span class="student-year-badge">${escapeHtml(academicYear)}</span>
               ${isInTeam 
-                ? `<span class="already-in-team-badge" title="Enrolled in ${escapeAttr(teamName)}">⚠️ In: ${escapeHtml(teamName)}</span>`
-                : `<span class="college-verified-tag">✓ Verified Student</span>`
+                ? `<span class="already-in-team-badge" title="Enrolled in ${escapeAttr(teamName)}">In Team: ${escapeHtml(teamName)}</span>`
+                : `<span class="student-available-badge">Available</span>`
               }
             </div>
 
-            <div class="student-academic-row" style="margin-top:4px; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-              <span class="student-academic-chip">${escapeHtml(s.program || 'Student')}</span>
-              ${s.semester_year ? `<span style="font-size:0.75rem; color:var(--text-sage); font-weight:600;">• ${escapeHtml(s.semester_year)}</span>` : ''}
+            <div class="student-program-row">
+              <span class="student-program-text">${escapeHtml(s.program || 'Jaipur National University')}</span>
+              ${admissionYear ? `<span class="student-batch-text">• Batch ${escapeHtml(admissionYear)}</span>` : ''}
             </div>
 
-            <div class="student-contact-row" style="margin-top:6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-              ${s.email ? `<span class="student-contact-chip">✉ ${escapeHtml(s.email)}</span>` : ''}
-              ${s.gender ? `<span class="student-contact-chip">• ${escapeHtml(s.gender)}</span>` : ''}
-              ${s.dob && s.dob !== 'N/A' ? `<span class="student-contact-chip">• DOB: ${escapeHtml(s.dob)}</span>` : ''}
+            <div class="student-meta-details-row">
+              ${s.email ? `<span class="student-detail-chip"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:13px;height:13px;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg> ${escapeHtml(s.email)}</span>` : ''}
+              ${s.gender ? `<span class="student-detail-chip">• ${escapeHtml(s.gender)}</span>` : ''}
             </div>
           </div>
         </div>
@@ -2577,35 +2579,40 @@ function renderDirectorySearchResults(students, query) {
 
   resultsDiv.innerHTML = students.map(s => {
     const rawAvatar = s.avatar_url || "";
-    const avatarSrc = getStudentAvatarSrc(rawAvatar, s.r_id);
+    const sRid = (s.r_id || "").toUpperCase();
+    const cleanName = (s.name || sRid).replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
+    const avatarSrc = getStudentAvatarSrc(rawAvatar, sRid);
+    const academicYear = s.academic_year || getAcademicYearByRid(sRid);
+    const admissionYear = s.admission_year || getAdmissionYearByRid(sRid);
+
     return `
-      <div class="team-card-forest">
-        <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
-          <div class="avatar-stack-item" style="width:48px; height:48px; margin-left:0; border:2px solid var(--badge-yellow);">
+      <div class="team-card-forest student-directory-card">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
+          <div class="student-search-avatar" style="width:56px; height:56px; border-radius:10px;">
             <img src="${escapeHtml(avatarSrc)}" 
                  data-raw-src="${escapeHtml(rawAvatar)}" 
-                 alt="${escapeHtml(s.name)}" 
+                 alt="${escapeHtml(cleanName)}" 
                  loading="lazy" 
                  decoding="async" 
                  onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
           </div>
           <div style="min-width:0; flex:1;">
-            <h3 class="font-serif" style="font-size:1.125rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(s.name)}</h3>
-            <div style="font-size:0.8125rem; color:var(--text-sage); margin-top:2px;">
-              ${escapeHtml(s.r_id)} • ${escapeHtml(s.gender || 'Student')}
+            <h3 class="font-serif" style="font-size:1.15rem; color:#FFFFFF; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(cleanName)}</h3>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span class="student-rid-badge">@${escapeHtml(sRid)}</span>
+              <span class="student-year-badge">${escapeHtml(academicYear)}</span>
             </div>
           </div>
         </div>
 
-        ${s.program ? `
-          <div style="margin-bottom:12px;">
-            <span class="status-capsule member" style="font-size:0.6875rem;">${escapeHtml(s.program)}</span>
-          </div>
-        ` : ''}
+        <div style="margin-bottom:12px; font-size:0.8125rem; color:var(--text-sage);">
+          <div>${escapeHtml(s.program || 'Jaipur National University')}</div>
+          ${admissionYear ? `<div style="font-size:0.75rem; color:var(--text-sage-light); margin-top:2px;">Batch of ${escapeHtml(admissionYear)}</div>` : ''}
+        </div>
 
-        <div class="team-card-bottom-row">
-          <span style="font-size:0.75rem; color:var(--text-sage);">DOB: ${escapeHtml(s.dob || 'N/A')}</span>
-          ${s.email ? `<a href="mailto:${escapeHtml(s.email)}" class="btn-black-pill sm" style="font-size:0.75rem; padding:4px 12px;">Email ➔</a>` : ""}
+        <div class="team-card-bottom-row" style="margin-top:auto;">
+          <span style="font-size:0.75rem; color:var(--text-sage);">${escapeHtml(s.gender || '')}</span>
+          ${s.email ? `<a href="mailto:${escapeHtml(s.email)}" class="btn-black-pill sm" style="font-size:0.75rem; padding:5px 12px;">Email Teammate</a>` : ""}
         </div>
       </div>
     `;
