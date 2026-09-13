@@ -56,7 +56,7 @@ function getAcademicYearByRid(studentId) {
   const num = parseInt(digits, 10);
   if (isNaN(num)) return "Student";
   if (num <= 42260) return "Passed Out Student";
-  if (num <= 50190) return "Final Year Student";
+  if (num <= 50190) return "4th Year Student";
   if (num <= 54323) return "3rd Year Student";
   if (num <= 59643) return "2nd Year Student";
   return "1st Year Student";
@@ -243,6 +243,12 @@ function handleCurrentRoute() {
     if (p) {
       p.classList.add("active");
       loadStudentsView();
+    }
+  } else if (path === "/admin") {
+    const p = document.getElementById("viewAdmin");
+    if (p) {
+      p.classList.add("active");
+      loadAdminView();
     }
   } else if (path === "/about") {
     history.replaceState(null, "", "/");
@@ -1725,6 +1731,7 @@ function renderFullProfile(prof, userTeams) {
     <div class="profile-section-card">
       <div class="profile-section-header">
         <h3 class="profile-section-title">Academic Credentials</h3>
+        <span class="status-capsule member">University Record</span>
       </div>
       <div class="profile-details-grid">
         <div class="profile-detail-cell">
@@ -1751,12 +1758,56 @@ function renderFullProfile(prof, userTeams) {
     </div>
   `;
 
-  // 3. Right Section: Contact & Identity Info
+  // 3. Right Section: Personal & Demographic Details
+  const personalHtml = `
+    <div class="profile-section-card">
+      <div class="profile-section-header">
+        <h3 class="profile-section-title">Personal & Identity Details</h3>
+        <span class="status-capsule member">Verified Attributes</span>
+      </div>
+      <div class="profile-details-grid">
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Date of Birth</span>
+          <span class="profile-cell-value">${escapeHtml(prof.dob || 'Not Provided')}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Gender</span>
+          <span class="profile-cell-value">${escapeHtml(gender)}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Blood Group</span>
+          <span class="profile-cell-value" style="color:var(--badge-yellow); font-weight:700;">${escapeHtml(prof.blood_group || 'Not Provided')}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Category / Quota</span>
+          <span class="profile-cell-value">${escapeHtml(prof.category || 'General')}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Religion</span>
+          <span class="profile-cell-value">${escapeHtml(prof.religion || 'Not Provided')}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Caste / Sub-Caste</span>
+          <span class="profile-cell-value">${escapeHtml(prof.caste || 'Not Provided')}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Marital Status</span>
+          <span class="profile-cell-value">${escapeHtml(prof.marital_status || 'Single')}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Physical Disability</span>
+          <span class="profile-cell-value">${escapeHtml(prof.disabled || 'No')}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 4. Right Section: Contact & Communications
   const contactHtml = `
     <div class="profile-section-card">
       <div class="profile-section-header">
-        <h3 class="profile-section-title">Contact & University Records</h3>
-        <span class="status-capsule member">Official Records</span>
+        <h3 class="profile-section-title">Contact & University Communications</h3>
+        <span class="status-capsule member">Direct Channels</span>
       </div>
       <div class="profile-details-grid">
         <div class="profile-detail-cell">
@@ -1764,18 +1815,70 @@ function renderFullProfile(prof, userTeams) {
           <span class="profile-cell-value">${escapeHtml(email)}</span>
         </div>
         <div class="profile-detail-cell">
-          <span class="profile-cell-label">Gender</span>
-          <span class="profile-cell-value">${escapeHtml(gender)}</span>
+          <span class="profile-cell-label">Primary Mobile Phone</span>
+          <span class="profile-cell-value" style="color:var(--badge-mint); font-weight:700;">${escapeHtml(prof.phone || 'Not Provided')}</span>
         </div>
-        <div class="profile-detail-cell full-width">
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Alternate Mobile Phone</span>
+          <span class="profile-cell-value">${escapeHtml(prof.alt_phone || 'Not Provided')}</span>
+        </div>
+        <div class="profile-detail-cell">
           <span class="profile-cell-label">Hackathon Eligibility</span>
-          <span class="profile-cell-value" style="color:var(--badge-mint);">● Verified for Smart India Hackathon (SIH) and Capture The Flag (CTF) squads</span>
+          <span class="profile-cell-value" style="color:var(--badge-mint);">● Verified for SIH & CTF Squads</span>
         </div>
       </div>
     </div>
   `;
 
-  // 4. Right Section: User's Teams
+  // 5. Right Section: Family & Guardian Records
+  const familyHtml = `
+    <div class="profile-section-card">
+      <div class="profile-section-header">
+        <h3 class="profile-section-title">Family & Guardian Records</h3>
+        <span class="status-capsule member">Institutional Records</span>
+      </div>
+      <div class="profile-details-grid">
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Father's Name</span>
+          <span class="profile-cell-value">${escapeHtml(prof.father_name || 'Not Provided')}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Father's Mobile No</span>
+          <span class="profile-cell-value">${escapeHtml(prof.father_phone || 'Not Provided')}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Mother's Name</span>
+          <span class="profile-cell-value">${escapeHtml(prof.mother_name || 'Not Provided')}</span>
+        </div>
+        <div class="profile-detail-cell">
+          <span class="profile-cell-label">Mother's Mobile No</span>
+          <span class="profile-cell-value">${escapeHtml(prof.mother_phone || 'Not Provided')}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 6. Right Section: Residential Addresses
+  const addressHtml = `
+    <div class="profile-section-card">
+      <div class="profile-section-header">
+        <h3 class="profile-section-title">Residential Addresses on Record</h3>
+        <span class="status-capsule member">Campus File</span>
+      </div>
+      <div class="profile-details-grid">
+        <div class="profile-detail-cell full-width">
+          <span class="profile-cell-label">Permanent Address</span>
+          <span class="profile-cell-value">${escapeHtml(prof.permanent_address || 'Not Provided')}</span>
+        </div>
+        <div class="profile-detail-cell full-width">
+          <span class="profile-cell-label">Correspondence Address</span>
+          <span class="profile-cell-value">${escapeHtml(prof.correspondence_address || 'Not Provided')}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 7. Right Section: User's Teams
   let teamsListHtml = '';
   if (!userTeams || userTeams.length === 0) {
     teamsListHtml = `
@@ -1832,10 +1935,13 @@ function renderFullProfile(prof, userTeams) {
           ${identityCardHtml}
         </div>
 
-        <!-- Right Section: Credentials, Personal Contact & Teams -->
+        <!-- Right Section: All University Records & Teams -->
         <div class="profile-content-column">
           ${credentialsHtml}
+          ${personalHtml}
           ${contactHtml}
+          ${familyHtml}
+          ${addressHtml}
           ${teamsHtml}
         </div>
       </div>
@@ -2637,48 +2743,34 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   const displayEmail = targetEmail || student.email || `${student.r_id}@student.edu`;
   const program = student.program || "Student";
   const academicYear = student.academic_year || getAcademicYearByRid(student.r_id);
-  const admissionYear = student.admission_year || getAdmissionYearByRid(student.r_id);
-  const gender = student.gender || "";
 
   spotlightContainer.innerHTML = `
-    <div class="auth-student-spotlight-card">
-      <div class="auth-spotlight-header">
-        <div class="auth-spotlight-avatar">
-          <img src="${escapeHtml(avatarSrc)}" 
-               data-raw-src="${escapeHtml(rawAvatar)}" 
-               alt="${escapeHtml(cleanName)}" 
-               onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
-        </div>
-        <div class="auth-spotlight-meta">
-          <h3 class="auth-spotlight-name">${escapeHtml(cleanName)}</h3>
-          <div class="auth-spotlight-rid">College R-ID: <strong>@${escapeHtml(student.r_id)}</strong></div>
+    <!-- SECTION 1: STUDENT DETAILS (CLEAN HORIZONTAL STRIP) -->
+    <div class="auth-student-id-strip">
+      <div class="auth-strip-avatar">
+        <img src="${escapeHtml(avatarSrc)}" 
+             data-raw-src="${escapeHtml(rawAvatar)}" 
+             alt="${escapeHtml(cleanName)}" 
+             onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+      </div>
+      <div class="auth-strip-info">
+        <div class="auth-strip-name">${escapeHtml(cleanName)}</div>
+        <div class="auth-strip-tags">
+          <span class="auth-badge-rid">@${escapeHtml(student.r_id)}</span>
+          <span class="auth-badge-year">${escapeHtml(academicYear)}</span>
+          <span class="auth-badge-prog truncate">${escapeHtml(program)}</span>
         </div>
       </div>
+    </div>
 
-      <div class="auth-spotlight-details-grid">
-        <div class="auth-spotlight-detail-item">
-          <span class="auth-detail-key">Academic Year</span>
-          <span class="auth-detail-val highlight">${escapeHtml(academicYear)}</span>
-        </div>
-        <div class="auth-spotlight-detail-item">
-          <span class="auth-detail-key">Admission Batch</span>
-          <span class="auth-detail-val">${escapeHtml(admissionYear || 'Verified')}</span>
-        </div>
-        ${gender ? `
-        <div class="auth-spotlight-detail-item">
-          <span class="auth-detail-key">Gender</span>
-          <span class="auth-detail-val">${escapeHtml(gender)}</span>
-        </div>
-        ` : ''}
-        <div class="auth-spotlight-detail-item full-width">
-          <span class="auth-detail-key">Program</span>
-          <span class="auth-detail-val truncate">${escapeHtml(program)}</span>
-        </div>
+    <!-- SECTION 2: WHERE OTP IS SENT (DEDICATED DISPATCH BANNER) -->
+    <div class="auth-dispatch-banner">
+      <div class="auth-dispatch-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px; height:15px;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
       </div>
-
-      <div class="auth-spotlight-email-bar">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; color:var(--badge-mint); flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
-        <span>Verification Code sent to: <strong>${escapeHtml(displayEmail)}</strong></span>
+      <div class="auth-dispatch-content">
+        <span class="auth-dispatch-prompt">Verification code sent to</span>
+        <strong class="auth-dispatch-email">${escapeHtml(displayEmail)}</strong>
       </div>
     </div>
   `;
@@ -2716,7 +2808,7 @@ function loadLoginView() {
         <p id="authPortalSubtext" style="color:var(--text-sage); font-size:0.875rem; margin-bottom:20px;">${escapeHtml(authSubText)}</p>
 
         ${isCreateTeamIntent ? `
-          <div id="authCreateTeamBanner" style="display:inline-flex; align-items:center; gap:6px; background:rgba(62,168,108,0.15); border:1px solid rgba(62,168,108,0.3); border-radius:var(--radius-pill); padding:4px 12px; margin-bottom:18px; font-size:0.75rem; color:var(--badge-mint); font-weight:750;">
+          <div id="authCreateTeamBanner" style="display:inline-flex; align-items:center; gap:6px; background:rgba(62,168,108,0.15); border:1px solid rgba(62,168,108,0.3); border-radius:6px; padding:4px 12px; margin-bottom:18px; font-size:0.75rem; color:var(--badge-mint); font-weight:750;">
             <span>🛡️</span> Team Leader Verification Required
           </div>
         ` : ''}
@@ -2728,7 +2820,7 @@ function loadLoginView() {
             <input type="text" id="authRidInput" placeholder="e.g. R15006" class="input-forest" style="font-weight:750; text-transform:uppercase; font-size:1.125rem; letter-spacing:0.04em; text-align:center;" onkeyup="if(event.key==='Enter') submitInitialRid()">
           </div>
 
-          <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-black-pill lg" style="width:100%;">
+          <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-auth-submit" style="width:100%;">
             ${btnActionText}
           </button>
         </div>
@@ -2744,7 +2836,7 @@ function loadLoginView() {
             </span>
           </div>
 
-          <div style="background:rgba(242,169,34,0.12); border:1px solid rgba(242,169,34,0.3); border-radius:var(--radius-lg); padding:10px 14px; margin-bottom:14px; font-size:0.8125rem; color:#FFD479; line-height:1.45; text-align:center;">
+          <div style="background:rgba(242,169,34,0.12); border:1px solid rgba(242,169,34,0.3); border-radius:6px; padding:10px 14px; margin-bottom:14px; font-size:0.8125rem; color:#FFD479; line-height:1.45; text-align:center;">
             Server couldn't connect to campus database. Please complete your registration details manually to continue.
           </div>
 
@@ -2767,35 +2859,39 @@ function loadLoginView() {
             </div>
           </div>
 
-          <button onclick="submitSyncDetailsAndSendOtp()" id="btnSendSyncOtp" class="btn-black-pill lg" style="width:100%;">
+          <button onclick="submitSyncDetailsAndSendOtp()" id="btnSendSyncOtp" class="btn-auth-submit" style="width:100%;">
             Send Verification Code
           </button>
 
-          <button onclick="showAuthStep(1)" class="btn-outline-pill" style="width:100%; margin-top:8px;">
+          <button onclick="showAuthStep(1)" class="btn-auth-secondary" style="width:100%; margin-top:8px;">
             ← Change R-ID
           </button>
         </div>
 
-        <!-- Step 2: Compact Zero-Scroll OTP Verification with Profile Spotlight -->
+        <!-- Step 2: Zero-Scroll OTP Verification (3-part Engineering Layout) -->
         <div id="authStep2" style="display:none;">
+          <!-- Section 1 (Student Details) and Section 2 (Where OTP is Sent) rendered here -->
           <div id="authStep2ProfileSpotlight"></div>
 
-          <div class="form-group" style="margin-bottom:12px;">
-            <label class="form-label-forest" style="text-align:center; margin-bottom:6px; font-size:0.75rem;">Enter 6-Digit Verification Code</label>
-            <input type="text" id="otpCodeInput" placeholder="123456" maxlength="6" class="input-forest" style="height:48px; font-size:1.6rem; font-weight:800; text-align:center; letter-spacing:0.35em;" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
-          </div>
+          <!-- SECTION 3: OTP ENTER SECTION -->
+          <div class="auth-otp-entry-section">
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label-forest" style="text-align:center; font-size:0.75rem; margin-bottom:6px; letter-spacing:0.04em;">Enter 6-Digit Code</label>
+              <input type="text" id="otpCodeInput" placeholder="••••••" maxlength="6" class="input-forest otp-code-input" autocomplete="one-time-code" inputmode="numeric" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
+            </div>
 
-          <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-black-pill lg" style="width:100%; height:44px; font-size:0.9375rem;">
-            Verify & Sign In ➔
-          </button>
+            <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-auth-submit" style="width:100%;">
+              Verify & Sign In ➔
+            </button>
 
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:12px;">
-            <button type="button" id="btnResendOtp" onclick="handleResendOtp()" style="font-size:0.78rem; color:var(--badge-yellow); font-weight:700; background:none; border:none; cursor:pointer;" disabled>
-              Resend Code (<span id="resendCountdown">30</span>s)
-            </button>
-            <button type="button" onclick="showAuthStep(1)" style="font-size:0.78rem; color:var(--text-sage); font-weight:700; background:none; border:none; cursor:pointer;">
-              ← Change R-ID
-            </button>
+            <div class="auth-otp-footer-row">
+              <button type="button" id="btnResendOtp" onclick="handleResendOtp()" class="auth-link-btn" disabled>
+                Resend Code (<span id="resendCountdown">30</span>s)
+              </button>
+              <button type="button" onclick="showAuthStep(1)" class="auth-link-btn change-rid">
+                ← Change R-ID
+              </button>
+            </div>
           </div>
         </div>
 
@@ -3410,6 +3506,388 @@ function showGlassModal(options) {
 function closeGlassModal() {
   const overlay = document.getElementById("glassModalOverlay");
   if (overlay) overlay.classList.remove("active");
+}
+
+/* ==========================================================================
+   10. ADMIN EXECUTIVE CONSOLE (/admin)
+   ========================================================================== */
+function loadAdminView() {
+  const container = document.getElementById("adminViewContainer");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="admin-loading-wrap">
+      ${renderIosSpinner('lg', 'Checking administration credentials...')}
+    </div>
+  `;
+
+  fetch("/api/admin/status")
+    .then(res => res.json())
+    .then(data => {
+      if (data.authenticated) {
+        loadAdminDashboardData();
+      } else {
+        renderAdminLoginForm();
+      }
+    })
+    .catch(() => {
+      renderAdminLoginForm();
+    });
+}
+
+function renderAdminLoginForm() {
+  const container = document.getElementById("adminViewContainer");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="admin-auth-wrap">
+      <div class="admin-auth-card">
+        <div class="admin-auth-crest">
+          <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="jnu-admin-logo" onerror="this.src='/static/img/jnu_logo.jpg';">
+        </div>
+        <div class="admin-auth-badge">Executive Security Gateway</div>
+        <h2 class="admin-auth-title font-serif">JnuMate Administration</h2>
+        <p class="admin-auth-subtitle">Enter administrator credentials to access platform controls.</p>
+
+        <form onsubmit="event.preventDefault(); submitAdminLogin();" class="admin-auth-form">
+          <div class="form-group" style="margin-bottom:14px; text-align:left;">
+            <label class="form-label-forest">Administrator ID</label>
+            <input type="text" id="adminUserIdInput" class="input-forest" placeholder="e.g. admin" value="admin" required autocomplete="username">
+          </div>
+
+          <div class="form-group" style="margin-bottom:20px; text-align:left;">
+            <label class="form-label-forest">Admin Password</label>
+            <input type="password" id="adminPasswordInput" class="input-forest" placeholder="Enter password" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" id="btnAdminLogin" class="btn-auth-submit" style="width:100%;">
+            Authenticate into Console ➔
+          </button>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function submitAdminLogin() {
+  const userEl = document.getElementById("adminUserIdInput");
+  const passEl = document.getElementById("adminPasswordInput");
+  const btn = document.getElementById("btnAdminLogin");
+  if (!userEl || !passEl) return;
+
+  const username = userEl.value.trim();
+  const password = passEl.value;
+
+  if (!username || !password) {
+    showToast("Please enter User ID and Password", "error");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Authenticating...</span></span>`;
+  }
+
+  fetch("/api/admin/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: username, password: password })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast("Administrator authenticated", "success");
+        loadAdminDashboardData();
+      } else {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "Authenticate into Console ➔";
+        }
+        showToast(data.message || "Invalid admin credentials", "error");
+      }
+    })
+    .catch(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Authenticate into Console ➔";
+      }
+      showToast("Connection error authenticating admin", "error");
+    });
+}
+
+function loadAdminDashboardData() {
+  const container = document.getElementById("adminViewContainer");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="admin-loading-wrap">
+      ${renderIosSpinner('lg', 'Loading system metrics and controls...')}
+    </div>
+  `;
+
+  Promise.all([
+    fetch("/api/admin/settings").then(r => r.json()),
+    fetch("/api/admin/stats").then(r => r.json())
+  ])
+    .then(([settingsRes, statsRes]) => {
+      if (!settingsRes.success || !statsRes.success) {
+        renderAdminLoginForm();
+        return;
+      }
+      renderAdminDashboard(settingsRes, statsRes.stats, statsRes.recent_activity || []);
+    })
+    .catch(err => {
+      console.error("Admin dashboard load error:", err);
+      showToast("Error loading admin data", "error");
+      renderAdminLoginForm();
+    });
+}
+
+function renderAdminDashboard(settings, stats, activity) {
+  const container = document.getElementById("adminViewContainer");
+  if (!container) return;
+
+  const isEmailOn = Boolean(settings.otp_email_enabled);
+  const bypassOtp = settings.default_bypass_otp || "123456";
+
+  container.innerHTML = `
+    <div class="admin-dashboard-wrap">
+      <!-- Admin Top Executive Bar -->
+      <div class="admin-header-bar">
+        <div class="admin-header-left">
+          <div class="admin-crest-mini">
+            <img src="/static/img/jnu_logo.png" alt="JNU" onerror="this.src='/static/img/jnu_logo.jpg';">
+          </div>
+          <div>
+            <div class="admin-header-kicker">Platform Administration</div>
+            <h1 class="admin-header-title font-serif">Executive Control Center</h1>
+          </div>
+        </div>
+        <div class="admin-header-right">
+          <span class="admin-status-indicator">
+            <span class="indicator-dot pulse"></span>
+            Superuser Active
+          </span>
+          <button onclick="logoutAdmin()" class="btn-admin-signout">
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      <!-- Master Control: OTP & Email Dispatch Switch -->
+      <div class="admin-toggle-panel ${isEmailOn ? 'email-active' : 'email-paused'}">
+        <div class="admin-toggle-main-row">
+          <div class="admin-toggle-desc-col">
+            <div class="admin-panel-kicker">Master Communication Engine</div>
+            <h2 class="admin-panel-title">Student Email & OTP Dispatch</h2>
+            <p class="admin-panel-subtitle">
+              ${isEmailOn 
+                ? "Live dispatch is <strong>ACTIVE</strong>. Brevo SMTP relays real OTP codes and notifications to student university emails."
+                : "Live dispatch is <strong>HALTED</strong>. Zero emails are sent under any circumstance. All students can log in using the confidential default bypass OTP below."
+              }
+            </p>
+          </div>
+          <div class="admin-toggle-switch-box">
+            <div class="admin-toggle-status-badge ${isEmailOn ? 'live' : 'paused'}">
+              ${isEmailOn ? '● LIVE DISPATCH (ON)' : '■ ZERO EMAILS (OFF)'}
+            </div>
+            <label class="admin-switch">
+              <input type="checkbox" id="adminOtpEmailToggle" ${isEmailOn ? 'checked' : ''} onchange="handleAdminToggleOtp(this.checked)">
+              <span class="admin-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        ${!isEmailOn ? `
+          <!-- CONFIDENTIAL MASTER BYPASS CODE (VISIBLE STRICTLY WHEN EMAIL DISPATCH IS OFF) -->
+          <div class="admin-bypass-card" id="adminBypassBox">
+            <div class="admin-bypass-header">
+              <div class="admin-bypass-title-row">
+                <span class="admin-lock-icon">🔒</span>
+                <div>
+                  <h3 class="admin-bypass-heading">Default Master Bypass OTP</h3>
+                  <p class="admin-bypass-sub">Use this code to sign in to any student account without sending emails.</p>
+                </div>
+              </div>
+              <button onclick="copyAdminBypassCode()" class="btn-admin-copy-code" title="Copy code to clipboard">
+                📋 Copy Code
+              </button>
+            </div>
+
+            <div class="admin-bypass-code-box">
+              <span class="admin-bypass-digits" id="adminBypassCodeDisplay">${escapeHtml(bypassOtp)}</span>
+            </div>
+
+            <div class="admin-bypass-update-row">
+              <div class="admin-bypass-input-group">
+                <input type="text" id="adminNewBypassInput" placeholder="Set custom OTP" maxlength="8" class="input-forest" style="width:160px; height:36px; text-align:center; font-weight:700;">
+                <button onclick="handleAdminUpdateBypassOtp()" class="btn-admin-save-code">
+                  Update Bypass Code
+                </button>
+              </div>
+              <span class="admin-bypass-confidential-note">
+                Strictly Confidential: Visible only on this admin dashboard. Hidden from students and public API responses.
+              </span>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+
+      <!-- Executive Platform Metrics Grid -->
+      <div class="admin-metrics-grid">
+        <div class="admin-metric-card">
+          <div class="admin-metric-label">Registered Students</div>
+          <div class="admin-metric-value" style="color:var(--badge-mint);">
+            ${stats.registered_students || 0}
+          </div>
+          <div class="admin-metric-footnote">
+            out of ${stats.total_students ? stats.total_students.toLocaleString() : '16,199'} campus records
+          </div>
+        </div>
+
+        <div class="admin-metric-card">
+          <div class="admin-metric-label">Hackathon Squads</div>
+          <div class="admin-metric-value" style="color:var(--badge-yellow);">
+            ${stats.total_teams || 0}
+          </div>
+          <div class="admin-metric-footnote">
+            ${stats.sih_teams || 0} SIH Squads &nbsp;•&nbsp; ${stats.ctf_teams || 0} CTF Squads
+          </div>
+        </div>
+
+        <div class="admin-metric-card">
+          <div class="admin-metric-label">Open Roster Slots</div>
+          <div class="admin-metric-value" style="color:#60A5FA;">
+            ${stats.open_slots || 0}
+          </div>
+          <div class="admin-metric-footnote">
+            Seats available for join requests
+          </div>
+        </div>
+
+        <div class="admin-metric-card">
+          <div class="admin-metric-label">Active Team Members</div>
+          <div class="admin-metric-value" style="color:var(--text-white);">
+            ${stats.total_members || 0}
+          </div>
+          <div class="admin-metric-footnote">
+            Students assigned to active squads
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent OTP & Authentication Activity Log -->
+      <div class="admin-activity-card">
+        <div class="admin-activity-header">
+          <h3 class="admin-activity-title">Recent OTP & Authentication Events</h3>
+          <span class="admin-activity-badge">Last 15 Dispatches</span>
+        </div>
+
+        ${activity.length === 0 ? `
+          <div class="admin-empty-log">No recent verification attempts logged.</div>
+        ` : `
+          <div class="admin-table-responsive">
+            <table class="admin-log-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Student R-ID</th>
+                  <th>Target Email</th>
+                  <th>Verification Code</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${activity.map(a => {
+                  const dateStr = a.created_at ? new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Recent';
+                  const isUsed = Boolean(a.used);
+                  return `
+                    <tr>
+                      <td style="color:var(--text-sage); font-family:monospace;">${escapeHtml(dateStr)}</td>
+                      <td><strong style="color:var(--badge-yellow);">@${escapeHtml(a.r_id)}</strong></td>
+                      <td style="color:var(--text-sage-light);">${escapeHtml(a.email)}</td>
+                      <td><code class="admin-code-pill">${escapeHtml(a.otp || '••••••')}</code></td>
+                      <td>
+                        <span class="admin-badge ${isUsed ? 'verified' : 'pending'}">
+                          ${isUsed ? 'Verified / Logged In' : 'Dispatched'}
+                        </span>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+
+    </div>
+  `;
+}
+
+function handleAdminToggleOtp(checked) {
+  fetch("/api/admin/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ otp_email_enabled: checked })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast(checked ? "Email dispatch turned ON (Students receive emails)" : "Email dispatch turned OFF (Zero emails sent)", "success");
+        loadAdminDashboardData();
+      } else {
+        showToast(data.message || "Failed to update setting", "error");
+      }
+    })
+    .catch(() => showToast("Error toggling email setting", "error"));
+}
+
+function handleAdminUpdateBypassOtp() {
+  const input = document.getElementById("adminNewBypassInput");
+  if (!input || !input.value.trim()) {
+    showToast("Please enter a new bypass code", "error");
+    return;
+  }
+  const newCode = input.value.trim();
+  fetch("/api/admin/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ default_bypass_otp: newCode })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast(`Default bypass OTP updated to ${newCode}`, "success");
+        loadAdminDashboardData();
+      } else {
+        showToast(data.message || "Failed to update code", "error");
+      }
+    })
+    .catch(() => showToast("Error updating bypass code", "error"));
+}
+
+function copyAdminBypassCode() {
+  const el = document.getElementById("adminBypassCodeDisplay");
+  const code = el ? el.innerText.trim() : "123456";
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(code).then(() => {
+      showToast(`Master bypass code ${code} copied to clipboard!`, "success");
+    }).catch(() => {
+      showToast(`Master bypass code: ${code}`, "info");
+    });
+  } else {
+    showToast(`Master bypass code: ${code}`, "info");
+  }
+}
+
+function logoutAdmin() {
+  fetch("/api/admin/logout", { method: "POST" })
+    .then(() => {
+      showToast("Signed out of Admin Console", "info");
+      loadAdminView();
+    })
+    .catch(() => loadAdminView());
 }
 
 document.addEventListener("click", (e) => {

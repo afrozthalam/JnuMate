@@ -149,6 +149,19 @@ def init_db():
             );
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS system_settings (
+                key VARCHAR(100) PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("""
+            INSERT INTO system_settings (key, value)
+            VALUES ('otp_email_enabled', 'true'), ('default_bypass_otp', '123456')
+            ON CONFLICT (key) DO NOTHING;
+        """)
+
         conn.commit()
         conn.close()
         print("PostgreSQL tables initialized successfully!")
@@ -272,6 +285,16 @@ def init_db():
             );
         """)
 
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS system_settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('otp_email_enabled', 'true');")
+        cursor.execute("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('default_bypass_otp', '123456');")
+
         # Performance Indexes for sub-millisecond query execution
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(team_id);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_team_members_student_rid ON team_members(student_r_id);")
@@ -283,6 +306,48 @@ def init_db():
         conn.commit()
         conn.close()
         print("SQLite database initialized successfully!")
+
+def get_system_setting(key, default=None):
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if is_postgres() else "?"
+        cursor.execute(f"SELECT value FROM system_settings WHERE key = {p}", (key,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            if hasattr(row, '__getitem__'):
+                return row["value"] if isinstance(row, dict) or hasattr(row, 'keys') else row[0]
+            return row[0]
+        return default
+    except Exception as e:
+        print(f"Error fetching system setting {key}: {e}")
+        return default
+
+def set_system_setting(key, value):
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        p = "%s" if is_postgres() else "?"
+        val_str = str(value)
+        if is_postgres():
+            cursor.execute(f"""
+                INSERT INTO system_settings (key, value, updated_at)
+                VALUES ({p}, {p}, CURRENT_TIMESTAMP)
+                ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP
+            """, (key, val_str))
+        else:
+            cursor.execute(f"""
+                INSERT INTO system_settings (key, value, updated_at)
+                VALUES ({p}, {p}, CURRENT_TIMESTAMP)
+                ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP
+            """, (key, val_str))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error setting system setting {key}: {e}")
+        return False
 
 if __name__ == "__main__":
     init_db()

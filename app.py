@@ -7,7 +7,7 @@ import threading
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, jsonify, session
-from database import get_db, init_db, is_postgres
+from database import get_db, init_db, is_postgres, get_system_setting, set_system_setting
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "hackmate_liquid_glass_2026")
@@ -80,7 +80,7 @@ def get_academic_year_by_rid(student_id):
             if 0 <= id_num <= 42260:
                 return "Passed Out Student", None
             elif 42261 <= id_num <= 50190:
-                return "Final Year Student", "2023"
+                return "4th Year Student", "2023"
             elif 50191 <= id_num <= 54323:
                 return "3rd Year Student", "2024"
             elif 54324 <= id_num <= 59643:
@@ -194,6 +194,11 @@ def get_student_course_details(r_id, cursor=None):
     return None, None
 
 def send_real_email_otp(target_email, r_id, otp_code):
+    is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
+    if not is_email_on:
+        print(f"[BREVO EMAIL BLOCKED] OTP email dispatch is toggled OFF by Admin. No email sent to {target_email}.")
+        return False, "Email dispatch disabled by administrator"
+
     subject = f"{otp_code} is your JnuMate Verification Code"
     
     html_body = f"""<!DOCTYPE html>
@@ -288,8 +293,120 @@ def auto_import_student_from_json(r_id, conn, cursor):
 @app.route("/login")
 @app.route("/students")
 @app.route("/about")
+@app.route("/admin")
 def index(team_id=None):
     return render_template("index.html")
+
+# --- ADMIN CREDENTIALS & CONTROL ENDPOINTS ---
+ADMIN_USERNAME = os.environ.get("ADMIN_USER", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASS", "hehenewpassword@123")
+
+@app.route("/api/admin/login", methods=["POST"])
+def admin_login():
+    data = request.json or {}
+    username = (data.get("username") or data.get("user_id") or "").strip()
+    password = (data.get("password") or "").strip()
+    if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        session["is_admin"] = True
+        return jsonify({"success": True, "message": "Admin authenticated successfully"})
+    return jsonify({"success": False, "message": "Invalid admin user ID or password"}), 401
+
+@app.route("/api/admin/logout", methods=["POST"])
+def admin_logout():
+    session.pop("is_admin", None)
+    return jsonify({"success": True, "message": "Admin signed out"})
+
+@app.route("/api/admin/status", methods=["GET"])
+def admin_status():
+    return jsonify({
+        "success": True,
+        "authenticated": bool(session.get("is_admin"))
+    })
+
+@app.route("/api/admin/settings", methods=["GET", "POST"])
+def admin_settings():
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    if request.method == "POST":
+        data = request.json or {}
+        if "otp_email_enabled" in data:
+            val = "true" if data["otp_email_enabled"] in [True, "true", "True", 1, "1"] else "false"
+            set_system_setting("otp_email_enabled", val)
+        if "default_bypass_otp" in data and str(data["default_bypass_otp"]).strip():
+            set_system_setting("default_bypass_otp", str(data["default_bypass_otp"]).strip())
+        return jsonify({
+            "success": True,
+            "message": "System settings saved successfully",
+            "otp_email_enabled": str(get_system_setting("otp_email_enabled", "true")).lower() == "true",
+            "default_bypass_otp": get_system_setting("default_bypass_otp", "123456")
+        })
+
+    return jsonify({
+        "success": True,
+        "otp_email_enabled": str(get_system_setting("otp_email_enabled", "true")).lower() == "true",
+        "default_bypass_otp": get_system_setting("default_bypass_otp", "123456")
+    })
+
+@app.route("/api/admin/stats", methods=["GET"])
+def admin_stats():
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM students WHERE is_registered = 1")
+    reg_count = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM teams")
+    teams_count = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM teams WHERE LOWER(hackathon_type) = 'sih'")
+    sih_count = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM teams WHERE LOWER(hackathon_type) = 'ctf'")
+    ctf_count = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM team_members")
+    members_count = cursor.fetchone()[0]
+
+    # Calculate open slots across all teams
+    cursor.execute("SELECT t.id, t.seat_modes, COUNT(tm.id) as filled FROM teams t LEFT JOIN team_members tm ON t.id = tm.team_id GROUP BY t.id")
+    team_seat_rows = cursor.fetchall()
+    open_slots_count = 0
+    for row in team_seat_rows:
+        r_dict = dict(row)
+        modes_str = r_dict.get("seat_modes") or "request,request,request,request,request"
+        modes = [m.strip().lower() for m in modes_str.split(",") if m.strip()]
+        filled = r_dict.get("filled", 1)
+        total_seats = 1 + len(modes)
+        open_seats = max(0, total_seats - filled)
+        open_slots_count += open_seats
+
+    cursor.execute("SELECT id, r_id, email, used, created_at FROM email_otps ORDER BY id DESC LIMIT 15")
+    otp_rows = [dict(r) for r in cursor.fetchall()]
+
+    conn.close()
+
+    otp_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
+    bypass_code = get_system_setting("default_bypass_otp", "123456")
+
+    return jsonify({
+        "success": True,
+        "stats": {
+            "total_students": len(STUDENT_PROFILES_MAP) or 16199,
+            "registered_students": reg_count,
+            "total_teams": teams_count,
+            "sih_teams": sih_count,
+            "ctf_teams": ctf_count,
+            "total_members": members_count,
+            "open_slots": open_slots_count,
+            "otp_email_enabled": otp_on,
+            "default_bypass_otp": bypass_code
+        },
+        "recent_activity": otp_rows
+    })
 
 
 
@@ -359,8 +476,13 @@ def auth_send_otp():
     conn.close()
 
     acad_yr, adm_yr = get_academic_year_by_rid(r_id)
-    # Dispatch email asynchronously in background thread so HTTP response is instant (<10ms)
-    threading.Thread(target=send_real_email_otp, args=(email, r_id, otp_code), daemon=True).start()
+    # Check if admin has enabled real email dispatch
+    is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
+    if is_email_on:
+        # Dispatch email asynchronously in background thread so HTTP response is instant (<10ms)
+        threading.Thread(target=send_real_email_otp, args=(email, r_id, otp_code), daemon=True).start()
+    else:
+        print(f"[BREVO EMAIL DISPATCH BYPASSED] OTP emails toggled OFF in Admin. No email sent to {email}.")
 
     return jsonify({
         "success": True,
@@ -410,7 +532,11 @@ def auth_send_registration_otp():
     conn.commit()
     conn.close()
 
-    threading.Thread(target=send_real_email_otp, args=(email, r_id, otp_code), daemon=True).start()
+    is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
+    if is_email_on:
+        threading.Thread(target=send_real_email_otp, args=(email, r_id, otp_code), daemon=True).start()
+    else:
+        print(f"[BREVO EMAIL DISPATCH BYPASSED] Registration OTP emails toggled OFF in Admin. No email sent to {email}.")
 
     return jsonify({
         "success": True,
@@ -472,7 +598,9 @@ def auth_verify_otp():
     """, (r_id,))
     latest_otp = cursor.fetchone()
 
-    # Allow if matching row found, OR matches latest record, OR master test bypass "123456" / "000000"
+    is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
+    bypass_otp = str(get_system_setting("default_bypass_otp", "123456")).strip()
+
     is_valid = False
     matched_id = None
 
@@ -482,14 +610,14 @@ def auth_verify_otp():
     elif latest_otp and str(latest_otp["otp"]).strip() == otp_code:
         is_valid = True
         matched_id = latest_otp["id"]
-    elif otp_code in ["123456", "000000", "999999"]:
+    elif not is_email_on and (otp_code == bypass_otp or otp_code == "123456"):
         is_valid = True
         if latest_otp:
             matched_id = latest_otp["id"]
 
     if not is_valid:
         conn.close()
-        return jsonify({"success": False, "message": f"Incorrect verification code ({otp_code}). Please enter the code sent to your email or 123456."}), 200
+        return jsonify({"success": False, "message": "Incorrect verification code. Please check and try again."}), 200
 
     # Mark OTP used and mark student as registered
     if matched_id:
@@ -1458,17 +1586,23 @@ def get_user_profile():
     family = json_item.get("family_details", {}) or {}
     address_data = json_item.get("address_details", {}) or {}
 
-    addr_parts = []
-    c_addr = address_data.get("Correspondence Address") or address_data.get("Permanent Address")
-    c_city = address_data.get("Correspondence City") or address_data.get("Permanent City")
-    c_state = address_data.get("Correspondence State") or address_data.get("Permanent State")
-    c_pin = address_data.get("Correspondence Pincode") or address_data.get("Permanent Pincode")
+    # Format correspondence address
+    c_parts = []
+    for k in ["Correspondence Address", "Correspondence City", "Correspondence State", "Correspondence Pincode", "Correspondence Country"]:
+        val = address_data.get(k)
+        if val and str(val).strip() not in ["", "None", "-1", "null"]:
+            c_parts.append(str(val).strip())
+    correspondence_addr = ", ".join(c_parts) if c_parts else "Not Provided"
 
-    for part in [c_addr, c_city, c_state, c_pin]:
-        if part and str(part).strip() not in ["", "None", "-1", "null"]:
-            addr_parts.append(str(part).strip())
+    # Format permanent address
+    p_parts = []
+    for k in ["Permanent Address", "Permanent City", "Permanent State", "Permanent Pincode", "Permanent Country"]:
+        val = address_data.get(k)
+        if val and str(val).strip() not in ["", "None", "-1", "null"]:
+            p_parts.append(str(val).strip())
+    permanent_addr = ", ".join(p_parts) if p_parts else "Not Provided"
 
-    full_address = ", ".join(addr_parts) if addr_parts else "JNU Campus, Jaipur"
+    full_address = correspondence_addr if correspondence_addr != "Not Provided" else permanent_addr
 
     avatar_url = student_dict.get("avatar_url")
     if not avatar_url or "demo/avatars/1.jpg" in avatar_url:
@@ -1481,17 +1615,28 @@ def get_user_profile():
         "r_id": r_id,
         "name": student_dict.get("name") or json_item.get("name") or "Student",
         "email": student_dict.get("email") or personal.get("EmailID") or f"{r_id}@student.edu",
-        "phone": student_dict.get("phone") or personal.get("Mobile No") or "N/A",
+        "phone": student_dict.get("phone") or personal.get("Mobile No") or "Not Provided",
+        "alt_phone": personal.get("Alternate Mobile No") or "Not Provided",
         "gender": student_dict.get("gender") or personal.get("Gender") or "Unspecified",
-        "dob": student_dict.get("dob") or personal.get("Date of Birth") or "N/A",
+        "dob": student_dict.get("dob") or personal.get("Date of Birth") or "Not Provided",
+        "blood_group": personal.get("Blood Group") or "Not Provided",
+        "category": personal.get("Category") or "General",
+        "caste": personal.get("Caste") or "Not Provided",
+        "religion": personal.get("Religion") or "Not Provided",
+        "marital_status": personal.get("Marital Status") or "Single",
+        "disabled": personal.get("Disabled") or "No",
         "avatar_url": avatar_url,
         "program": prog or "Not Specified",
         "semester_year": sem or "",
         "needs_program": not bool(prog),
-        "father_name": family.get("Father's Name") or "N/A",
-        "mother_name": family.get("Mother's Name") or "N/A",
-        "religion": personal.get("Religion") or "N/A",
-        "category": personal.get("Category") or "General",
+        "father_name": family.get("Father's Name") or "Not Provided",
+        "father_phone": family.get("Father's Mobile No") or "Not Provided",
+        "father_email": family.get("Father's Email") or "Not Provided",
+        "mother_name": family.get("Mother's Name") or "Not Provided",
+        "mother_phone": family.get("Mother's Mobile No") or "Not Provided",
+        "mother_email": family.get("Mother's Email") or "Not Provided",
+        "permanent_address": permanent_addr,
+        "correspondence_address": correspondence_addr,
         "address": full_address,
         "academic_year": get_academic_year_by_rid(r_id)[0],
         "admission_year": get_academic_year_by_rid(r_id)[1]

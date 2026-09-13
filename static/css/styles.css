@@ -2674,32 +2674,34 @@ textarea.input-forest {
 
 .ios-spinner {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: inline-block;
+  vertical-align: middle;
+  color: var(--text-white);
 }
 
 .ios-spinner.sm {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .ios-spinner.lg {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
 }
 
 .ios-spinner-blade {
   position: absolute;
-  left: 44.5%;
+  left: 45%;
   top: 0;
-  width: 11%;
+  width: 10%;
   height: 28%;
   border-radius: 9999px;
-  background-color: var(--text-white);
-  opacity: 0.15;
+  background-color: currentColor;
+  opacity: 0.12;
   transform-origin: center 178%;
-  animation: iosSpinnerFade 1s linear infinite;
+  animation: iosSpinnerFade 1s steps(12, start) infinite;
   will-change: opacity;
 }
 
@@ -2718,7 +2720,7 @@ textarea.input-forest {
 
 @keyframes iosSpinnerFade {
   0% { opacity: 1; }
-  100% { opacity: 0.15; }
+  100% { opacity: 0.12; }
 }
 
 .ios-spinner-text {
@@ -4495,5 +4497,774 @@ textarea.input-forest {
 
 .profile-cell-value.highlight {
   color: var(--badge-mint);
+}
+
+/* ==========================================================================
+   21. EXECUTIVE AUTH & ZERO-SCROLL OTP REDESIGN (REQUIREMENTS 2 & 3)
+   ========================================================================== */
+.login-screen-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 16px 40px;
+  min-height: calc(100vh - 160px);
+}
+
+.login-editorial-card {
+  width: 100%;
+  max-width: 440px;
+  background: #08170E;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.login-jnu-logo-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.jnu-signin-logo {
+  height: 52px;
+  width: auto;
+  max-width: 170px;
+  object-fit: contain;
+}
+
+.btn-auth-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #3EA86C;
+  color: #040D07;
+  font-weight: 800;
+  font-size: 0.9375rem;
+  height: 44px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btn-auth-submit:hover:not(:disabled) {
+  background: #46BA79;
+}
+
+.btn-auth-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-auth-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--text-sage);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  height: 38px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.btn-auth-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--text-white);
+}
+
+/* 3-Section Zero-Scroll OTP Layout */
+.auth-student-id-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
+.auth-strip-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+  background: #0D2618;
+}
+
+.auth-strip-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.auth-strip-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.auth-strip-name {
+  font-size: 1rem;
+  font-weight: 750;
+  color: var(--text-white);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-strip-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.auth-badge-rid {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--badge-yellow);
+}
+
+.auth-badge-year {
+  font-size: 0.6875rem;
+  font-weight: 750;
+  color: var(--badge-mint);
+  background: rgba(62, 168, 108, 0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.auth-badge-prog {
+  font-size: 0.6875rem;
+  color: var(--text-sage);
+  max-width: 160px;
+}
+
+.auth-dispatch-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(62, 168, 108, 0.08);
+  border: 1px solid rgba(62, 168, 108, 0.22);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.auth-dispatch-icon {
+  color: var(--badge-mint);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.auth-dispatch-content {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-dispatch-prompt {
+  color: var(--text-sage);
+  margin-right: 4px;
+}
+
+.auth-dispatch-email {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.auth-otp-entry-section {
+  text-align: center;
+}
+
+.otp-code-input {
+  height: 46px !important;
+  font-size: 1.625rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.35em !important;
+  text-align: center !important;
+  border-radius: 6px !important;
+  background: #050E09 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.otp-code-input:focus {
+  border-color: #3EA86C !important;
+  box-shadow: 0 0 0 2px rgba(62, 168, 108, 0.2) !important;
+}
+
+.auth-otp-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.auth-link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--badge-yellow);
+  padding: 4px 0;
+}
+
+.auth-link-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.auth-link-btn.change-rid {
+  color: var(--text-sage);
+}
+
+@media (max-width: 640px) {
+  .login-editorial-card {
+    padding: 24px 18px;
+    border-radius: 8px;
+  }
+}
+
+/* ==========================================================================
+   22. ADMIN EXECUTIVE CONSOLE & MASTER TOGGLE (REQUIREMENT 1)
+   ========================================================================== */
+.admin-loading-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 360px;
+}
+
+.admin-dashboard-wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 16px 0 60px;
+}
+
+.admin-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-crest-mini img {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+}
+
+.admin-header-kicker {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--badge-yellow);
+}
+
+.admin-header-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-white);
+  line-height: 1.2;
+}
+
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-status-indicator {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--badge-mint);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(62, 168, 108, 0.12);
+  border: 1px solid rgba(62, 168, 108, 0.3);
+  padding: 5px 12px;
+  border-radius: 6px;
+}
+
+.indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #3EA86C;
+}
+
+.indicator-dot.pulse {
+  animation: adminDotPulse 2s infinite ease-in-out;
+}
+
+@keyframes adminDotPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.6; }
+}
+
+.btn-admin-signout {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #FF7B7B;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-admin-signout:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Master Toggle Panel */
+.admin-toggle-panel {
+  background: #08170E;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  transition: border-color 0.2s ease;
+}
+
+.admin-toggle-panel.email-active {
+  border-left: 4px solid #3EA86C;
+}
+
+.admin-toggle-panel.email-paused {
+  border-left: 4px solid #F2A922;
+}
+
+.admin-toggle-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.admin-toggle-desc-col {
+  flex: 1;
+  min-width: 260px;
+}
+
+.admin-panel-kicker {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--badge-yellow);
+}
+
+.admin-panel-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 4px 0 6px;
+}
+
+.admin-panel-subtitle {
+  font-size: 0.84rem;
+  color: var(--text-sage);
+  line-height: 1.5;
+}
+
+.admin-toggle-switch-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.admin-toggle-status-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.admin-toggle-status-badge.live {
+  color: #3EA86C;
+  background: rgba(62, 168, 108, 0.15);
+  border: 1px solid rgba(62, 168, 108, 0.3);
+}
+
+.admin-toggle-status-badge.paused {
+  color: #F2A922;
+  background: rgba(242, 169, 34, 0.15);
+  border: 1px solid rgba(242, 169, 34, 0.35);
+}
+
+/* Switch geometry */
+.admin-switch {
+  position: relative;
+  display: inline-block;
+  width: 58px;
+  height: 32px;
+}
+
+.admin-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.admin-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #241414;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  transition: .25s ease;
+  border-radius: 32px;
+}
+
+.admin-slider:before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #FF7B7B;
+  transition: .25s ease;
+  border-radius: 50%;
+}
+
+input:checked + .admin-slider {
+  background-color: #10331E;
+  border-color: #3EA86C;
+}
+
+input:checked + .admin-slider:before {
+  transform: translateX(26px);
+  background-color: #3EA86C;
+}
+
+/* Master Bypass Code Card (Only visible when toggle is OFF) */
+.admin-bypass-card {
+  background: rgba(242, 169, 34, 0.08);
+  border: 1px solid rgba(242, 169, 34, 0.3);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.admin-bypass-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.admin-bypass-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-lock-icon {
+  font-size: 1.25rem;
+}
+
+.admin-bypass-heading {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #FFD479;
+}
+
+.admin-bypass-sub {
+  font-size: 0.78rem;
+  color: var(--text-sage);
+}
+
+.btn-admin-copy-code {
+  background: rgba(242, 169, 34, 0.18);
+  border: 1px solid rgba(242, 169, 34, 0.4);
+  color: #FFD479;
+  font-size: 0.8125rem;
+  font-weight: 750;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-admin-copy-code:hover {
+  background: rgba(242, 169, 34, 0.28);
+}
+
+.admin-bypass-code-box {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 16px;
+}
+
+.admin-bypass-digits {
+  font-family: monospace;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  color: #FFD479;
+  background: #050E09;
+  border: 1px solid rgba(242, 169, 34, 0.35);
+  border-radius: 6px;
+  padding: 8px 28px;
+  display: inline-block;
+  text-align: center;
+}
+
+.admin-bypass-update-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-top: 1px solid rgba(242, 169, 34, 0.18);
+  padding-top: 12px;
+}
+
+.admin-bypass-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-admin-save-code {
+  background: #3EA86C;
+  color: #040D07;
+  font-weight: 750;
+  font-size: 0.8125rem;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.admin-bypass-confidential-note {
+  font-size: 0.72rem;
+  color: var(--badge-yellow);
+  font-weight: 600;
+  font-style: italic;
+}
+
+/* Executive Metrics Grid */
+.admin-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-metric-card {
+  background: #08170E;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 18px 20px;
+}
+
+.admin-metric-label {
+  font-size: 0.75rem;
+  font-weight: 750;
+  color: var(--text-sage);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-metric-value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: 8px 0 4px;
+}
+
+.admin-metric-footnote {
+  font-size: 0.75rem;
+  color: var(--text-sage-light);
+}
+
+/* Activity Table */
+.admin-activity-card {
+  background: #08170E;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.admin-activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.admin-activity-title {
+  font-size: 1.125rem;
+  font-weight: 750;
+  color: #FFFFFF;
+}
+
+.admin-activity-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-sage);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.admin-table-responsive {
+  overflow-x: auto;
+}
+
+.admin-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.admin-log-table th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--text-sage);
+  font-weight: 750;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-log-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.admin-code-pill {
+  font-family: monospace;
+  font-size: 0.8125rem;
+  background: #050E09;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-white);
+}
+
+.admin-badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 750;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.admin-badge.verified {
+  color: #3EA86C;
+  background: rgba(62, 168, 108, 0.15);
+}
+
+.admin-badge.pending {
+  color: var(--text-sage);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-empty-log {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--text-sage);
+  font-size: 0.84rem;
+}
+
+/* Admin Auth Gateway Card */
+.admin-auth-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 16px 80px;
+  min-height: calc(100vh - 200px);
+}
+
+.admin-auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: #08170E;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 36px 30px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.admin-auth-crest {
+  margin-bottom: 14px;
+}
+
+.jnu-admin-logo {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+}
+
+.admin-auth-badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--badge-yellow);
+  background: rgba(242, 169, 34, 0.12);
+  border: 1px solid rgba(242, 169, 34, 0.3);
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.admin-auth-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 6px;
+}
+
+.admin-auth-subtitle {
+  font-size: 0.8125rem;
+  color: var(--text-sage);
+  line-height: 1.45;
+  margin-bottom: 22px;
 }
 
