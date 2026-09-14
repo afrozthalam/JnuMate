@@ -122,11 +122,18 @@ def build_student_search_index():
         prog, sem = EDUCATION_DETAILS_MAP.get(r_id_key, (None, None))
         acad_yr, adm_yr = get_academic_year_by_rid(r_id_key)
         
+        name_upper = name.upper()
+        clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', name_upper).strip()
+        name_words = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
+
         student_obj = {
             "r_id": r_id_key,
             "name": name,
-            "name_upper": name.upper(),
+            "name_upper": name_upper,
+            "clean_name": clean_name,
+            "name_words": name_words,
             "email": email,
+            "email_upper": email.upper(),
             "phone": phone,
             "gender": gender_clean,
             "dob": dob,
@@ -136,6 +143,9 @@ def build_student_search_index():
             "academic_year": acad_yr,
             "admission_year": adm_yr
         }
+        SEARCHABLE_STUDENTS_LIST.append(student_obj)
+        STUDENT_CACHE_BY_RID[r_id_key] = student_obj
+
     # Also synchronize any students from database (e.g. manual registrations or updated profiles)
     try:
         conn = get_db()
@@ -160,18 +170,35 @@ def build_student_search_index():
 
             if rid in STUDENT_CACHE_BY_RID:
                 cached = STUDENT_CACHE_BY_RID[rid]
+                if name and (not cached.get("name") or cached.get("name") == "Unknown Student" or cached.get("name") == "Student"):
+                    cached["name"] = name
+                    cached["name_upper"] = name.upper()
+                    clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', cached["name_upper"]).strip()
+                    cached["clean_name"] = clean_name
+                    cached["name_words"] = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
                 if prog and (not cached.get("program") or cached.get("program") == "Student"):
                     cached["program"] = prog
                 if sem and not cached.get("semester_year"):
                     cached["semester_year"] = sem
                 if email and not cached.get("email"):
                     cached["email"] = email
+                    cached["email_upper"] = email.upper()
+                if phone and not cached.get("phone"):
+                    cached["phone"] = phone
+                if avatar_url and not cached.get("avatar_url"):
+                    cached["avatar_url"] = avatar_url
             else:
+                name_upper = name.upper()
+                clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', name_upper).strip()
+                name_words = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
                 student_obj = {
                     "r_id": rid,
                     "name": name,
-                    "name_upper": name.upper(),
+                    "name_upper": name_upper,
+                    "clean_name": clean_name,
+                    "name_words": name_words,
                     "email": email,
+                    "email_upper": email.upper(),
                     "phone": phone,
                     "gender": gender_clean,
                     "dob": dob,
@@ -200,19 +227,31 @@ def add_or_update_student_in_search_index(rid, name, email, program=None, avatar
         if name:
             s["name"] = name
             s["name_upper"] = name.upper()
+            clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', s["name_upper"]).strip()
+            s["clean_name"] = clean_name
+            s["name_words"] = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
         if email:
             s["email"] = email
+            s["email_upper"] = email.upper()
         if program:
             s["program"] = program
         if avatar_url:
             s["avatar_url"] = avatar_url
     else:
+        name_val = (name or "Student").strip()
+        name_upper = name_val.upper()
+        clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', name_upper).strip()
+        name_words = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
+        email_val = email or f"{clean_rid}@student.edu"
         gender_clean = "Female" if gender and ("Female" in gender or "F" == gender) else "Male"
         s = {
             "r_id": clean_rid,
-            "name": name,
-            "name_upper": name.upper(),
-            "email": email or f"{clean_rid}@student.edu",
+            "name": name_val,
+            "name_upper": name_upper,
+            "clean_name": clean_name,
+            "name_words": name_words,
+            "email": email_val,
+            "email_upper": email_val.upper(),
             "phone": "",
             "gender": gender_clean,
             "dob": dob or "N/A",
@@ -361,14 +400,23 @@ def auto_import_student_from_json(r_id, conn, cursor):
     if "demo/avatars/1.jpg" in avatar_url or not avatar_url:
         avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
 
+    prog, sem = EDUCATION_DETAILS_MAP.get(r_id.upper(), (None, None))
+
     try:
         cursor.execute(f"""
-            INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, is_registered)
-            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, 0)
-        """, (r_id.upper(), name, email, phone, gender_clean, dob, avatar_url))
+            INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, program, semester_year, is_registered)
+            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, 0)
+        """, (r_id.upper(), name, email, phone, gender_clean, dob, avatar_url, prog or "Student", sem or ""))
         conn.commit()
     except Exception as e:
-        pass
+        try:
+            cursor.execute(f"""
+                INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, is_registered)
+                VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, 0)
+            """, (r_id.upper(), name, email, phone, gender_clean, dob, avatar_url))
+            conn.commit()
+        except Exception:
+            pass
 
     cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id.upper(),))
     return cursor.fetchone()
@@ -1005,23 +1053,31 @@ def student_search():
         return jsonify({"students": []})
 
     scored_candidates = []
+    alphanumeric_query = re.sub(r'[^A-Z0-9]', '', query)
 
     for s in SEARCHABLE_STUDENTS_LIST:
         rid = s["r_id"]
         name_upper = s["name_upper"]
-        clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', name_upper).strip()
-        name_words = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
+        email_upper = s.get("email_upper", "")
+
+        # Fast rejection filter: tokens must match R-ID, name, or email
+        if not any(t in rid or t in name_upper or t in email_upper for t in tokens):
+            if not alphanumeric_query or alphanumeric_query not in rid:
+                continue
+
+        clean_name = s.get("clean_name") or name_upper
+        name_words = s.get("name_words") or [clean_name]
 
         score = 0
 
         # 1. Exact R-ID match (Highest confidence)
-        if rid == query:
+        if rid == query or (alphanumeric_query and rid == alphanumeric_query):
             score += 12000
         # 2. R-ID prefix match
-        elif rid.startswith(query):
+        elif rid.startswith(query) or (alphanumeric_query and rid.startswith(alphanumeric_query)):
             score += 7000 + int((len(query) / max(len(rid), 1)) * 1000)
         # 3. R-ID substring match
-        elif query in rid:
+        elif query in rid or (alphanumeric_query and alphanumeric_query in rid):
             score += 4000
 
         # 4. Exact Full Clean Name match
@@ -1034,7 +1090,7 @@ def student_search():
         elif query in clean_name or query in name_upper:
             score += 4500
 
-        # 7. Multi-token evaluation across individual name words and R-ID
+        # 7. Multi-token evaluation across individual name words, R-ID, and email
         matched_token_count = 0
         token_prefix_points = 0
 
@@ -1054,7 +1110,7 @@ def student_search():
                     t_matched = True
                     break
             
-            if t_matched or (t in rid):
+            if t_matched or (t in rid) or (t in email_upper):
                 matched_token_count += 1
 
         if matched_token_count == len(tokens):
@@ -1071,7 +1127,7 @@ def student_search():
             scored_candidates.append((score, s))
 
     # Sort descending by score, then clean name
-    scored_candidates.sort(key=lambda item: (-item[0], item[1]["name_upper"]))
+    scored_candidates.sort(key=lambda item: (-item[0], item[1].get("clean_name", item[1]["name_upper"])))
 
     results = []
     seen = set()
@@ -1079,6 +1135,9 @@ def student_search():
         if s["r_id"] not in seen:
             seen.add(s["r_id"])
             c_copy = dict(s)
+            c_copy.pop("clean_name", None)
+            c_copy.pop("name_words", None)
+            c_copy.pop("email_upper", None)
             c_copy["rid"] = c_copy.get("r_id", "")
             tm = TEAM_MEMBERSHIP_MAP.get(c_copy["r_id"])
             if tm:
@@ -1661,7 +1720,7 @@ def get_my_team():
 @app.route("/api/teams/<int:team_id>/members/add", methods=["POST"])
 def add_team_member(team_id):
     data = request.json or {}
-    leader_r_id = data.get("leader_r_id", "").strip().upper()
+    leader_r_id = (data.get("leader_r_id") or session.get("user_rid") or "").strip().upper()
     student_r_id = data.get("student_r_id", "").strip().upper()
     p = get_placeholder()
 
