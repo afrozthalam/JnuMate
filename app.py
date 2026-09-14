@@ -525,6 +525,9 @@ def auth_send_otp():
     student = cursor.fetchone()
 
     if not student:
+        student = auto_import_student_from_json(r_id, conn, cursor)
+
+    if not student:
         conn.close()
         return jsonify({
             "success": False,

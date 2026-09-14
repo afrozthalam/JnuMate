@@ -2827,7 +2827,7 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   const gender = student.gender || "Not Specified";
   const state = student.state || "Not Provided";
 
-  const isBlankAvatar = !rawAvatar || rawAvatar.includes("dicebear") || rawAvatar.includes("data:image") || !STUDENT_PROFILES_MAP[student.r_id];
+  const isBlankAvatar = !rawAvatar || rawAvatar.includes("dicebear") || rawAvatar.includes("data:image");
 
   spotlightContainer.innerHTML = `
     <div class="auth-spotlight-profile-inner">
@@ -3174,7 +3174,15 @@ function submitInitialRid() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ rid: rid })
   })
-    .then(res => res.json())
+    .then(async res => {
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        throw new Error("Server communication error (status " + res.status + ")");
+      }
+      return data;
+    })
     .then(data => {
       btn.disabled = false;
       btn.innerHTML = defaultBtnText;
@@ -3187,16 +3195,18 @@ function submitInitialRid() {
         showToast("Verification code sent!", "success");
       } else if (data.not_found) {
         pendingRegistrationData = { rid: rid };
-        document.getElementById("syncRidBanner").innerText = rid;
+        const banner = document.getElementById("syncRidBanner");
+        if (banner) banner.innerText = rid;
         showAuthStep('sync');
       } else {
         showToast(data.message || "Unable to proceed with this R-ID", "error");
       }
     })
-    .catch(() => {
+    .catch((err) => {
+      console.error("submitInitialRid error:", err);
       btn.disabled = false;
       btn.innerHTML = defaultBtnText;
-      showToast("Network error checking R-ID", "error");
+      showToast(err && err.message ? err.message : "Network error checking R-ID", "error");
     });
 }
 
