@@ -375,11 +375,7 @@
   <!-- ================= MOBILE OFF-CANVAS APP DRAWER (< 768px) ================= -->
   <div id="mobileDrawerOverlay" class="mobile-drawer-overlay" onclick="closeMobileDrawer()">
     <div class="mobile-drawer-sheet" onclick="event.stopPropagation()">
-      <div class="mobile-drawer-header">
-        <a href="/" class="mobile-brand-lockup" onclick="closeMobileDrawer()">
-          <img src="{{ url_for('static', filename='img/jnu_logo.png') }}" alt="JNU Crest" class="mobile-crest-logo">
-          <span class="mobile-brand">JnuMate<span class="brand-dot">.</span></span>
-        </a>
+      <div class="mobile-drawer-header" style="justify-content: flex-end; border-bottom: none; padding-bottom: 0;">
         <button onclick="closeMobileDrawer()" class="drawer-close-btn" aria-label="Close Menu">
           ✕
         </button>
@@ -490,6 +486,13 @@
       </svg>
     </button>
     <div id="teamDetailModalContainer" class="fullscreen-team-content"></div>
+  </div>
+
+  <!-- ================= STUDENT DETAIL POPOVER / BOTTOM SHEET ================= -->
+  <div id="studentDetailModal" class="forest-modal-overlay" onclick="closeStudentDetailModal()" style="display:none; z-index:99999;">
+    <div class="forest-modal-sheet student-detail-modal-sheet" onclick="event.stopPropagation()" id="studentDetailModalContent">
+      <!-- Injected dynamically via JS -->
+    </div>
   </div>
 
   <!-- JavaScript SPA Engine -->

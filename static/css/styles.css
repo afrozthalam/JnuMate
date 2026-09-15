@@ -1914,7 +1914,7 @@ h1, h2, h3, h4, .font-serif {
    10. FORMS & CREATE TEAM (EXPANDED WIDTH & INTERACTIVE SLOTS)
    ========================================================================== */
 .create-team-container {
-  max-width: 960px;
+  max-width: 1280px;
   width: 100%;
   margin: 0 auto;
 }
@@ -3429,16 +3429,18 @@ textarea.input-forest {
 
 /* Desktop User Profile Dropdown Menu */
 .desktop-profile-menu {
-  width: 300px;
-  padding: 10px;
+  width: 220px;
+  min-width: 220px;
+  padding: 8px;
 }
 
 .desktop-profile-menu-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.05);
+  text-align: center;
+  padding: 16px 12px 12px 12px;
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-xl);
   margin-bottom: 8px;
@@ -4107,15 +4109,21 @@ textarea.input-forest {
   align-items: start;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .homescreen-editorial-footer {
     margin-top: 28px;
-    padding: 20px 0 16px 0;
+    padding: 24px 0 20px 0;
   }
   .footer-split-container {
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 16px;
+    grid-template-columns: 1fr;
+    gap: 24px;
     align-items: start;
+  }
+  .footer-col-contact {
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-left: 0;
+    padding-top: 20px;
   }
 }
 
@@ -4191,20 +4199,12 @@ textarea.input-forest {
   padding-left: 32px;
 }
 
-@media (max-width: 860px) {
-  .footer-col-contact {
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    border-top: none;
-    padding-left: 16px;
-    padding-top: 0;
-  }
-}
-
 .footer-dev-statement-clean {
-  font-size: 0.875rem;
+  font-size: 1.05rem;
   color: #FFFFFF;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  white-space: nowrap;
 }
 
 .footer-dev-statement {
@@ -4225,6 +4225,45 @@ textarea.input-forest {
   color: var(--text-sage);
   line-height: 1.45;
   margin-bottom: 14px;
+}
+
+.footer-contact-links-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.footer-contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #FFFFFF;
+  font-size: 0.875rem;
+  font-weight: 650;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  transition: all var(--trans-fast);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.footer-contact-item:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.footer-contact-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--accent);
 }
 
 .footer-links-row {
@@ -5223,6 +5262,11 @@ input:checked + .admin-slider:before {
 .admin-badge.pending {
   color: var(--text-sage);
   background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-badge.status-declined {
+  color: #EF4444;
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .admin-empty-log {
@@ -6401,5 +6445,100 @@ body.scroll-locked {
     grid-template-columns: 1fr;
   }
 }
+
+/* Student Detail Popover & Bottom Sheet */
+.student-detail-modal-sheet {
+  max-width: 440px;
+  width: 90%;
+  border-radius: 20px;
+  background: #143d28;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  padding: 24px;
+  margin: auto;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .student-detail-modal-sheet {
+    max-width: 100%;
+    width: 100%;
+    margin-top: auto;
+    margin-bottom: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    padding: 24px 20px 32px 20px;
+    animation: slideUpSheet 0.25s ease-out;
+  }
+}
+
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Join Request Highlighted Card */
+.join-request-card {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.join-request-textarea:focus {
+  outline: none;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+.btn-send-join-req:hover {
+  background: #1d4ed8 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4) !important;
+}
+
+.btn-send-join-req:active {
+  transform: translateY(0);
+}
+
+/* Stable Auth Card sizing across all steps */
+.login-editorial-card {
+  max-width: 540px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  transition: min-height 0.2s ease, opacity 0.2s ease;
+}
+
+.login-editorial-card.wide-step {
+  max-width: 620px !important;
+  padding: 32px 34px !important;
+}
+
+@media (max-width: 640px) {
+  .login-editorial-card {
+    max-width: 100% !important;
+    padding: 24px 18px !important;
+  }
+  .login-editorial-card.wide-step {
+    max-width: 100% !important;
+    padding: 24px 18px !important;
+  }
+}
+
 
 

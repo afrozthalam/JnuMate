@@ -553,6 +553,62 @@ def admin_stats():
         "recent_activity": otp_rows
     })
 
+@app.route("/api/admin/activity", methods=["GET"])
+def admin_activity():
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT r_id, name, email, phone, gender, program, semester_year, is_registered
+            FROM students
+            WHERE is_registered = 1
+            ORDER BY r_id DESC
+            LIMIT 100
+        """)
+        registered_students = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("""
+            SELECT id, r_id, email, otp, used, created_at
+            FROM email_otps
+            ORDER BY id DESC
+            LIMIT 30
+        """)
+        recent_otps = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("""
+            SELECT id, name, leader_r_id, hackathon_type, created_at
+            FROM teams
+            ORDER BY id DESC
+            LIMIT 30
+        """)
+        recent_teams = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("""
+            SELECT jr.id, jr.team_id, jr.student_r_id, jr.message, jr.status, jr.created_at, t.name as team_name, s.name as student_name
+            FROM join_requests jr
+            LEFT JOIN teams t ON jr.team_id = t.id
+            LEFT JOIN students s ON UPPER(jr.student_r_id) = UPPER(s.r_id)
+            ORDER BY jr.id DESC
+            LIMIT 30
+        """)
+        recent_requests = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+
+        return jsonify({
+            "success": True,
+            "registered_students": registered_students,
+            "recent_otps": recent_otps,
+            "recent_teams": recent_teams,
+            "recent_requests": recent_requests
+        })
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 
 
 # --- AUTH ENDPOINTS ---
@@ -684,6 +740,9 @@ def auth_send_registration_otp():
     name = data.get("name", "").strip()
     email = data.get("email", "").strip()
     program = data.get("program", "").strip()
+    gender = (data.get("gender") or "Other").strip().capitalize()
+    if gender not in ["Male", "Female", "Other"]:
+        gender = "Other"
     p = get_placeholder()
 
     if not r_id or not name or not email or not program:
@@ -742,17 +801,30 @@ def auth_verify_otp():
         name = (data.get("name") or f"Student {r_id}").strip()
         email = (data.get("email") or f"{r_id.lower()}@student.edu").strip()
         program = (data.get("program") or "").strip()
+        gender = (data.get("gender") or "Other").strip().capitalize()
+        if gender not in ["Male", "Female", "Other"]:
+            gender = "Other"
         avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
         try:
             cursor.execute(f"""
                 INSERT INTO students (r_id, name, email, program, gender, dob, is_registered, avatar_url)
-                VALUES ({p}, {p}, {p}, {p}, 'Student', 'N/A', 1, {p})
-            """, (r_id, name, email, program, avatar_url))
+                VALUES ({p}, {p}, {p}, {p}, {p}, 'N/A', 1, {p})
+            """, (r_id, name, email, program, gender, avatar_url))
             conn.commit()
             cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
             student = cursor.fetchone()
         except Exception as e:
             print(f"Notice student auto-create: {e}")
+    elif data.get("gender"):
+        clean_g = str(data.get("gender")).strip().capitalize()
+        if clean_g in ["Male", "Female", "Other"]:
+            try:
+                cursor.execute(f"UPDATE students SET gender = {p} WHERE UPPER(r_id) = {p}", (clean_g, r_id))
+                conn.commit()
+                cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+                student = cursor.fetchone()
+            except Exception:
+                pass
 
     # Robust matching:
     # 1. Match against any OTP issued for this R-ID
@@ -1152,6 +1224,28 @@ def student_search():
             if len(results) >= 40:
                 break
 
+    # Fallback for unindexed valid R-IDs (e.g. R44190)
+    if not results and (re.match(r'^R\d{3,7}$', alphanumeric_query) or (len(alphanumeric_query) >= 4 and alphanumeric_query.isdigit())):
+        std_rid = alphanumeric_query if alphanumeric_query.startswith("R") else f"R{alphanumeric_query}"
+        acad_yr, adm_yr = get_academic_year_by_rid(std_rid)
+        tm = TEAM_MEMBERSHIP_MAP.get(std_rid)
+        results.append({
+            "r_id": std_rid,
+            "rid": std_rid,
+            "name": std_rid,
+            "gender": "Student",
+            "email": f"{std_rid.lower()}@student.edu",
+            "avatar_url": None,
+            "program": "Jaipur National University",
+            "semester_year": "",
+            "academic_year": acad_yr,
+            "admission_year": adm_yr,
+            "in_team": bool(tm),
+            "team_name": tm["team_name"] if tm else None,
+            "team_id": tm["team_id"] if tm else None,
+            "is_unindexed_fallback": True
+        })
+
     return jsonify({"students": results})
 
 # --- NOTIFICATION ENGINE ---
@@ -1415,10 +1509,17 @@ def create_team():
         conn.close()
         return jsonify({"success": False, "message": "Leader R-ID not found"}), 404
 
-    cursor.execute(f"SELECT team_id FROM team_members WHERE UPPER(student_r_id) = {p}", (leader_r_id,))
-    if cursor.fetchone():
+    cursor.execute(f"""
+        SELECT tm.team_id, t.name as team_name 
+        FROM team_members tm 
+        LEFT JOIN teams t ON tm.team_id = t.id 
+        WHERE UPPER(tm.student_r_id) = {p}
+    """, (leader_r_id,))
+    already_in = cursor.fetchone()
+    if already_in:
+        t_name = (already_in["team_name"] if (isinstance(already_in, dict) or hasattr(already_in, '__getitem__')) else "another team") or "another team"
         conn.close()
-        return jsonify({"success": False, "message": "You are already in another team"}), 400
+        return jsonify({"success": False, "message": f"You cannot create a team until you leave team '{t_name}'. Each student can only be in one team at a time."}), 400
 
     clean_rids = []
     for item in friend_r_ids:
@@ -1442,6 +1543,17 @@ def create_team():
         s = cursor.fetchone()
         if not s:
             s = auto_import_student_from_json(f_id, conn, cursor)
+        if not s and (re.match(r'^R\d{3,7}$', f_id) or f_id.isalnum()):
+            try:
+                cursor.execute(f"""
+                    INSERT INTO students (r_id, name, email, gender, dob, avatar_url, program, is_registered)
+                    VALUES ({p}, {p}, {p}, 'Student', 'N/A', '', 'Jaipur National University', 0)
+                """, (f_id, f_id, f"{f_id.lower()}@student.edu"))
+                conn.commit()
+                cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (f_id,))
+                s = cursor.fetchone()
+            except Exception:
+                pass
         if not s:
             continue
         cursor.execute(f"SELECT team_id FROM team_members WHERE UPPER(student_r_id) = {p}", (f_id,))
@@ -1530,7 +1642,7 @@ def request_join_team(team_id):
         s_row = cursor.fetchone()
         applicant_name = (s_row["name"] if s_row else student_r_id) or student_r_id
         team_name = team["name"] or "your team"
-        create_notification_db(cursor, p, leader_rid, "New Join Request", f"{applicant_name} ({student_r_id}) requested to join {team_name}", "join_request", f"/team/{team_id}")
+        create_notification_db(cursor, p, leader_rid, "New Join Request", f"New join request from {applicant_name} (@{student_r_id}) to join {team_name}.", "join_request", f"/team/{team_id}")
 
         conn.commit()
         conn.close()
@@ -1555,17 +1667,43 @@ def get_team_requests(team_id):
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
     cursor.execute(f"""
-        SELECT jr.id as request_id, jr.status, jr.message, jr.created_at,
-               s.r_id, s.name, s.gender, s.dob, s.avatar_url, s.phone, s.email
+        SELECT jr.id as request_id, jr.status, jr.message, jr.created_at, jr.student_r_id,
+               s.r_id, s.name, s.gender, s.dob, s.avatar_url, s.phone, s.email, s.program, s.semester_year
         FROM join_requests jr
-        JOIN students s ON jr.student_r_id = s.r_id
+        LEFT JOIN students s ON UPPER(jr.student_r_id) = UPPER(s.r_id)
         WHERE jr.team_id = {p} AND jr.status = 'pending'
         ORDER BY jr.created_at ASC
     """, (team_id,))
     rows = cursor.fetchall()
     conn.close()
 
-    return jsonify({"requests": [dict(r) for r in rows]})
+    results = []
+    for r in rows:
+        d = dict(r)
+        rid = (d.get("student_r_id") or d.get("r_id") or "").strip().upper()
+        cached = STUDENT_CACHE_BY_RID.get(rid) or {}
+        p_val, s_val = EDUCATION_DETAILS_MAP.get(rid, (None, None))
+        acad_yr, adm_yr = get_academic_year_by_rid(rid)
+        
+        name = d.get("name") or cached.get("name") or rid
+        email = d.get("email") or cached.get("email") or f"{rid.lower()}@student.edu"
+        gender = d.get("gender") or cached.get("gender") or "Student"
+        avatar_url = d.get("avatar_url") or cached.get("avatar_url")
+        prog = d.get("program") or cached.get("program") or p_val or "Student"
+        sem = d.get("semester_year") or cached.get("semester_year") or s_val or ""
+        
+        d["r_id"] = rid
+        d["name"] = name
+        d["email"] = email
+        d["gender"] = gender
+        d["avatar_url"] = avatar_url
+        d["program"] = prog
+        d["semester_year"] = sem
+        d["academic_year"] = acad_yr
+        d["admission_year"] = adm_yr
+        results.append(d)
+
+    return jsonify({"requests": results})
 
 @app.route("/api/teams/<int:team_id>/requests/<int:req_id>/action", methods=["POST"])
 def handle_join_request(team_id, req_id):
@@ -1577,7 +1715,7 @@ def handle_join_request(team_id, req_id):
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute(f"SELECT leader_r_id FROM teams WHERE id = {p}", (team_id,))
+    cursor.execute(f"SELECT leader_r_id, name FROM teams WHERE id = {p}", (team_id,))
     team = cursor.fetchone()
     if not team or team["leader_r_id"].upper() != leader_r_id:
         conn.close()
@@ -1589,6 +1727,8 @@ def handle_join_request(team_id, req_id):
         conn.close()
         return jsonify({"success": False, "message": "Request not found"}), 404
 
+    target_rid = str(join_req["student_r_id"]).strip().upper()
+
     if action == "accept":
         cursor.execute(f"SELECT COUNT(*) as cnt FROM team_members WHERE team_id = {p}", (team_id,))
         cnt_row = cursor.fetchone()
@@ -1597,23 +1737,38 @@ def handle_join_request(team_id, req_id):
             conn.close()
             return jsonify({"success": False, "message": "Team is full (6/6)"}), 400
 
-        cursor.execute(f"SELECT team_id FROM team_members WHERE student_r_id = {p}", (join_req["student_r_id"],))
-        if cursor.fetchone():
+        cursor.execute(f"""
+            SELECT tm.team_id, t.name as team_name 
+            FROM team_members tm 
+            LEFT JOIN teams t ON tm.team_id = t.id 
+            WHERE UPPER(tm.student_r_id) = {p}
+        """, (target_rid,))
+        existing_membership = cursor.fetchone()
+        if existing_membership:
             cursor.execute(f"UPDATE join_requests SET status = 'rejected' WHERE id = {p}", (req_id,))
             conn.commit()
             conn.close()
-            return jsonify({"success": False, "message": "Student already joined another team"}), 400
+            t_name = (existing_membership["team_name"] if (isinstance(existing_membership, dict) or hasattr(existing_membership, '__getitem__')) else "another team") or "another team"
+            return jsonify({"success": False, "message": f"Cannot add this student because they are already in team '{t_name}'."}), 400
+
+        # Ensure student exists in students table
+        cursor.execute(f"SELECT r_id FROM students WHERE UPPER(r_id) = {p}", (target_rid,))
+        if not cursor.fetchone():
+            auto_import_student_from_json(target_rid, conn, cursor)
 
         cursor.execute(f"""
             INSERT INTO team_members (team_id, student_r_id, role)
             VALUES ({p}, {p}, 'member')
-        """, (team_id, join_req["student_r_id"]))
+        """, (team_id, target_rid))
 
         cursor.execute(f"UPDATE join_requests SET status = 'accepted' WHERE id = {p}", (req_id,))
 
-        # Notify applicant
+        # Fetch leader name for professional notification
+        cursor.execute(f"SELECT name FROM students WHERE UPPER(r_id) = {p}", (leader_r_id,))
+        lead_row = cursor.fetchone()
+        leader_name = (lead_row["name"] if lead_row else leader_r_id) or leader_r_id
         team_name = team["name"] if ("name" in team.keys() if hasattr(team, 'keys') else True) else "the team"
-        create_notification_db(cursor, p, join_req["student_r_id"], "Join Request Accepted! 🎉", f"Congratulations! You are now an official team member of {team_name}.", "request_accepted", f"/team/{team_id}")
+        create_notification_db(cursor, p, target_rid, "Join Request Approved", f"Congratulations, your request to join {team_name} has been approved by team leader {leader_name}.", "request_accepted", f"/team/{team_id}")
 
         conn.commit()
         refresh_team_membership_cache()
@@ -1623,9 +1778,8 @@ def handle_join_request(team_id, req_id):
     elif action == "reject":
         cursor.execute(f"UPDATE join_requests SET status = 'rejected' WHERE id = {p}", (req_id,))
 
-        # Notify applicant
         team_name = team["name"] if ("name" in team.keys() if hasattr(team, 'keys') else True) else "the team"
-        create_notification_db(cursor, p, join_req["student_r_id"], "Join Request Update", f"Your request to join {team_name} was not accepted.", "request_declined", "/")
+        create_notification_db(cursor, p, target_rid, "Join Request Update", f"Your request to join {team_name} was declined by the team leader.", "request_declined", "/")
 
         conn.commit()
         conn.close()
@@ -1730,7 +1884,7 @@ def add_team_member(team_id):
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute(f"SELECT leader_r_id FROM teams WHERE id = {p}", (team_id,))
+    cursor.execute(f"SELECT id, name, leader_r_id FROM teams WHERE id = {p}", (team_id,))
     team = cursor.fetchone()
     if not team or team["leader_r_id"].upper() != leader_r_id:
         conn.close()
@@ -1743,18 +1897,33 @@ def add_team_member(team_id):
         conn.close()
         return jsonify({"success": False, "message": "Team is already full (6/6)"}), 400
 
-    cursor.execute(f"SELECT r_id FROM students WHERE UPPER(r_id) = {p}", (student_r_id,))
+    cursor.execute(f"SELECT r_id, name FROM students WHERE UPPER(r_id) = {p}", (student_r_id,))
     s = cursor.fetchone()
     if not s:
         s = auto_import_student_from_json(student_r_id, conn, cursor)
     if not s:
-        conn.close()
-        return jsonify({"success": False, "message": "Student R-ID not found in college database"}), 404
+        import re
+        if re.match(r"^R\d+$", student_r_id, re.IGNORECASE):
+            cursor.execute(f"""
+                INSERT INTO students (r_id, name, gender, is_registered)
+                VALUES ({p}, {p}, 'Unknown', 0)
+            """, (student_r_id, f"Student {student_r_id}"))
+            conn.commit()
+            s = {"r_id": student_r_id, "name": f"Student {student_r_id}"}
+        else:
+            conn.close()
+            return jsonify({"success": False, "message": "Student R-ID not found in college database"}), 404
 
-    cursor.execute(f"SELECT team_id FROM team_members WHERE UPPER(student_r_id) = {p}", (student_r_id,))
-    if cursor.fetchone():
+    cursor.execute(f"""
+        SELECT t.name FROM team_members tm
+        JOIN teams t ON tm.team_id = t.id
+        WHERE UPPER(tm.student_r_id) = {p}
+    """, (student_r_id,))
+    existing_team = cursor.fetchone()
+    if existing_team:
+        ex_name = existing_team["name"] if isinstance(existing_team, dict) or hasattr(existing_team, '__getitem__') else existing_team[0]
         conn.close()
-        return jsonify({"success": False, "message": "Student is already in another team"}), 400
+        return jsonify({"success": False, "message": f"Cannot add this student because they are already in team '{ex_name}'."}), 400
 
     cursor.execute(f"""
         INSERT INTO team_members (team_id, student_r_id, role)
@@ -1765,7 +1934,7 @@ def add_team_member(team_id):
 
     # Notify added student
     team_name = team["name"] if ("name" in team.keys() if hasattr(team, 'keys') else True) else "the team"
-    create_notification_db(cursor, p, s["r_id"], "Added to Team! 🎉", f"You have been directly added to {team_name} by the team leader.", "team_added", f"/team/{team_id}")
+    create_notification_db(cursor, p, s["r_id"], "Added to Team", f"You have been directly added to {team_name} by the team leader.", "team_added", f"/team/{team_id}")
 
     conn.commit()
     refresh_team_membership_cache()
