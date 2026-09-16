@@ -150,6 +150,19 @@ def init_db():
         """)
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS team_messages (
+                id SERIAL PRIMARY KEY,
+                team_id INT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+                sender_r_id VARCHAR(50) NOT NULL REFERENCES students(r_id),
+                sender_name VARCHAR(150),
+                sender_avatar TEXT,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_team_messages_team ON team_messages(team_id);")
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS system_settings (
                 key VARCHAR(100) PRIMARY KEY,
                 value TEXT NOT NULL,
@@ -284,6 +297,21 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS team_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team_id INTEGER NOT NULL,
+                sender_r_id TEXT NOT NULL,
+                sender_name TEXT,
+                sender_avatar TEXT,
+                message TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (team_id) REFERENCES teams (id) ON DELETE CASCADE,
+                FOREIGN KEY (sender_r_id) REFERENCES students (r_id)
+            );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_team_messages_team ON team_messages(team_id);")
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS system_settings (

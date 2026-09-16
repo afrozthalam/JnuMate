@@ -313,23 +313,39 @@ def get_student_course_details(r_id, cursor=None):
     if not r_id:
         return None, None
     clean_rid = str(r_id).strip().upper()
+    p = get_placeholder()
     
-    # 1. Fast in-memory cache lookup from education_details
-    if clean_rid in EDUCATION_DETAILS_MAP:
-        prog, sem = EDUCATION_DETAILS_MAP[clean_rid]
-        if prog:
-            return prog, sem
-
-    # 2. Check students table if cursor provided
+    # 1. Check students table first if cursor provided
     if cursor:
-        p = get_placeholder()
         try:
             cursor.execute(f"SELECT program, semester_year FROM students WHERE UPPER(r_id) = {p}", (clean_rid,))
             row = cursor.fetchone()
             if row:
                 prog = row["program"] if hasattr(row, '__getitem__') else row[0]
                 sem = row["semester_year"] if hasattr(row, '__getitem__') else row[1]
-                if prog and str(prog).strip():
+                if prog and str(prog).strip() and str(prog).strip().lower() != "student":
+                    return str(prog).strip(), (str(sem).strip() if sem else None)
+        except Exception:
+            pass
+
+    # 2. In-memory cache lookup from education_details
+    if clean_rid in EDUCATION_DETAILS_MAP:
+        prog, sem = EDUCATION_DETAILS_MAP[clean_rid]
+        if prog and str(prog).strip() and str(prog).strip().lower() != "student":
+            return str(prog).strip(), (str(sem).strip() if sem else None)
+
+    # 3. If cursor was not provided, open DB connection to check persistent students table
+    if not cursor:
+        try:
+            conn = get_db()
+            c = conn.cursor()
+            c.execute(f"SELECT program, semester_year FROM students WHERE UPPER(r_id) = {p}", (clean_rid,))
+            row = c.fetchone()
+            conn.close()
+            if row:
+                prog = row["program"] if hasattr(row, '__getitem__') else row[0]
+                sem = row["semester_year"] if hasattr(row, '__getitem__') else row[1]
+                if prog and str(prog).strip() and str(prog).strip().lower() != "student":
                     return str(prog).strip(), (str(sem).strip() if sem else None)
         except Exception:
             pass
@@ -897,9 +913,13 @@ def auth_verify_otp():
     updated_student = dict(db_row) if db_row else {}
     prog, sem = get_student_course_details(r_id, cursor)
     if not prog and updated_student.get("program"):
-        prog = updated_student.get("program")
+        p_cand = updated_student.get("program")
+        if p_cand and str(p_cand).strip().lower() != "student":
+            prog = str(p_cand).strip()
     if not sem and updated_student.get("semester_year"):
         sem = updated_student.get("semester_year")
+
+    is_needs_prog = (not bool(prog)) or (str(prog).strip().lower() == "student")
 
     cursor.execute(f"""
         SELECT tm.team_id, t.name as team_name 
@@ -928,7 +948,7 @@ def auth_verify_otp():
         "avatar_url": clean_av,
         "program": prog,
         "semester_year": sem,
-        "needs_program": not bool(prog),
+        "needs_program": is_needs_prog,
         "team_id": team_id,
         "team_name": team_name
     }
@@ -950,7 +970,7 @@ def auth_verify_otp():
         "success": True,
         "message": "Signed in successfully",
         "user": user_payload,
-        "needs_program": not bool(prog),
+        "needs_program": is_needs_prog,
         "student": updated_student
     })
 
@@ -1082,6 +1102,11 @@ def auth_me():
         student = auto_import_student_from_json(user_rid, conn, cursor)
 
     prog, sem = get_student_course_details(user_rid, cursor)
+    if not prog and student:
+        st_cand = dict(student).get("program")
+        if st_cand and str(st_cand).strip().lower() != "student":
+            prog = str(st_cand).strip()
+    is_needs_prog = (not bool(prog)) or (str(prog).strip().lower() == "student")
 
     cursor.execute(f"""
         SELECT tm.team_id, t.name as team_name 
@@ -1112,7 +1137,7 @@ def auth_me():
             "avatar_url": clean_av,
             "program": prog,
             "semester_year": sem,
-            "needs_program": not bool(prog),
+            "needs_program": is_needs_prog,
             "team_id": team_id,
             "team_name": team_name
         }
@@ -1138,6 +1163,11 @@ def auth_restore_session():
     if not student:
         student = auto_import_student_from_json(r_id, conn, cursor)
     prog, sem = get_student_course_details(r_id, cursor)
+    if not prog and student:
+        st_cand = dict(student).get("program")
+        if st_cand and str(st_cand).strip().lower() != "student":
+            prog = str(st_cand).strip()
+    is_needs_prog = (not bool(prog)) or (str(prog).strip().lower() == "student")
     conn.close()
 
     if not student:
@@ -1146,6 +1176,8 @@ def auth_restore_session():
     session["user_rid"] = r_id
     session.permanent = True
     s_dict = dict(student)
+    raw_av = s_dict.get("avatar_url")
+    clean_av = raw_av if is_valid_student_image(raw_av, r_id) else DEFAULT_AVATAR_PATH
     return jsonify({
         "success": True,
         "authenticated": True,
@@ -1155,10 +1187,10 @@ def auth_restore_session():
             "email": s_dict["email"],
             "gender": s_dict["gender"],
             "dob": s_dict["dob"],
-            "avatar_url": s_dict["avatar_url"],
+            "avatar_url": clean_av,
             "program": prog,
             "semester_year": sem,
-            "needs_program": not bool(prog)
+            "needs_program": is_needs_prog
         }
     })
 
@@ -2220,6 +2252,120 @@ def update_team_seat_modes(team_id):
 
     return jsonify({"success": True, "message": "Seat modes updated successfully", "team": updated_team})
 
+# --- TEAM LIVE SQUAD CHAT (MEMBER-EXCLUSIVE, FAST REST POLLING) ---
+
+@app.route("/api/teams/<int:team_id>/messages", methods=["GET"])
+def get_team_messages(team_id):
+    r_id = (request.args.get("r_id") or session.get("user_rid") or "").strip().upper()
+    if not r_id:
+        return jsonify({"success": False, "message": "Authentication required"}), 401
+
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        # Strict squad membership validation (captain or confirmed member)
+        cursor.execute(f"""
+            SELECT 1 FROM teams WHERE id = {p} AND UPPER(leader_r_id) = {p}
+            UNION
+            SELECT 1 FROM team_members WHERE team_id = {p} AND UPPER(student_r_id) = {p}
+        """, (team_id, r_id, team_id, r_id))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({"success": False, "message": "Access restricted: only squad members can view live chat."}), 403
+
+        cursor.execute(f"""
+            SELECT id, team_id, sender_r_id, sender_name, sender_avatar, message, created_at
+            FROM team_messages
+            WHERE team_id = {p}
+            ORDER BY id ASC
+            LIMIT 100
+        """, (team_id,))
+        rows = cursor.fetchall()
+        messages = []
+        for r in rows:
+            m = dict(r)
+            m["created_at"] = str(m.get("created_at") or "")
+            messages.append(m)
+
+        conn.close()
+        return jsonify({"success": True, "messages": messages})
+    except Exception as e:
+        conn.close()
+        print(f"Notice fetching team messages: {e}")
+        return jsonify({"success": False, "messages": [], "error": str(e)}), 500
+
+
+@app.route("/api/teams/<int:team_id>/messages", methods=["POST"])
+def post_team_message(team_id):
+    data = request.json or {}
+    r_id = (data.get("r_id") or session.get("user_rid") or "").strip().upper()
+    raw_msg = (data.get("message") or "").strip()
+
+    if not r_id:
+        return jsonify({"success": False, "message": "Authentication required"}), 401
+    if not raw_msg:
+        return jsonify({"success": False, "message": "Message content cannot be empty."}), 400
+    if len(raw_msg) > 1000:
+        return jsonify({"success": False, "message": "Message cannot exceed 1,000 characters."}), 400
+
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+
+    try:
+        # Strict squad membership validation (captain or confirmed member)
+        cursor.execute(f"""
+            SELECT 1 FROM teams WHERE id = {p} AND UPPER(leader_r_id) = {p}
+            UNION
+            SELECT 1 FROM team_members WHERE team_id = {p} AND UPPER(student_r_id) = {p}
+        """, (team_id, r_id, team_id, r_id))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({"success": False, "message": "Access restricted: only squad members can chat."}), 403
+
+        # Lookup sender name and avatar
+        sender_info = STUDENT_CACHE_BY_RID.get(r_id)
+        if not sender_info:
+            cursor.execute(f"SELECT name, avatar_url FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+            s_row = cursor.fetchone()
+            sender_info = dict(s_row) if s_row else {}
+
+        sender_name = (sender_info.get("name") or f"Student @{r_id}").strip()
+        sender_avatar = sender_info.get("avatar_url") or DEFAULT_AVATAR_PATH
+        if not is_valid_student_image(sender_avatar, r_id):
+            sender_avatar = DEFAULT_AVATAR_PATH
+
+        if is_postgres():
+            cursor.execute("""
+                INSERT INTO team_messages (team_id, sender_r_id, sender_name, sender_avatar, message)
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING id, team_id, sender_r_id, sender_name, sender_avatar, message, created_at
+            """, (team_id, r_id, sender_name, sender_avatar, raw_msg))
+            new_row = cursor.fetchone()
+            conn.commit()
+            new_msg = dict(new_row) if new_row else {}
+        else:
+            cursor.execute("""
+                INSERT INTO team_messages (team_id, sender_r_id, sender_name, sender_avatar, message)
+                VALUES (?, ?, ?, ?, ?)
+            """, (team_id, r_id, sender_name, sender_avatar, raw_msg))
+            conn.commit()
+            cursor.execute("SELECT id, team_id, sender_r_id, sender_name, sender_avatar, message, created_at FROM team_messages WHERE id = last_insert_rowid()")
+            new_row = cursor.fetchone()
+            new_msg = dict(new_row) if new_row else {}
+
+        if new_msg and new_msg.get("created_at"):
+            new_msg["created_at"] = str(new_msg["created_at"])
+
+        conn.close()
+        return jsonify({"success": True, "message": new_msg})
+    except Exception as e:
+        conn.close()
+        print(f"Notice posting team message: {e}")
+        return jsonify({"success": False, "message": "Failed to post message", "error": str(e)}), 500
+
 # --- NOTIFICATION API ENDPOINTS ---
 
 @app.route("/api/notifications", methods=["GET"])
@@ -2247,11 +2393,15 @@ def get_user_notifications():
             m_rid = re.search(r'@(R\d+)', nd.get("message", ""), re.IGNORECASE)
             if m_rid:
                 s_rid = m_rid.group(1).upper()
-                cached_s = STUDENT_CACHE_BY_RID.get(s_rid) or {}
+                cached_s = STUDENT_CACHE_BY_RID.get(s_rid)
+                if not cached_s:
+                    cursor.execute(f"SELECT r_id, name, avatar_url FROM students WHERE UPPER(r_id) = {p}", (s_rid,))
+                    s_row = cursor.fetchone()
+                    cached_s = dict(s_row) if s_row else {}
                 nd["sender_rid"] = s_rid
                 nd["sender_name"] = cached_s.get("name") or s_rid
                 s_av = cached_s.get("avatar_url")
-                nd["sender_avatar"] = s_av if is_valid_student_image(s_av, s_rid) else DEFAULT_AVATAR_PATH
+                nd["sender_avatar"] = s_av if (s_av and is_valid_student_image(s_av, s_rid)) else DEFAULT_AVATAR_PATH
             else:
                 nd["sender_rid"] = None
                 nd["sender_name"] = None

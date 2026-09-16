@@ -4120,10 +4120,10 @@ textarea.input-forest {
     align-items: start;
   }
   .footer-col-contact {
-    border-left: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    padding-left: 0;
-    padding-top: 20px;
+    border-left: none !important;
+    border-top: none !important;
+    padding-left: 0 !important;
+    padding-top: 0 !important;
   }
 }
 
@@ -5337,22 +5337,27 @@ input:checked + .admin-slider:before {
 /* Scroll Lock for Modals & Mobile Drawer */
 body.scroll-locked {
   overflow: hidden !important;
+  touch-action: none !important;
 }
 
-/* Full-Screen Team Overlay Window */
+/* Full-Screen Team Overlay Window (100dvh Solid Opaque, Zero Underlay Bleed) */
 .fullscreen-team-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: radial-gradient(circle at 50% 0%, #174E34 0%, #0D321F 50%, #082013 100%) !important;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  min-height: -webkit-fill-available;
+  background: #08170e !important;
   z-index: 10000;
   overflow-y: auto !important;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch !important;
   touch-action: pan-y !important;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
 }
 
 .fullscreen-team-overlay[style*="display: none"] {
@@ -5538,7 +5543,7 @@ body.scroll-locked {
     gap: 32px;
   }
   .fullscreen-team-content {
-    padding: 40px 16px 60px;
+    padding: 36px 16px calc(110px + env(safe-area-inset-bottom, 24px)) !important;
   }
   .fullscreen-modal-close-btn {
     top: 14px;
@@ -6383,8 +6388,8 @@ body.scroll-locked {
    ========================================================================== */
 .homescreen-editorial-footer {
   margin-top: 48px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(10, 32, 20, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #090e0b !important;
   padding: 32px 24px 28px 24px;
   border-radius: 20px 20px 0 0;
 }
@@ -6520,6 +6525,13 @@ body.scroll-locked {
     display: grid !important;
     grid-template-columns: 1.1fr 1fr !important;
     gap: 14px !important;
+  }
+
+  .footer-col-contact {
+    border-left: none !important;
+    border-top: none !important;
+    padding-left: 0 !important;
+    padding-top: 0 !important;
   }
 
   .footer-steps-flow {
@@ -6675,13 +6687,50 @@ body.scroll-locked {
 }
 
 /* ==========================================================================
-   EXACT STABLE AUTH CARD SIZING (ZERO JUMPING ACROSS ALL STEPS)
+   VIEWPORT CENTERING ON /login & RESILIENT AUTH CARD SIZING
    ========================================================================== */
-.login-editorial-card,
-.login-editorial-card.wide-step {
-  width: 520px !important;
-  max-width: 520px !important;
-  min-height: 560px !important;
+body.is-login-route .app-main-workspace {
+  padding: 0 !important;
+  min-height: calc(100vh - 72px) !important;
+  height: calc(100vh - 72px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+body.is-login-route #viewLogin {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body.is-login-route .login-screen-wrap {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  body.is-login-route .app-main-workspace {
+    min-height: calc(100dvh - 60px) !important;
+    height: calc(100dvh - 60px) !important;
+  }
+}
+
+.login-editorial-card {
+  width: 100% !important;
+  max-width: 480px !important;
+  min-height: auto !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
@@ -6689,18 +6738,41 @@ body.scroll-locked {
   position: relative !important;
   overflow: hidden !important;
   margin: 0 auto !important;
-  padding: 36px 32px !important;
-  transition: box-shadow 0.25s ease !important;
+  padding: 34px 32px !important;
+  transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1), padding 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.login-editorial-card.wide-step,
+.login-editorial-card.otp-active {
+  max-width: 680px !important;
+  padding: 30px 32px !important;
 }
 
 @media (max-width: 640px) {
   .login-editorial-card,
-  .login-editorial-card.wide-step {
+  .login-editorial-card.wide-step,
+  .login-editorial-card.otp-active {
     width: min(480px, calc(100vw - 32px)) !important;
     max-width: min(480px, calc(100vw - 32px)) !important;
-    min-height: 540px !important;
-    padding: 26px 18px !important;
+    min-height: auto !important;
+    padding: 22px 18px !important;
   }
+}
+
+.auth-step2-header-bar {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.auth-step2-badge-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(62, 168, 108, 0.12);
+  border: 1px solid rgba(62, 168, 108, 0.25);
+  padding: 4px 14px;
+  border-radius: 9999px;
+  margin-bottom: 6px;
 }
 
 .auth-step-panel {
@@ -6964,6 +7036,174 @@ body.scroll-locked {
 .notif-item-box:hover {
   background: rgba(255, 255, 255, 0.06) !important;
   transform: translateX(2px) !important;
+}
+
+/* ==========================================================================
+   TEAM LIVE SQUAD CHAT (MEMBER-EXCLUSIVE, FAST & LIGHTWEIGHT)
+   ========================================================================== */
+.team-chat-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.team-chat-messages-container {
+  height: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 14px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.team-chat-empty-hint {
+  margin: auto;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.8125rem;
+  padding: 24px 12px;
+}
+
+.team-chat-msg-row {
+  display: flex;
+  gap: 8px;
+  max-width: 88%;
+  align-items: flex-end;
+}
+
+.team-chat-msg-row.you {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.team-chat-msg-row.them {
+  align-self: flex-start;
+}
+
+.team-chat-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1.5px solid #cbd5e1;
+}
+
+.team-chat-msg-bubble {
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  word-break: break-word;
+  position: relative;
+}
+
+.team-chat-msg-bubble.you {
+  background: #16a34a;
+  color: #ffffff;
+  border-bottom-right-radius: 3px;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+}
+
+.team-chat-msg-bubble.them {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  border-bottom-left-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.team-chat-sender-name {
+  font-size: 0.6875rem;
+  font-weight: 750;
+  color: #64748b;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.team-chat-timestamp {
+  font-size: 0.625rem;
+  margin-top: 3px;
+  opacity: 0.75;
+  text-align: right;
+}
+
+.chat-text-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
+}
+
+.team-chat-msg-bubble.you .chat-text-link {
+  color: #ffffff;
+}
+
+.team-chat-msg-bubble.them .chat-text-link {
+  color: #16a34a;
+}
+
+.team-chat-form-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.team-chat-input {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  padding: 9px 14px;
+  font-size: 0.84rem;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+}
+
+.team-chat-input:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+
+.team-chat-send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.team-chat-send-btn:hover {
+  background: #15803d;
+  transform: scale(1.05);
+}
+
+.team-chat-send-btn:active {
+  transform: scale(0.95);
+}
+
+.team-chat-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 

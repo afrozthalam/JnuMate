@@ -232,6 +232,14 @@ function handleCurrentRoute() {
     }
   }
 
+  // Login Viewport Centering & Footer Visibility Control
+  const isLoginRoute = path === "/login";
+  document.body.classList.toggle("is-login-route", isLoginRoute);
+  const footerEl = document.getElementById("homescreenFooter");
+  if (footerEl) {
+    footerEl.style.display = isLoginRoute ? "none" : "";
+  }
+
   // Hide discover top header pitch on interior views (login, admin, profile, etc.)
   const topHeaderCenter = document.querySelector(".desktop-top-header-center");
   if (topHeaderCenter) {
@@ -251,11 +259,6 @@ function handleCurrentRoute() {
     }
   } else if (path.startsWith("/team/")) {
     const teamId = path.split("/")[2];
-    const p = document.getElementById("viewDiscover");
-    if (p) {
-      p.classList.add("active");
-      loadDiscoverView();
-    }
     openTeamDetailModal(teamId);
   } else if (path === "/create-team") {
     const p = document.getElementById("viewCreateTeam");
@@ -405,6 +408,7 @@ function renderNavUserSlots() {
   const topSlot = document.getElementById("navUserSlotDesktopTop");
   const profileDropdown = document.getElementById("desktopProfileDropdown");
   const mobileTogglePfp = document.getElementById("mobileMenuTogglePfp");
+  const mobileAuthSlot = document.getElementById("mobileAuthSlot");
 
   if (currentUser) {
     const rawName = (currentUser.name || currentUser.id || "Student") + "";
@@ -412,7 +416,13 @@ function renderNavUserSlots() {
     const firstName = cleanName.split(' ')[0] || cleanName;
     const avatarUrl = getStudentAvatarSrc(currentUser.avatar_url, currentUser.id);
 
-    if (mobileTogglePfp) {
+    if (mobileAuthSlot) {
+      mobileAuthSlot.innerHTML = `
+        <button id="btnMobileMenuToggle" onclick="toggleMobileDrawer()" class="mobile-menu-btn" aria-label="Open Profile & Menu">
+          <img id="mobileMenuTogglePfp" src="${escapeHtml(avatarUrl)}" alt="Profile" class="mobile-menu-pfp" onerror="this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+        </button>
+      `;
+    } else if (mobileTogglePfp) {
       mobileTogglePfp.src = avatarUrl;
     }
 
@@ -486,7 +496,13 @@ function renderNavUserSlots() {
       `;
     }
   } else {
-    if (mobileTogglePfp) {
+    if (mobileAuthSlot) {
+      mobileAuthSlot.innerHTML = `
+        <a href="/login" class="btn-black-pill sm" style="padding:6px 14px; font-size:0.8125rem; text-decoration:none; white-space:nowrap;">
+          Sign In
+        </a>
+      `;
+    } else if (mobileTogglePfp) {
       mobileTogglePfp.src = DEFAULT_STUDENT_AVATAR;
     }
     const loginDtHtml = `
@@ -1126,6 +1142,7 @@ function openTeamDetailModal(teamId) {
 }
 
 function closeTeamDetailModal(restoreUrl = true) {
+  stopTeamChatPolling();
   const modal = document.getElementById("teamDetailModal");
   if (modal) {
     modal.style.display = "none";
@@ -1380,6 +1397,32 @@ function renderFullTeamDetail(team) {
             </div>
           ` : ''}
 
+          ${(isLeader || isMember) ? `
+            <div class="team-paper-card team-chat-card" id="teamSquadChatCard">
+              <div class="paper-card-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,0.2);"></span>
+                  <h3 class="paper-card-title" style="margin:0; font-size:1.05rem;">Squad Live Chat</h3>
+                </div>
+                <span style="font-size:0.72rem; color:#166534; font-weight:700; background:#dcfce7; padding:2px 8px; border-radius:999px;">Members Only</span>
+              </div>
+              
+              <div id="teamChatMessagesList" class="team-chat-messages-container">
+                <div class="team-chat-empty-hint">Loading squad messages...</div>
+              </div>
+
+              <form id="teamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-chat-form-row">
+                <input type="text" id="teamChatInput" placeholder="Message your squad... (URLs auto-link)" maxlength="1000" autocomplete="off" class="team-chat-input">
+                <button type="submit" id="teamChatSendBtn" class="team-chat-send-btn" aria-label="Send message" title="Send message">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
+              </form>
+            </div>
+          ` : ''}
+
           <!-- 5. Readiness Checklist Paper Card -->
           <div class="team-paper-card">
             <div class="paper-card-header">
@@ -1425,6 +1468,151 @@ function renderFullTeamDetail(team) {
       </div>
     </div>
   `;
+
+  if (isLeader || isMember) {
+    startTeamChatPolling(team.id);
+  } else {
+    stopTeamChatPolling();
+  }
+}
+
+/* ==========================================================================
+   TEAM LIVE SQUAD CHAT IMPLEMENTATION (LIGHTWEIGHT REST POLLING)
+   ========================================================================== */
+let teamChatPollInterval = null;
+let currentChatTeamId = null;
+
+function linkifyChatMessage(text) {
+  if (!text) return "";
+  const escaped = escapeHtml(text);
+  const urlRegex = /((?:https?:\/\/|www\.)[^\s<]+)/gi;
+  return escaped.replace(urlRegex, function(match) {
+    let url = match;
+    if (url.toLowerCase().startsWith('www.')) {
+      url = 'https://' + url;
+    }
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="chat-text-link">${match}</a>`;
+  });
+}
+
+function startTeamChatPolling(teamId) {
+  currentChatTeamId = teamId;
+  stopTeamChatPolling();
+  loadTeamChatMessages(teamId, true);
+  teamChatPollInterval = setInterval(() => {
+    const modal = document.getElementById("teamDetailModal");
+    if (modal && modal.style.display !== "none" && currentChatTeamId === teamId) {
+      loadTeamChatMessages(teamId, false);
+    } else {
+      stopTeamChatPolling();
+    }
+  }, 4000);
+}
+
+function stopTeamChatPolling() {
+  if (teamChatPollInterval) {
+    clearInterval(teamChatPollInterval);
+    teamChatPollInterval = null;
+  }
+}
+
+function loadTeamChatMessages(teamId, isInitial) {
+  const container = document.getElementById("teamChatMessagesList");
+  if (!container) return;
+
+  const currentRid = currentUser ? currentUser.id : "";
+  fetch(`/api/teams/${teamId}/messages?r_id=${encodeURIComponent(currentRid)}`)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) return;
+      const msgs = data.messages || [];
+      if (msgs.length === 0) {
+        if (isInitial) {
+          container.innerHTML = `<div class="team-chat-empty-hint">No messages yet. Say hello to your squad!</div>`;
+        }
+        return;
+      }
+
+      const isScrolledToBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 60;
+
+      container.innerHTML = msgs.map(m => {
+        const isYou = Boolean(currentRid && m.sender_r_id && (m.sender_r_id.toUpperCase() === currentRid.toUpperCase()));
+        const cleanSender = (m.sender_name || m.sender_r_id || "Teammate").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim();
+        const av = getStudentAvatarSrc(m.sender_avatar, m.sender_r_id, cleanSender);
+        const timeStr = m.created_at ? m.created_at.split(" ")[1] || m.created_at : "";
+
+        return `
+          <div class="team-chat-msg-row ${isYou ? 'you' : 'them'}">
+            ${!isYou ? `<img src="${escapeHtml(av)}" alt="${escapeHtml(cleanSender)}" class="team-chat-avatar" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">` : ""}
+            <div class="team-chat-msg-bubble ${isYou ? 'you' : 'them'}">
+              ${!isYou ? `<div class="team-chat-sender-name">${escapeHtml(cleanSender)}</div>` : ""}
+              <div class="team-chat-text">${linkifyChatMessage(m.message)}</div>
+              ${timeStr ? `<div class="team-chat-timestamp">${escapeHtml(timeStr.substring(0, 5))}</div>` : ""}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      if (isInitial || isScrolledToBottom) {
+        container.scrollTop = container.scrollHeight;
+      }
+    })
+    .catch(() => {});
+}
+
+function handleSendTeamChatMessage(e, teamId) {
+  if (e) e.preventDefault();
+  const input = document.getElementById("teamChatInput");
+  const sendBtn = document.getElementById("teamChatSendBtn");
+  const container = document.getElementById("teamChatMessagesList");
+  if (!input) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  const currentRid = currentUser ? currentUser.id : "";
+
+  // Clear input immediately for 0ms lag feel
+  input.value = "";
+  if (sendBtn) sendBtn.disabled = true;
+
+  // Optimistic UI render
+  if (container) {
+    const emptyHint = container.querySelector(".team-chat-empty-hint");
+    if (emptyHint) emptyHint.remove();
+
+    const tempDiv = document.createElement("div");
+    tempDiv.className = "team-chat-msg-row you";
+    const nowTime = new Date().toTimeString().substring(0, 5);
+    tempDiv.innerHTML = `
+      <div class="team-chat-msg-bubble you">
+        <div class="team-chat-text">${linkifyChatMessage(text)}</div>
+        <div class="team-chat-timestamp">${nowTime}</div>
+      </div>
+    `;
+    container.appendChild(tempDiv);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  fetch(`/api/teams/${teamId}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      r_id: currentRid,
+      message: text
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (sendBtn) sendBtn.disabled = false;
+      if (!data.success) {
+        showToast(data.message || "Failed to send message", "error");
+      }
+    })
+    .catch(() => {
+      if (sendBtn) sendBtn.disabled = false;
+      showToast("Network error sending message", "error");
+    });
 }
 
 window.currentTeamRequests = [];
@@ -1447,32 +1635,33 @@ function loadTeamJoinRequests(teamId) {
       }
 
       container.innerHTML = requests.map((req, idx) => {
+        const reqId = req.request_id || req.id;
         const applicantName = (req.name || req.student_name || req.r_id || "Student") + "";
         const cleanName = applicantName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
         return `
-          <div class="clean-request-row" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; margin-bottom:10px;">
+          <div class="clean-request-row" id="req-row-${escapeAttr(reqId)}" style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px 14px; margin-bottom:12px; transition:all 0.3s ease;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; cursor:pointer;" onclick="openStudentDetailModalByIndex(${idx})" title="Click to view student profile">
-              <img src="${escapeHtml(getStudentAvatarSrc(req.avatar_url, req.r_id, applicantName))}" alt="${escapeHtml(cleanName)}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:1.5px solid var(--badge-mint);" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
+              <img src="${escapeHtml(getStudentAvatarSrc(req.avatar_url, req.r_id, applicantName))}" alt="${escapeHtml(cleanName)}" style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:1.5px solid #16a34a; flex-shrink:0;" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
               <div style="min-width:0; flex:1;">
-                <div style="font-weight:700; font-size:0.875rem; color:#fff; display:flex; align-items:center; gap:6px;">
+                <div style="font-weight:750; font-size:0.875rem; color:#0f172a; display:flex; align-items:center; gap:6px;">
                   <span>${escapeHtml(cleanName)}</span>
-                  <span style="font-size:0.6875rem; color:var(--badge-mint); background:rgba(34,197,94,0.15); padding:1px 6px; border-radius:4px; font-weight:600;">View Profile</span>
+                  <span style="font-size:0.6875rem; color:#166534; background:#dcfce7; padding:1px 6px; border-radius:4px; font-weight:700;">View Profile</span>
                 </div>
-                <div style="font-size:0.75rem; color:var(--text-sage);">@${escapeHtml(req.r_id)} ${req.gender ? `• ${escapeHtml(req.gender)}` : ''}</div>
+                <div style="font-size:0.75rem; color:#64748b;">@${escapeHtml(req.r_id)} ${req.gender ? `• ${escapeHtml(req.gender)}` : ''}</div>
               </div>
             </div>
 
             ${req.message ? `
-              <div style="font-size:0.8125rem; color:rgba(255,255,255,0.85); background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:8px; margin-bottom:10px; line-height:1.4; border-left:2px solid var(--accent);">
+              <div style="font-size:0.8125rem; color:#334155; background:#f1f5f9; padding:8px 12px; border-radius:8px; margin-bottom:10px; line-height:1.4; border-left:3px solid #16a34a;">
                 "${escapeHtml(req.message)}"
               </div>
             ` : ""}
 
             <div style="display:flex; gap:8px; justify-content:flex-end;">
-              <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'reject')" class="btn-clean-action" style="font-size:0.75rem; padding:5px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:transparent; color:#fff; cursor:pointer;">
+              <button id="btn-decline-${escapeAttr(reqId)}" onclick="handleJoinRequestAction('${teamId}', '${escapeAttr(reqId)}', 'reject')" style="font-size:0.75rem; padding:5px 12px; border-radius:8px; border:1px solid #cbd5e1; background:#ffffff; color:#475569; font-weight:600; cursor:pointer;">
                 Decline
               </button>
-              <button onclick="handleJoinRequestAction('${teamId}', '${req.request_id || req.id}', 'accept')" class="btn-black-pill sm" style="font-size:0.75rem; padding:5px 14px; background:var(--badge-mint); color:#000; font-weight:700; cursor:pointer;">
+              <button id="btn-accept-${escapeAttr(reqId)}" onclick="handleJoinRequestAction('${teamId}', '${escapeAttr(reqId)}', 'accept')" style="font-size:0.75rem; padding:5px 14px; border-radius:8px; border:none; background:#16a34a; color:#ffffff; font-weight:750; cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
                 Accept
               </button>
             </div>
@@ -1564,6 +1753,17 @@ function closeStudentDetailModal() {
 }
 
 function handleJoinRequestAction(teamId, reqId, action) {
+  const acceptBtn = document.getElementById(`btn-accept-${reqId}`);
+  const declineBtn = document.getElementById(`btn-decline-${reqId}`);
+  const activeBtn = action === 'accept' ? acceptBtn : declineBtn;
+  const row = document.getElementById(`req-row-${reqId}`);
+
+  if (activeBtn) {
+    activeBtn.disabled = true;
+    if (declineBtn && declineBtn !== activeBtn) declineBtn.disabled = true;
+    activeBtn.innerHTML = `<span class="btn-spinner" style="width:12px; height:12px; border-width:2px; display:inline-block; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite;"></span> <span>${action === 'accept' ? 'Accepting...' : 'Declining...'}</span>`;
+  }
+
   fetch(`/api/teams/${teamId}/requests/${reqId}/action`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1575,16 +1775,52 @@ function handleJoinRequestAction(teamId, reqId, action) {
     .then(res => res.json())
     .then(data => {
       if (data.success) {
-        showToast(action === 'accept' ? "Teammate accepted!" : "Request declined", "info");
+        showToast(action === 'accept' ? "Teammate accepted!" : "Request declined", "success");
+        if (row) {
+          row.style.transition = "opacity 0.25s ease, transform 0.25s ease";
+          row.style.opacity = "0";
+          row.style.transform = "translateX(20px)";
+          setTimeout(() => {
+            row.remove();
+            const container = document.getElementById("pendingRequestsContainer");
+            const badge = document.getElementById("pendingReqCountBadge");
+            const remaining = container ? container.querySelectorAll(".clean-request-row").length : 0;
+            if (badge) badge.innerText = `${remaining} Pending`;
+            if (remaining === 0 && container) {
+              container.innerHTML = `<p style="font-size:0.8125rem; color:#64748b; text-align:center; padding:16px 0;">No pending join requests.</p>`;
+            }
+          }, 250);
+        }
         delete clientCache.teamsMap[teamId];
         clientCache.teamsList = null;
-        loadTeamDetailView(teamId);
+        fetch(`/api/teams/${teamId}`)
+          .then(r => r.json())
+          .then(d => {
+            if (d.team) {
+              clientCache.teamsMap[teamId] = d.team;
+              renderFullTeamDetail(d.team);
+              loadTeamJoinRequests(teamId);
+            }
+          })
+          .catch(() => {});
         loadNotifications();
       } else {
+        if (activeBtn) {
+          activeBtn.disabled = false;
+          if (declineBtn && declineBtn !== activeBtn) declineBtn.disabled = false;
+          activeBtn.innerHTML = action === 'accept' ? 'Accept' : 'Decline';
+        }
         showToast(data.message || "Action failed", "error");
       }
     })
-    .catch(() => showToast("Network error processing request", "error"));
+    .catch(() => {
+      if (activeBtn) {
+        activeBtn.disabled = false;
+        if (declineBtn && declineBtn !== activeBtn) declineBtn.disabled = false;
+        activeBtn.innerHTML = action === 'accept' ? 'Accept' : 'Decline';
+      }
+      showToast("Network error processing request", "error");
+    });
 }
 
 function submitJoinRequest(teamId) {
@@ -3112,9 +3348,10 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   const cleanName = (student.name || student.r_id || "Student").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
   const displayEmail = student.jnu_email || targetEmail || student.email || `${student.r_id}@student.edu`;
   const academicYear = student.current_year || student.academic_year || getAcademicYearByRid(student.r_id);
-  const dob = student.dob || "Not Provided";
+  const program = student.program || student.course || "";
   const gender = student.gender || "Not Specified";
-  const state = student.state || "Not Provided";
+  const dob = (student.dob && student.dob !== "Not Provided" && student.dob !== "N/A") ? student.dob : null;
+  const state = (student.state && student.state !== "Not Provided" && student.state !== "N/A") ? student.state : null;
 
   const isBlankAvatar = !rawAvatar || rawAvatar.includes("dicebear") || rawAvatar.includes("data:image");
 
@@ -3136,30 +3373,40 @@ function renderAuthProfileSpotlight(student, targetEmail) {
 
       <div class="auth-student-details-sheet">
         <h2 class="auth-student-fullname font-serif">${escapeHtml(cleanName)}</h2>
-        <div style="margin-bottom:12px;">
+        <div style="margin-bottom:10px;">
           <span class="student-rid-badge highlight">@${escapeHtml(student.r_id)}</span>
         </div>
 
         <div class="auth-unboxed-details">
+          ${(program && program !== "Student") ? `
+            <div class="auth-unboxed-row">
+              <span class="auth-unboxed-label">Program</span>
+              <span class="auth-unboxed-value highlight truncate" title="${escapeAttr(program)}">${escapeHtml(program)}</span>
+            </div>
+          ` : ""}
           <div class="auth-unboxed-row">
-            <span class="auth-unboxed-label">Academic Year</span>
+            <span class="auth-unboxed-label">Year</span>
             <span class="auth-unboxed-value">${escapeHtml(academicYear)}</span>
-          </div>
-          <div class="auth-unboxed-row">
-            <span class="auth-unboxed-label">Date of Birth</span>
-            <span class="auth-unboxed-value">${escapeHtml(dob)}</span>
           </div>
           <div class="auth-unboxed-row">
             <span class="auth-unboxed-label">Gender</span>
             <span class="auth-unboxed-value">${escapeHtml(gender)}</span>
           </div>
-          <div class="auth-unboxed-row">
-            <span class="auth-unboxed-label">State</span>
-            <span class="auth-unboxed-value">${escapeHtml(state)}</span>
-          </div>
+          ${dob ? `
+            <div class="auth-unboxed-row">
+              <span class="auth-unboxed-label">DOB</span>
+              <span class="auth-unboxed-value">${escapeHtml(dob)}</span>
+            </div>
+          ` : ""}
+          ${state ? `
+            <div class="auth-unboxed-row">
+              <span class="auth-unboxed-label">State</span>
+              <span class="auth-unboxed-value">${escapeHtml(state)}</span>
+            </div>
+          ` : ""}
           <div class="auth-unboxed-row full-width">
             <span class="auth-unboxed-label">Official Email</span>
-            <span class="auth-unboxed-value truncate">${escapeHtml(displayEmail)}</span>
+            <span class="auth-unboxed-value truncate" title="${escapeAttr(displayEmail)}">${escapeHtml(displayEmail)}</span>
           </div>
         </div>
       </div>
@@ -3278,6 +3525,13 @@ function loadLoginView() {
 
         <!-- Step 2: Zero-Scroll OTP Verification (Clean Split Grid on Desktop) -->
         <div id="authStep2" class="auth-step-panel" style="display:none;">
+          <div class="auth-step2-header-bar">
+            <div class="auth-step2-badge-wrap">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--badge-mint, #3ea86c);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              <span style="font-weight:750; font-size:0.875rem; color:#FFFFFF; letter-spacing:0.02em;">OTP Verification</span>
+            </div>
+            <p style="font-size:0.8125rem; color:var(--text-sage); margin:4px 0 16px 0;">Enter the 6-digit code sent to your registered email</p>
+          </div>
           <div class="auth-otp-split-grid">
             <!-- Left Column: Student Identity Spotlight -->
             <div id="authStep2ProfileSpotlight" class="auth-otp-left-col"></div>
@@ -3353,11 +3607,18 @@ function showAuthStep(step) {
   const logoBox = document.querySelector(".login-jnu-logo-box");
   const cardTitle = document.querySelector(".login-portal-title");
   const cardSub = document.querySelector(".login-portal-subtitle");
+  const cardFrame = document.getElementById("loginCardFrame");
 
   const isStep1 = step === 1;
   const isOtpStep = step === 2;
   const isSyncStep = step === 'sync';
   const isCourseStep = step === 'course_select';
+
+  // Toggle card width class for OTP step
+  if (cardFrame) {
+    cardFrame.classList.toggle("otp-active", isOtpStep);
+    cardFrame.classList.toggle("wide-step", isOtpStep);
+  }
 
   // HIDE official JNU Crest logo and default titles on Step 2, sync, and course_select
   if (logoBox) logoBox.style.display = isStep1 ? "block" : "none";
@@ -3725,6 +3986,7 @@ function submitUserCourseSelection() {
       if (data.success) {
         if (currentUser) {
           currentUser.program = program;
+          currentUser.needs_program = false;
           try { localStorage.setItem("jnumate_user", JSON.stringify(currentUser)); } catch (e) {}
         }
         showToast("Academic program updated successfully!", "success");
