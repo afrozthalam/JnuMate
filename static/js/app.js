@@ -1256,17 +1256,17 @@ function renderFullTeamDetail(team) {
           <img src="${isSih ? '/static/img/sih_logo.jpg' : '/static/img/ctf_logo.jpg'}" alt="${isSih ? 'Smart India Hackathon' : 'Capture The Flag'}" class="track-hero-logo">
         </div>
         <div class="track-hero-content">
-          <div class="track-hero-pill-row">
-            <span class="track-hero-tag">${isSih ? 'Smart India Hackathon 2026' : 'Capture The Flag 2026'}</span>
-            <span class="track-hero-status-pill">${isFull ? 'Roster Full (6/6)' : `${6 - count} Open ${6 - count === 1 ? 'Slot' : 'Slots'} Available`}</span>
-            ${isSih ? `
-              <span class="track-hero-rule-pill ${hasFemale ? 'rule-met' : 'rule-needed'}">
-                ${hasFemale ? '✓ Female Participant Rule Met' : '⚠ 1 Female Member Mandatory'}
-              </span>
-            ` : ''}
-          </div>
+          <h2 class="track-hero-title">${isSih ? 'Smart India Hackathon 2026' : 'Capture The Flag 2026'}</h2>
           <div class="track-hero-subtitle">
             ${isSih ? 'Official SIH Competition Track &bull; 6-Member Multidisciplinary Squad' : 'Official CTF Cyber Challenge Track &bull; Cybersecurity & Defense Squad'}
+          </div>
+          <div class="track-hero-meta-line">
+            <span class="track-meta-stat">● Roster: ${count}/6 Confirmed (${isFull ? 'Full Team' : `${6 - count} Open ${6 - count === 1 ? 'Slot' : 'Slots'}`})</span>
+            ${isSih ? `
+              <span class="track-meta-stat ${hasFemale ? 'rule-met' : 'rule-needed'}">
+                &bull; ${hasFemale ? '✓ Female Participant Rule Met' : '⚠ 1 Female Teammate Mandatory'}
+              </span>
+            ` : ''}
           </div>
         </div>
       </div>
@@ -1404,15 +1404,14 @@ function renderFullTeamDetail(team) {
                   <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,0.2);"></span>
                   <h3 class="paper-card-title" style="margin:0; font-size:1.05rem;">Squad Live Chat</h3>
                 </div>
-                <span style="font-size:0.72rem; color:#166534; font-weight:700; background:#dcfce7; padding:2px 8px; border-radius:999px;">Members Only</span>
               </div>
               
               <div id="teamChatMessagesList" class="team-chat-messages-container">
-                <div class="team-chat-empty-hint">Loading squad messages...</div>
+                <div style="padding:40px 0; text-align:center;">${renderIosSpinner('sm', 'Loading squad messages...')}</div>
               </div>
 
               <form id="teamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-chat-form-row">
-                <input type="text" id="teamChatInput" placeholder="Message your squad... (URLs auto-link)" maxlength="1000" autocomplete="off" class="team-chat-input">
+                <input type="text" id="teamChatInput" placeholder="Message your squad..." maxlength="1000" autocomplete="off" class="team-chat-input">
                 <button type="submit" id="teamChatSendBtn" class="team-chat-send-btn" aria-label="Send message" title="Send message">
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -1516,9 +1515,15 @@ function stopTeamChatPolling() {
   }
 }
 
+window.__lastRenderedChatSignatures = window.__lastRenderedChatSignatures || {};
+
 function loadTeamChatMessages(teamId, isInitial) {
   const container = document.getElementById("teamChatMessagesList");
   if (!container) return;
+
+  if (isInitial && !container.querySelector(".team-chat-msg-row")) {
+    container.innerHTML = `<div style="padding:40px 0; text-align:center;">${renderIosSpinner('sm', 'Loading squad messages...')}</div>`;
+  }
 
   const currentRid = currentUser ? currentUser.id : "";
   fetch(`/api/teams/${teamId}/messages?r_id=${encodeURIComponent(currentRid)}`)
@@ -1526,10 +1531,16 @@ function loadTeamChatMessages(teamId, isInitial) {
     .then(data => {
       if (!data.success) return;
       const msgs = data.messages || [];
+
+      // Create unique signature to prevent unnecessary DOM wipes & flickering
+      const newSignature = msgs.map(m => `${m.id}_${m.is_active_member}`).join(",");
+      if (!isInitial && window.__lastRenderedChatSignatures[teamId] === newSignature) {
+        return; // Zero DOM churn when chat hasn't changed
+      }
+      window.__lastRenderedChatSignatures[teamId] = newSignature;
+
       if (msgs.length === 0) {
-        if (isInitial) {
-          container.innerHTML = `<div class="team-chat-empty-hint">No messages yet. Say hello to your squad!</div>`;
-        }
+        container.innerHTML = `<div class="team-chat-empty-hint">No messages yet. Say hello to your squad!</div>`;
         return;
       }
 
@@ -1540,9 +1551,10 @@ function loadTeamChatMessages(teamId, isInitial) {
         const cleanSender = (m.sender_name || m.sender_r_id || "Teammate").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim();
         const av = getStudentAvatarSrc(m.sender_avatar, m.sender_r_id, cleanSender);
         const timeStr = m.created_at ? m.created_at.split(" ")[1] || m.created_at : "";
+        const isFormer = m.is_active_member === false;
 
         return `
-          <div class="team-chat-msg-row ${isYou ? 'you' : 'them'}">
+          <div class="team-chat-msg-row ${isYou ? 'you' : 'them'} ${isFormer ? 'former-member' : ''}">
             ${!isYou ? `<img src="${escapeHtml(av)}" alt="${escapeHtml(cleanSender)}" class="team-chat-avatar" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">` : ""}
             <div class="team-chat-msg-bubble ${isYou ? 'you' : 'them'}">
               ${!isYou ? `<div class="team-chat-sender-name">${escapeHtml(cleanSender)}</div>` : ""}
@@ -1574,7 +1586,10 @@ function handleSendTeamChatMessage(e, teamId) {
 
   // Clear input immediately for 0ms lag feel
   input.value = "";
-  if (sendBtn) sendBtn.disabled = true;
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = renderIosSpinner('sm');
+  }
 
   // Optimistic UI render
   if (container) {
@@ -1604,13 +1619,32 @@ function handleSendTeamChatMessage(e, teamId) {
   })
     .then(res => res.json())
     .then(data => {
-      if (sendBtn) sendBtn.disabled = false;
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        `;
+      }
       if (!data.success) {
         showToast(data.message || "Failed to send message", "error");
+      } else {
+        // Trigger background refresh to sync IDs
+        loadTeamChatMessages(teamId, false);
       }
     })
     .catch(() => {
-      if (sendBtn) sendBtn.disabled = false;
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        `;
+      }
       showToast("Network error sending message", "error");
     });
 }
@@ -1621,6 +1655,8 @@ function loadTeamJoinRequests(teamId) {
   const container = document.getElementById("pendingRequestsContainer");
   const badge = document.getElementById("pendingReqCountBadge");
   if (!container) return;
+
+  container.innerHTML = `<div style="padding:20px 0; text-align:center;">${renderIosSpinner('sm')}</div>`;
 
   fetch(`/api/teams/${teamId}/requests?leader_r_id=${encodeURIComponent(currentUser ? currentUser.id : "")}`)
     .then(res => res.json())
@@ -1761,7 +1797,7 @@ function handleJoinRequestAction(teamId, reqId, action) {
   if (activeBtn) {
     activeBtn.disabled = true;
     if (declineBtn && declineBtn !== activeBtn) declineBtn.disabled = true;
-    activeBtn.innerHTML = `<span class="btn-spinner" style="width:12px; height:12px; border-width:2px; display:inline-block; border:2px solid currentColor; border-top-color:transparent; border-radius:50%; animation:spin 0.6s linear infinite;"></span> <span>${action === 'accept' ? 'Accepting...' : 'Declining...'}</span>`;
+    activeBtn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;">${renderIosSpinner('sm')} <span>${action === 'accept' ? 'Accepting...' : 'Declining...'}</span></span>`;
   }
 
   fetch(`/api/teams/${teamId}/requests/${reqId}/action`, {
@@ -1830,7 +1866,7 @@ function submitJoinRequest(teamId) {
 
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<span class="btn-spinner"></span> <span>Sending Join Request...</span>`;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Sending Join Request...</span></span>`;
   }
 
   fetch(`/api/teams/${teamId}/request`, {
@@ -2584,7 +2620,7 @@ function saveCourseSelection() {
         if (window.location.pathname === "/profile") {
           loadProfileView();
         } else {
-          navigateTo("/profile");
+          navigateTo("/");
         }
       } else {
         showToast(data.message || "Failed to update program", "error");
@@ -3349,79 +3385,36 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   const displayEmail = student.jnu_email || targetEmail || student.email || `${student.r_id}@student.edu`;
   const academicYear = student.current_year || student.academic_year || getAcademicYearByRid(student.r_id);
   const program = student.program || student.course || "";
-  const gender = student.gender || "Not Specified";
-  const dob = (student.dob && student.dob !== "Not Provided" && student.dob !== "N/A") ? student.dob : null;
-  const state = (student.state && student.state !== "Not Provided" && student.state !== "N/A") ? student.state : null;
+  const gender = student.gender || "";
 
   const isBlankAvatar = !rawAvatar || rawAvatar.includes("dicebear") || rawAvatar.includes("data:image");
 
   spotlightContainer.innerHTML = `
-    <div class="auth-spotlight-profile-inner">
-      <div class="auth-student-big-avatar-box">
-        ${isBlankAvatar ? `
-          <div class="auth-instagram-avatar-circle">
-            <img src="${INSTAGRAM_EMPTY_AVATAR}" alt="Default avatar" class="auth-student-big-avatar" style="border-radius:50%;">
-          </div>
-        ` : `
-          <img src="${escapeHtml(avatarSrc)}" 
-               data-raw-src="${escapeHtml(rawAvatar)}" 
-               alt="${escapeHtml(cleanName)}" 
-               class="auth-student-big-avatar"
-               onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
-        `}
-      </div>
-
-      <div class="auth-student-details-sheet">
-        <h2 class="auth-student-fullname font-serif">${escapeHtml(cleanName)}</h2>
-        <div style="margin-bottom:10px;">
-          <span class="student-rid-badge highlight">@${escapeHtml(student.r_id)}</span>
+    <div class="auth-spotlight-compact-card">
+      <img src="${escapeHtml(isBlankAvatar ? DEFAULT_STUDENT_AVATAR : avatarSrc)}" 
+           data-raw-src="${escapeHtml(rawAvatar)}" 
+           alt="${escapeHtml(cleanName)}" 
+           class="auth-spotlight-compact-avatar"
+           onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+      <div class="auth-spotlight-compact-meta">
+        <div class="auth-spotlight-compact-name">${escapeHtml(cleanName)}</div>
+        <div class="auth-spotlight-compact-subline">
+          <span class="student-rid-badge" style="font-size:0.6875rem; padding:1px 6px;">@${escapeHtml(student.r_id)}</span>
+          ${academicYear ? `<span>• ${escapeHtml(academicYear)}</span>` : ""}
+          ${gender ? `<span>• ${escapeHtml(gender)}</span>` : ""}
         </div>
-
-        <div class="auth-unboxed-details">
-          ${(program && program !== "Student") ? `
-            <div class="auth-unboxed-row">
-              <span class="auth-unboxed-label">Program</span>
-              <span class="auth-unboxed-value highlight truncate" title="${escapeAttr(program)}">${escapeHtml(program)}</span>
-            </div>
-          ` : ""}
-          <div class="auth-unboxed-row">
-            <span class="auth-unboxed-label">Year</span>
-            <span class="auth-unboxed-value">${escapeHtml(academicYear)}</span>
-          </div>
-          <div class="auth-unboxed-row">
-            <span class="auth-unboxed-label">Gender</span>
-            <span class="auth-unboxed-value">${escapeHtml(gender)}</span>
-          </div>
-          ${dob ? `
-            <div class="auth-unboxed-row">
-              <span class="auth-unboxed-label">DOB</span>
-              <span class="auth-unboxed-value">${escapeHtml(dob)}</span>
-            </div>
-          ` : ""}
-          ${state ? `
-            <div class="auth-unboxed-row">
-              <span class="auth-unboxed-label">State</span>
-              <span class="auth-unboxed-value">${escapeHtml(state)}</span>
-            </div>
-          ` : ""}
-          <div class="auth-unboxed-row full-width">
-            <span class="auth-unboxed-label">Official Email</span>
-            <span class="auth-unboxed-value truncate" title="${escapeAttr(displayEmail)}">${escapeHtml(displayEmail)}</span>
-          </div>
-        </div>
+        ${(program && program !== "Student") ? `
+          <div class="auth-spotlight-compact-program" title="${escapeAttr(program)}">${escapeHtml(program)}</div>
+        ` : ""}
+        <div class="auth-spotlight-compact-email" title="${escapeAttr(displayEmail)}">${escapeHtml(displayEmail)}</div>
       </div>
     </div>
   `;
 
   if (bannerContainer) {
     bannerContainer.innerHTML = `
-      <div class="auth-dispatch-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px; flex-shrink:0;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-      </div>
-      <div class="auth-dispatch-text">
-        <span>Verification code sent to</span>
-        <strong class="auth-dispatch-email">${escapeHtml(displayEmail)}</strong>
-      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px; height:15px; flex-shrink:0;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      <span>Verification code sent to <strong>${escapeHtml(displayEmail)}</strong></span>
     `;
   }
 }
@@ -3523,41 +3516,39 @@ function loadLoginView() {
           </button>
         </div>
 
-        <!-- Step 2: Zero-Scroll OTP Verification (Clean Split Grid on Desktop) -->
+        <!-- Step 2: Zero-Scroll OTP Verification (Single-Column Unified Flow) -->
         <div id="authStep2" class="auth-step-panel" style="display:none;">
           <div class="auth-step2-header-bar">
             <div class="auth-step2-badge-wrap">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--badge-mint, #3ea86c);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--badge-mint, #3ea86c);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
               <span style="font-weight:750; font-size:0.875rem; color:#FFFFFF; letter-spacing:0.02em;">OTP Verification</span>
             </div>
-            <p style="font-size:0.8125rem; color:var(--text-sage); margin:4px 0 16px 0;">Enter the 6-digit code sent to your registered email</p>
+            <p style="font-size:0.8125rem; color:var(--text-sage); margin:3px 0 12px 0;">Enter the 6-digit code sent to your registered email</p>
           </div>
-          <div class="auth-otp-split-grid">
-            <!-- Left Column: Student Identity Spotlight -->
-            <div id="authStep2ProfileSpotlight" class="auth-otp-left-col"></div>
 
-            <!-- Right Column: OTP Code Entry & Actions -->
-            <div class="auth-otp-right-col">
-              <div id="authStep2DispatchBanner" class="auth-dispatch-notice-bar"></div>
+          <!-- Student Spotlight Compact Identity Card -->
+          <div id="authStep2ProfileSpotlight"></div>
 
-              <div class="form-group" style="margin-bottom:14px;">
-                <label class="form-label-forest" style="text-align:center; font-size:0.75rem; margin-bottom:6px; letter-spacing:0.04em;">Enter 6-Digit Code</label>
-                <input type="text" id="otpCodeInput" placeholder="••••••" maxlength="6" class="input-forest otp-code-input" autocomplete="one-time-code" inputmode="numeric" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
-              </div>
+          <!-- Dispatch Alert -->
+          <div id="authStep2DispatchBanner" class="auth-dispatch-notice-bar"></div>
 
-              <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-auth-submit" style="width:100%;">
-                Verify & Sign In ➔
-              </button>
+          <!-- OTP Code Input -->
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label-forest" style="text-align:center; font-size:0.75rem; margin-bottom:6px; letter-spacing:0.04em;">ENTER 6-DIGIT CODE</label>
+            <input type="text" id="otpCodeInput" placeholder="••••••" maxlength="6" class="input-forest otp-code-input" autocomplete="one-time-code" inputmode="numeric" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
+          </div>
 
-              <div class="auth-otp-footer-row">
-                <button type="button" id="btnResendOtp" onclick="handleResendOtp()" class="auth-link-btn" disabled>
-                  Resend Code (<span id="resendCountdown">30</span>s)
-                </button>
-                <button type="button" onclick="showAuthStep(1)" class="auth-link-btn change-rid">
-                  ← Change R-ID
-                </button>
-              </div>
-            </div>
+          <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-auth-submit" style="width:100%;">
+            Verify & Sign In ➔
+          </button>
+
+          <div class="auth-otp-footer-row">
+            <button type="button" id="btnResendOtp" onclick="handleResendOtp()" class="auth-link-btn" disabled>
+              Resend Code (<span id="resendCountdown">30</span>s)
+            </button>
+            <button type="button" onclick="showAuthStep(1)" class="auth-link-btn change-rid">
+              ← Change R-ID
+            </button>
           </div>
         </div>
 
@@ -3586,7 +3577,7 @@ function loadLoginView() {
           </div>
 
           <button onclick="submitUserCourseSelection()" id="btnSubmitCourseSelect" class="btn-auth-submit" style="width:100%;">
-            Save & Continue to Profile ➔
+            Save & Continue ➔
           </button>
         </div>
 
@@ -3937,7 +3928,7 @@ function verifyEmailOtpCode() {
             postLoginRedirect = null;
             navigateTo(redirectDest);
           } else {
-            navigateTo("/profile");
+            navigateTo("/");
           }
         } catch (navErr) {
           console.warn("Navigation notice:", navErr);
@@ -3981,7 +3972,7 @@ function submitUserCourseSelection() {
     .then(data => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Save & Continue to Profile ➔";
+        btn.innerText = "Save & Continue ➔";
       }
       if (data.success) {
         if (currentUser) {
@@ -3995,7 +3986,7 @@ function submitUserCourseSelection() {
           postLoginRedirect = null;
           navigateTo(redirectDest);
         } else {
-          navigateTo("/profile");
+          navigateTo("/");
         }
       } else {
         showToast(data.message || "Failed to update program", "error");
@@ -4004,7 +3995,7 @@ function submitUserCourseSelection() {
     .catch(() => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Save & Continue to Profile ➔";
+        btn.innerText = "Save & Continue ➔";
       }
       showToast("Network error updating program", "error");
     });

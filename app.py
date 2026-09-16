@@ -2275,6 +2275,14 @@ def get_team_messages(team_id):
             conn.close()
             return jsonify({"success": False, "message": "Access restricted: only squad members can view live chat."}), 403
 
+        # Query all current active members in the squad (captain + confirmed members)
+        cursor.execute(f"""
+            SELECT UPPER(leader_r_id) FROM teams WHERE id = {p}
+            UNION
+            SELECT UPPER(student_r_id) FROM team_members WHERE team_id = {p}
+        """, (team_id, team_id))
+        active_members = {row[0] for row in cursor.fetchall() if row[0]}
+
         cursor.execute(f"""
             SELECT id, team_id, sender_r_id, sender_name, sender_avatar, message, created_at
             FROM team_messages
@@ -2287,6 +2295,8 @@ def get_team_messages(team_id):
         for r in rows:
             m = dict(r)
             m["created_at"] = str(m.get("created_at") or "")
+            sender = (m.get("sender_r_id") or "").strip().upper()
+            m["is_active_member"] = bool(sender and sender in active_members)
             messages.append(m)
 
         conn.close()
