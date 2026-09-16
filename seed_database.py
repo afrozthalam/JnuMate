@@ -45,8 +45,8 @@ def seed_students():
 
         image_urls = item.get("image_urls") or []
         avatar_url = image_urls[0] if image_urls else ""
-        if "demo/avatars/1.jpg" in avatar_url or not avatar_url:
-            avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
+        if "demo/avatars/1.jpg" in avatar_url or not avatar_url or "dicebear" in avatar_url:
+            avatar_url = "/static/img/blank_pfp.jpg"
 
         records.append((
             r_id.strip().upper(),

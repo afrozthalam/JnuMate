@@ -56,10 +56,8 @@
             <span id="mobileNotifBadge" class="notif-badge" style="display:none;">0</span>
           </button>
           <button id="btnMobileMenuToggle" onclick="toggleMobileDrawer()" class="mobile-menu-btn"
-            aria-label="Open Menu">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
-            </svg>
+            aria-label="Open Profile & Menu">
+            <img id="mobileMenuTogglePfp" src="/static/img/blank_pfp.jpg" alt="Profile" class="mobile-menu-pfp" onerror="this.src='/static/img/blank_pfp.jpg'">
           </button>
         </div>
       </header>
@@ -313,22 +311,23 @@
 
             <!-- Right Column: Engineering Contacts & Developer Credits -->
             <div class="footer-col-contact">
-              <div class="footer-dev-statement-clean">
-                Created by <strong class="footer-dev-highlight">Afroz Alam</strong>
+              <div class="footer-dev-attribution">
+                <div class="footer-dev-by">Created by</div>
+                <div class="footer-dev-name">Afroz Alam</div>
               </div>
               <div class="footer-contact-links-row">
-                <a href="https://github.com/afrozthalam" target="_blank" rel="noopener noreferrer" class="footer-contact-item">
+                <a href="https://github.com/afrozthalam" target="_blank" rel="noopener noreferrer" class="footer-text-link">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="flex-shrink:0;">
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
                   </svg>
-                  <span>GitHub</span>
+                  <span>github.com/afrozthalam</span>
                 </a>
-                <a href="mailto:afrozalam@jnumate.edu" class="footer-contact-item">
+                <a href="mailto:afrozalam@jnumate.edu" class="footer-text-link">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;">
                     <rect x="2" y="4" width="20" height="16" rx="2"/>
                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                   </svg>
-                  <span>Email</span>
+                  <span>afrozalam@jnumate.edu</span>
                 </a>
               </div>
               <div class="footer-meta-copyright">
@@ -375,23 +374,30 @@
   <!-- ================= MOBILE OFF-CANVAS APP DRAWER (< 768px) ================= -->
   <div id="mobileDrawerOverlay" class="mobile-drawer-overlay" onclick="closeMobileDrawer()">
     <div class="mobile-drawer-sheet" onclick="event.stopPropagation()">
-      <div class="mobile-drawer-header" style="justify-content: flex-end; border-bottom: none; padding-bottom: 0;">
-        <button onclick="closeMobileDrawer()" class="drawer-close-btn" aria-label="Close Menu">
-          ✕
-        </button>
-      </div>
+      <button onclick="closeMobileDrawer()" class="drawer-close-btn-floating" aria-label="Close Menu">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
 
       <!-- User Info / Sign In Slot in Drawer -->
       <div id="drawerUserSlot" class="drawer-user-slot"></div>
 
       <!-- Drawer Nav List -->
-      <nav class="drawer-nav-list">
+      <nav class="drawer-nav-list" id="drawerNavList">
         <a href="/" class="drawer-nav-link" onclick="closeMobileDrawer()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round"
               d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
           </svg>
           <span>Discover Teams</span>
+        </a>
+        <a href="javascript:void(0)" class="drawer-nav-link" id="drawerMyTeamLink" onclick="handleMyTeamClick()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.99-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+          </svg>
+          <span>My Team</span>
         </a>
         <a href="/create-team" class="drawer-nav-link" onclick="closeMobileDrawer()">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">

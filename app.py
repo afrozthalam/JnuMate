@@ -99,6 +99,22 @@ def get_academic_year_by_rid(student_id):
 SEARCHABLE_STUDENTS_LIST = []
 STUDENT_CACHE_BY_RID = {}
 
+DEFAULT_AVATAR_PATH = "/static/img/blank_pfp.jpg"
+
+def is_valid_student_image(img_url, expected_rid=None):
+    if not img_url or not isinstance(img_url, str):
+        return False
+    u = img_url.strip()
+    if not u or u.endswith("/") or "demo/avatars" in u or "SIGNATURE" in u or "dicebear" in u:
+        return False
+    # If the image filename references a specific R-ID, verify it matches
+    m = re.search(r'(R\d+)\.(jpg|jpeg|png)', u, re.IGNORECASE)
+    if m:
+        rid_in_img = m.group(1).upper()
+        if expected_rid and rid_in_img != str(expected_rid).strip().upper():
+            return False
+    return True
+
 def build_student_search_index():
     global SEARCHABLE_STUDENTS_LIST, STUDENT_CACHE_BY_RID
     SEARCHABLE_STUDENTS_LIST = []
@@ -114,10 +130,10 @@ def build_student_search_index():
         gender_clean = "Female" if "Female" in gender or "F" == gender else ("Male" if "Male" in gender or "M" == gender else "Other")
         image_urls = item.get("image_urls") or []
         first_img = image_urls[0] if image_urls else ""
-        if first_img and not first_img.endswith("/") and "demo/avatars" not in first_img and "SIGNATURE" not in first_img:
+        if is_valid_student_image(first_img, r_id_key):
             avatar_url = first_img
         else:
-            avatar_url = None
+            avatar_url = DEFAULT_AVATAR_PATH
         
         prog, sem = EDUCATION_DETAILS_MAP.get(r_id_key, (None, None))
         acad_yr, adm_yr = get_academic_year_by_rid(r_id_key)
@@ -185,8 +201,9 @@ def build_student_search_index():
                     cached["email_upper"] = email.upper()
                 if phone and not cached.get("phone"):
                     cached["phone"] = phone
-                if avatar_url and not cached.get("avatar_url"):
-                    cached["avatar_url"] = avatar_url
+                if avatar_url and (not cached.get("avatar_url") or cached.get("avatar_url") == DEFAULT_AVATAR_PATH):
+                    if is_valid_student_image(avatar_url, rid):
+                        cached["avatar_url"] = avatar_url
             else:
                 name_upper = name.upper()
                 clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', name_upper).strip()
@@ -202,7 +219,7 @@ def build_student_search_index():
                     "phone": phone,
                     "gender": gender_clean,
                     "dob": dob,
-                    "avatar_url": avatar_url,
+                    "avatar_url": avatar_url if is_valid_student_image(avatar_url, rid) else DEFAULT_AVATAR_PATH,
                     "program": prog or "Student",
                     "semester_year": sem or "",
                     "academic_year": acad_yr,
@@ -396,9 +413,11 @@ def auto_import_student_from_json(r_id, conn, cursor):
         gender_clean = "Other"
 
     image_urls = item.get("image_urls") or []
-    avatar_url = image_urls[0] if image_urls else ""
-    if "demo/avatars/1.jpg" in avatar_url or not avatar_url:
-        avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
+    first_img = image_urls[0] if image_urls else ""
+    if is_valid_student_image(first_img, r_id):
+        avatar_url = first_img
+    else:
+        avatar_url = DEFAULT_AVATAR_PATH
 
     prog, sem = EDUCATION_DETAILS_MAP.get(r_id.upper(), (None, None))
 
@@ -804,7 +823,7 @@ def auth_verify_otp():
         gender = (data.get("gender") or "Other").strip().capitalize()
         if gender not in ["Male", "Female", "Other"]:
             gender = "Other"
-        avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
+        avatar_url = DEFAULT_AVATAR_PATH
         try:
             cursor.execute(f"""
                 INSERT INTO students (r_id, name, email, program, gender, dob, is_registered, avatar_url)
@@ -881,22 +900,37 @@ def auth_verify_otp():
         prog = updated_student.get("program")
     if not sem and updated_student.get("semester_year"):
         sem = updated_student.get("semester_year")
+
+    cursor.execute(f"""
+        SELECT tm.team_id, t.name as team_name 
+        FROM team_members tm 
+        LEFT JOIN teams t ON tm.team_id = t.id 
+        WHERE UPPER(tm.student_r_id) = {p}
+    """, (r_id,))
+    tm_row = cursor.fetchone()
+    team_id = tm_row["team_id"] if tm_row else None
+    team_name = tm_row["team_name"] if tm_row else None
     conn.close()
 
     session["user_rid"] = r_id
     session.permanent = True
 
     student_name = (updated_student.get("name") or f"Student {r_id}").strip()
+    raw_av = updated_student.get("avatar_url")
+    clean_av = raw_av if is_valid_student_image(raw_av, r_id) else DEFAULT_AVATAR_PATH
+
     user_payload = {
         "id": r_id,
         "name": student_name,
         "email": updated_student.get("email") or f"{r_id.lower()}@student.edu",
         "gender": updated_student.get("gender") or "Student",
         "dob": updated_student.get("dob") or "N/A",
-        "avatar_url": updated_student.get("avatar_url") or f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}",
+        "avatar_url": clean_av,
         "program": prog,
         "semester_year": sem,
-        "needs_program": not bool(prog)
+        "needs_program": not bool(prog),
+        "team_id": team_id,
+        "team_name": team_name
     }
 
     try:
@@ -974,7 +1008,7 @@ def auth_register():
     if gender not in ["Male", "Female", "Other"]:
         gender = "Other"
 
-    avatar_url = f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
+    avatar_url = DEFAULT_AVATAR_PATH
 
     conn = get_db()
     cursor = conn.cursor()
@@ -1011,7 +1045,9 @@ def auth_register():
         "email": email,
         "gender": gender,
         "dob": dob,
-        "avatar_url": avatar_url
+        "avatar_url": avatar_url,
+        "team_id": None,
+        "team_name": None
     }
 
     return jsonify({
@@ -1046,12 +1082,25 @@ def auth_me():
         student = auto_import_student_from_json(user_rid, conn, cursor)
 
     prog, sem = get_student_course_details(user_rid, cursor)
+
+    cursor.execute(f"""
+        SELECT tm.team_id, t.name as team_name 
+        FROM team_members tm 
+        LEFT JOIN teams t ON tm.team_id = t.id 
+        WHERE UPPER(tm.student_r_id) = {p}
+    """, (user_rid,))
+    tm_row = cursor.fetchone()
+    team_id = tm_row["team_id"] if tm_row else None
+    team_name = tm_row["team_name"] if tm_row else None
     conn.close()
 
     if not student:
         return jsonify({"authenticated": False})
 
     s_dict = dict(student)
+    raw_av = s_dict.get("avatar_url")
+    clean_av = raw_av if is_valid_student_image(raw_av, user_rid) else DEFAULT_AVATAR_PATH
+
     return jsonify({
         "authenticated": True,
         "user": {
@@ -1060,10 +1109,12 @@ def auth_me():
             "email": s_dict["email"],
             "gender": s_dict["gender"],
             "dob": s_dict["dob"],
-            "avatar_url": s_dict["avatar_url"],
+            "avatar_url": clean_av,
             "program": prog,
             "semester_year": sem,
-            "needs_program": not bool(prog)
+            "needs_program": not bool(prog),
+            "team_id": team_id,
+            "team_name": team_name
         }
     })
 
@@ -2082,9 +2133,13 @@ def get_user_profile():
     full_address = correspondence_addr if correspondence_addr != "Not Provided" else permanent_addr
 
     avatar_url = student_dict.get("avatar_url")
-    if not avatar_url or "demo/avatars/1.jpg" in avatar_url:
+    if not is_valid_student_image(avatar_url, r_id):
         image_urls = json_item.get("image_urls") or []
-        avatar_url = image_urls[0] if image_urls and "demo/avatars/1.jpg" not in image_urls[0] else f"https://api.dicebear.com/7.x/avataaars/svg?seed={r_id}"
+        first_img = image_urls[0] if image_urls else ""
+        if is_valid_student_image(first_img, r_id):
+            avatar_url = first_img
+        else:
+            avatar_url = DEFAULT_AVATAR_PATH
 
     prog, sem = get_student_course_details(r_id, cursor)
 
@@ -2186,7 +2241,22 @@ def get_user_notifications():
             LIMIT 30
         """, (r_id,))
         rows = cursor.fetchall()
-        notifs = [dict(r) for r in rows]
+        notifs = []
+        for r in rows:
+            nd = dict(r)
+            m_rid = re.search(r'@(R\d+)', nd.get("message", ""), re.IGNORECASE)
+            if m_rid:
+                s_rid = m_rid.group(1).upper()
+                cached_s = STUDENT_CACHE_BY_RID.get(s_rid) or {}
+                nd["sender_rid"] = s_rid
+                nd["sender_name"] = cached_s.get("name") or s_rid
+                s_av = cached_s.get("avatar_url")
+                nd["sender_avatar"] = s_av if is_valid_student_image(s_av, s_rid) else DEFAULT_AVATAR_PATH
+            else:
+                nd["sender_rid"] = None
+                nd["sender_name"] = None
+                nd["sender_avatar"] = None
+            notifs.append(nd)
 
         cursor.execute(f"""
             SELECT COUNT(*) as unread

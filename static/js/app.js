@@ -87,40 +87,41 @@ const studentSearchClientCache = {};
 const failedAvatarUrls = new Set();
 
 // Sleek zero-network offline SVG fallback avatar (0ms render, 0 external requests)
-const DEFAULT_STUDENT_AVATAR = "data:image/svg+xml," + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">' +
-  '<rect width="64" height="64" rx="32" fill="#13432C"/>' +
-  '<circle cx="32" cy="24" r="11" fill="#8AB89B"/>' +
-  '<path d="M16 52 C16 42 23 38 32 38 C41 38 48 42 48 52" fill="#8AB89B"/>' +
-  '</svg>'
-);
+// Universal clean blank profile photo fallback (Zero DiceBear, Zero Cartoon Avatars)
+const DEFAULT_STUDENT_AVATAR = "/static/img/blank_pfp.jpg";
+const INSTAGRAM_EMPTY_AVATAR = "/static/img/blank_pfp.jpg";
 
-function isValidAvatarUrl(url) {
+function isValidAvatarUrl(url, expectedRid) {
   if (!url || typeof url !== 'string') return false;
   const u = url.trim();
   if (u.length < 8) return false;
   if (u.endsWith('/')) return false;
   if (u.includes('demo/avatars')) return false;
   if (u.includes('SIGNATURE')) return false;
+  if (u.includes('dicebear')) return false;
   if (failedAvatarUrls.has(u)) return false;
+
+  // Validate R-ID match if filename contains R-ID (prevents mismatched student scraped photos)
+  if (expectedRid) {
+    const cleanRid = String(expectedRid).trim().toUpperCase();
+    const match = u.match(/(R\d+)\.(jpg|jpeg|png)/i);
+    if (match && match[1]) {
+      const urlRid = match[1].toUpperCase();
+      if (urlRid !== cleanRid) {
+        return false;
+      }
+    }
+  }
   return true;
 }
 
 function getStudentAvatarSrc(rawUrl, rId) {
-  if (!isValidAvatarUrl(rawUrl)) {
+  if (!isValidAvatarUrl(rawUrl, rId)) {
     return DEFAULT_STUDENT_AVATAR;
   }
   return rawUrl.trim();
 }
 
-// Instagram-style white empty avatar silhouette for unlinked accounts
-const INSTAGRAM_EMPTY_AVATAR = "data:image/svg+xml," + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">' +
-  '<rect width="64" height="64" rx="32" fill="#143525"/>' +
-  '<circle cx="32" cy="23" r="11" fill="#FFFFFF" fill-opacity="0.9"/>' +
-  '<path d="M14 53 C14 41 22 36 32 36 C42 36 50 41 50 53" fill="#FFFFFF" fill-opacity="0.9"/>' +
-  '</svg>'
-);
 
 // Pure CSS Authentic iOS 12-Blade Activity Spinner Component
 function renderIosSpinner(size = '', text = '') {
@@ -403,18 +404,23 @@ function renderNavUserSlots() {
   const dtSlot = document.getElementById("navUserSlotDesktop");
   const topSlot = document.getElementById("navUserSlotDesktopTop");
   const profileDropdown = document.getElementById("desktopProfileDropdown");
+  const mobileTogglePfp = document.getElementById("mobileMenuTogglePfp");
 
   if (currentUser) {
     const rawName = (currentUser.name || currentUser.id || "Student") + "";
     const cleanName = rawName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
     const firstName = cleanName.split(' ')[0] || cleanName;
-    const avatarUrl = currentUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.id || 'Student')}`;
+    const avatarUrl = getStudentAvatarSrc(currentUser.avatar_url, currentUser.id);
+
+    if (mobileTogglePfp) {
+      mobileTogglePfp.src = avatarUrl;
+    }
 
     const userDtHtml = `
       <div style="display:flex; flex-direction:column; gap:8px;">
         <a href="/profile" style="display:flex; align-items:center; gap:12px; text-decoration:none; padding:8px 12px; border-radius:var(--radius-xl); background:rgba(255,255,255,0.06); transition:background var(--trans-fast);">
           <div class="avatar-stack-item" style="width:36px; height:36px; border:2px solid var(--badge-yellow); margin-left:0; flex-shrink:0;">
-            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(firstName)}" loading="lazy" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.id || 'Student')}';">
+            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(firstName)}" loading="lazy" onerror="this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
           </div>
           <div style="min-width:0; flex:1;">
             <div style="font-weight:700; font-size:0.875rem; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -436,7 +442,7 @@ function renderNavUserSlots() {
     if (topSlot) {
       topSlot.innerHTML = `
         <button type="button" onclick="toggleDesktopProfileDropdown(event)" class="desktop-top-user-pill" style="display:flex; align-items:center; gap:10px; padding:4px 12px 4px 6px; width:220px; border-radius:var(--radius-pill); background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.1); cursor:pointer; transition:all var(--trans-fast);" aria-label="Open Account Menu">
-          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1.5px solid var(--badge-mint); flex-shrink:0;" onerror="this.src='/static/img/avatar_placeholder.svg';">
+          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1.5px solid var(--badge-mint); flex-shrink:0;" onerror="this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
           <div style="min-width:0; flex:1; text-align:left;">
             <div style="font-weight:750; font-size:0.8125rem; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(cleanName)}</div>
           </div>
@@ -449,7 +455,7 @@ function renderNavUserSlots() {
       profileDropdown.innerHTML = `
         <div class="desktop-profile-menu-header" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding:18px 16px 14px 16px; border-bottom:1px solid rgba(255,255,255,0.08);">
           <div style="width:58px; height:58px; border-radius:50%; border:2px solid var(--accent); overflow:hidden; margin-bottom:8px; display:flex; align-items:center; justify-content:center; background:var(--surface-sunken); box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='/static/img/avatar_placeholder.svg';">
+            <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
           </div>
           <div style="font-size:0.75rem; font-weight:750; color:var(--accent); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:2px;">
             ${escapeHtml(currentUser.id || 'STUDENT')}
@@ -463,12 +469,16 @@ function renderNavUserSlots() {
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
             <span>My Profile</span>
           </a>
+          <button type="button" onclick="closeDesktopDropdowns(); handleMyTeamClick();" class="desktop-menu-item" style="background:none; border:none; width:100%; text-align:left; font-family:inherit; cursor:pointer;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
+            <span>My Team</span>
+          </button>
           <a href="/create-team" class="desktop-menu-item" onclick="closeDesktopDropdowns()">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
             <span>Create Team</span>
           </a>
           <div class="desktop-menu-divider"></div>
-          <button type="button" onclick="closeDesktopDropdowns(); logoutUser();" class="desktop-menu-item danger">
+          <button type="button" onclick="closeDesktopDropdowns(); logoutUser();" class="desktop-menu-item danger" style="background:none; border:none; width:100%; text-align:left; font-family:inherit; cursor:pointer;">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
             <span>Sign Out</span>
           </button>
@@ -476,6 +486,9 @@ function renderNavUserSlots() {
       `;
     }
   } else {
+    if (mobileTogglePfp) {
+      mobileTogglePfp.src = DEFAULT_STUDENT_AVATAR;
+    }
     const loginDtHtml = `
       <a href="/login" class="btn-black-pill" style="width:100%; justify-content:center;">
         Sign In with R-ID
@@ -554,19 +567,24 @@ document.addEventListener("keydown", (e) => {
 function renderDrawerUserSlot() {
   const slot = document.getElementById("drawerUserSlot");
   const footer = document.getElementById("drawerFooterSlot");
+  const mobileTogglePfp = document.getElementById("mobileMenuTogglePfp");
   if (!slot) return;
 
   if (currentUser) {
     const rawName = (currentUser.name || currentUser.id || "Student") + "";
     const cleanName = rawName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
-    const avatarUrl = currentUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(currentUser.id || 'Student')}`;
+    const avatarUrl = getStudentAvatarSrc(currentUser.avatar_url, currentUser.id);
+
+    if (mobileTogglePfp) {
+      mobileTogglePfp.src = avatarUrl;
+    }
 
     slot.innerHTML = `
-      <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-surface); border-radius:var(--radius-xl); padding:24px 16px; display:flex; flex-direction:column; align-items:center; text-align:center;">
-        <div style="width:72px; height:72px; border-radius:50%; border:2.5px solid var(--accent); overflow:hidden; margin-bottom:12px; background:var(--surface-sunken); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,0,0,0.35);">
-          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='/static/img/avatar_placeholder.svg';">
+      <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-surface); border-radius:var(--radius-xl); padding:20px 16px; display:flex; flex-direction:column; align-items:center; text-align:center;">
+        <div style="width:68px; height:68px; border-radius:50%; border:2.5px solid var(--accent); overflow:hidden; margin-bottom:10px; background:var(--surface-sunken); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(0,0,0,0.35);">
+          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" style="width:100%; height:100%; object-fit:cover;" onerror="this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
         </div>
-        <div style="font-size:0.75rem; font-weight:750; color:var(--accent); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:4px;">
+        <div style="font-size:0.75rem; font-weight:750; color:var(--accent); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:3px;">
           ${escapeHtml(currentUser.id || 'STUDENT')}
         </div>
         <div style="font-family:var(--font-serif); font-size:1.1rem; font-weight:700; color:var(--text-white); max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -587,6 +605,9 @@ function renderDrawerUserSlot() {
       `;
     }
   } else {
+    if (mobileTogglePfp) {
+      mobileTogglePfp.src = DEFAULT_STUDENT_AVATAR;
+    }
     slot.innerHTML = `
       <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-surface); border-radius:var(--radius-xl); padding:16px; text-align:center;">
         <div style="font-family:var(--font-serif); font-size:1.125rem; font-weight:700; margin-bottom:4px;">Join JnuMate</div>
@@ -598,6 +619,75 @@ function renderDrawerUserSlot() {
     `;
     if (footer) footer.innerHTML = "";
   }
+}
+
+function handleMyTeamClick() {
+  closeMobileDrawer();
+  closeDesktopDropdowns();
+  if (!currentUser) {
+    showToast("Please sign in with your College R-ID first.", "info");
+    navigateTo("/login");
+    return;
+  }
+
+  if (currentUser.team_id) {
+    navigateTo(`/team/${currentUser.team_id}`);
+    return;
+  }
+
+  fetch(`/api/user/profile?r_id=${encodeURIComponent(currentUser.id)}`)
+    .then(r => r.json())
+    .then(data => {
+      const teams = (data && data.teams) || [];
+      if (teams.length > 0 && teams[0].id) {
+        currentUser.team_id = teams[0].id;
+        currentUser.team_name = teams[0].name;
+        navigateTo(`/team/${teams[0].id}`);
+      } else {
+        showNoTeamPromptModal();
+      }
+    })
+    .catch(() => {
+      showNoTeamPromptModal();
+    });
+}
+
+function showNoTeamPromptModal() {
+  const existing = document.getElementById("noTeamPromptModal");
+  if (existing) existing.remove();
+
+  const modalHtml = `
+    <div id="noTeamPromptModal" class="student-search-modal-overlay active" style="z-index:1500; display:flex; align-items:center; justify-content:center; padding:16px;">
+      <div class="student-detail-modal-sheet" style="max-width:440px; width:100%; text-align:center; padding:32px 24px; animation:scaleInModal 0.2s cubic-bezier(0.16, 1, 0.3, 1);">
+        <div style="width:54px; height:54px; border-radius:50%; background:rgba(242,169,34,0.12); border:1.5px solid rgba(242,169,34,0.3); display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto; color:#f2a922;">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <h3 style="font-family:var(--font-serif); font-size:1.35rem; font-weight:700; color:#ffffff; margin-bottom:10px;">
+          No Active Squad Found
+        </h3>
+        <p style="font-size:0.92rem; color:var(--text-sage-light); line-height:1.55; margin-bottom:24px;">
+          You're not in any team currently please create one or join any open slots.
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <a href="/create-team" onclick="document.getElementById('noTeamPromptModal').remove();" class="btn-black-pill" style="width:100%; justify-content:center; padding:12px; font-weight:700; text-decoration:none;">
+            + Create a New Team
+          </a>
+          <a href="/" onclick="document.getElementById('noTeamPromptModal').remove();" class="btn-outline-pill" style="width:100%; justify-content:center; padding:11px; text-decoration:none;">
+            Explore Open Slots
+          </a>
+          <button type="button" onclick="document.getElementById('noTeamPromptModal').remove();" style="background:none; border:none; color:var(--text-sage); font-size:0.85rem; padding:8px; cursor:pointer; margin-top:2px;">
+            Dismiss
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 
 function logoutUser() {
@@ -1143,25 +1233,30 @@ function renderFullTeamDetail(team) {
 
   container.innerHTML = `
     <div class="clean-team-modal-layout">
-      <!-- 1. Team Overview Paper Card -->
-      <div class="team-paper-card">
-        <div class="team-paper-header-top">
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <span class="track-badge-paper ${(team.hackathon_type || 'sih').toLowerCase()}">
-              ${isSih ? '● Smart India Hackathon' : '● Capture The Flag'}
-            </span>
-            <span style="font-size:0.8125rem; font-weight:600; color:#64748B;">
-              ${isFull ? 'Roster Full (6/6)' : `${6 - count} open ${6 - count === 1 ? 'spot' : 'spots'}`}
-            </span>
+      <!-- Full-Width Track Hero Banner with Official Logo -->
+      <div class="team-track-hero-banner ${isSih ? 'track-sih-banner' : 'track-ctf-banner'}">
+        <div class="track-hero-logo-box">
+          <img src="${isSih ? '/static/img/sih_logo.jpg' : '/static/img/ctf_logo.jpg'}" alt="${isSih ? 'Smart India Hackathon' : 'Capture The Flag'}" class="track-hero-logo">
+        </div>
+        <div class="track-hero-content">
+          <div class="track-hero-pill-row">
+            <span class="track-hero-tag">${isSih ? 'Smart India Hackathon 2026' : 'Capture The Flag 2026'}</span>
+            <span class="track-hero-status-pill">${isFull ? 'Roster Full (6/6)' : `${6 - count} Open ${6 - count === 1 ? 'Slot' : 'Slots'} Available`}</span>
             ${isSih ? `
-              <span style="font-size:0.8125rem; font-weight:600; color:${hasFemale ? '#16A34A' : '#DC2626'};">
-                ${hasFemale ? '• 1+ Female (Rule Met)' : '• 1 Female Required'}
+              <span class="track-hero-rule-pill ${hasFemale ? 'rule-met' : 'rule-needed'}">
+                ${hasFemale ? '✓ Female Participant Rule Met' : '⚠ 1 Female Member Mandatory'}
               </span>
             ` : ''}
           </div>
+          <div class="track-hero-subtitle">
+            ${isSih ? 'Official SIH Competition Track &bull; 6-Member Multidisciplinary Squad' : 'Official CTF Cyber Challenge Track &bull; Cybersecurity & Defense Squad'}
+          </div>
         </div>
+      </div>
 
-        <h1 class="paper-team-title">${escapeHtml(team.name)}</h1>
+      <!-- 1. Team Overview Paper Card -->
+      <div class="team-paper-card">
+        <h1 class="paper-team-title" style="margin-top:0;">${escapeHtml(team.name)}</h1>
 
         <div class="paper-team-desc">
           ${escapeHtml(team.description || "Looking for teammates for the upcoming hackathon.")}
@@ -1919,18 +2014,31 @@ function renderFullProfile(prof, userTeams) {
   const rawName = prof.name || prof.r_id || "Student";
   const cleanName = rawName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
   const rId = prof.r_id || prof.id || "N/A";
-  const avatarSrc = prof.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(rId)}`;
+  const avatarSrc = getStudentAvatarSrc(prof.avatar_url, rId);
   const academicYear = prof.academic_year || getAcademicYearByRid(rId);
   const admissionYear = prof.admission_year || getAdmissionYearByRid(rId);
   const email = prof.email || `${rId}@student.edu`;
+  const phone = prof.phone || "Not Provided";
+  const altPhone = prof.alt_phone || "Not Provided";
   const gender = prof.gender || "Not Specified";
+  const dob = prof.dob || "Not Provided";
+  const bloodGroup = prof.blood_group || "Not Provided";
+  const category = prof.category || "General";
+  const religion = prof.religion || "Not Provided";
+  const maritalStatus = prof.marital_status || "Single";
   const program = prof.program || "Bachelor of Technology";
+  const semester = prof.semester_year ? `Semester ${prof.semester_year}` : "Enrolled";
+  const fatherName = prof.father_name || "Not Provided";
+  const fatherPhone = prof.father_phone || "Not Provided";
+  const motherName = prof.mother_name || "Not Provided";
+  const corrAddr = prof.correspondence_address || prof.address || "Not Provided";
+  const permAddr = prof.permanent_address || "Not Provided";
 
   // 1. Professional Profile Left Identity Spotlight Card
   const identityCardHtml = `
     <div class="profile-sticky-identity-card">
       <div class="profile-identity-avatar-box">
-        <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cleanName)}" onerror="this.src='/static/img/jnu_logo.png';">
+        <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cleanName)}" onerror="this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
       </div>
 
       <h2 class="font-serif" style="font-size:1.625rem; line-height:1.2; margin-bottom:4px;">${escapeHtml(cleanName)}</h2>
@@ -2013,41 +2121,121 @@ function renderFullProfile(prof, userTeams) {
     </div>
   `;
 
-  // 3. Right Section: Academic & Campus Verification Dossier
+  // 3. Right Section: Reorganized Real Student Dossier in 4 Micro-Grids
   const dossierHtml = `
-    <div class="profile-section-card">
+    <!-- 1. Academic Credentials -->
+    <div class="profile-section-card" style="margin-bottom:18px;">
       <div class="profile-section-header">
-        <h3 class="profile-section-title">Academic & Campus Dossier</h3>
+        <h3 class="profile-section-title">Academic Credentials</h3>
         <span class="status-capsule member">Verified Student</span>
       </div>
-      <div class="profile-details-grid">
-        <div class="profile-detail-cell">
-          <span class="profile-cell-label">College R-ID</span>
-          <span class="profile-cell-value" style="color:var(--badge-yellow); font-weight:800;">@${escapeHtml(rId)}</span>
+      <div class="profile-dossier-grid">
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">College R-ID</span>
+          <span class="profile-dossier-val highlight">@${escapeHtml(rId)}</span>
         </div>
-        <div class="profile-detail-cell">
-          <span class="profile-cell-label">Student Name</span>
-          <span class="profile-cell-value">${escapeHtml(cleanName)}</span>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Student Name</span>
+          <span class="profile-dossier-val">${escapeHtml(cleanName)}</span>
         </div>
-        <div class="profile-detail-cell">
-          <span class="profile-cell-label">Academic Year</span>
-          <span class="profile-cell-value highlight">${escapeHtml(academicYear)}</span>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Academic Year</span>
+          <span class="profile-dossier-val highlight">${escapeHtml(academicYear)}</span>
         </div>
-        <div class="profile-detail-cell">
-          <span class="profile-cell-label">Gender</span>
-          <span class="profile-cell-value">${escapeHtml(gender)}</span>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Admission Batch</span>
+          <span class="profile-dossier-val">${escapeHtml(admissionYear || 'Enrolled')}</span>
         </div>
-        <div class="profile-detail-cell full-width">
-          <span class="profile-cell-label">Degree Program</span>
-          <span class="profile-cell-value">${escapeHtml(program)}</span>
+        <div class="profile-dossier-cell full-width">
+          <span class="profile-dossier-label">Degree Program</span>
+          <span class="profile-dossier-val">${escapeHtml(program)}</span>
         </div>
-        <div class="profile-detail-cell full-width">
-          <span class="profile-cell-label">Official University Email</span>
-          <span class="profile-cell-value">${escapeHtml(email)}</span>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Current Term</span>
+          <span class="profile-dossier-val">${escapeHtml(semester)}</span>
         </div>
-        <div class="profile-detail-cell full-width">
-          <span class="profile-cell-label">Hackathon Eligibility</span>
-          <span class="profile-cell-value" style="color:var(--badge-mint); font-weight:600;">● Verified for SIH & CTF Squads</span>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Official Campus Email</span>
+          <span class="profile-dossier-val">${escapeHtml(email)}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Personal & Demographic Details -->
+    <div class="profile-section-card" style="margin-bottom:18px;">
+      <div class="profile-section-header">
+        <h3 class="profile-section-title">Personal & Demographic Details</h3>
+      </div>
+      <div class="profile-dossier-grid">
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Gender</span>
+          <span class="profile-dossier-val">${escapeHtml(gender)}</span>
+        </div>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Date of Birth</span>
+          <span class="profile-dossier-val">${escapeHtml(dob)}</span>
+        </div>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Blood Group</span>
+          <span class="profile-dossier-val">${escapeHtml(bloodGroup)}</span>
+        </div>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Reservation Category</span>
+          <span class="profile-dossier-val">${escapeHtml(category)}</span>
+        </div>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Community / Religion</span>
+          <span class="profile-dossier-val">${escapeHtml(religion)}</span>
+        </div>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Marital Status</span>
+          <span class="profile-dossier-val">${escapeHtml(maritalStatus)}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Family & Contact Details -->
+    <div class="profile-section-card" style="margin-bottom:18px;">
+      <div class="profile-section-header">
+        <h3 class="profile-section-title">Family & Contact Information</h3>
+      </div>
+      <div class="profile-dossier-grid">
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Primary Mobile</span>
+          <span class="profile-dossier-val">${escapeHtml(phone)}</span>
+        </div>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Alternate Mobile</span>
+          <span class="profile-dossier-val">${escapeHtml(altPhone)}</span>
+        </div>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Father's Name</span>
+          <span class="profile-dossier-val">${escapeHtml(fatherName)}</span>
+        </div>
+        <div class="profile-dossier-cell">
+          <span class="profile-dossier-label">Father's Contact</span>
+          <span class="profile-dossier-val">${escapeHtml(fatherPhone)}</span>
+        </div>
+        <div class="profile-dossier-cell full-width">
+          <span class="profile-dossier-label">Mother's Name</span>
+          <span class="profile-dossier-val">${escapeHtml(motherName)}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Residential Address -->
+    <div class="profile-section-card">
+      <div class="profile-section-header">
+        <h3 class="profile-section-title">Residential Addresses</h3>
+      </div>
+      <div class="profile-dossier-grid">
+        <div class="profile-dossier-cell full-width">
+          <span class="profile-dossier-label">Correspondence Address</span>
+          <span class="profile-dossier-val">${escapeHtml(corrAddr)}</span>
+        </div>
+        <div class="profile-dossier-cell full-width">
+          <span class="profile-dossier-label">Permanent Address</span>
+          <span class="profile-dossier-val">${escapeHtml(permAddr)}</span>
         </div>
       </div>
     </div>
@@ -2061,7 +2249,7 @@ function renderFullProfile(prof, userTeams) {
           ${identityCardHtml}
         </div>
 
-        <!-- Right Section: Clean Developer Profile & Squads -->
+        <!-- Right Section: Clean Developer Profile, Squads & Real Dossier -->
         <div class="profile-content-column">
           ${teamsHtml}
           ${dossierHtml}
@@ -3074,8 +3262,8 @@ function loadLoginView() {
             </div>
 
             <div>
-              <label class="form-label-forest">College Email *</label>
-              <input type="email" id="syncEmailInput" placeholder="name@student.jnujaipur.ac.in" class="input-forest">
+              <label class="form-label-forest">Email *</label>
+              <input type="email" id="syncEmailInput" placeholder="e.g. name@gmail.com" class="input-forest">
             </div>
           </div>
 
@@ -3162,7 +3350,6 @@ function showAuthStep(step) {
   const sSync = document.getElementById("authStepSyncNotice");
   const s2 = document.getElementById("authStep2");
   const sCourse = document.getElementById("authStepCourseSelect");
-  const cardFrame = document.getElementById("loginCardFrame");
   const logoBox = document.querySelector(".login-jnu-logo-box");
   const cardTitle = document.querySelector(".login-portal-title");
   const cardSub = document.querySelector(".login-portal-subtitle");
@@ -3172,42 +3359,51 @@ function showAuthStep(step) {
   const isSyncStep = step === 'sync';
   const isCourseStep = step === 'course_select';
 
-  if (cardFrame) {
-    if (isOtpStep) {
-      cardFrame.classList.add("wide-step");
-    } else {
-      cardFrame.classList.remove("wide-step");
-    }
-  }
-
   // HIDE official JNU Crest logo and default titles on Step 2, sync, and course_select
   if (logoBox) logoBox.style.display = isStep1 ? "block" : "none";
   if (cardTitle) cardTitle.style.display = isStep1 ? "block" : "none";
   if (cardSub) cardSub.style.display = isStep1 ? "block" : "none";
 
-  if (s1) s1.style.display = isStep1 ? "block" : "none";
-  if (sSync) sSync.style.display = isSyncStep ? "block" : "none";
-  if (s2) {
-    s2.style.display = isOtpStep ? "block" : "none";
-    if (isOtpStep) {
-      startResendTimer();
-      const input = document.getElementById("otpCodeInput");
-      if (input) {
-        input.value = "";
-        setTimeout(() => input.focus(), 150);
+  const panels = [
+    { el: s1, active: isStep1 },
+    { el: sSync, active: isSyncStep },
+    { el: s2, active: isOtpStep },
+    { el: sCourse, active: isCourseStep }
+  ];
+
+  panels.forEach(p => {
+    if (p.el) {
+      if (p.active) {
+        p.el.style.display = "block";
+        p.el.style.opacity = "0";
+        p.el.style.transform = "translateY(4px)";
+        requestAnimationFrame(() => {
+          p.el.style.transition = "opacity 0.2s ease, transform 0.2s ease";
+          p.el.style.opacity = "1";
+          p.el.style.transform = "translateY(0)";
+        });
+      } else {
+        p.el.style.display = "none";
       }
     }
-  }
-  if (sCourse) {
-    sCourse.style.display = isCourseStep ? "block" : "none";
-    if (isCourseStep && currentUser) {
-      const nameEl = document.getElementById("courseSelectStudentName");
-      const ridEl = document.getElementById("courseSelectRid");
-      const avatarEl = document.getElementById("courseSelectAvatar");
-      if (nameEl) nameEl.innerText = currentUser.name || "Student";
-      if (ridEl) ridEl.innerText = currentUser.id || "";
-      if (avatarEl) avatarEl.src = getStudentAvatarSrc(currentUser.avatar_url, currentUser.id);
+  });
+
+  if (isOtpStep) {
+    startResendTimer();
+    const input = document.getElementById("otpCodeInput");
+    if (input) {
+      input.value = "";
+      setTimeout(() => input.focus(), 150);
     }
+  }
+
+  if (isCourseStep && currentUser) {
+    const nameEl = document.getElementById("courseSelectStudentName");
+    const ridEl = document.getElementById("courseSelectRid");
+    const avatarEl = document.getElementById("courseSelectAvatar");
+    if (nameEl) nameEl.innerText = currentUser.name || "Student";
+    if (ridEl) ridEl.innerText = currentUser.id || "";
+    if (avatarEl) avatarEl.src = getStudentAvatarSrc(currentUser.avatar_url, currentUser.id);
   }
 }
 
@@ -3632,6 +3828,21 @@ function closeNotificationsPanel() {
   }
 }
 
+function formatRelativeTime(dateStr) {
+  if (!dateStr) return "Recently";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr).split('.')[0];
+    const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (diffSec < 60) return "Just now";
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+    return `${Math.floor(diffSec / 86400)}d ago`;
+  } catch (e) {
+    return String(dateStr).split('.')[0];
+  }
+}
+
 function renderNotificationsList(notifications, unreadCount) {
   const mobileContainer = document.getElementById("notifListContainer");
   const desktopContainer = document.getElementById("desktopNotifListBody");
@@ -3680,16 +3891,26 @@ function renderNotificationsList(notifications, unreadCount) {
 
     const cleanTitle = (n.title || "").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim();
     const cleanMessage = (n.message || "").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').trim();
+    const relativeTime = formatRelativeTime(n.created_at);
+
+    // Show real applicant avatar on join request notifications (Zero generic icons)
+    const applicantAvatar = getStudentAvatarSrc(n.sender_avatar, n.sender_rid);
+    const hasApplicantPhoto = Boolean(n.sender_avatar || n.sender_rid || n.type === 'join_request');
+
+    const avatarHtml = hasApplicantPhoto
+      ? `<img src="${escapeHtml(applicantAvatar)}" alt="${escapeHtml(n.sender_name || 'Applicant')}" class="notif-applicant-avatar" onerror="this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">`
+      : `<div class="notif-icon-circle" style="background:${iconBg}; color:${iconColor}; display:flex; align-items:center; justify-content:center;">${iconSvg}</div>`;
 
     return `
-      <div class="notif-item-box ${isUnread ? 'unread' : ''}" ${linkAction} style="cursor:pointer;">
-        <div class="notif-icon-circle" style="background:${iconBg}; color:${iconColor}; display:flex; align-items:center; justify-content:center;">
-          ${iconSvg}
-        </div>
+      <div class="notif-item-box ${isUnread ? 'unread' : ''}" ${linkAction} style="cursor:pointer; display:flex; align-items:center; gap:12px; padding:12px 14px;">
+        ${avatarHtml}
         <div style="flex:1; min-width:0;">
-          <div class="notif-title">${escapeHtml(cleanTitle)}</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:2px;">
+            <div class="notif-title" style="margin-bottom:0;">${escapeHtml(cleanTitle)}</div>
+            ${isUnread ? '<span class="notif-pulse-dot" title="Unread"></span>' : ''}
+          </div>
           <div class="notif-message">${escapeHtml(cleanMessage)}</div>
-          <div class="notif-time">${n.created_at ? escapeHtml(n.created_at.toString().split('.')[0]) : "Recently"}</div>
+          <div class="notif-time">${escapeHtml(relativeTime)}</div>
         </div>
       </div>
     `;
