@@ -129,8 +129,8 @@
 
       <!-- ================= VIEW 1: HOME / DISCOVER TEAMS ================= -->
       <section id="viewDiscover" class="view-page-panel">
-        <!-- Hero Section -->
-        <div class="home-hero-header">
+        <!-- Desktop Hero Section (>= 768px) -->
+        <div class="home-hero-header desktop-only-flex">
           <div class="home-hero-content">
             <span class="section-kicker">TEAMS</span>
             <h1 class="home-headline">Find your team, build something great.</h1>
@@ -144,7 +144,7 @@
                   d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
               <input type="text" id="searchInput" placeholder="Search teams, ideas, skills, members..."
-                class="search-input" oninput="debounceDiscoverSearch()">
+                class="search-input" oninput="debounceDiscoverSearch(this.value)">
             </div>
             <!-- Create Team Primary CTA Button -->
             <a href="/create-team" class="btn-primary-green">
@@ -155,6 +155,30 @@
               </svg>
               <span>Create Team</span>
             </a>
+          </div>
+        </div>
+
+        <!-- Mobile Dedicated Hero Banner (< 768px) -->
+        <div class="mobile-home-hero-card mobile-only-flex">
+          <div class="mobile-hero-text-wrap">
+            <span class="mobile-hero-kicker">HACKATHONS &bull; IDEAS &bull; PEOPLE</span>
+            <h1 class="mobile-hero-title">Build<br>What Matters.</h1>
+            <p class="mobile-hero-subtitle">Find teammates, join hackathons and turn your ideas into real projects.</p>
+          </div>
+          <div class="mobile-hero-img-wrap">
+            <img src="/static/img/redesign/mobile_hero_dome.png" alt="Campus Dome" class="mobile-hero-dome-img">
+          </div>
+        </div>
+
+        <!-- Mobile Dedicated Search Bar (< 768px) -->
+        <div class="mobile-search-row mobile-only-flex">
+          <div class="search-input-box mobile-search-box">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="search-icon">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input type="text" id="mobileSearchInput" placeholder="Search teams, ideas, skills, R-IDs..."
+              class="search-input" oninput="debounceDiscoverSearch(this.value)">
           </div>
         </div>
 
@@ -171,7 +195,7 @@
               data-filter="open">Open Slots</button>
           </div>
 
-          <div class="sort-selector-wrap">
+          <div class="sort-selector-wrap desktop-only-flex">
             <span class="sort-label">Sort by</span>
             <select id="sortSelect" onchange="handleSortChange(this.value)" class="sort-dropdown">
               <option value="newest">Newest</option>
@@ -181,15 +205,36 @@
           </div>
         </div>
 
+        <!-- Mobile Section Heading (< 768px) -->
+        <div class="mobile-squads-header mobile-only-flex">
+          <h2 class="mobile-squads-title">Featured Hackathon Squads</h2>
+          <a href="javascript:void(0)" onclick="setDiscoverFilter('all')" class="mobile-view-all-link">View All &rarr;</a>
+        </div>
+
         <!-- Teams Kanban Grid -->
         <div id="teamsGridContainer" class="teams-cards-grid"></div>
+
+        <!-- Mobile Bottom Squad Creation Prompt Card (< 768px) -->
+        <div class="mobile-create-squad-cta-card mobile-only-flex">
+          <div class="cta-card-icon-wrap">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+            </svg>
+          </div>
+          <div class="cta-card-text-wrap">
+            <h4 class="cta-card-title">Don't find a team you like?</h4>
+            <p class="cta-card-sub">Create your own squad and invite others.</p>
+            <a href="/create-team" class="btn-primary-green btn-mob-cta">+ Create New Team</a>
+          </div>
+        </div>
 
         <!-- Pagination Controls with University Dome Watermark -->
         <div class="discover-pagination-container">
           <div id="discoverPagination" class="discover-pagination-wrapper"></div>
           <!-- Line Art Sketch Watermark -->
-          <div class="watermark-sketch">
-            <span class="sketch-quote">Learn<br>Grow<br>Belong<br>Together.</span>
+          <div class="watermark-sketch desktop-only-flex">
+            <img src="/static/img/redesign/campus_sketch.png" alt="Learn Grow Belong Together" class="sketch-watermark-img">
           </div>
         </div>
 
@@ -211,8 +256,8 @@
             <p class="events-subheadline">Hackathons, workshops, seminars, cultural events and more. Stay updated and never
               miss an opportunity.</p>
           </div>
-          <div class="events-hero-sketch">
-            <span class="sketch-script">Learn<br>Grow<br>Belong<br>Together</span>
+          <div class="events-hero-sketch desktop-only-flex">
+            <img src="/static/img/redesign/campus_sketch.png" alt="Campus Sketch" class="hero-sketch-img">
           </div>
         </div>
 
@@ -264,9 +309,9 @@
             <p class="resources-subheadline">All the resources you need for your academic and campus journey, curated in one
               place.</p>
           </div>
-          <div class="resources-hero-sketch">
-            <span class="sketch-script">Knowledge Shapes<br>Brighter Tomorrows.</span>
-            <span class="sketch-quote">“Better Resources. Brighter Futures.”</span>
+          <div class="resources-hero-sketch desktop-only-flex">
+            <img src="/static/img/redesign/campus_sketch.png" alt="Campus Sketch" class="hero-sketch-img">
+            <span class="sketch-quote">&ldquo;Better Resources. Brighter Futures.&rdquo;</span>
           </div>
         </div>
 
@@ -398,7 +443,7 @@
   </div><!-- /.app-enclosure-shell -->
 
   <!-- ================= NOTIFICATION SLIDE-OVER / MODAL PANEL ================= -->
-  <div id="notifOverlay" class="notif-center-overlay" onclick="closeNotificationsPanel()">
+  <div id="notifOverlay" class="notif-center-overlay" style="display:none !important;" onclick="closeNotificationsPanel()">
     <div class="notif-center-sheet" onclick="event.stopPropagation()">
       <div class="notif-center-header">
         <div style="display:flex; align-items:center; gap:8px;">
@@ -418,12 +463,12 @@
   </div>
 
   <!-- ================= CONFIRMATION MODAL OVERLAY ================= -->
-  <div id="glassModalOverlay" class="modal-backdrop-overlay">
+  <div id="glassModalOverlay" class="modal-backdrop-overlay" style="display:none !important;">
     <div class="modal-card-sheet" id="glassModalSheet"></div>
   </div>
 
   <!-- ================= STUDENT SEARCH MODAL OVERLAY (Assign Teammate) ================= -->
-  <div id="studentSearchModalOverlay" class="modal-backdrop-overlay" onclick="closeStudentSearchModal()">
+  <div id="studentSearchModalOverlay" class="modal-backdrop-overlay" style="display:none !important;" onclick="closeStudentSearchModal()">
     <div class="student-search-modal-sheet" onclick="event.stopPropagation()">
       <div class="student-search-modal-header">
         <div class="search-modal-title-group">
