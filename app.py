@@ -457,8 +457,6 @@ def auto_import_student_from_json(r_id, conn, cursor):
     return cursor.fetchone()
 
 @app.route("/")
-@app.route("/events")
-@app.route("/resources")
 @app.route("/team/<int:team_id>")
 @app.route("/create-team")
 @app.route("/profile")

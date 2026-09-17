@@ -610,13 +610,13 @@ function renderTeamsGrid(teams) {
       <article class="team-card-modern" onclick="navigateTo('/team/${team.id}')">
         <div>
           <div class="team-card-top-row">
-            <div class="team-track-left-group">
-              <div class="team-track-icon-wrap ${trackClass}">
-                <img src="${trackLogoImg}" alt="${trackLabel}">
-              </div>
-              <span class="badge-track ${trackClass}">${trackLabel}</span>
+            <div class="team-track-icon-wrap ${trackClass}">
+              <img src="${trackLogoImg}" alt="${trackLabel}" style="width: 28px; height: 28px; object-fit: contain; border-radius: 4px;">
             </div>
-            <span class="badge-open-seats">${openSeatsCount} Open Seat${openSeatsCount === 1 ? '' : 's'}</span>
+            <div class="team-badges-stack">
+              <span class="badge-track ${trackClass}">${trackLabel}</span>
+              <span class="badge-open-seats">${openSeatsCount} Open Seat${openSeatsCount === 1 ? '' : 's'}</span>
+            </div>
           </div>
 
           <h3 class="team-card-title">${escapeHtml(team.name || "Untitled Squad")}</h3>
@@ -624,20 +624,13 @@ function renderTeamsGrid(teams) {
         </div>
 
         <div>
-          <div class="team-card-avatars-and-actions">
-            <div class="team-members-avatars-row">
-              ${avatarsHtml}
-            </div>
-            <div class="mobile-card-chevron mobile-only-block">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
+          <div class="team-members-avatars-row">
+            ${avatarsHtml}
           </div>
 
           <div class="team-card-bottom-row">
             <span class="team-card-member-count">${filledCount} / ${maxMembers} Members</span>
-            <a href="/team/${team.id}" class="btn-view-team-pill desktop-only-inline-flex" onclick="event.stopPropagation();">
+            <a href="/team/${team.id}" class="btn-view-team-pill" onclick="event.stopPropagation();">
               <span>View Team</span>
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -686,7 +679,7 @@ const CAMPUS_EVENTS_DATA = [
     desc: "Innovate for a better tomorrow. Build solutions for real-world problems facing government and industry.",
     interested: 234,
     status: "Registration Open",
-    banner: "/static/img/redesign/events/event_sih.png"
+    banner: "/static/img/sih_logo.jpg"
   },
   {
     id: 2,
@@ -699,7 +692,7 @@ const CAMPUS_EVENTS_DATA = [
     desc: "Hands-on session on modern AI tools, neural architectures, and scalable LLM applications.",
     interested: 120,
     status: "Registration Open",
-    banner: "/static/img/redesign/events/event_ai.png"
+    banner: "/static/img/blank_pfp.jpg"
   },
   {
     id: 3,
@@ -712,7 +705,7 @@ const CAMPUS_EVENTS_DATA = [
     desc: "Insights from industry experts on emerging technologies, silicon design, and distributed cloud computing.",
     interested: 98,
     status: "Coming Soon",
-    banner: "/static/img/redesign/events/event_future_tech.png"
+    banner: "/static/img/blank_pfp.jpg"
   },
   {
     id: 4,
@@ -725,7 +718,7 @@ const CAMPUS_EVENTS_DATA = [
     desc: "Music, art, dance and much more. Celebrate the vibrant creative spirit and student community of JNU.",
     interested: 320,
     status: "Upcoming",
-    banner: "/static/img/redesign/events/event_cultural.png"
+    banner: "/static/img/blank_pfp.jpg"
   },
   {
     id: 5,
@@ -738,7 +731,7 @@ const CAMPUS_EVENTS_DATA = [
     desc: "Test your cybersecurity skills, binary exploitation, cryptography, and network defense in this thrilling challenge.",
     interested: 176,
     status: "Ongoing",
-    banner: "/static/img/redesign/events/event_ctf.png"
+    banner: "/static/img/ctf_logo.jpg"
   },
   {
     id: 6,
@@ -748,10 +741,10 @@ const CAMPUS_EVENTS_DATA = [
     day: "18",
     month: "DEC",
     venue: "Management Block",
-    desc: "Learn from student startup founders, hardware builders, and venture innovators about scaling from dorm rooms.",
+    desc: "Learn from student founders, early-stage builders, and venture innovators about starting tech companies.",
     interested: 64,
     status: "Upcoming",
-    banner: "/static/img/redesign/events/event_startup.png"
+    banner: "/static/img/blank_pfp.jpg"
   }
 ];
 
@@ -941,7 +934,7 @@ const CAMPUS_RESOURCES_DATA = [
     count: "2.4K+ Papers",
     desc: "Previous year question papers for all engineering, medical, science and management semesters.",
     icon: "doc",
-    img: "/static/img/redesign/resources/res_pyqs.png"
+    img: "/static/img/blank_pfp.jpg"
   },
   {
     id: 2,
@@ -951,7 +944,7 @@ const CAMPUS_RESOURCES_DATA = [
     count: "500+ Syllabi",
     desc: "Latest curriculum, course structures, credit distribution, and subject outcomes for all batches.",
     icon: "book",
-    img: "/static/img/redesign/resources/res_syllabus.png"
+    img: "/static/img/blank_pfp.jpg"
   },
   {
     id: 3,
@@ -961,7 +954,7 @@ const CAMPUS_RESOURCES_DATA = [
     count: "1.8K+ Resources",
     desc: "Curated class notes, lecture slides, lab manuals, and shared peer study materials.",
     icon: "note",
-    img: "/static/img/redesign/resources/res_notes.png"
+    img: "/static/img/blank_pfp.jpg"
   },
   {
     id: 4,
@@ -971,7 +964,7 @@ const CAMPUS_RESOURCES_DATA = [
     count: "Latest Updates",
     desc: "Important university schedules, mid-term examinations, semester end dates, and institutional holidays.",
     icon: "calendar",
-    img: "/static/img/redesign/resources/res_calendar.png"
+    img: "/static/img/blank_pfp.jpg"
   },
   {
     id: 5,
@@ -981,7 +974,7 @@ const CAMPUS_RESOURCES_DATA = [
     count: "300+ Resources",
     desc: "On-campus placement drives, interview question archives, company prep kits, and technical test rounds.",
     icon: "briefcase",
-    img: "/static/img/redesign/resources/res_placements.png"
+    img: "/static/img/blank_pfp.jpg"
   },
   {
     id: 6,
@@ -991,7 +984,7 @@ const CAMPUS_RESOURCES_DATA = [
     count: "200+ Guides",
     desc: "Industry roadmaps, open source contributions, resume building guides, and competitive programming tips.",
     icon: "users",
-    img: "/static/img/redesign/resources/res_career.png"
+    img: "/static/img/blank_pfp.jpg"
   },
   {
     id: 7,
@@ -1001,7 +994,7 @@ const CAMPUS_RESOURCES_DATA = [
     count: "150+ Ideas",
     desc: "Mini projects, major capstone architectures, IoT blueprints, and AI/ML domain research ideas.",
     icon: "bulb",
-    img: "/static/img/redesign/resources/res_ideas.png"
+    img: "/static/img/blank_pfp.jpg"
   },
   {
     id: 8,
@@ -1011,7 +1004,7 @@ const CAMPUS_RESOURCES_DATA = [
     count: "100+ Links",
     desc: "Student clubs, hackathon squads, coding chapters, cultural societies, and technical forums.",
     icon: "users",
-    img: "/static/img/redesign/resources/res_community.png"
+    img: "/static/img/blank_pfp.jpg"
   },
   {
     id: 9,
@@ -1021,7 +1014,7 @@ const CAMPUS_RESOURCES_DATA = [
     count: "250+ Links",
     desc: "Official university ERP portal, library repository, fee payments, and campus Wi-Fi instructions.",
     icon: "link",
-    img: "/static/img/redesign/resources/res_links.png"
+    img: "/static/img/blank_pfp.jpg"
   }
 ];
 
@@ -1998,8 +1991,7 @@ function openStudentSearchModalCommon(title) {
   }
 
   if (modal) {
-    modal.classList.add("active");
-    modal.style.setProperty("display", "flex", "important");
+    modal.style.display = "flex";
     document.body.classList.add("scroll-locked");
     if (input) setTimeout(() => input.focus(), 100);
   }
@@ -2007,10 +1999,7 @@ function openStudentSearchModalCommon(title) {
 
 function closeStudentSearchModal() {
   const modal = document.getElementById("studentSearchModalOverlay");
-  if (modal) {
-    modal.classList.remove("active");
-    modal.style.setProperty("display", "none", "important");
-  }
+  if (modal) modal.style.display = "none";
   document.body.classList.remove("scroll-locked");
   activeSlotIndexToAssign = null;
 }
@@ -2080,32 +2069,29 @@ function executeSlotStudentSearch(query) {
           `<span class="badge-track ctf">Available</span>`;
 
         return `
-          <div class="student-result-card">
-            <div class="student-result-left">
-              <img src="${pfp}" alt="${escapeHtml(s.name)}" class="student-result-pfp" onerror="this.src='/static/img/blank_pfp.jpg'">
-              <div class="student-result-info">
-                <div class="student-result-name-row">
-                  <span class="student-result-name">${escapeHtml(s.name)}</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #fff; border: 1px solid var(--border-subtle); border-radius: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <img src="${pfp}" alt="${escapeHtml(s.name)}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-subtle);" onerror="this.src='/static/img/blank_pfp.jpg'">
+              <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span style="font-size: 0.9375rem; font-weight: 700; color: var(--text-heading);">${escapeHtml(s.name)}</span>
                   <span class="badge-track ctf" style="padding: 2px 6px;">@${escapeHtml(s.r_id || '')}</span>
                   ${statusBadge}
                 </div>
-                <div class="student-result-sub">
+                <div style="font-size: 0.75rem; color: var(--text-secondary);">
                   ${escapeHtml(s.program || 'Engineering')} &bull; Batch ${escapeHtml(s.admission_year || '2025')}
                 </div>
-                <div class="student-result-meta">
-                  ${s.email ? `<span><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> ${escapeHtml(s.email)}</span>` : ''}
+                <div style="font-size: 0.72rem; color: var(--text-muted);">
+                  ${escapeHtml(s.email || '')}
                 </div>
               </div>
             </div>
 
-            <div class="student-result-actions">
+            <div style="flex-shrink: 0; margin-left: 12px;">
               ${hasTeam ? `
-                <button disabled class="btn-assign-action disabled">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-                  <span>In Team</span>
-                </button>
+                <button disabled class="btn-back-link" style="opacity: 0.5; font-size: 0.75rem;">In Team</button>
               ` : `
-                <button onclick="handleAssignStudentToSlot('${s.r_id}', '${escapeHtml(s.name)}', '${pfp}')" class="btn-assign-action">
+                <button onclick="handleAssignStudentToSlot('${s.r_id}', '${escapeHtml(s.name)}', '${pfp}')" class="btn-primary-green" style="height: 36px; padding: 0 14px; font-size: 0.75rem;">
                   + Add Teammate
                 </button>
               `}
@@ -3003,21 +2989,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadUserFromSession(() => {
     handleCurrentRoute();
     loadNotifications();
-});
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    closeStudentSearchModal();
-    closeNotificationsPanel();
-    closeEventDetailModal();
-    closeResourceDetailModal();
-    closeStudentDetailModal();
-    closeMobileDrawer();
-    const dropdown = document.getElementById("desktopProfileDropdown");
-    if (dropdown) dropdown.classList.remove("show");
-    const notifDropdown = document.getElementById("desktopNotifDropdown");
-    if (notifDropdown) notifDropdown.classList.remove("show");
-  }
+  });
 });
 
 
