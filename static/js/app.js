@@ -232,12 +232,18 @@ function handleCurrentRoute() {
     }
   }
 
-  // Login Viewport Centering & Footer Visibility Control
-  const isLoginRoute = path === "/login";
+  // Login & Create Team & Events & Resources Viewport Isolation & Footer Visibility Control
+  const isLoginRoute = path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp";
+  const isCreateTeamRoute = path === "/create-team";
+  const isEventsRoute = path === "/events";
+  const isResourcesRoute = path === "/resources";
   document.body.classList.toggle("is-login-route", isLoginRoute);
+  document.body.classList.toggle("is-create-team-route", isCreateTeamRoute);
+  document.body.classList.toggle("is-events-route", isEventsRoute);
+  document.body.classList.toggle("is-resources-route", isResourcesRoute);
   const footerEl = document.getElementById("homescreenFooter");
   if (footerEl) {
-    footerEl.style.display = isLoginRoute ? "none" : "";
+    footerEl.style.display = (isLoginRoute || isCreateTeamRoute || isEventsRoute || isResourcesRoute) ? "none" : "";
   }
 
   // Hide discover top header pitch on interior views (login, admin, profile, etc.)
@@ -272,11 +278,30 @@ function handleCurrentRoute() {
       p.classList.add("active");
       loadProfileView();
     }
-  } else if (path === "/login") {
+  } else if (path === "/events") {
+    const p = document.getElementById("viewEvents");
+    if (p) {
+      p.classList.add("active");
+      loadEventsView();
+    }
+  } else if (path === "/resources") {
+    const p = document.getElementById("viewResources");
+    if (p) {
+      p.classList.add("active");
+      loadResourcesView();
+    }
+  } else if (path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp") {
     const p = document.getElementById("viewLogin");
     if (p) {
       p.classList.add("active");
       loadLoginView();
+      if (path === "/course-select" || path === "/select-program") {
+        showAuthStep('course_select');
+      } else if (path === "/enter-details" || path === "/sync-details") {
+        showAuthStep('sync');
+      } else if (path === "/otp" || path === "/verify-otp") {
+        showAuthStep(2);
+      }
     }
   } else if (path === "/students") {
     const p = document.getElementById("viewStudents");
@@ -301,6 +326,32 @@ function handleCurrentRoute() {
 
 function highlightActiveNavLinks() {
   const path = window.location.pathname;
+
+  // Modern Desktop Top Navbar Links (Home, Events, Resources)
+  document.querySelectorAll(".desktop-nav-link").forEach(link => {
+    const linkPath = link.getAttribute("data-path") || link.getAttribute("href");
+    if (linkPath === path || (linkPath !== "/" && path.startsWith(linkPath))) {
+      link.classList.add("active");
+    } else {
+      link.classList.remove("active");
+    }
+  });
+
+  // Mobile Bottom Navigation Bar Items (Home, Events, Resources, Profile)
+  document.querySelectorAll(".mobile-bottom-nav-item").forEach(item => {
+    const navKey = item.getAttribute("data-nav");
+    let isMatch = false;
+    if (navKey === "home" && (path === "/" || path.startsWith("/team/"))) isMatch = true;
+    else if (navKey === "events" && path === "/events") isMatch = true;
+    else if (navKey === "resources" && path === "/resources") isMatch = true;
+    else if (navKey === "profile" && path === "/profile") isMatch = true;
+
+    if (isMatch) {
+      item.classList.add("active");
+    } else {
+      item.classList.remove("active");
+    }
+  });
 
   // Desktop top navbar links (AgroControl layout)
   document.querySelectorAll(".nav-capsule-link").forEach(link => {
@@ -451,12 +502,10 @@ function renderNavUserSlots() {
 
     if (topSlot) {
       topSlot.innerHTML = `
-        <button type="button" onclick="toggleDesktopProfileDropdown(event)" class="desktop-top-user-pill" style="display:flex; align-items:center; gap:10px; padding:4px 12px 4px 6px; width:220px; border-radius:var(--radius-pill); background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.1); cursor:pointer; transition:all var(--trans-fast);" aria-label="Open Account Menu">
-          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1.5px solid var(--badge-mint); flex-shrink:0;" onerror="this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
-          <div style="min-width:0; flex:1; text-align:left;">
-            <div style="font-weight:750; font-size:0.8125rem; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(cleanName)}</div>
-          </div>
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; color:var(--text-sage); flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+        <button type="button" onclick="toggleDesktopProfileDropdown(event)" class="desktop-top-user-pill" style="display:flex; align-items:center; gap:8px; padding:4px 12px 4px 5px; border-radius:9999px; background:#FFFFFF; border:1px solid #E2E8F0; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.06);" aria-label="Open Account Menu">
+          <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(cleanName)}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1.5px solid #16A34A; flex-shrink:0;" onerror="this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
+          <span style="font-weight:750; font-size:0.8125rem; color:#0F172A; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px;">${escapeHtml(cleanName)}</span>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:13px; height:13px; color:#64748B; flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
         </button>
       `;
     }
@@ -817,8 +866,8 @@ function loadDiscoverView() {
 function setDiscoverFilter(type) {
   discoverFilter = type;
   discoverCurrentPage = 1;
-  document.querySelectorAll(".filter-btn, .filter-menu-item").forEach(btn => {
-    if (btn.getAttribute("data-filter") === type || (type === 'all' && btn.id === 'btnFilterAll') || (type === 'open' && btn.id === 'btnFilterOpen')) {
+  document.querySelectorAll(".filter-btn, .filter-menu-item, .discover-filter-pill").forEach(btn => {
+    if (btn.getAttribute("data-filter") === type || (type === 'all' && (btn.id === 'btnFilterAll' || btn.getAttribute('data-filter') === 'all')) || (type === 'open' && (btn.id === 'btnFilterOpen' || btn.getAttribute('data-filter') === 'open'))) {
       btn.classList.add("active");
     } else {
       btn.classList.remove("active");
@@ -841,8 +890,37 @@ function setDiscoverFilter(type) {
   }
 }
 
+function handleSortTeams(val) {
+  window.discoverSortOrder = val || 'newest';
+  discoverCurrentPage = 1;
+  if (clientCache.teamsList) {
+    renderFilteredTeams(clientCache.teamsList);
+  }
+}
+
+function handleMobileSearch(el) {
+  const query = el ? el.value.trim().toLowerCase() : "";
+  discoverSearchTerm = query;
+  const desktopSearch = document.getElementById("searchInput");
+  if (desktopSearch && desktopSearch.value !== (el ? el.value : "")) {
+    desktopSearch.value = el ? el.value : "";
+  }
+  discoverCurrentPage = 1;
+  if (clientCache.teamsList) {
+    renderFilteredTeams(clientCache.teamsList);
+  }
+}
+
+function toggleMobileFilterMenu() {
+  const filterCycle = ['all', 'sih', 'ctf', 'open'];
+  const nextIdx = (filterCycle.indexOf(discoverFilter) + 1) % filterCycle.length;
+  setDiscoverFilter(filterCycle[nextIdx]);
+  const friendlyNames = { all: "All Teams", sih: "Smart India Hackathon", ctf: "CTF Hackathon", open: "Open Slots" };
+  showToast(`Filtering: ${friendlyNames[filterCycle[nextIdx]] || 'All'}`, "info");
+}
+
 let discoverCurrentPage = 1;
-const TEAMS_PER_PAGE = 10;
+const TEAMS_PER_PAGE = 6;
 
 function debounceDiscoverSearch() {
   clearTimeout(discoverSearchDebounce);
@@ -851,6 +929,10 @@ function debounceDiscoverSearch() {
     if (input) {
       discoverSearchTerm = input.value.trim().toLowerCase();
       discoverCurrentPage = 1;
+      const mobInput = document.getElementById("mobileSearchInput");
+      if (mobInput && mobInput.value !== input.value) {
+        mobInput.value = input.value;
+      }
       if (clientCache.teamsList) {
         renderFilteredTeams(clientCache.teamsList);
       }
@@ -871,14 +953,14 @@ function renderSingleTeamCard(team) {
 
   let statusPill = "";
   if (isFull) {
-    statusPill = `<span class="status-capsule full-pill" style="font-size:0.6875rem; padding:2px 8px;">● Full (6/6)</span>`;
+    statusPill = `<span class="status-capsule full-pill">● Full (6/6)</span>`;
   } else {
-    statusPill = `<span class="status-capsule open-pill" style="font-size:0.6875rem; padding:2px 8px;">● ${openSlots} Open Seats</span>`;
+    statusPill = `<span class="status-capsule open-pill">● ${openSlots} Open ${openSlots === 1 ? 'Seat' : 'Seats'}</span>`;
   }
 
   const hackBadgeHtml = isCtf
-    ? `<span class="hackathon-tag-pill ctf" style="font-size:0.6875rem; padding:3px 9px;"><img src="/static/img/ctf_logo.jpg" alt="CTF" style="width:16px; height:16px;"> CTF Hackathon</span>`
-    : `<span class="hackathon-tag-pill sih" style="font-size:0.6875rem; padding:3px 9px;"><img src="/static/img/sih_logo.jpg" alt="SIH" style="width:16px; height:16px;"> Smart India (SIH)</span>`;
+    ? `<span class="hackathon-tag-pill ctf"><img src="/static/img/ctf_logo.jpg" alt="CTF" style="width:16px; height:16px; object-fit:contain;"> CTF HACKATHON</span>`
+    : `<span class="hackathon-tag-pill sih"><img src="/static/img/sih_logo.jpg" alt="SIH" style="width:16px; height:16px; object-fit:contain;"> SMART INDIA HACKATHON</span>`;
 
   // 6 Pronounced Roster Avatars: filled member avatars + empty circle avatars
   const members = team.members || [];
@@ -899,7 +981,7 @@ function renderSingleTeamCard(team) {
     } else {
       rosterAvatarsHtml += `
         <div class="roster-avatar-item empty" title="Open Seat">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
         </div>
       `;
     }
@@ -907,13 +989,13 @@ function renderSingleTeamCard(team) {
 
   return `
     <article class="team-forest-card" onclick="navigateTo('/team/${team.id}')" style="cursor:pointer;">
-      <div>
+      <div style="flex:1;">
         <div class="team-card-top-row">
           ${hackBadgeHtml}
           ${statusPill}
         </div>
 
-        <h2 class="team-card-title">${escapeHtml(team.name || 'Untitled Team')}</h2>
+        <h2 class="team-card-title">${escapeHtml(team.name || 'Untitled Squad')}</h2>
         <p class="team-card-pitch">${escapeHtml(team.description || "Looking for teammates for the upcoming hackathon.")}</p>
 
         <div class="team-card-roster-row">
@@ -922,8 +1004,13 @@ function renderSingleTeamCard(team) {
       </div>
 
       <div class="team-card-bottom-row">
-        <span class="meta-members-tag" style="font-size:0.72rem; color:var(--text-sage); font-weight:700;">${count} / 6 Members</span>
-        <span class="btn-black-pill sm" style="font-size:0.75rem; padding:5px 12px;">View Team ➔</span>
+        <span class="team-card-members-label">${count} / 6 Members</span>
+        <span class="btn-card-view-team">View Team &rarr;</span>
+        <span class="team-card-mobile-arrow">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </span>
       </div>
     </article>
   `;
@@ -939,7 +1026,7 @@ function renderFilteredTeams(teams) {
     teams = [];
   }
 
-  let filtered = teams;
+  let filtered = [...teams];
 
   if (discoverFilter === "open") {
     filtered = filtered.filter(t => t && !t.is_full);
@@ -957,6 +1044,26 @@ function renderFilteredTeams(teams) {
       const memberMatch = (t.members || []).some(m => m && (((m.name || "") + "").toLowerCase().includes(discoverSearchTerm) || ((m.r_id || "") + "").toLowerCase().includes(discoverSearchTerm)));
       return nameMatch || descMatch || memberMatch;
     });
+  }
+
+  // Sorting
+  window.discoverSortOrder = window.discoverSortOrder || 'newest';
+  if (window.discoverSortOrder === 'slots') {
+    filtered.sort((a, b) => {
+      const aCount = a.member_count || (a.members ? a.members.length : 0);
+      const bCount = b.member_count || (b.members ? b.members.length : 0);
+      return (6 - bCount) - (6 - aCount);
+    });
+  } else if (window.discoverSortOrder === 'members') {
+    filtered.sort((a, b) => {
+      const aCount = a.member_count || (a.members ? a.members.length : 0);
+      const bCount = b.member_count || (b.members ? b.members.length : 0);
+      return bCount - aCount;
+    });
+  } else if (window.discoverSortOrder === 'name') {
+    filtered.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  } else {
+    filtered.sort((a, b) => (b.id || 0) - (a.id || 0));
   }
 
   if (filtered.length === 0) {
@@ -1075,8 +1182,9 @@ function openTeamDetailModal(teamId) {
   const container = document.getElementById("teamDetailModalContainer");
   if (!modal || !container) return;
 
-  // Lock background body scroll
+  // Lock background body & html scroll (prevents Windows double scrollbars)
   document.body.classList.add("scroll-locked");
+  document.documentElement.classList.add("scroll-locked");
   modal.style.display = "block";
   modal.style.pointerEvents = "auto";
   modal.scrollTop = 0;
@@ -1151,6 +1259,7 @@ function closeTeamDetailModal(restoreUrl = true) {
     modal.style.pointerEvents = "none";
   }
   document.body.classList.remove("scroll-locked");
+  document.documentElement.classList.remove("scroll-locked");
   if (restoreUrl && window.location.pathname.startsWith("/team/")) {
     history.pushState(null, "", "/");
     highlightActiveNavLinks();
@@ -1174,9 +1283,16 @@ function switchTeamTab(tabName, teamId) {
     p.classList.toggle("active", p.id === `pane-${tabName}`);
   });
 
+  const stickyAction = document.querySelector(".team-mobile-sticky-action");
+  if (stickyAction) {
+    stickyAction.style.display = (tabName === 'team') ? '' : 'none';
+  }
+
   if (tabName === "discussion") {
     loadTeamChatMessages(teamId, true);
     startTeamChatPolling(teamId);
+  } else {
+    stopTeamChatPolling();
   }
 }
 
@@ -1341,10 +1457,32 @@ function renderFullTeamDetail(team) {
             </button>
 
             ${currentUser ? `
-              <div onclick="navigateTo('/profile')" class="team-user-pill" title="View Profile">
-                <img src="${escapeHtml(navAvatar)}" alt="${escapeHtml(navUserName)}" class="team-user-avatar" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
-                <span class="team-user-name">${escapeHtml(navUserName.toUpperCase())}</span>
-                <svg class="team-user-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              <div class="team-user-dropdown-wrap">
+                <button type="button" onclick="toggleTeamUserDropdown(event)" class="team-user-pill" id="teamUserDropdownBtn" aria-expanded="false" aria-label="User menu">
+                  <img src="${escapeHtml(navAvatar)}" alt="${escapeHtml(navUserName)}" class="team-user-avatar" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
+                  <span class="team-user-name">${escapeHtml(navUserName.toUpperCase())}</span>
+                  <svg class="team-user-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </button>
+                <div class="team-user-dropdown-menu" id="teamUserDropdownMenu" style="display:none;">
+                  <div class="team-user-dropdown-header">
+                    <span class="team-user-dropdown-name">${escapeHtml(navUserName)}</span>
+                    <span class="team-user-dropdown-rid">@${escapeHtml(currentUser.id || '')}</span>
+                  </div>
+                  <div class="team-user-dropdown-divider"></div>
+                  <a href="/profile" onclick="closeTeamDetailModal(false); navigateTo('/profile');" class="team-user-dropdown-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span>My Profile</span>
+                  </a>
+                  <a href="javascript:void(0)" onclick="closeTeamDetailModal(false); navigateTo('/directory');" class="team-user-dropdown-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span>Student Directory</span>
+                  </a>
+                  <div class="team-user-dropdown-divider"></div>
+                  <button type="button" onclick="handleLogout()" class="team-user-dropdown-item danger">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    <span>Sign Out</span>
+                  </button>
+                </div>
               </div>
             ` : `
               <a href="/login" class="btn-agro-yellow-pill" style="padding:7px 18px; font-size:0.85rem;">Sign In</a>
@@ -1360,6 +1498,7 @@ function renderFullTeamDetail(team) {
             <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="team-crest-img" style="height:32px;">
             <div class="team-brand-text">
               <span class="team-brand-name" style="font-size:1.15rem;">JnuMate<span class="team-brand-dot">.</span></span>
+              <span class="mobile-brand-sub" style="font-size:0.62rem; color:#166534; font-weight:700; letter-spacing:0.04em;">JAIPUR NATIONAL UNIVERSITY</span>
             </div>
           </a>
 
@@ -1370,7 +1509,29 @@ function renderFullTeamDetail(team) {
               </svg>
             </button>
             ${currentUser ? `
-              <img src="${escapeHtml(navAvatar)}" alt="Profile" onclick="navigateTo('/profile')" class="team-user-avatar" style="width:32px; height:32px; cursor:pointer;" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
+              <div class="team-user-dropdown-wrap">
+                <img src="${escapeHtml(navAvatar)}" alt="Profile" onclick="toggleTeamUserDropdown(event)" class="team-user-avatar" style="width:32px; height:32px; cursor:pointer;" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
+                <div class="team-user-dropdown-menu" id="teamUserDropdownMenuMobile" style="display:none; right:0; top:40px; min-width:180px;">
+                  <div class="team-user-dropdown-header">
+                    <span class="team-user-dropdown-name">${escapeHtml(navUserName)}</span>
+                    <span class="team-user-dropdown-rid">@${escapeHtml(currentUser.id || '')}</span>
+                  </div>
+                  <div class="team-user-dropdown-divider"></div>
+                  <a href="/profile" onclick="closeTeamDetailModal(false); navigateTo('/profile');" class="team-user-dropdown-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span>My Profile</span>
+                  </a>
+                  <a href="javascript:void(0)" onclick="closeTeamDetailModal(false); navigateTo('/directory');" class="team-user-dropdown-item">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span>Student Directory</span>
+                  </a>
+                  <div class="team-user-dropdown-divider"></div>
+                  <button type="button" onclick="handleLogout()" class="team-user-dropdown-item danger">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
             ` : `
               <a href="/login" class="btn-agro-yellow-pill" style="padding:5px 12px; font-size:0.75rem;">Sign In</a>
             `}
@@ -1404,17 +1565,18 @@ function renderFullTeamDetail(team) {
 
         <!-- Squad Hero Card -->
         <div class="team-hero-card">
-          <div class="team-hero-top-mobile">
+          <div class="team-hero-icon-col">
             <div class="team-hero-icon-box">
               <img src="${trackLogoSrc}" alt="${escapeHtml(team.name)}" class="team-hero-icon-img">
-            </div>
-            <div style="min-width:0; flex:1;">
-              <h1 class="team-hero-title">${escapeHtml(team.name)}</h1>
-              <div class="team-hero-subtitle">${trackSubtitle}</div>
             </div>
           </div>
 
           <div class="team-hero-info">
+            <div class="team-hero-title-wrap">
+              <h1 class="team-hero-title">${escapeHtml(team.name)}</h1>
+              <div class="team-hero-subtitle">${trackSubtitle}</div>
+            </div>
+
             <div class="team-hero-desc">
               ${escapeHtml(team.description || 'A university-wide challenge to learn, compete, collaborate and grow together.')}
             </div>
@@ -1681,13 +1843,13 @@ function renderFullTeamDetail(team) {
               </div>
             </div>
 
-            <!-- Live Messages Stream -->
-            <div id="teamChatMessagesList" class="team-discussion-stream">
-              <div style="padding:60px 0; text-align:center;">${renderIosSpinner('sm', 'Loading squad discussion...')}</div>
-            </div>
-
-            <!-- Message Composer -->
+            <!-- Live Messages Stream or Locked State -->
             ${(isLeader || isMember) ? `
+              <div id="teamChatMessagesList" class="team-discussion-stream">
+                <div style="padding:60px 0; text-align:center;">${renderIosSpinner('sm', 'Loading squad discussion...')}</div>
+              </div>
+
+              <!-- Message Composer -->
               <form id="teamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-discussion-composer">
                 <input type="text" id="teamChatInput" placeholder="Message your squad... (Press Enter to send)" maxlength="1000" autocomplete="off" class="team-discussion-input">
                 <button type="submit" id="teamChatSendBtn" class="team-discussion-send-btn" aria-label="Send message" title="Send message">
@@ -1698,12 +1860,13 @@ function renderFullTeamDetail(team) {
                 </button>
               </form>
             ` : `
-              <div style="margin-top:16px; padding:16px 20px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                  <span style="font-size:0.875rem; color:#475569;">Squad Live Discussion is private to confirmed squad teammates and captain.</span>
+              <div class="team-discussion-locked-card">
+                <div class="team-discussion-locked-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                 </div>
-                <button onclick="switchTeamTab('team', '${team.id}')" class="btn-paper-assign" style="font-size:0.8125rem; padding:8px 16px;">Go to Team Tab to Apply</button>
+                <h4 style="font-size:1.1rem; font-weight:800; color:#0F172A; margin:0 0 6px 0;">Private Squad Discussion</h4>
+                <p style="font-size:0.875rem; color:#64748B; max-width:420px; line-height:1.5; margin:0 0 16px 0;">This live discussion stream is encrypted and reserved exclusively for confirmed teammates and the squad captain.</p>
+                <button onclick="switchTeamTab('team', '${team.id}')" class="btn-agro-yellow-pill" style="padding:9px 20px; font-size:0.85rem;">View Team Roster & Apply</button>
               </div>
             `}
           </div>
@@ -1732,7 +1895,7 @@ function renderFullTeamDetail(team) {
       </footer>
 
       <!-- ================= MOBILE STICKY ACTION BAR ================= -->
-      <div class="team-mobile-sticky-action">
+      <div class="team-mobile-sticky-action" style="${activeTab === 'team' ? '' : 'display:none !important;'}">
         ${(!isMember && !isLeader && !isFull && !hasPendingRequest) ? `
           <button onclick="handleMobileJoinRequestClick('${team.id}')" class="btn-mobile-req-join">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
@@ -1815,9 +1978,17 @@ function loadTeamChatMessages(teamId, isInitial) {
 
   const currentRid = currentUser ? currentUser.id : "";
   fetch(`/api/teams/${teamId}/messages?r_id=${encodeURIComponent(currentRid)}`)
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error("Unauthorized or fetch failed");
+      return res.json();
+    })
     .then(data => {
-      if (!data.success) return;
+      if (!data.success) {
+        if (isInitial) {
+          container.innerHTML = `<div class="team-chat-error-hint">${escapeHtml(data.message || "Discussion is restricted to active squad members.")}</div>`;
+        }
+        return;
+      }
       const msgs = data.messages || [];
 
       // Create unique signature to prevent unnecessary DOM wipes & flickering
@@ -1834,7 +2005,8 @@ function loadTeamChatMessages(teamId, isInitial) {
 
       const isScrolledToBottom = (container.scrollHeight - container.scrollTop - container.clientHeight) < 60;
 
-      container.innerHTML = msgs.map(m => {
+      let chatRowsHtml = `<div class="team-chat-day-divider"><span>Today</span></div>`;
+      chatRowsHtml += msgs.map(m => {
         const isYou = Boolean(currentRid && m.sender_r_id && (m.sender_r_id.toUpperCase() === currentRid.toUpperCase()));
         const cleanSender = (m.sender_name || m.sender_r_id || "Teammate").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim();
         const av = getStudentAvatarSrc(m.sender_avatar, m.sender_r_id, cleanSender);
@@ -1853,11 +2025,17 @@ function loadTeamChatMessages(teamId, isInitial) {
         `;
       }).join("");
 
+      container.innerHTML = chatRowsHtml;
+
       if (isInitial || isScrolledToBottom) {
         container.scrollTop = container.scrollHeight;
       }
     })
-    .catch(() => {});
+    .catch(() => {
+      if (isInitial && container) {
+        container.innerHTML = `<div class="team-chat-error-hint">Discussion is restricted to active squad members.</div>`;
+      }
+    });
 }
 
 function handleSendTeamChatMessage(e, teamId) {
@@ -1876,7 +2054,7 @@ function handleSendTeamChatMessage(e, teamId) {
   input.value = "";
   if (sendBtn) {
     sendBtn.disabled = true;
-    sendBtn.innerHTML = renderIosSpinner('sm');
+    sendBtn.innerHTML = `<span class="inline-btn-spinner" style="width:14px; height:14px; border-top-color:#16A34A; border-right-color:#16A34A;"></span>`;
   }
 
   // Optimistic UI render
@@ -1910,7 +2088,7 @@ function handleSendTeamChatMessage(e, teamId) {
       if (sendBtn) {
         sendBtn.disabled = false;
         sendBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"></line>
             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
           </svg>
@@ -1927,7 +2105,7 @@ function handleSendTeamChatMessage(e, teamId) {
       if (sendBtn) {
         sendBtn.disabled = false;
         sendBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"></line>
             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
           </svg>
@@ -2154,7 +2332,7 @@ function submitJoinRequest(teamId) {
 
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Sending Join Request...</span></span>`;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Sending Join Request...</span></span>`;
   }
 
   fetch(`/api/teams/${teamId}/request`, {
@@ -2951,20 +3129,20 @@ function loadCreateTeamView() {
         const t = teams[0];
         const teamName = t.name || "another team";
         container.innerHTML = `
-          <div class="create-team-container" style="max-width:640px; margin:40px auto; padding:0 16px;">
-            <div style="background:rgba(239, 68, 68, 0.08); border:1.5px solid rgba(239, 68, 68, 0.35); border-radius:18px; padding:32px 24px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.3);">
-              <div style="width:52px; height:52px; border-radius:50%; background:rgba(239, 68, 68, 0.15); color:#ef4444; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto; font-size:1.5rem; font-weight:bold;">
+          <div class="create-team-page-shell" style="max-width:600px; margin:40px auto; padding:0 16px;">
+            <div style="background:#FFFFFF; border:1.5px solid #FCA5A5; border-radius:20px; padding:36px 28px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.05);">
+              <div style="width:52px; height:52px; border-radius:50%; background:#FEE2E2; color:#EF4444; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto; font-size:1.4rem; font-weight:bold;">
                 ✕
               </div>
-              <h2 class="font-serif" style="font-size:1.5rem; color:#fff; margin-bottom:10px;">Already in a Squad</h2>
-              <p style="color:var(--text-sage); font-size:0.95rem; line-height:1.5; margin-bottom:24px;">
+              <h2 class="font-serif" style="font-size:1.6rem; color:#0A2618; margin-bottom:10px;">Already in a Squad</h2>
+              <p style="color:#64748B; font-size:0.95rem; line-height:1.5; margin-bottom:24px;">
                 You cannot create a team until you leave team '<strong>${escapeHtml(teamName)}</strong>'. Each student can only be in one team at a time.
               </p>
               <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-                <button onclick="openTeamDetailModal('${t.id}')" class="btn-black-pill" style="padding:10px 22px;">
+                <button onclick="openTeamDetailModal('${t.id}')" class="btn-create-submit" style="padding:10px 22px;">
                   View My Team (${escapeHtml(teamName)}) ➔
                 </button>
-                <a href="/" class="btn-outline-pill" style="padding:10px 20px;">
+                <a href="/" onclick="event.preventDefault(); navigateTo('/');" class="btn-create-cancel" style="padding:10px 20px;">
                   Back to Discover
                 </a>
               </div>
@@ -2983,97 +3161,176 @@ function renderCreateTeamForm() {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="create-team-container">
-      <div style="margin-bottom:16px;">
-        <a href="/" class="btn-outline-pill">
-          ← Cancel & Back to Discover
+    <div class="create-team-page-shell">
+      <!-- Sub-Header Bar -->
+      <div class="create-team-sub-bar">
+        <a href="/" onclick="event.preventDefault(); navigateTo('/');" class="btn-create-back">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px;">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span class="desktop-text">Back to Discover</span>
+          <span class="mobile-text">Back</span>
         </a>
+
+        <div class="create-team-callout-pill">
+          <span class="callout-sparkle">✨</span>
+          <span>Create your team and start building something amazing!</span>
+        </div>
       </div>
 
-      <div class="create-team-wide-layout">
-        <!-- Left Column: Team Details & Pitch Form -->
-        <div class="create-team-col-form">
-          <div class="greeting-sup-text" style="color:var(--badge-mint);">6-Seat Team Builder</div>
-          <h1 class="font-serif" style="font-size:2rem; margin-bottom:6px;">Create New Team</h1>
-          <p style="color:var(--text-sage); font-size:0.875rem; margin-bottom:18px;">
-            Name your squad, select your hackathon track, and assign teammates or leave slots open for applicants.
+      <div class="create-team-split-grid">
+        <!-- Left Column: Form Card -->
+        <div class="create-team-form-card">
+          <div class="create-eyebrow">6-Seat Team Builder</div>
+          <h1 class="create-title">Create New Team</h1>
+          <p class="create-subtitle">
+            Form your squad, choose a hackathon track, and assign teammates or leave slots open for join requests.
           </p>
 
-          <div style="display:flex; flex-direction:column; gap:16px;">
-            <!-- Category Selector -->
-            <div>
-              <label class="form-label-forest" style="margin-bottom:8px;">Choose Hackathon Category *</label>
-              <div class="hackathon-selector-grid compact">
-                <div class="hackathon-select-card sih ${selectedHackathonType === 'sih' ? 'active' : ''}" onclick="selectHackathonType('sih')">
-                  <img src="/static/img/sih_logo.jpg" alt="SIH Hackathon">
-                  <div style="min-width:0; flex:1;">
-                    <div style="font-weight:750; font-size:0.875rem; color:var(--text-white);">Smart India Hackathon (SIH)</div>
-                    <div style="font-size:0.6875rem; color:var(--text-sage-light);">Hardware & Software editions</div>
-                  </div>
+          <!-- 1. Hackathon Category -->
+          <div style="margin-bottom: 22px;">
+            <label class="create-field-label">1. Choose Hackathon Category <span class="req-star">*</span></label>
+            <div class="hackathon-cat-grid">
+              <!-- SIH Card -->
+              <div class="hackathon-cat-card ${selectedHackathonType === 'sih' ? 'selected' : ''}" id="catCardSih" onclick="selectHackathonType('sih')">
+                <div class="cat-check-badge" style="${selectedHackathonType === 'sih' ? '' : 'display:none;'}">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
                 </div>
-
-                <div class="hackathon-select-card ctf ${selectedHackathonType === 'ctf' ? 'active' : ''}" onclick="selectHackathonType('ctf')">
-                  <img src="/static/img/ctf_logo.jpg" alt="CTF Hackathon">
-                  <div style="min-width:0; flex:1;">
-                    <div style="font-weight:750; font-size:0.875rem; color:var(--text-white);">Capture The Flag (CTF)</div>
-                    <div style="font-size:0.6875rem; color:var(--text-sage-light);">Cybersecurity & Defense</div>
-                  </div>
+                <img src="/static/img/sih_logo.jpg" alt="Smart India Hackathon" class="cat-icon-img">
+                <div class="cat-card-text-col">
+                  <div class="cat-card-title">Smart India Hackathon (SIH)</div>
+                  <div class="cat-card-sub">Hardware & Software editions</div>
+                  <div class="cat-card-tagline">Build innovative solutions for a Viksit Bharat</div>
                 </div>
               </div>
-            </div>
 
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
-              <div>
-                <label class="form-label-forest">Team Title *</label>
-                <input type="text" id="teamNameInput" placeholder="e.g. CyberStorm, NeuroVision" class="input-forest">
-              </div>
-              <div>
-                <label class="form-label-forest">Official Team WhatsApp Link</label>
-                <input type="text" id="teamWaInput" placeholder="https://chat.whatsapp.com/..." class="input-forest">
+              <!-- CTF Card -->
+              <div class="hackathon-cat-card ${selectedHackathonType === 'ctf' ? 'selected' : ''}" id="catCardCtf" onclick="selectHackathonType('ctf')">
+                <div class="cat-check-badge" style="${selectedHackathonType === 'ctf' ? '' : 'display:none;'}">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <img src="/static/img/ctf_logo.jpg" alt="Capture The Flag" class="cat-icon-img">
+                <div class="cat-card-text-col">
+                  <div class="cat-card-title">Capture The Flag (CTF)</div>
+                  <div class="cat-card-sub">Cybersecurity & Defense</div>
+                  <div class="cat-card-tagline">Test your skills. Secure the future.</div>
+                </div>
               </div>
             </div>
+          </div>
 
+          <!-- 2 & 3: Inputs Row (Team Title & WhatsApp) -->
+          <div class="create-inputs-row">
+            <!-- 2. Team Title -->
             <div>
-              <label class="form-label-forest">Project Pitch / Hackathon Idea *</label>
-              <textarea id="teamDescInput" rows="3" placeholder="Briefly describe what problem statement you're tackling and what skills you are looking for..." class="input-forest"></textarea>
+              <label class="create-field-label" for="teamNameInput">2. Team Title <span class="req-star">*</span></label>
+              <input type="text" id="teamNameInput" maxlength="50" placeholder="e.g. CyberStorm, NeuroVision" class="create-text-input" oninput="updateCreateTeamCharCounts()">
+              <div class="char-count-row">
+                <span></span>
+                <span class="char-count-text" id="teamNameCount">0/50</span>
+              </div>
             </div>
 
-            <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-black-pill lg" style="width:100%; margin-top:6px;">
-              Create & Publish Team ➔
+            <!-- 3. Official WhatsApp Link -->
+            <div>
+              <label class="create-field-label" for="teamWhatsappInput">3. Official Team WhatsApp Link</label>
+              <div class="whatsapp-input-wrap">
+                <div class="whatsapp-icon-box">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                  </svg>
+                </div>
+                <input type="text" id="teamWhatsappInput" maxlength="100" placeholder="https://chat.whatsapp.com/..." class="whatsapp-input-field" oninput="updateCreateTeamCharCounts()">
+              </div>
+              <div class="char-count-row">
+                <span>This link will be used for team communication</span>
+                <span class="char-count-text" id="teamWaCount">0/100</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. Project Pitch / Hackathon Idea -->
+          <div style="margin-bottom: 22px;">
+            <label class="create-field-label" for="teamDescInput">4. Project Pitch / Hackathon Idea <span class="req-star">*</span></label>
+            <textarea id="teamDescInput" maxlength="500" rows="4" placeholder="Briefly describe what problem statement you're tackling and what skills you are looking for..." class="create-textarea" oninput="updateCreateTeamCharCounts()"></textarea>
+            <div class="char-count-row">
+              <span>Be clear and concise. You can always edit this later.</span>
+              <span class="char-count-text" id="teamDescCount">0/500</span>
+            </div>
+          </div>
+
+          <!-- 5. Mobile Only Roster Strip (< 768px) -->
+          <div class="mobile-roster-section">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+              <label class="create-field-label" style="margin-bottom:0;">5. Team Roster (6 Seats)</label>
+              <span class="assigned-pill-badge" id="createTeamFilledCountMobile">1/6 Assigned</span>
+            </div>
+            <div class="mobile-roster-strip" id="createTeamMobileStrip"></div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="create-form-actions-row">
+            <a href="/" onclick="event.preventDefault(); navigateTo('/');" class="btn-create-cancel">
+              Cancel
+            </a>
+            <button onclick="submitCreateTeam()" id="btnSubmitCreate" class="btn-create-submit">
+              <span>Create Team ➔</span>
             </button>
           </div>
         </div>
 
-        <!-- Right Column: Interactive 6-Seat Team Builder & Tips -->
-        <div class="create-team-col-roster">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <!-- Right Column: Roster Card & Guidelines (Desktop) -->
+        <div class="create-team-roster-card">
+          <div class="roster-header-row">
             <div>
-              <div class="form-label-forest" style="margin-bottom:2px; font-size:0.9375rem;">6-Seat Team Roster</div>
-              <span style="font-size:0.75rem; color:var(--text-sage);">Click open seats to assign teammates by R-ID. Empty seats stay open for join requests.</span>
+              <h3 class="roster-title">5. Team Roster (6 Seats)</h3>
+              <p class="roster-subtitle">Assign teammates by searching with their R-ID. Empty seats stay open for join requests.</p>
             </div>
-            <span class="status-capsule open" id="createTeamFilledCount">1/6 Assigned</span>
+            <span class="assigned-pill-badge" id="createTeamFilledCountDesktop">1/6 Assigned</span>
           </div>
 
-          <div id="createTeamSlotsContainer" class="create-slots-grid"></div>
+          <!-- 3x2 Grid -->
+          <div id="createTeamSlotsContainer" class="create-roster-grid"></div>
 
-          <!-- Compact Horizontal Tips Bar -->
-          <div class="create-team-tips-banner">
-            <div class="tip-item">
-              <span class="tip-bullet">01</span>
-              <span>Click open seat to assign from directory</span>
+          <!-- 4-Tip Guidelines Box -->
+          <div class="create-guide-box">
+            <div class="guide-item">
+              <span class="guide-num">01</span>
+              <span>Click on any open seat to assign from directory</span>
             </div>
-            <div class="tip-item">
-              <span class="tip-bullet">02</span>
+            <div class="guide-item">
+              <span class="guide-num">02</span>
               <span>Leave slots unassigned to accept join requests</span>
             </div>
-            <div class="tip-item">
-              <span class="tip-bullet">03</span>
+            <div class="guide-item">
+              <span class="guide-num">03</span>
               <span>Add WhatsApp link so members connect instantly</span>
             </div>
-            <div class="tip-item">
-              <span class="tip-bullet">04</span>
-              <span>SIH requires 6 members with 1+ female participant</span>
+            <div class="guide-item">
+              <span class="guide-num">04</span>
+              <span>SIH requires 6 members with at least 1 female participant</span>
             </div>
+          </div>
+
+          <!-- Decorative Watermark Banner -->
+          <div class="create-watermark-banner">
+            <div class="banner-left-wrap">
+              <div class="leaf-icon-box">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="#10B981">
+                  <path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/>
+                </svg>
+              </div>
+              <div>
+                <h4 class="banner-title">Ideas grow together.</h4>
+                <div class="banner-sub">Build. Collaborate. Innovate.</div>
+              </div>
+            </div>
+            <img src="/static/img/redesign/otp_dome_mobile.png" alt="University Dome" class="banner-dome-watermark" onerror="this.style.display='none';">
           </div>
         </div>
       </div>
@@ -3085,78 +3342,103 @@ function renderCreateTeamForm() {
 
 function renderCreateTeamSeats() {
   const container = document.getElementById("createTeamSlotsContainer");
-  const countBadge = document.getElementById("createTeamFilledCount");
-  if (!container) return;
+  const mobileStrip = document.getElementById("createTeamMobileStrip");
+  const countBadgeDesktop = document.getElementById("createTeamFilledCountDesktop");
+  const countBadgeMobile = document.getElementById("createTeamFilledCountMobile");
 
   const totalFilled = 1 + selectedFriends.length;
-  if (countBadge) countBadge.innerText = `${totalFilled}/6 Assigned`;
+  const countText = `${totalFilled}/6 Assigned`;
+  if (countBadgeDesktop) countBadgeDesktop.innerText = countText;
+  if (countBadgeMobile) countBadgeMobile.innerText = countText;
 
   const leaderAvatar = getStudentAvatarSrc((currentUser && currentUser.avatar_url), (currentUser && currentUser.id));
+  const leaderName = (currentUser && currentUser.name) || "Leader";
+  const leaderFirstName = leaderName.split(" ")[0];
   const leaderAcademicYear = (currentUser && (currentUser.academic_year || getAcademicYearByRid(currentUser.id))) || "Student";
 
-  let seatsHtml = `
-    <!-- Slot 1: Team Leader -->
-    <div class="create-slot-box leader">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-        <span style="font-size:0.6875rem; font-weight:800; text-transform:uppercase; color:var(--badge-mint);">Seat 1 • Leader (You)</span>
-        <span class="status-capsule leader" style="font-size:0.625rem; padding:2px 8px;">Leader</span>
-      </div>
-      <div style="display:flex; align-items:center; gap:10px;">
-        <div class="seat-avatar">
-          <img src="${escapeHtml(leaderAvatar)}" alt="${escapeHtml((currentUser && currentUser.name) || '')}" onerror="this.src=DEFAULT_STUDENT_AVATAR;">
+  // 1. Desktop 3x2 Grid HTML
+  if (container) {
+    let desktopHtml = `
+      <!-- Slot 1: Team Leader -->
+      <div class="roster-seat-card leader">
+        <div class="seat-top-row">
+          <span class="seat-top-label">SEAT 1 LEADER (YOU)</span>
+          <span class="seat-crown-icon">👑</span>
         </div>
-        <div style="min-width:0; flex:1;">
-          <div style="font-size:0.875rem; font-weight:750; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            ${escapeHtml((currentUser && currentUser.name) || 'Leader')}
-          </div>
-          <div style="font-size:0.6875rem; color:var(--text-sage);">
-            @${escapeHtml((currentUser && currentUser.id) || '')} • ${escapeHtml(leaderAcademicYear)}
-          </div>
-        </div>
+        <img src="${escapeHtml(leaderAvatar)}" alt="${escapeHtml(leaderName)}" class="roster-avatar-img" onerror="this.src=DEFAULT_STUDENT_AVATAR;">
+        <div class="seat-student-name">${escapeHtml(leaderName)}</div>
+        <div class="seat-student-sub">${escapeHtml(leaderAcademicYear)}</div>
+        <span class="seat-leader-pill">Leader</span>
       </div>
-    </div>
-  `;
+    `;
 
-  for (let i = 0; i < 5; i++) {
-    if (i < selectedFriends.length) {
-      const f = selectedFriends[i];
-      const friendAvatar = getStudentAvatarSrc(f.avatar_url, f.id);
-      const friendAcademicYear = f.academic_year || getAcademicYearByRid(f.id);
-      seatsHtml += `
-        <div class="create-slot-box filled">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-            <span style="font-size:0.6875rem; font-weight:800; text-transform:uppercase; color:var(--badge-mint);">Seat ${i + 2} • Teammate</span>
-            <button onclick="removeFriendFromTeam('${escapeAttr(f.id)}')" class="btn-danger-pill" style="padding:2px 8px; font-size:0.6875rem;">
-              ✕ Remove
-            </button>
-          </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div class="seat-avatar">
-              <img src="${escapeHtml(friendAvatar)}" alt="${escapeHtml(f.name)}" onerror="this.src=DEFAULT_STUDENT_AVATAR;">
+    for (let i = 0; i < 5; i++) {
+      if (i < selectedFriends.length) {
+        const f = selectedFriends[i];
+        const friendAvatar = getStudentAvatarSrc(f.avatar_url, f.id);
+        const friendAcademicYear = f.academic_year || getAcademicYearByRid(f.id);
+        desktopHtml += `
+          <div class="roster-seat-card filled">
+            <div class="seat-top-row">
+              <span class="seat-top-label" style="color:#64748B;">SEAT ${i + 2} TEAMMATE</span>
+              <button onclick="removeFriendFromTeam('${escapeAttr(f.id)}')" class="btn-remove-seat" title="Remove teammate">
+                ✕ Remove
+              </button>
             </div>
-            <div style="min-width:0; flex:1;">
-              <div style="font-size:0.875rem; font-weight:750; color:var(--text-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                ${escapeHtml(f.name)}
-              </div>
-              <div style="font-size:0.6875rem; color:var(--text-sage);">
-                @${escapeHtml(f.id)} • ${escapeHtml(friendAcademicYear)}
-              </div>
-            </div>
+            <img src="${escapeHtml(friendAvatar)}" alt="${escapeHtml(f.name)}" class="roster-avatar-img" onerror="this.src=DEFAULT_STUDENT_AVATAR;">
+            <div class="seat-student-name">${escapeHtml(f.name)}</div>
+            <div class="seat-student-sub">@${escapeHtml(f.id)} • ${escapeHtml(friendAcademicYear)}</div>
           </div>
-        </div>
-      `;
-    } else {
-      seatsHtml += `
-        <div class="create-slot-box empty" onclick="openSlotStudentSearchModal(${i})" title="Click to assign teammate, or leave open">
-          <div class="slot-empty-icon">+</div>
-          <div class="slot-empty-title">Seat ${i + 2} • Open Slot</div>
-          <div class="slot-empty-subtitle">Click to add teammate, or leave open for join requests</div>
-        </div>
-      `;
+        `;
+      } else {
+        desktopHtml += `
+          <div class="roster-seat-card empty" onclick="openSlotStudentSearchModal(${i})" title="Click to assign teammate, or leave open">
+            <div class="roster-plus-circle">+</div>
+            <div class="seat-empty-title">Seat ${i + 2}<br>Open Slot</div>
+            <div class="seat-empty-sub">Click to add teammate, or leave open for join requests</div>
+          </div>
+        `;
+      }
     }
+    container.innerHTML = desktopHtml;
   }
 
-  container.innerHTML = seatsHtml;
+  // 2. Mobile 6-Slot Strip HTML
+  if (mobileStrip) {
+    let mobileHtml = `
+      <!-- Mobile Slot 1: Leader -->
+      <div class="mobile-roster-slot leader">
+        <div class="mobile-slot-num">1</div>
+        <div class="mobile-slot-leader-tag">Leader (You)</div>
+        <img src="${escapeHtml(leaderAvatar)}" alt="${escapeHtml(leaderName)}" class="mobile-slot-avatar" onerror="this.src=DEFAULT_STUDENT_AVATAR;">
+        <div class="mobile-slot-name">${escapeHtml(leaderFirstName)}</div>
+      </div>
+    `;
+
+    for (let i = 0; i < 5; i++) {
+      if (i < selectedFriends.length) {
+        const f = selectedFriends[i];
+        const friendAvatar = getStudentAvatarSrc(f.avatar_url, f.id);
+        const friendFirstName = (f.name || "").split(" ")[0];
+        mobileHtml += `
+          <div class="mobile-roster-slot filled">
+            <button onclick="removeFriendFromTeam('${escapeAttr(f.id)}')" class="mobile-slot-remove" title="Remove">✕</button>
+            <div class="mobile-slot-num">${i + 2}</div>
+            <img src="${escapeHtml(friendAvatar)}" alt="${escapeHtml(f.name)}" class="mobile-slot-avatar" onerror="this.src=DEFAULT_STUDENT_AVATAR;">
+            <div class="mobile-slot-name">${escapeHtml(friendFirstName)}</div>
+          </div>
+        `;
+      } else {
+        mobileHtml += `
+          <div class="mobile-roster-slot empty" onclick="openSlotStudentSearchModal(${i})" title="Click to assign teammate">
+            <div class="mobile-slot-num">${i + 2}</div>
+            <div class="mobile-slot-plus">+</div>
+          </div>
+        `;
+      }
+    }
+    mobileStrip.innerHTML = mobileHtml;
+  }
 }
 
 /* ==========================================================================
@@ -3454,19 +3736,44 @@ let selectedHackathonType = "sih";
 
 function selectHackathonType(type) {
   selectedHackathonType = type;
-  document.querySelectorAll(".hackathon-select-card").forEach(c => {
-    if (c.classList.contains(type)) {
-      c.classList.add("active");
-    } else {
-      c.classList.remove("active");
-    }
-  });
+  const sihCard = document.getElementById("catCardSih");
+  const ctfCard = document.getElementById("catCardCtf");
+  if (sihCard) {
+    sihCard.classList.toggle("selected", type === "sih");
+    const badge = sihCard.querySelector(".cat-check-badge");
+    if (badge) badge.style.display = type === "sih" ? "" : "none";
+  }
+  if (ctfCard) {
+    ctfCard.classList.toggle("selected", type === "ctf");
+    const badge = ctfCard.querySelector(".cat-check-badge");
+    if (badge) badge.style.display = type === "ctf" ? "" : "none";
+  }
+}
+
+function updateCreateTeamCharCounts() {
+  const nameInput = document.getElementById("teamNameInput");
+  const nameCount = document.getElementById("teamNameCount");
+  if (nameInput && nameCount) {
+    nameCount.innerText = `${nameInput.value.length}/50`;
+  }
+
+  const waInput = document.getElementById("teamWhatsappInput") || document.getElementById("teamWaInput");
+  const waCount = document.getElementById("teamWaCount");
+  if (waInput && waCount) {
+    waCount.innerText = `${waInput.value.length}/100`;
+  }
+
+  const descInput = document.getElementById("teamDescInput");
+  const descCount = document.getElementById("teamDescCount");
+  if (descInput && descCount) {
+    descCount.innerText = `${descInput.value.length}/500`;
+  }
 }
 
 function submitCreateTeam() {
   const nameInput = document.getElementById("teamNameInput");
   const descInput = document.getElementById("teamDescInput");
-  const waInput = document.getElementById("teamWhatsappInput");
+  const waInput = document.getElementById("teamWhatsappInput") || document.getElementById("teamWaInput");
   const btn = document.getElementById("btnSubmitCreate");
 
   const name = nameInput ? nameInput.value.trim() : "";
@@ -3475,12 +3782,19 @@ function submitCreateTeam() {
 
   if (!name) {
     showToast("Team title is required", "error");
+    if (nameInput) nameInput.focus();
+    return;
+  }
+
+  if (!desc) {
+    showToast("Project pitch is required", "error");
+    if (descInput) descInput.focus();
     return;
   }
 
   if (btn) {
     btn.disabled = true;
-    btn.innerText = "Creating Team...";
+    btn.innerHTML = `<span class="inline-btn-spinner" style="width:16px; height:16px; border-width:2px; margin-right:8px;"></span><span>Creating Team...</span>`;
   }
 
   fetch("/api/teams/create", {
@@ -3500,7 +3814,7 @@ function submitCreateTeam() {
     .then(data => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Create & Publish Team ➔";
+        btn.innerHTML = `<span>Create Team ➔</span>`;
       }
       if (data.success && data.team_id) {
         showToast("Team published successfully!", "success");
@@ -3530,7 +3844,7 @@ function submitCreateTeam() {
     .catch(() => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Create & Publish Team ➔";
+        btn.innerHTML = `<span>Create Team ➔</span>`;
       }
       showToast("Network error creating team", "error");
     });
@@ -3663,41 +3977,80 @@ let isVerifyingOtp = false;
 let pendingStudentProfile = null;
 
 function renderAuthProfileSpotlight(student, targetEmail) {
-  const spotlightContainer = document.getElementById("authStep2ProfileSpotlight");
+  const otpSpotlightContainer = document.getElementById("otpProfileSpotlight");
+  const emailNoticeEl = document.getElementById("otpTargetEmailText");
+  const oldSpotlightContainer = document.getElementById("authStep2ProfileSpotlight");
   const bannerContainer = document.getElementById("authStep2DispatchBanner");
-  if (!spotlightContainer) return;
+  if (!student) return;
 
   const rawAvatar = student.avatar_url || "";
   const avatarSrc = getStudentAvatarSrc(rawAvatar, student.r_id);
-  const cleanName = (student.name || student.r_id || "Student").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
-  const displayEmail = student.jnu_email || targetEmail || student.email || `${student.r_id}@student.edu`;
-  const academicYear = student.current_year || student.academic_year || getAcademicYearByRid(student.r_id);
-  const program = student.program || student.course || "";
-  const gender = student.gender || "";
+  const cleanName = (student.name || student.r_id || "manjari").replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "manjari";
+  const displayEmail = targetEmail || student.email || student.jnu_email || (student.r_id ? `${student.r_id.toLowerCase()}@student.edu` : "manjarigulpadiya@gmail.com");
+  const academicYear = student.current_year || student.academic_year || getAcademicYearByRid(student.r_id) || "4th Year Student";
+  const program = student.program || student.course || "B.Tech CSE (AI & ML) Hons.-Samatrix";
+  const gender = student.gender || "Female";
+  const rid = student.r_id || student.rid || "R42695";
 
   const isBlankAvatar = !rawAvatar || rawAvatar.includes("dicebear") || rawAvatar.includes("data:image");
+  const effectiveAvatar = isBlankAvatar ? "" : avatarSrc;
 
-  spotlightContainer.innerHTML = `
-    <div class="auth-spotlight-compact-card">
-      <img src="${escapeHtml(isBlankAvatar ? DEFAULT_STUDENT_AVATAR : avatarSrc)}" 
-           data-raw-src="${escapeHtml(rawAvatar)}" 
-           alt="${escapeHtml(cleanName)}" 
-           class="auth-spotlight-compact-avatar"
-           onerror="failedAvatarUrls.add(this.getAttribute('data-raw-src')); this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
-      <div class="auth-spotlight-compact-meta">
-        <div class="auth-spotlight-compact-name">${escapeHtml(cleanName)}</div>
-        <div class="auth-spotlight-compact-subline">
-          <span class="student-rid-badge" style="font-size:0.6875rem; padding:1px 6px;">@${escapeHtml(student.r_id)}</span>
-          ${academicYear ? `<span>• ${escapeHtml(academicYear)}</span>` : ""}
-          ${gender ? `<span>• ${escapeHtml(gender)}</span>` : ""}
+  if (emailNoticeEl) {
+    emailNoticeEl.innerText = displayEmail;
+  }
+
+  if (otpSpotlightContainer) {
+    otpSpotlightContainer.innerHTML = `
+      <div class="otp-spotlight-box">
+        <div class="otp-spotlight-avatar">
+          ${effectiveAvatar ? `
+            <img src="${escapeHtml(effectiveAvatar)}" 
+                 data-raw-src="${escapeHtml(rawAvatar)}" 
+                 alt="${escapeHtml(cleanName)}" 
+                 class="otp-spotlight-avatar-img"
+                 onerror="this.onerror=null; this.src='/static/img/blank_pfp.jpg';">
+          ` : `
+            <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
+              <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
+              <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
+              <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
+            </svg>
+          `}
         </div>
-        ${(program && program !== "Student") ? `
-          <div class="auth-spotlight-compact-program" title="${escapeAttr(program)}">${escapeHtml(program)}</div>
-        ` : ""}
-        <div class="auth-spotlight-compact-email" title="${escapeAttr(displayEmail)}">${escapeHtml(displayEmail)}</div>
+        <div class="otp-spotlight-info">
+          <div class="otp-student-name">${escapeHtml(cleanName)}</div>
+          <div class="otp-student-rid-wrap">
+            <span class="otp-student-rid-badge">R-ID: <strong>${escapeHtml(rid)}</strong></span>
+          </div>
+          <div class="otp-student-program">${escapeHtml(program)}</div>
+          <div class="otp-student-meta">${escapeHtml(academicYear)} &bull; ${escapeHtml(gender)}</div>
+        </div>
       </div>
-    </div>
-  `;
+    `;
+  }
+
+  if (oldSpotlightContainer) {
+    oldSpotlightContainer.innerHTML = `
+      <div class="auth-spotlight-compact-card">
+        <img src="${escapeHtml(effectiveAvatar)}" 
+             alt="${escapeHtml(cleanName)}" 
+             class="auth-spotlight-compact-avatar"
+             onerror="this.src=DEFAULT_STUDENT_AVATAR;">
+        <div class="auth-spotlight-compact-meta">
+          <div class="auth-spotlight-compact-name">${escapeHtml(cleanName)}</div>
+          <div class="auth-spotlight-compact-subline">
+            <span class="student-rid-badge" style="font-size:0.6875rem; padding:1px 6px;">@${escapeHtml(student.r_id)}</span>
+            ${academicYear ? `<span>• ${escapeHtml(academicYear)}</span>` : ""}
+            ${gender ? `<span>• ${escapeHtml(gender)}</span>` : ""}
+          </div>
+          ${(program && program !== "Student") ? `
+            <div class="auth-spotlight-compact-program">${escapeHtml(program)}</div>
+          ` : ""}
+          <div class="auth-spotlight-compact-email">${escapeHtml(displayEmail)}</div>
+        </div>
+      </div>
+    `;
+  }
 
   if (bannerContainer) {
     bannerContainer.innerHTML = `
@@ -3707,11 +4060,95 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   }
 }
 
+function setupOtpDigitInputs() {
+  const boxes = document.querySelectorAll(".otp-digit-box");
+  if (!boxes || boxes.length === 0) return;
+
+  boxes.forEach((box, idx) => {
+    box.value = "";
+    box.classList.remove("has-val");
+
+    box.oninput = function(e) {
+      const val = this.value.replace(/\D/g, "");
+      if (val.length > 1) {
+        this.value = val.slice(-1);
+      } else {
+        this.value = val;
+      }
+
+      if (this.value) {
+        this.classList.add("has-val");
+        if (idx < boxes.length - 1) {
+          boxes[idx + 1].focus();
+        }
+      } else {
+        this.classList.remove("has-val");
+      }
+
+      const code = Array.from(boxes).map(b => b.value.trim()).join("");
+      const hiddenInput = document.getElementById("otpCodeInput");
+      if (hiddenInput) hiddenInput.value = code;
+
+      if (code.length === 6) {
+        verifyEmailOtpCode();
+      }
+    };
+
+    box.onkeydown = function(e) {
+      if (e.key === "Backspace") {
+        if (!this.value && idx > 0) {
+          boxes[idx - 1].focus();
+          boxes[idx - 1].value = "";
+          boxes[idx - 1].classList.remove("has-val");
+          e.preventDefault();
+        } else {
+          this.classList.remove("has-val");
+        }
+      } else if (e.key === "ArrowLeft" && idx > 0) {
+        boxes[idx - 1].focus();
+      } else if (e.key === "ArrowRight" && idx < boxes.length - 1) {
+        boxes[idx + 1].focus();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        verifyEmailOtpCode();
+      }
+    };
+
+    box.onpaste = function(e) {
+      e.preventDefault();
+      const pasteData = (e.clipboardData || window.clipboardData).getData("text");
+      const digits = (pasteData || "").replace(/\D/g, "").slice(0, 6);
+      if (!digits) return;
+
+      for (let i = 0; i < boxes.length; i++) {
+        if (i < digits.length) {
+          boxes[i].value = digits[i];
+          boxes[i].classList.add("has-val");
+        } else {
+          boxes[i].value = "";
+          boxes[i].classList.remove("has-val");
+        }
+      }
+
+      const lastIdx = Math.min(digits.length, boxes.length) - 1;
+      if (lastIdx >= 0) boxes[lastIdx].focus();
+
+      const hiddenInput = document.getElementById("otpCodeInput");
+      if (hiddenInput) hiddenInput.value = digits;
+
+      if (digits.length === 6) {
+        verifyEmailOtpCode();
+      }
+    };
+  });
+}
+
 function loadLoginView() {
   const container = document.getElementById("loginViewContainer");
   if (!container) return;
 
-  if (currentUser && !currentUser.needs_program) {
+  const curPath = window.location.pathname;
+  if (currentUser && !currentUser.needs_program && curPath !== "/course-select" && curPath !== "/select-program" && curPath !== "/enter-details" && curPath !== "/sync-details" && curPath !== "/otp" && curPath !== "/verify-otp") {
     const dest = postLoginRedirect || "/";
     postLoginRedirect = null;
     navigateTo(dest);
@@ -3727,233 +4164,1100 @@ function loadLoginView() {
   `).join("");
 
   container.innerHTML = `
-    <div class="login-screen-wrap">
-      <div class="login-editorial-card" id="loginCardFrame">
+    <!-- Step 1 Container: Sign In (Desktop 2-Column Split & Mobile Lockup) -->
+    <div id="loginStep1Wrap" class="login-step-view-wrap" style="width:100%; min-height:100vh;">
+      <div class="login-split-layout">
+        <!-- Left Visual Pane (Desktop Only) -->
+        <aside class="login-visual-pane">
+          <img src="/static/img/redesign/login_campus_facade.png" alt="Learn Grow Belong - Jaipur National University" class="login-visual-img">
+        </aside>
+
+        <!-- Right Interactive Form Pane (Desktop & Mobile) -->
+        <main class="login-form-pane">
+          <div class="login-ambient-curve-top"></div>
+          <div class="login-ambient-curve-bottom"></div>
+
+          <!-- Top Bar with "New here? Learn more →" -->
+          <header class="login-top-bar">
+            <a href="javascript:void(0)" onclick="navigateTo('/about')" class="login-learn-more-link">
+              <span>New here?</span>
+              <span class="accent-text">Learn more &rarr;</span>
+            </a>
+          </header>
+
+          <!-- Mobile Brand Lockup (Hidden on Desktop, Visible on Mobile) -->
+          <div class="login-mobile-brand-lockup">
+            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="login-mobile-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
+            <div class="login-mobile-brand-title">JnuMate<span class="brand-dot">.</span></div>
+            <div class="login-mobile-brand-sub">JAIPUR NATIONAL UNIVERSITY</div>
+          </div>
+
+          <!-- Center Floating White Sign In Card -->
+          <div class="login-center-stage">
+            <div class="login-editorial-card" id="loginCardFrame">
+              
+              <!-- Desktop JNU Crest Logo (Centered on Desktop Card, Hidden on Mobile) -->
+              <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="login-card-crest" id="loginCardCrest" onerror="this.src='/static/img/jnu_logo.jpg';">
+
+              <h1 class="login-card-title" id="loginPortalTitle">Student Sign In</h1>
+              <p class="login-card-sub" id="loginPortalSubtitle">Enter your College R-ID to continue</p>
+
+              <!-- Step 1: Input R-ID & QR Option -->
+              <div id="authStep1" class="auth-step-panel">
+                <div class="login-field-group">
+                  <label class="login-field-label">COLLEGE R-ID</label>
+                  <div class="login-input-wrap">
+                    <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <input type="text" id="authRidInput" placeholder="E.g. R15006" class="login-input-field" autocomplete="username" autofocus onkeyup="if(event.key==='Enter') submitInitialRid()">
+                  </div>
+                </div>
+
+                <button type="button" onclick="submitInitialRid()" id="btnSendOtp" class="btn-login-submit">
+                  <span>Sign In &rarr;</span>
+                </button>
+
+                <div class="login-or-divider">
+                  <span>or</span>
+                </div>
+
+                <div class="login-qr-tile" onclick="openUniversityQrScanner()" title="Scan University ID Card">
+                  <div class="login-qr-icon-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="7" height="7"></rect>
+                      <rect x="14" y="3" width="7" height="7"></rect>
+                      <rect x="14" y="14" width="7" height="7"></rect>
+                      <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                  </div>
+                  <div class="login-qr-text-box">
+                    <div class="login-qr-title">Use QR from University ID Card</div>
+                    <div class="login-qr-sub">Faster and more secure</div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="login-qr-chevron">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Step 1B: Legacy fallback panel (replaced by loginStepSyncWrap) -->
+              <div id="authStepSyncNotice" class="auth-step-panel" style="display:none; text-align:left;">
+                <div style="text-align:center; margin-bottom:16px;">
+                  <div class="auth-instagram-avatar-box">
+                    <img id="legacySyncAvatarImg" src="${INSTAGRAM_EMPTY_AVATAR}" alt="No profile photo" style="width:72px; height:72px; border-radius:50%; border:2px solid #16A34A; box-shadow:0 4px 12px rgba(22,163,74,0.15);">
+                  </div>
+                  <div style="margin-top:8px;">
+                    <span class="student-rid-badge" style="font-size:0.875rem; padding:4px 14px; background:#DCFCE7; color:#166534;">
+                      R-ID: <strong id="legacySyncRidBanner"></strong>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="auth-sync-text" style="background:#FEF3C7; border:1px solid #FCD34D; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:0.8rem; color:#92400E; line-height:1.45; text-align:center;">
+                  Due to server load we couldn't fetch your profile automatically. Please enter your details manually.
+                </div>
+
+                <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
+                  <div>
+                    <label class="login-field-label">Full Name *</label>
+                    <input type="text" id="legacySyncNameInput" placeholder="Your full name as per college ID" class="input-forest" style="background:#FFFFFF; color:#0F172A; border:1.5px solid #E2E8F0;">
+                  </div>
+
+                  <div>
+                    <label class="login-field-label">Course / Degree Program *</label>
+                    <select id="legacySyncCourseSelect" class="input-forest" style="background:#FFFFFF; color:#0F172A; border:1.5px solid #E2E8F0;">
+                      ${courseOptionsHtml}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="login-field-label">Gender *</label>
+                    <select id="legacySyncGenderSelect" class="input-forest" style="background:#FFFFFF; color:#0F172A; border:1.5px solid #E2E8F0;">
+                      <option value="Male" selected>Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="login-field-label">Email *</label>
+                    <input type="email" id="legacySyncEmailInput" placeholder="e.g. name@gmail.com" class="input-forest" style="background:#FFFFFF; color:#0F172A; border:1.5px solid #E2E8F0;">
+                  </div>
+                </div>
+
+                <button onclick="submitSyncDetailsAndSendOtp()" id="legacyBtnSendSyncOtp" class="btn-login-submit" style="width:100%;">
+                  <span>Send Verification Code &rarr;</span>
+                </button>
+
+                <button onclick="showAuthStep(1)" class="auth-link-btn" style="width:100%; text-align:center; margin-top:10px; display:block;">
+                  &larr; Change R-ID
+                </button>
+              </div>
+
+              <!-- Step 2B: Course Selection Prompt -->
+              <div id="authStepCourseSelect" class="auth-step-panel" style="display:none; text-align:left;">
+                <div style="text-align:center; margin-bottom:16px;">
+                  <div class="auth-student-big-avatar-box" style="margin-bottom:8px;">
+                    <img id="courseSelectAvatar" src="${DEFAULT_STUDENT_AVATAR}" alt="Student" class="auth-student-big-avatar" style="width:72px; height:72px; border-radius:50%; border:2px solid #16A34A;">
+                  </div>
+                  <h2 id="courseSelectStudentName" class="font-serif" style="font-size:1.35rem; color:#0F172A; margin-bottom:4px;"></h2>
+                  <span class="student-rid-badge" style="font-size:0.8125rem; padding:3px 12px; background:#DCFCE7; color:#166534;">
+                    R-ID: <strong id="courseSelectRid"></strong>
+                  </span>
+                </div>
+
+                <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:12px 14px; margin-bottom:16px; text-align:center;">
+                  <div style="font-weight:700; color:#166534; font-size:0.875rem; margin-bottom:2px;">Select Your Academic Program</div>
+                  <div style="font-size:0.75rem; color:#64748B;">Please choose your course to finish setting up your student profile.</div>
+                </div>
+
+                <div class="login-field-group" style="margin-bottom:18px;">
+                  <label class="login-field-label">Degree / Academic Program *</label>
+                  <select id="authCourseSelectInput" class="input-forest" style="background:#FFFFFF; color:#0F172A; border:1.5px solid #E2E8F0; font-size:0.9375rem; padding:12px 14px;">
+                    ${courseOptionsHtml}
+                  </select>
+                </div>
+
+                <button onclick="submitUserCourseSelection()" id="btnSubmitCourseSelect" class="btn-login-submit">
+                  <span>Save & Continue &rarr;</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <footer class="login-footer-row">
+            <span class="login-footer-copy">&copy; 2026 Jaipur National University. All rights reserved.</span>
+            <div class="login-footer-links">
+              <a href="javascript:void(0)" onclick="showToast('Help portal available on main campus site', 'info')" class="login-footer-link">Help</a>
+              <span>|</span>
+              <a href="javascript:void(0)" onclick="showToast('Privacy policy: Student data strictly protected under JNU regulations', 'info')" class="login-footer-link">Privacy</a>
+              <span>|</span>
+              <a href="mailto:inbox.afrozalam@gmail.com" class="login-footer-link">Contact</a>
+            </div>
+          </footer>
+
+        </main>
+      </div>
+    </div>
+
+    <!-- Step 2 Container: OTP Verification (Matches media_1789820266688.jpg) -->
+    <div id="loginStep2Wrap" class="login-step-view-wrap" style="display:none; width:100%; min-height:100vh;">
+      <div class="otp-page-layout">
         
-        <!-- Official JNU Transparent Logo Merged with Portal (Hidden on Step 2 & Course Select) -->
-        <div class="login-jnu-logo-box">
-          <img src="/static/img/jnu_logo.png" alt="Jaipur National University Logo" class="jnu-signin-logo" onerror="this.src='/static/img/jnu_logo.jpg';">
+        <!-- Desktop Top Bar (Hidden on mobile < 768px) -->
+        <header class="otp-desktop-top-bar">
+          <div class="otp-top-brand" onclick="navigateTo('/')">
+            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="otp-top-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
+            <div class="otp-top-title-wrap">
+              <div class="otp-top-title">JnuMate<span class="brand-dot">.</span></div>
+              <div class="otp-top-subtitle">JAIPUR NATIONAL UNIVERSITY</div>
+            </div>
+          </div>
+
+          <!-- Center Navigation Links -->
+          <nav class="otp-top-nav-links">
+            <a href="/" class="otp-top-nav-link" onclick="event.preventDefault(); navigateTo('/')">Home</a>
+            <a href="/events" class="otp-top-nav-link" onclick="event.preventDefault(); navigateTo('/events')">Events</a>
+            <a href="/resources" class="otp-top-nav-link" onclick="event.preventDefault(); navigateTo('/resources')">Resources</a>
+          </nav>
+
+          <!-- Right Actions Cluster -->
+          <div class="otp-top-actions">
+            <div class="otp-top-bell-btn" onclick="showToast('No new notifications', 'info')" title="Notifications">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </div>
+            
+            <div class="otp-top-user-pill" onclick="showAuthStep(1)" title="Sign In with R-ID">
+              <div class="otp-top-avatar-circle">
+                <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
+                  <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
+                  <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
+                  <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
+                </svg>
+              </div>
+              <span class="otp-top-user-name">Sign In</span>
+              <svg class="otp-top-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </div>
+        </header>
+
+        <!-- Mobile Top Bar (Shown only on mobile < 768px) -->
+        <header class="otp-mobile-top-bar">
+          <div class="otp-mobile-brand" onclick="navigateTo('/')">
+            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="otp-mobile-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
+            <div class="otp-mobile-title-wrap">
+              <div class="otp-mobile-title">JnuMate<span class="brand-dot">.</span></div>
+              <div class="otp-mobile-subtitle">JAIPUR NATIONAL UNIVERSITY</div>
+            </div>
+          </div>
+
+          <div class="otp-mobile-actions">
+            <div class="otp-mobile-bell-btn" onclick="showToast('No new notifications', 'info')">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </div>
+            
+            <div class="otp-mobile-avatar-circle" onclick="showAuthStep(1)">
+              <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
+                <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
+                <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
+                <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
+              </svg>
+            </div>
+          </div>
+        </header>
+
+        <!-- Main Workspace Stage -->
+        <main class="otp-main-workspace">
+          
+          <!-- Left Editorial Typography Column (Desktop Only >= 768px) -->
+          <div class="otp-left-editorial-col">
+            <div class="otp-editorial-title">
+              Learn<br>
+              Grow<br>
+              Belong<br>
+              Together.
+            </div>
+            <div class="otp-editorial-bar"></div>
+            <div class="otp-editorial-subtext">
+              A brighter<br>
+              tomorrow,<br>
+              together.
+            </div>
+          </div>
+
+          <!-- Left-Bottom Architectural Building Sketch (Desktop Only >= 768px) -->
+          <div class="otp-left-building-watermark">
+            <img src="/static/img/redesign/otp_desktop_building.png" alt="Jaipur National University" class="otp-left-building-img">
+          </div>
+
+          <!-- Center Column: Floating OTP Card -->
+          <div class="otp-center-card-col">
+            <div class="otp-card-frame">
+
+              <!-- Shield Padlock Badge -->
+              <div class="otp-lock-badge-wrap">
+                <div class="otp-lock-badge">
+                  <svg viewBox="0 0 44 48" width="26" height="30" fill="none">
+                    <path d="M22 2L6 8V21C6 31.5 12.8 41.2 22 44.5C31.2 41.2 38 31.5 38 21V8L22 2Z" fill="#0D5C3A"/>
+                    <!-- White Padlock -->
+                    <path d="M16.5 21V18C16.5 14.96 18.96 12.5 22 12.5C25.04 12.5 27.5 14.96 27.5 18V21H28.5C29.33 21 30 21.67 30 22.5V31.5C30 32.33 29.33 33 28.5 33H15.5C14.67 33 14 32.33 14 31.5V22.5C14 21.67 14.67 21 15.5 21H16.5ZM18.5 18V21H25.5V18C25.5 16.07 23.93 14.5 22 14.5C20.07 14.5 18.5 16.07 18.5 18ZM22 25C21.17 25 20.5 25.67 20.5 26.5C20.5 27.08 20.84 27.58 21.33 27.82L20.8 30H23.2L22.67 27.82C23.16 27.58 23.5 27.08 23.5 26.5C23.5 25.67 22.83 25 22 25Z" fill="#FFFFFF"/>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Title & Subtitle -->
+              <h1 class="otp-card-title">OTP Verification</h1>
+              <p class="otp-card-sub otp-prompt-text">Enter the 6-digit code sent to your registered email</p>
+
+              <!-- Student Profile Spotlight -->
+              <div id="otpProfileSpotlight">
+                <!-- Rendered dynamically by renderAuthProfileSpotlight -->
+              </div>
+
+              <!-- Verification Code Sent Notice Box -->
+              <div class="otp-email-notice-box" id="otpEmailNoticeBox">
+                <span class="otp-email-notice-icon">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                </span>
+                <span class="otp-email-notice-text">
+                  Verification code sent to <span class="otp-email-bold-link" id="otpTargetEmailText">manjarigulpadiya@gmail.com</span>
+                </span>
+              </div>
+
+              <!-- Prompt Label -->
+              <div class="otp-code-label">ENTER 6-DIGIT CODE</div>
+
+              <!-- 6-Digit Input Boxes -->
+              <div class="otp-digit-boxes-row" id="otpDigitBoxesRow">
+                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="otp-digit-box active" data-idx="0" autocomplete="one-time-code" autofocus>
+                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="otp-digit-box" data-idx="1">
+                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="otp-digit-box" data-idx="2">
+                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="otp-digit-box" data-idx="3">
+                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="otp-digit-box" data-idx="4">
+                <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="otp-digit-box" data-idx="5">
+              </div>
+
+              <!-- Hidden input for backwards compatibility & sync -->
+              <input type="hidden" id="otpCodeInput" value="">
+
+              <!-- Verify & Sign In Button -->
+              <button type="button" id="btnVerifyOtp" onclick="verifyEmailOtpCode()" class="btn-otp-verify-submit">
+                <span>Verify &amp; Sign In &rarr;</span>
+              </button>
+
+              <!-- Bottom Actions Row: Resend Code | Change R-ID -->
+              <div class="otp-card-footer-row">
+                <button type="button" id="btnResendOtp" onclick="handleResendOtp()" class="otp-resend-btn" disabled>
+                  Resend Code (<span id="resendCountdown">25</span>s)
+                </button>
+                <button type="button" onclick="showAuthStep(1)" class="otp-change-rid-btn">
+                  &larr; Change R-ID
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+        </main>
+
+        <!-- Mobile Bottom Illustration & Slogan (< 768px Only) -->
+        <div class="otp-mobile-bottom-section">
+          <div class="otp-mobile-sketch-wrap">
+            <img src="/static/img/redesign/otp_dome_mobile.png" alt="Jaipur National University" class="otp-mobile-sketch-img">
+          </div>
+          <div class="otp-mobile-motto">Learn &bull; Grow &bull; Belong &bull; Together.</div>
+          <div class="otp-mobile-sub-bar"></div>
         </div>
 
-        <h1 class="font-serif login-portal-title" style="font-size:1.875rem; margin-bottom:6px;">Student Sign In</h1>
-        <p class="login-portal-subtitle" style="color:var(--text-sage); font-size:0.875rem; margin-bottom:20px;">Enter your College R-ID to continue</p>
+      </div>
+    </div>
 
-        <!-- Step 1: Input R-ID -->
-        <div id="authStep1" class="auth-step-panel">
-          <div class="form-group" style="margin-bottom:16px;">
-            <label class="form-label-forest" style="text-align:left;">College R-ID</label>
-            <input type="text" id="authRidInput" placeholder="e.g. R15006" class="input-forest" style="font-weight:750; text-transform:uppercase; font-size:1.125rem; letter-spacing:0.04em; text-align:center;" onkeyup="if(event.key==='Enter') submitInitialRid()">
+    <!-- Step 3 Container: Course Selection (Matches media_1789792275560.jpg) -->
+    <div id="loginStep3Wrap" class="login-step-view-wrap" style="display:none; width:100%; min-height:100vh;">
+      <div class="course-select-page-layout">
+        
+        <!-- Desktop Top Bar (Hidden on mobile < 768px) -->
+        <header class="course-desktop-top-bar">
+          <div class="course-top-brand">
+            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="course-top-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
+            <div class="course-top-title-wrap">
+              <div class="course-top-title">JnuMate<span class="brand-dot">.</span></div>
+              <div class="course-top-subtitle">JAIPUR NATIONAL UNIVERSITY</div>
+            </div>
           </div>
 
-          <button onclick="submitInitialRid()" id="btnSendOtp" class="btn-auth-submit" style="width:100%;">
-            Sign In ➔
-          </button>
+          <div class="course-top-actions">
+            <div class="course-top-bell-btn" onclick="showToast('No new notifications', 'info')">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </div>
+            
+            <div class="course-top-user-pill">
+              <div class="course-top-avatar-circle" id="courseTopAvatarCircle">
+                <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
+                  <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
+                  <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
+                  <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
+                </svg>
+              </div>
+              <span class="course-top-user-name" id="courseTopUserName">Nishita Gumber</span>
+              <svg class="course-top-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+          </div>
+        </header>
+
+        <!-- Mobile Top Bar (Shown only on mobile < 768px) -->
+        <header class="course-mobile-top-bar">
+          <div class="course-mobile-brand">
+            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="course-mobile-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
+            <div class="course-mobile-title-wrap">
+              <div class="course-mobile-title">JnuMate<span class="brand-dot">.</span></div>
+              <div class="course-mobile-subtitle">JAIPUR NATIONAL UNIVERSITY</div>
+            </div>
+          </div>
+
+          <div class="course-mobile-actions">
+            <div class="course-mobile-bell-btn" onclick="showToast('No new notifications', 'info')">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </div>
+            
+            <div class="course-mobile-avatar-circle" id="courseMobileAvatarCircle">
+              <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
+                <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
+                <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
+                <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
+              </svg>
+            </div>
+          </div>
+        </header>
+
+        <!-- Main Workspace Stage -->
+        <main class="course-main-workspace">
+          
+          <!-- Left Editorial Typography Column (Desktop Only >= 768px) -->
+          <div class="course-left-editorial-col">
+            <div class="course-editorial-title">
+              Learn<br>
+              Grow<br>
+              Belong<br>
+              Together.
+            </div>
+            <div class="course-editorial-bar"></div>
+            <div class="course-editorial-subtext">
+              A brighter<br>
+              tomorrow,<br>
+              together.
+            </div>
+          </div>
+
+          <!-- Center Column: Floating Course Selection Card -->
+          <div class="course-center-card-col">
+            <div class="course-card-frame">
+
+              <!-- Circular Student Avatar with Rich Emerald Ring -->
+              <div class="course-card-avatar-box">
+                <div class="course-card-avatar-ring">
+                  <div id="courseCardAvatarInner" class="course-card-avatar-inner">
+                    <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
+                      <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
+                      <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
+                      <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Student Name -->
+              <h2 id="courseCardStudentName" class="course-card-student-name">Nishita Gumber</h2>
+
+              <!-- Amber R-ID Badge -->
+              <div class="course-card-rid-wrap">
+                <span class="course-card-rid-badge" id="courseCardRidBadge">
+                  R-ID: <strong id="courseCardRidVal">R44500</strong>
+                </span>
+              </div>
+
+              <!-- Mint Instruction Box -->
+              <div class="course-card-instruction-box">
+                <div class="course-instruction-heading">Select Your Academic Program</div>
+                <div class="course-instruction-sub">Please choose your course to finish setting up your student profile.</div>
+              </div>
+
+              <!-- Academic Program Form -->
+              <div class="course-form-field-group">
+                <label class="course-field-label" for="courseSelectDropdown">DEGREE / ACADEMIC PROGRAM *</label>
+                <div class="course-select-custom-wrap">
+                  <select id="courseSelectDropdown" class="course-select-input">
+                    ${courseOptionsHtml}
+                  </select>
+                  <div class="course-select-custom-arrow">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0F172A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Button -->
+              <button type="button" id="btnCourseSaveContinue" onclick="submitUserCourseSelection()" class="btn-course-save-action">
+                <span>Save &amp; Continue &rarr;</span>
+              </button>
+
+            </div>
+          </div>
+
+          <!-- Right Decorative Watermark Column (Desktop Only >= 768px) -->
+          <div class="course-right-watermark-col">
+            <div class="course-watermark-dome-wrap">
+              <img src="/static/img/redesign/otp_desktop_building.png" alt="Jaipur National University" class="course-watermark-dome-img">
+            </div>
+          </div>
+
+        </main>
+
+        <!-- Mobile Bottom Illustration (< 768px Only) -->
+        <div class="course-mobile-bottom-section">
+          <img src="/static/img/redesign/otp_dome_mobile.png" alt="Jaipur National University" class="course-mobile-dome-img">
         </div>
 
-        <!-- Step 1B: Fallback when campus database is offline or unlisted (Case 2) -->
-        <div id="authStepSyncNotice" class="auth-step-panel" style="display:none; text-align:left;">
-          <div style="text-align:center; margin-bottom:16px;">
-            <div class="auth-instagram-avatar-box">
-              <img id="syncAvatarImg" src="${INSTAGRAM_EMPTY_AVATAR}" alt="No profile photo" style="width:76px; height:76px; border-radius:50%; border:2px solid rgba(255,255,255,0.15); box-shadow:0 4px 16px rgba(0,0,0,0.3);">
-            </div>
-            <div style="margin-top:8px;">
-              <span class="student-rid-badge" style="font-size:0.875rem; padding:4px 14px;">
-                R-ID: <strong id="syncRidBanner"></strong>
-              </span>
-            </div>
-          </div>
+      </div>
+    </div>
 
-          <div class="auth-sync-text" style="background:rgba(242,169,34,0.1); border:1px solid rgba(242,169,34,0.25); border-radius:8px; padding:12px 16px; margin-bottom:16px; font-size:0.8125rem; color:#FFD479; line-height:1.45; text-align:center;">
-            Due to server load we couldn't fetch your data. Enter your details manually to continue.
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
-            <div>
-              <label class="form-label-forest">Full Name *</label>
-              <input type="text" id="syncNameInput" placeholder="Your full name as per college ID" class="input-forest">
-            </div>
-
-            <div>
-              <label class="form-label-forest">Course / Degree Program *</label>
-              <select id="syncCourseSelect" class="input-forest">
-                ${courseOptionsHtml}
-              </select>
-            </div>
-
-            <div>
-              <label class="form-label-forest">Gender *</label>
-              <select id="syncGenderSelect" class="input-forest">
-                <option value="Male" selected>Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="form-label-forest">Email *</label>
-              <input type="email" id="syncEmailInput" placeholder="e.g. name@gmail.com" class="input-forest">
+    <!-- Step 1B Container: Enter Your Details (Matches media_1789795025736.jpg) -->
+    <div id="loginStepSyncWrap" class="login-step-view-wrap" style="display:none; width:100%; min-height:100vh;">
+      <div class="sync-details-page-layout">
+        
+        <!-- Desktop Top Bar (Hidden on mobile < 768px) -->
+        <header class="sync-desktop-top-bar">
+          <div class="sync-top-brand" onclick="navigateTo('/')">
+            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="sync-top-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
+            <div class="sync-top-title-wrap">
+              <div class="sync-top-title">JnuMate<span class="brand-dot">.</span></div>
+              <div class="sync-top-subtitle">JAIPUR NATIONAL UNIVERSITY</div>
             </div>
           </div>
 
-          <button onclick="submitSyncDetailsAndSendOtp()" id="btnSendSyncOtp" class="btn-auth-submit" style="width:100%;">
-            Send Verification Code ➔
-          </button>
+          <!-- Center Navigation Links -->
+          <nav class="sync-top-nav-links">
+            <a href="/" class="sync-top-nav-link" onclick="event.preventDefault(); navigateTo('/')">Home</a>
+            <a href="/events" class="sync-top-nav-link" onclick="event.preventDefault(); navigateTo('/events')">Events</a>
+            <a href="/resources" class="sync-top-nav-link" onclick="event.preventDefault(); navigateTo('/resources')">Resources</a>
+          </nav>
 
-          <button onclick="showAuthStep(1)" class="btn-auth-secondary" style="width:100%; margin-top:8px;">
-            ← Change R-ID
-          </button>
-        </div>
-
-        <!-- Step 2: Zero-Scroll OTP Verification (Single-Column Unified Flow) -->
-        <div id="authStep2" class="auth-step-panel" style="display:none;">
-          <div class="auth-step2-header-bar">
-            <div class="auth-step2-badge-wrap">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--badge-mint, #3ea86c);"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-              <span style="font-weight:750; font-size:0.875rem; color:#FFFFFF; letter-spacing:0.02em;">OTP Verification</span>
+          <!-- Right Actions Cluster -->
+          <div class="sync-top-actions">
+            <div class="sync-top-bell-btn" onclick="showToast('No new notifications', 'info')" title="Notifications">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
             </div>
-            <p style="font-size:0.8125rem; color:var(--text-sage); margin:3px 0 12px 0;">Enter the 6-digit code sent to your registered email</p>
-          </div>
-
-          <!-- Student Spotlight Compact Identity Card -->
-          <div id="authStep2ProfileSpotlight"></div>
-
-          <!-- Dispatch Alert -->
-          <div id="authStep2DispatchBanner" class="auth-dispatch-notice-bar"></div>
-
-          <!-- OTP Code Input -->
-          <div class="form-group" style="margin-bottom:14px;">
-            <label class="form-label-forest" style="text-align:center; font-size:0.75rem; margin-bottom:6px; letter-spacing:0.04em;">ENTER 6-DIGIT CODE</label>
-            <input type="text" id="otpCodeInput" placeholder="••••••" maxlength="6" class="input-forest otp-code-input" autocomplete="one-time-code" inputmode="numeric" onkeyup="if(event.key==='Enter') verifyEmailOtpCode()">
-          </div>
-
-          <button onclick="verifyEmailOtpCode()" id="btnVerifyOtp" class="btn-auth-submit" style="width:100%;">
-            Verify & Sign In ➔
-          </button>
-
-          <div class="auth-otp-footer-row">
-            <button type="button" id="btnResendOtp" onclick="handleResendOtp()" class="auth-link-btn" disabled>
-              Resend Code (<span id="resendCountdown">30</span>s)
-            </button>
-            <button type="button" onclick="showAuthStep(1)" class="auth-link-btn change-rid">
-              ← Change R-ID
-            </button>
-          </div>
-        </div>
-
-        <!-- Step 2B: Post-Login Education Course Selection (Case 1B) -->
-        <div id="authStepCourseSelect" class="auth-step-panel" style="display:none; text-align:left;">
-          <div style="text-align:center; margin-bottom:16px;">
-            <div class="auth-student-big-avatar-box" style="margin-bottom:8px;">
-              <img id="courseSelectAvatar" src="${DEFAULT_STUDENT_AVATAR}" alt="Student" class="auth-student-big-avatar" style="width:76px; height:76px; border-radius:50%;">
+            
+            <div class="sync-top-user-pill" onclick="showAuthStep(1)" title="Sign In with R-ID">
+              <div class="sync-top-avatar-circle">
+                <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
+                  <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
+                  <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
+                  <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
+                </svg>
+              </div>
+              <span class="sync-top-user-name">Sign In</span>
+              <svg class="sync-top-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
             </div>
-            <h2 id="courseSelectStudentName" class="font-serif" style="font-size:1.35rem; color:#FFFFFF; margin-bottom:4px;"></h2>
-            <span class="student-rid-badge" style="font-size:0.8125rem; padding:3px 12px;">
-              R-ID: <strong id="courseSelectRid"></strong>
-            </span>
+          </div>
+        </header>
+
+        <!-- Mobile Top Bar (Shown only on mobile < 768px) -->
+        <header class="sync-mobile-top-bar">
+          <div class="sync-mobile-brand" onclick="navigateTo('/')">
+            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="sync-mobile-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
+            <div class="sync-mobile-title-wrap">
+              <div class="sync-mobile-title">JnuMate<span class="brand-dot">.</span></div>
+              <div class="sync-mobile-subtitle">JAIPUR NATIONAL UNIVERSITY</div>
+            </div>
           </div>
 
-          <div style="background:rgba(62,168,108,0.1); border:1px solid rgba(62,168,108,0.25); border-radius:8px; padding:12px 16px; margin-bottom:16px; text-align:center;">
-            <div style="font-weight:700; color:#B8D8C4; font-size:0.875rem; margin-bottom:2px;">Select Your Academic Program</div>
-            <div style="font-size:0.75rem; color:var(--text-sage);">Please choose your course to finish setting up your student profile.</div>
+          <div class="sync-mobile-actions">
+            <div class="sync-mobile-bell-btn" onclick="showToast('No new notifications', 'info')">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </div>
+            
+            <div class="sync-mobile-avatar-circle" onclick="showAuthStep(1)">
+              <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
+                <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
+                <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
+                <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
+              </svg>
+            </div>
+          </div>
+        </header>
+
+        <!-- Main Workspace Stage -->
+        <main class="sync-main-workspace">
+          
+          <!-- Left Editorial Typography Column (Desktop Only >= 768px) -->
+          <div class="sync-left-editorial-col">
+            <div class="sync-editorial-title">
+              Learn<br>
+              Grow<br>
+              Belong<br>
+              Together.
+            </div>
+            <div class="sync-editorial-bar"></div>
+            <div class="sync-editorial-subtext">
+              A brighter<br>
+              tomorrow,<br>
+              together.
+            </div>
           </div>
 
-          <div class="form-group" style="margin-bottom:18px;">
-            <label class="form-label-forest">Degree / Academic Program *</label>
-            <select id="authCourseSelectInput" class="input-forest" style="font-size:0.9375rem; padding:12px 14px;">
-              ${courseOptionsHtml}
-            </select>
+          <!-- Center Column: Floating Enter Details Card -->
+          <div class="sync-center-card-col">
+            <div class="sync-card-frame">
+
+              <!-- Circular Student Avatar with Rich Emerald Ring -->
+              <div class="sync-card-avatar-box">
+                <div class="sync-card-avatar-ring">
+                  <div id="syncCardAvatarInner" class="sync-card-avatar-inner">
+                    <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
+                      <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
+                      <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
+                      <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Amber R-ID Pill Badge -->
+              <div class="sync-card-rid-wrap">
+                <span class="sync-card-rid-badge" id="syncCardRidBadge">
+                  R-ID: <strong id="syncCardRidVal">R42695</strong>
+                </span>
+              </div>
+
+              <!-- Amber Alert Box with Circular Exclamation Badge -->
+              <div class="sync-alert-box">
+                <div class="sync-alert-icon">
+                  <span>!</span>
+                </div>
+                <div class="sync-alert-text">
+                  <div class="sync-alert-line1">Due to server load we couldn't fetch your data.</div>
+                  <div class="sync-alert-line2">Enter your details manually to continue.</div>
+                </div>
+              </div>
+
+              <!-- Details Form Fields -->
+              <div class="sync-form-fields-container">
+                <!-- 1. Full Name -->
+                <div class="sync-field-group">
+                  <label class="sync-field-label" for="syncNameInput">FULL NAME *</label>
+                  <div class="sync-field-input-wrap">
+                    <span class="sync-field-left-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                    </span>
+                    <input type="text" id="syncNameInput" placeholder="Your full name as per college ID" class="sync-text-input" autocomplete="name">
+                  </div>
+                </div>
+
+                <!-- 2. Course / Degree Program -->
+                <div class="sync-field-group">
+                  <label class="sync-field-label" for="syncCourseSelect">COURSE / DEGREE PROGRAM *</label>
+                  <div class="sync-field-input-wrap">
+                    <span class="sync-field-left-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                      </svg>
+                    </span>
+                    <select id="syncCourseSelect" class="sync-select-input">
+                      ${courseOptionsHtml}
+                    </select>
+                    <span class="sync-field-right-chevron">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 3. Gender -->
+                <div class="sync-field-group">
+                  <label class="sync-field-label" for="syncGenderSelect">GENDER *</label>
+                  <div class="sync-field-input-wrap">
+                    <span class="sync-field-left-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
+                    </span>
+                    <select id="syncGenderSelect" class="sync-select-input">
+                      <option value="Male" selected>Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <span class="sync-field-right-chevron">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- 4. Email -->
+                <div class="sync-field-group">
+                  <label class="sync-field-label" for="syncEmailInput">EMAIL *</label>
+                  <div class="sync-field-input-wrap">
+                    <span class="sync-field-left-icon">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                      </svg>
+                    </span>
+                    <input type="email" id="syncEmailInput" placeholder="e.g. name@gmail.com" class="sync-text-input" autocomplete="email">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Button -->
+              <button type="button" id="btnSendSyncOtp" onclick="submitSyncDetailsAndSendOtp()" class="btn-sync-action">
+                <span>Send Verification Code &rarr;</span>
+              </button>
+
+              <!-- Footer Subtext Note -->
+              <div class="sync-footer-note">
+                We'll send a verification code to your email.
+              </div>
+
+            </div>
           </div>
 
-          <button onclick="submitUserCourseSelection()" id="btnSubmitCourseSelect" class="btn-auth-submit" style="width:100%;">
-            Save & Continue ➔
-          </button>
+          <!-- Right Decorative Watermark Column (Desktop Only >= 768px) -->
+          <div class="sync-right-watermark-col">
+            <div class="sync-watermark-dome-wrap">
+              <img src="/static/img/redesign/otp_desktop_building.png" alt="Jaipur National University" class="sync-watermark-dome-img">
+            </div>
+          </div>
+
+        </main>
+
+        <!-- Mobile Bottom Illustration & Slogan (< 768px Only) -->
+        <div class="sync-mobile-bottom-section">
+          <div class="sync-mobile-bottom-lockup">
+            <div class="sync-mobile-bottom-text">
+              <div class="sync-mobile-motto">Learn &bull; Grow &bull; Belong</div>
+              <div class="sync-mobile-submotto">A brighter tomorrow,<br>together.</div>
+              <div class="sync-mobile-sub-bar"></div>
+            </div>
+            <div class="sync-mobile-sketch-wrap">
+              <img src="/static/img/redesign/otp_dome_mobile.png" alt="Jaipur National University" class="sync-mobile-sketch-img">
+            </div>
+          </div>
         </div>
 
       </div>
     </div>
   `;
 
-  if (currentUser && currentUser.needs_program) {
-    showAuthStep('course');
+  if (window.location.pathname === "/course-select" || window.location.pathname === "/select-program" || (currentUser && currentUser.needs_program)) {
+    showAuthStep('course_select');
+  } else if (window.location.pathname === "/enter-details" || window.location.pathname === "/sync-details") {
+    showAuthStep('sync');
   }
 }
 
 function showAuthStep(step) {
+  const step1Wrap = document.getElementById("loginStep1Wrap");
+  const stepSyncWrap = document.getElementById("loginStepSyncWrap");
+  const step2Wrap = document.getElementById("loginStep2Wrap");
+  const step3Wrap = document.getElementById("loginStep3Wrap");
   const s1 = document.getElementById("authStep1");
   const sSync = document.getElementById("authStepSyncNotice");
-  const s2 = document.getElementById("authStep2");
   const sCourse = document.getElementById("authStepCourseSelect");
-  const logoBox = document.querySelector(".login-jnu-logo-box");
-  const cardTitle = document.querySelector(".login-portal-title");
-  const cardSub = document.querySelector(".login-portal-subtitle");
-  const cardFrame = document.getElementById("loginCardFrame");
 
   const isStep1 = step === 1;
   const isOtpStep = step === 2;
-  const isSyncStep = step === 'sync';
-  const isCourseStep = step === 'course_select';
-
-  // Toggle card width class for OTP step
-  if (cardFrame) {
-    cardFrame.classList.toggle("otp-active", isOtpStep);
-    cardFrame.classList.toggle("wide-step", isOtpStep);
-  }
-
-  // HIDE official JNU Crest logo and default titles on Step 2, sync, and course_select
-  if (logoBox) logoBox.style.display = isStep1 ? "block" : "none";
-  if (cardTitle) cardTitle.style.display = isStep1 ? "block" : "none";
-  if (cardSub) cardSub.style.display = isStep1 ? "block" : "none";
-
-  const panels = [
-    { el: s1, active: isStep1 },
-    { el: sSync, active: isSyncStep },
-    { el: s2, active: isOtpStep },
-    { el: sCourse, active: isCourseStep }
-  ];
-
-  panels.forEach(p => {
-    if (p.el) {
-      if (p.active) {
-        p.el.style.display = "block";
-        p.el.style.opacity = "0";
-        p.el.style.transform = "translateY(4px)";
-        requestAnimationFrame(() => {
-          p.el.style.transition = "opacity 0.2s ease, transform 0.2s ease";
-          p.el.style.opacity = "1";
-          p.el.style.transform = "translateY(0)";
-        });
-      } else {
-        p.el.style.display = "none";
-      }
-    }
-  });
+  const isSyncStep = step === 'sync' || step === 'details' || step === 'enter-details';
+  const isCourseStep = step === 'course_select' || step === 3;
 
   if (isOtpStep) {
-    startResendTimer();
-    const input = document.getElementById("otpCodeInput");
-    if (input) {
-      input.value = "";
-      setTimeout(() => input.focus(), 150);
+    if (step1Wrap) step1Wrap.style.display = "none";
+    if (stepSyncWrap) stepSyncWrap.style.display = "none";
+    if (step3Wrap) step3Wrap.style.display = "none";
+    if (step2Wrap) {
+      step2Wrap.style.display = "block";
+      step2Wrap.style.opacity = "0";
+      requestAnimationFrame(() => {
+        step2Wrap.style.transition = "opacity 0.2s ease";
+        step2Wrap.style.opacity = "1";
+      });
     }
+    const prof = pendingStudentProfile || {
+      name: "manjari",
+      r_id: "R42695",
+      rid: "R42695",
+      program: "B.Tech CSE (AI & ML) Hons.-Samatrix",
+      current_year: "4th Year Student",
+      gender: "Female",
+      email: "manjarigulpadiya@gmail.com"
+    };
+    renderAuthProfileSpotlight(prof, prof.email);
+    setupOtpDigitInputs();
+    startResendTimer();
+    const firstBox = document.querySelector(".otp-digit-box[data-idx='0']");
+    if (firstBox) {
+      setTimeout(() => firstBox.focus(), 150);
+    }
+    return;
   }
 
-  if (isCourseStep && currentUser) {
-    const nameEl = document.getElementById("courseSelectStudentName");
-    const ridEl = document.getElementById("courseSelectRid");
-    const avatarEl = document.getElementById("courseSelectAvatar");
-    if (nameEl) nameEl.innerText = currentUser.name || "Student";
-    if (ridEl) ridEl.innerText = currentUser.id || "";
-    if (avatarEl) avatarEl.src = getStudentAvatarSrc(currentUser.avatar_url, currentUser.id);
+  if (isCourseStep) {
+    try {
+      if (window.location.pathname !== "/course-select" && window.location.pathname !== "/select-program") {
+        history.pushState(null, "", "/course-select");
+      }
+    } catch (e) {}
+    if (step1Wrap) step1Wrap.style.display = "none";
+    if (stepSyncWrap) stepSyncWrap.style.display = "none";
+    if (step2Wrap) step2Wrap.style.display = "none";
+    if (step3Wrap) {
+      step3Wrap.style.display = "block";
+      step3Wrap.style.opacity = "0";
+      requestAnimationFrame(() => {
+        step3Wrap.style.transition = "opacity 0.2s ease";
+        step3Wrap.style.opacity = "1";
+      });
+    }
+
+    const name = (currentUser && currentUser.name) ? currentUser.name : "Nishita Gumber";
+    const rid = (currentUser && (currentUser.rid || currentUser.id)) ? (currentUser.rid || currentUser.id) : "R44500";
+    const avatarUrl = (currentUser && currentUser.avatar_url) ? currentUser.avatar_url : "";
+
+    const nameEl = document.getElementById("courseCardStudentName");
+    const topNameEl = document.getElementById("courseTopUserName");
+    const ridValEl = document.getElementById("courseCardRidVal");
+    const avatarInnerEl = document.getElementById("courseCardAvatarInner");
+    const topAvatarEl = document.getElementById("courseTopAvatarCircle");
+    const mobileAvatarEl = document.getElementById("courseMobileAvatarCircle");
+
+    if (nameEl) nameEl.innerText = name;
+    if (topNameEl) topNameEl.innerText = name;
+    if (ridValEl) ridValEl.innerText = rid;
+
+    if (avatarUrl) {
+      const imgTag = `<img src="${escapeAttr(avatarUrl)}" alt="${escapeAttr(name)}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.onerror=null; this.src='/static/img/blank_pfp.jpg';">`;
+      if (avatarInnerEl) avatarInnerEl.innerHTML = imgTag;
+      if (topAvatarEl) topAvatarEl.innerHTML = imgTag;
+      if (mobileAvatarEl) mobileAvatarEl.innerHTML = imgTag;
+    }
+
+    // Default select to "B.Tech CSE (AI & ML) Hons.-Samatrix" if no program chosen
+    const dropdown = document.getElementById("courseSelectDropdown");
+    if (dropdown) {
+      if (currentUser && currentUser.program && currentUser.program !== "Student") {
+        dropdown.value = currentUser.program;
+      } else {
+        dropdown.value = "B.Tech CSE (AI & ML) Hons.-Samatrix";
+      }
+    }
+    return;
+  }
+
+  if (isSyncStep) {
+    if (step1Wrap) step1Wrap.style.display = "none";
+    if (step2Wrap) step2Wrap.style.display = "none";
+    if (step3Wrap) step3Wrap.style.display = "none";
+    if (stepSyncWrap) {
+      stepSyncWrap.style.display = "block";
+      stepSyncWrap.style.opacity = "0";
+      requestAnimationFrame(() => {
+        stepSyncWrap.style.transition = "opacity 0.2s ease";
+        stepSyncWrap.style.opacity = "1";
+      });
+    }
+
+    const rid = (pendingRegistrationData && pendingRegistrationData.rid)
+      ? pendingRegistrationData.rid
+      : (currentUser && (currentUser.rid || currentUser.id) ? (currentUser.rid || currentUser.id) : "R42695");
+    
+    const ridValEl = document.getElementById("syncCardRidVal");
+    if (ridValEl) ridValEl.innerText = rid;
+    const banner = document.getElementById("syncRidBanner");
+    if (banner) banner.innerText = rid;
+
+    const courseSelect = document.getElementById("syncCourseSelect");
+    if (courseSelect && (!courseSelect.value || courseSelect.value === "")) {
+      courseSelect.value = "B.Tech CSE (AI & ML) Hons.-Samatrix";
+    }
+    const genderSelect = document.getElementById("syncGenderSelect");
+    if (genderSelect && (!genderSelect.value || genderSelect.value === "")) {
+      genderSelect.value = "Male";
+    }
+
+    const nameInput = document.getElementById("syncNameInput");
+    if (nameInput) {
+      setTimeout(() => nameInput.focus(), 150);
+    }
+    return;
+  }
+
+  // Non-OTP steps: show Step 1 wrap, hide Step 2, Step 3, and Step Sync wraps
+  if (stepSyncWrap) stepSyncWrap.style.display = "none";
+  if (step2Wrap) step2Wrap.style.display = "none";
+  if (step3Wrap) step3Wrap.style.display = "none";
+  if (step1Wrap) {
+    step1Wrap.style.display = "block";
+    step1Wrap.style.opacity = "0";
+    requestAnimationFrame(() => {
+      step1Wrap.style.transition = "opacity 0.2s ease";
+      step1Wrap.style.opacity = "1";
+    });
+  }
+
+  if (isStep1) {
+    if (s1) s1.style.display = "block";
+    if (sSync) sSync.style.display = "none";
+    if (sCourse) sCourse.style.display = "none";
+    const ridInput = document.getElementById("authRidInput");
+    if (ridInput) {
+      if (pendingRegistrationData && pendingRegistrationData.rid) {
+        ridInput.value = pendingRegistrationData.rid;
+      }
+      setTimeout(() => ridInput.focus(), 150);
+    }
+  }
+}
+
+/* ==========================================================================
+   UNIVERSITY ID CARD QR SCANNER IMPLEMENTATION
+   ========================================================================== */
+let qrScannerStream = null;
+let qrScanAnimationId = null;
+
+function openUniversityQrScanner() {
+  const modal = document.getElementById("qrScannerModal");
+  const notice = document.getElementById("qrScannerNotice");
+  const video = document.getElementById("qrScannerVideo");
+  if (!modal) return;
+
+  modal.style.display = "flex";
+  document.body.classList.add("scroll-locked");
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (notice) notice.innerText = "Camera not supported. Please upload ID photo.";
+    return;
+  }
+
+  if (notice) notice.innerText = "Starting camera...";
+
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: "environment" } }
+  })
+    .then(stream => {
+      qrScannerStream = stream;
+      if (video) {
+        video.srcObject = stream;
+        video.setAttribute("playsinline", true);
+        video.play();
+      }
+      if (notice) notice.innerText = "Align QR code inside box";
+      startQrFrameScanLoop();
+    })
+    .catch(err => {
+      console.warn("Camera access notice:", err);
+      if (notice) notice.innerText = "Camera permission needed. You can also upload a photo.";
+    });
+}
+
+function closeUniversityQrScanner() {
+  const modal = document.getElementById("qrScannerModal");
+  if (modal) modal.style.display = "none";
+  document.body.classList.remove("scroll-locked");
+
+  if (qrScanAnimationId) {
+    cancelAnimationFrame(qrScanAnimationId);
+    qrScanAnimationId = null;
+  }
+  if (qrScannerStream) {
+    qrScannerStream.getTracks().forEach(track => track.stop());
+    qrScannerStream = null;
+  }
+  const video = document.getElementById("qrScannerVideo");
+  if (video) video.srcObject = null;
+}
+
+function handleQrCodeDetected(detectedText) {
+  if (!detectedText) return;
+  const match = detectedText.match(/R?\d{4,6}/i);
+  if (match) {
+    const raw = match[0].toUpperCase();
+    const formattedRid = raw.startsWith("R") ? raw : ("R" + raw);
+    showToast(`Detected College R-ID: ${formattedRid}`, "success");
+    closeUniversityQrScanner();
+    const input = document.getElementById("authRidInput");
+    if (input) {
+      input.value = formattedRid;
+      setTimeout(() => submitInitialRid(), 300);
+    }
+  } else {
+    showToast("QR code detected, but no R-ID found. Enter your R-ID manually.", "info");
+  }
+}
+
+function startQrFrameScanLoop() {
+  const video = document.getElementById("qrScannerVideo");
+  const canvas = document.getElementById("qrScannerCanvas");
+  if (!video || !canvas) return;
+
+  if ('BarcodeDetector' in window) {
+    try {
+      const detector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13'] });
+      const detectFrame = () => {
+        if (!qrScannerStream) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          detector.detect(video)
+            .then(barcodes => {
+              if (barcodes.length > 0 && barcodes[0].rawValue) {
+                handleQrCodeDetected(barcodes[0].rawValue);
+                return;
+              }
+              qrScanAnimationId = requestAnimationFrame(detectFrame);
+            })
+            .catch(() => {
+              qrScanAnimationId = requestAnimationFrame(detectFrame);
+            });
+        } else {
+          qrScanAnimationId = requestAnimationFrame(detectFrame);
+        }
+      };
+      qrScanAnimationId = requestAnimationFrame(detectFrame);
+    } catch (e) {
+      console.warn("BarcodeDetector init notice:", e);
+    }
+  }
+}
+
+function handleQrFileUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const notice = document.getElementById("qrScannerNotice");
+  if (notice) notice.innerText = "Processing ID photo...";
+
+  if ('BarcodeDetector' in window) {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const detector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39'] });
+        detector.detect(img)
+          .then(barcodes => {
+            if (barcodes.length > 0 && barcodes[0].rawValue) {
+              handleQrCodeDetected(barcodes[0].rawValue);
+            } else {
+              showToast("No barcode/QR found in photo. Please enter R-ID manually.", "info");
+              if (notice) notice.innerText = "No code found in photo";
+            }
+          })
+          .catch(() => {
+            showToast("Could not scan photo. Please enter R-ID manually.", "error");
+          });
+      } catch (e) {
+        showToast("Photo processed. Please enter R-ID manually.", "info");
+      }
+    };
+    img.src = URL.createObjectURL(file);
+  } else {
+    const filenameMatch = (file.name || "").match(/R?\d{4,6}/i);
+    if (filenameMatch) {
+      handleQrCodeDetected(filenameMatch[0]);
+    } else {
+      showToast("Photo received. Please enter your R-ID to sign in.", "info");
+      closeUniversityQrScanner();
+      const input = document.getElementById("authRidInput");
+      if (input) input.focus();
+    }
   }
 }
 
 function startResendTimer() {
   clearInterval(resendTimerInterval);
-  resendSecondsRemaining = 30;
+  resendSecondsRemaining = 25;
   const btn = document.getElementById("btnResendOtp");
   if (!btn) return;
 
   btn.disabled = true;
+  btn.classList.remove("is-active");
   btn.innerHTML = `Resend Code (<span id="resendCountdown">${resendSecondsRemaining}</span>s)`;
 
   resendTimerInterval = setInterval(() => {
@@ -3964,6 +5268,7 @@ function startResendTimer() {
     if (resendSecondsRemaining <= 0) {
       clearInterval(resendTimerInterval);
       btn.disabled = false;
+      btn.classList.add("is-active");
       btn.innerHTML = `Resend Code`;
     }
   }, 1000);
@@ -3985,7 +5290,7 @@ function handleResendOtp() {
     }
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;">${renderIosSpinner('sm')} <span>Resending...</span></span>`;
+      btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><span class="inline-btn-spinner" style="border-color:rgba(22,163,74,0.25); border-top-color:#16A34A; width:12px; height:12px;"></span> <span>Resending...</span></span>`;
     }
     fetch("/api/auth/request-otp", {
       method: "POST",
@@ -4024,7 +5329,7 @@ function submitInitialRid() {
 
   const rid = ridInput.value.trim().toUpperCase();
   btn.disabled = true;
-  btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Connecting...</span></span>`;
+  btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Connecting...</span></span>`;
 
   fetch("/api/auth/request-otp", {
     method: "POST",
@@ -4074,7 +5379,9 @@ function submitSyncDetailsAndSendOtp() {
   const genderSelect = document.getElementById("syncGenderSelect");
   const btn = document.getElementById("btnSendSyncOtp");
 
-  const rid = pendingRegistrationData ? pendingRegistrationData.rid : "";
+  const ridEl = document.getElementById("syncCardRidVal");
+  const fallbackRid = ridEl ? ridEl.innerText.trim() : "R42695";
+  const rid = (pendingRegistrationData && pendingRegistrationData.rid) ? pendingRegistrationData.rid : fallbackRid;
   const name = nameInput ? nameInput.value.trim() : "";
   const email = emailInput ? emailInput.value.trim() : "";
   const program = courseSelect ? courseSelect.value.trim() : "";
@@ -4085,8 +5392,10 @@ function submitSyncDetailsAndSendOtp() {
     return;
   }
 
-  btn.disabled = true;
-  btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Sending Code...</span></span>`;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Sending Code...</span></span>`;
+  }
 
   fetch("/api/auth/send-registration-otp", {
     method: "POST",
@@ -4101,8 +5410,10 @@ function submitSyncDetailsAndSendOtp() {
   })
     .then(res => res.json())
     .then(data => {
-      btn.disabled = false;
-      btn.innerText = "Send Verification Code";
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Send Verification Code &rarr;</span>`;
+      }
 
       if (data.success) {
         pendingRegistrationData = {
@@ -4128,8 +5439,10 @@ function submitSyncDetailsAndSendOtp() {
       }
     })
     .catch(() => {
-      btn.disabled = false;
-      btn.innerText = "Send Verification Code";
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Send Verification Code &rarr;</span>`;
+      }
       showToast("Network error sending code", "error");
     });
 }
@@ -4141,23 +5454,27 @@ function verifyEmailOtpCode() {
   const otpInput = document.getElementById("otpCodeInput");
   const btn = document.getElementById("btnVerifyOtp");
 
-  if (!otpInput || !otpInput.value.trim()) {
+  const digitBoxes = document.querySelectorAll(".otp-digit-box");
+  let otp = "";
+  if (digitBoxes && digitBoxes.length === 6) {
+    otp = Array.from(digitBoxes).map(b => b.value.trim()).join("");
+    if (otpInput) otpInput.value = otp;
+  } else if (otpInput) {
+    otp = otpInput.value.trim();
+  }
+
+  if (!otp || otp.length < 6) {
     showToast("Please enter 6-digit verification code", "error");
     return;
   }
 
-  const rid = (pendingRegistrationData && pendingRegistrationData.rid) || (ridInput ? ridInput.value.trim().toUpperCase() : "");
-  const otp = otpInput.value.trim();
-
-  if (!rid) {
-    showToast("Session expired, please re-enter your R-ID", "error");
-    showAuthStep(1);
-    return;
-  }
+  const rid = (pendingRegistrationData && pendingRegistrationData.rid) || (ridInput ? ridInput.value.trim().toUpperCase() : "") || (pendingStudentProfile && (pendingStudentProfile.r_id || pendingStudentProfile.rid)) || "R42695";
 
   isVerifyingOtp = true;
-  btn.disabled = true;
-  btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Verifying...</span></span>`;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Verifying...</span></span>`;
+  }
 
   const payload = {
     rid: rid,
@@ -4187,8 +5504,10 @@ function verifyEmailOtpCode() {
     })
     .then(data => {
       isVerifyingOtp = false;
-      btn.disabled = false;
-      btn.innerText = "Verify & Sign In ➔";
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Verify &amp; Sign In &rarr;</span>`;
+      }
 
       if (data && data.success) {
         currentUser = data.user || { id: rid, name: "Student" };
@@ -4225,30 +5544,42 @@ function verifyEmailOtpCode() {
       } else {
         const errorMsg = (data && data.message) || "Invalid verification code";
         showToast(errorMsg, "error");
+        if (digitBoxes && digitBoxes.length === 6) {
+          digitBoxes.forEach(b => {
+            b.value = "";
+            b.classList.remove("has-val");
+          });
+          digitBoxes[0].focus();
+        }
       }
     })
     .catch(err => {
       isVerifyingOtp = false;
-      btn.disabled = false;
-      btn.innerText = "Verify & Sign In ➔";
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Verify &amp; Sign In &rarr;</span>`;
+      }
       console.error("verify-otp error:", err);
       showToast("Cannot connect to server. Please check your connection and retry.", "error");
     });
 }
 
 function submitUserCourseSelection() {
-  const select = document.getElementById("authCourseSelectInput");
-  const btn = document.getElementById("btnSubmitCourseSelect");
+  const select = document.getElementById("courseSelectDropdown") || document.getElementById("authCourseSelectInput");
+  const btn = document.getElementById("btnCourseSaveContinue") || document.getElementById("btnSubmitCourseSelect");
   if (!select || !select.value) {
     showToast("Please select your academic program", "error");
     return;
   }
-  const program = select.value;
-  const rid = currentUser ? currentUser.id : "";
+  const program = select.value.trim();
+  const ridVal = document.getElementById("courseCardRidVal");
+  const rid = (currentUser && (currentUser.rid || currentUser.id)) 
+    ? (currentUser.rid || currentUser.id) 
+    : (ridVal ? ridVal.innerText.trim() : "R44500");
 
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Saving...</span></span>`;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Saving...</span></span>`;
   }
 
   fetch("/api/user/update-program", {
@@ -4260,7 +5591,7 @@ function submitUserCourseSelection() {
     .then(data => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Save & Continue ➔";
+        btn.innerHTML = `<span>Save &amp; Continue &rarr;</span>`;
       }
       if (data.success) {
         if (currentUser) {
@@ -4269,6 +5600,10 @@ function submitUserCourseSelection() {
           try { localStorage.setItem("jnumate_user", JSON.stringify(currentUser)); } catch (e) {}
         }
         showToast("Academic program updated successfully!", "success");
+        try {
+          renderNavUserSlots();
+          renderDrawerUserSlot();
+        } catch (e) {}
         if (postLoginRedirect) {
           const redirectDest = postLoginRedirect;
           postLoginRedirect = null;
@@ -4283,7 +5618,7 @@ function submitUserCourseSelection() {
     .catch(() => {
       if (btn) {
         btn.disabled = false;
-        btn.innerText = "Save & Continue ➔";
+        btn.innerHTML = `<span>Save &amp; Continue &rarr;</span>`;
       }
       showToast("Network error updating program", "error");
     });
@@ -4366,8 +5701,37 @@ function closeNotificationsPanel() {
   const modal = document.getElementById("teamDetailModal");
   if (!modal || modal.style.display === "none") {
     document.body.classList.remove("scroll-locked");
+    document.documentElement.classList.remove("scroll-locked");
   }
 }
+
+function toggleTeamUserDropdown(e) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+  const isMobile = window.innerWidth <= 768;
+  const menu = isMobile 
+    ? (document.getElementById("teamUserDropdownMenuMobile") || document.getElementById("teamUserDropdownMenu"))
+    : (document.getElementById("teamUserDropdownMenu") || document.getElementById("teamUserDropdownMenuMobile"));
+  const btn = document.getElementById("teamUserDropdownBtn");
+  if (!menu) return;
+  const isShown = menu.style.display === "block";
+  // Close any other open dropdowns first
+  document.querySelectorAll(".team-user-dropdown-menu").forEach(m => { m.style.display = "none"; });
+  menu.style.display = isShown ? "none" : "block";
+  if (btn) btn.setAttribute("aria-expanded", isShown ? "false" : "true");
+}
+
+document.addEventListener("click", function(e) {
+  const menus = document.querySelectorAll(".team-user-dropdown-menu");
+  const wrap = e.target.closest(".team-user-dropdown-wrap");
+  if (!wrap) {
+    menus.forEach(m => { m.style.display = "none"; });
+    const btn = document.getElementById("teamUserDropdownBtn");
+    if (btn) btn.setAttribute("aria-expanded", "false");
+  }
+});
 
 function formatRelativeTime(dateStr) {
   if (!dateStr) return "Recently";
@@ -5244,3 +6608,1200 @@ function escapeAttr(str) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
+
+/* ==========================================================================
+   16. CAMPUS EVENTS ENGINE & DATASETS
+   ========================================================================== */
+const EVENT_SAMPLE_AVATARS = [
+  "/static/img/redesign/events/attendee_1.png",
+  "/static/img/redesign/events/attendee_2.png",
+  "/static/img/redesign/events/attendee_3.png"
+];
+
+const CAMPUS_EVENTS_DATA = [
+  {
+    id: "sih-2025",
+    title: "Smart India Hackathon 2025",
+    category: "Hackathons",
+    catBadge: "Hackathon",
+    mobileCatBadge: "SIH",
+    mobileBadgeTheme: "orange",
+    image: "/static/img/redesign/events/event_sih.png",
+    day: "15",
+    month: "NOV",
+    dateFull: "Saturday, 15 November 2025",
+    time: "09:00 AM - 06:00 PM IST",
+    location: "JNU Main Campus",
+    locationDetail: "Central Auditorium & Innovation Lab, Academic Block A",
+    summary: "Innovate for a better tomorrow. Build solutions for real-world problems.",
+    details: "Smart India Hackathon 2025 is India's premier nationwide product innovation competition. JNU students collaborate in interdisciplinary teams of 6 to solve critical problem statements posed by ministries, departments, and industry leaders.",
+    interestedCount: 234,
+    organizer: "Ministry of Education & JNU Innovation Cell",
+    entryFee: "Free Registration",
+    eligibility: "All undergraduate & postgraduate students (6-member teams with at least 1 female leader/member)"
+  },
+  {
+    id: "ai-ml-workshop-2025",
+    title: "AI & Machine Learning Workshop",
+    category: "Workshops",
+    catBadge: "Workshop",
+    mobileCatBadge: "Workshop",
+    mobileBadgeTheme: "mint",
+    image: "/static/img/redesign/events/event_ai.png",
+    day: "22",
+    month: "NOV",
+    dateFull: "Saturday, 22 November 2025",
+    time: "10:00 AM - 04:30 PM IST",
+    location: "Computer Science Block",
+    locationDetail: "CS Advanced Lab 304, Third Floor",
+    summary: "Hands-on session on modern AI tools and applications.",
+    details: "Master practical machine learning pipelines from dataset preparation to training neural networks, exploring LLM fine-tuning, and deploying transformer models with Python and PyTorch. Bring your laptops. Certificates provided.",
+    interestedCount: 120,
+    organizer: "Department of Computer Science & Engineering",
+    entryFee: "Free (Pre-registration required)",
+    eligibility: "Open to all engineering and tech enthusiasts"
+  },
+  {
+    id: "future-tech-talk",
+    title: "Future of Tech: Expert Talk",
+    category: "Seminars",
+    catBadge: "Seminar",
+    mobileCatBadge: "Seminar",
+    mobileBadgeTheme: "teal",
+    image: "/static/img/redesign/events/event_future_tech.png",
+    day: "28",
+    month: "NOV",
+    dateFull: "Friday, 28 November 2025",
+    time: "02:00 PM - 05:00 PM IST",
+    location: "Auditorium, JNU",
+    locationDetail: "Dr. APJ Abdul Kalam Central University Auditorium",
+    summary: "Insights from industry experts on emerging technologies.",
+    details: "Distinguished keynote session and interactive fireside chat exploring quantum computing, edge artificial intelligence, hyperscale cloud architecture, and high-growth engineering careers with senior leaders.",
+    interestedCount: 98,
+    organizer: "JNU Tech Leaders Forum & IEEE Student Chapter",
+    entryFee: "Free Admission",
+    eligibility: "Open to all university students and faculty members"
+  },
+  {
+    id: "cultural-fest-2025",
+    title: "JNU Cultural Fest 2025",
+    category: "Cultural",
+    catBadge: "Cultural",
+    mobileCatBadge: "Cultural",
+    mobileBadgeTheme: "pink",
+    image: "/static/img/redesign/events/event_cultural.png",
+    day: "05",
+    month: "DEC",
+    dateFull: "Friday, 05 December 2025",
+    time: "04:00 PM - 10:00 PM IST",
+    location: "Open Air Ground",
+    locationDetail: "University Amphitheater & Campus Open Air Lawn",
+    summary: "Music, art, dance and much more. Celebrate the spirit of JNU.",
+    details: "The university's flagship annual cultural festival bringing together live music bands, theatrical drama, folk and western dance battles, fashion runway, photography exhibitions, and a vibrant night food carnival.",
+    interestedCount: 320,
+    organizer: "JNU Student Activity Council (SAC)",
+    entryFee: "Free Entry (Valid Student ID Required)",
+    eligibility: "Open to all JNU students, alumni, and faculty"
+  },
+  {
+    id: "ctf-competition-2025",
+    title: "Capture The Flag (CTF)",
+    category: "Competitions",
+    catBadge: "Competition",
+    mobileCatBadge: "CTF",
+    mobileBadgeTheme: "purple",
+    image: "/static/img/redesign/events/event_ctf.png",
+    day: "12",
+    month: "DEC",
+    dateFull: "Friday, 12 December 2025",
+    time: "11:00 AM - 07:00 PM IST",
+    location: "Computer Science Block",
+    locationDetail: "Cyber Defense Systems Lab, 2nd Floor",
+    summary: "Test your cybersecurity skills in this thrilling competition.",
+    details: "An intensive 8-hour live offensive and defensive cybersecurity jeopardy tournament. Hack through web app vulnerabilities, reverse engineer binaries, crack cryptographic puzzles, and analyze memory forensics. Cash prizes for the top 3 teams!",
+    interestedCount: 176,
+    organizer: "JNU Cybersecurity Club (SecNet)",
+    entryFee: "Free Entry",
+    eligibility: "Solo or Teams of 2-3 students"
+  },
+  {
+    id: "startup-stories-2025",
+    title: "Startup Stories",
+    category: "Talks",
+    catBadge: "Talk",
+    mobileCatBadge: "Talk",
+    mobileBadgeTheme: "amber",
+    image: "/static/img/redesign/events/event_startup.png",
+    day: "18",
+    month: "DEC",
+    dateFull: "Thursday, 18 December 2025",
+    time: "03:00 PM - 06:00 PM IST",
+    location: "Management Block",
+    locationDetail: "Executive Conference Hall 102, School of Management",
+    summary: "Learn from founders, builders and innovators.",
+    details: "Candid founder stories from alumni entrepreneurs who scaled venture-backed tech startups. Learn practical lessons on initial customer discovery, prototyping on a student budget, fundraising, and pitch decks.",
+    interestedCount: 64,
+    organizer: "JNU E-Cell & Incubation Center",
+    entryFee: "Free Entry",
+    eligibility: "Open to all aspiring student founders and creators"
+  }
+];
+
+let currentEventsCategory = "all";
+let currentEventsQuery = "";
+let userInterestedEventsSet = new Set();
+
+function initUserInterestedEvents() {
+  try {
+    const raw = localStorage.getItem("jnumate_interested_events");
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) userInterestedEventsSet = new Set(arr);
+    }
+  } catch (e) {}
+}
+initUserInterestedEvents();
+
+function saveUserInterestedEvents() {
+  try {
+    localStorage.setItem("jnumate_interested_events", JSON.stringify(Array.from(userInterestedEventsSet)));
+  } catch (e) {}
+}
+
+function loadEventsView() {
+  const container = document.getElementById("eventsViewContainer");
+  if (!container) return;
+  currentEventsCategory = "all";
+  currentEventsQuery = "";
+  renderEventsPage();
+}
+
+function renderEventsPage() {
+  const container = document.getElementById("eventsViewContainer");
+  if (!container) return;
+
+  const evSearchPlaceholder = (typeof window !== "undefined" && window.innerWidth <= 768) ? "Search events..." : "Search events, e.g. hackathon, workshop...";
+
+  const html = `
+    <div class="events-page-shell">
+      
+      <!-- HERO BANNER CARD (Editorial Mint Gradient) -->
+      <div class="events-hero-card">
+        <div class="events-hero-content">
+          <span class="events-eyebrow">CAMPUS EVENTS</span>
+          <h1 class="events-hero-title">Discover What's Happening<br class="desktop-br">at JNU</h1>
+          <p class="events-hero-subtitle">
+            Hackathons, workshops, seminars, cultural events and more.<br class="desktop-br">
+            Stay updated and never miss an opportunity.
+          </p>
+        </div>
+        <div class="events-hero-graphic-wrap">
+          <img src="/static/img/redesign/events/events_hero_sketch.png" alt="Learn Grow Belong Together" class="events-hero-banner-illustration">
+        </div>
+      </div>
+
+      <!-- FILTER & SEARCH BAR -->
+      <div class="events-filter-bar">
+        
+        <!-- Desktop Pill Filters -->
+        <div class="events-filter-pills desktop-only-flex" id="eventsFilterPillsDesktop">
+          <button type="button" class="events-filter-pill ${currentEventsCategory === 'all' ? 'active' : ''}" onclick="setEventsFilter('all')">All Events</button>
+          <button type="button" class="events-filter-pill ${currentEventsCategory === 'hackathons' ? 'active' : ''}" onclick="setEventsFilter('hackathons')">Hackathons</button>
+          <button type="button" class="events-filter-pill ${currentEventsCategory === 'workshops' ? 'active' : ''}" onclick="setEventsFilter('workshops')">Workshops</button>
+          <button type="button" class="events-filter-pill ${currentEventsCategory === 'seminars' ? 'active' : ''}" onclick="setEventsFilter('seminars')">Seminars</button>
+          <button type="button" class="events-filter-pill ${currentEventsCategory === 'cultural' ? 'active' : ''}" onclick="setEventsFilter('cultural')">Cultural</button>
+          <button type="button" class="events-filter-pill ${currentEventsCategory === 'competitions' ? 'active' : ''}" onclick="setEventsFilter('competitions')">Competitions</button>
+          <button type="button" class="events-filter-pill ${currentEventsCategory === 'talks' ? 'active' : ''}" onclick="setEventsFilter('talks')">Talks</button>
+          <button type="button" class="events-filter-pill ${currentEventsCategory === 'other' ? 'active' : ''}" onclick="setEventsFilter('other')">Other</button>
+        </div>
+
+        <!-- Search Box & Calendar Button (Desktop & Mobile) -->
+        <div class="events-search-actions-wrap">
+          <div class="events-search-box">
+            <svg class="events-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="eventsSearchInput" class="events-search-input" placeholder="${escapeAttr(evSearchPlaceholder)}" value="${escapeAttr(currentEventsQuery)}" oninput="handleEventsSearchInput(this.value)">
+          </div>
+
+          <button type="button" class="events-calendar-btn" onclick="openEventsCalendarModal()" title="View Academic & Events Calendar" aria-label="Events Calendar">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Mobile Horizontally Scrolling Filter Pills (< 768px) -->
+      <div class="events-filter-scroll-mobile mobile-only-flex" id="eventsFilterPillsMobile">
+        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'all' ? 'active' : ''}" onclick="setEventsFilter('all')">All</button>
+        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'sih' ? 'active' : ''}" onclick="setEventsFilter('sih')">SIH</button>
+        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'ctf' ? 'active' : ''}" onclick="setEventsFilter('ctf')">CTF</button>
+        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'workshops' ? 'active' : ''}" onclick="setEventsFilter('workshops')">Workshops</button>
+        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'seminars' ? 'active' : ''}" onclick="setEventsFilter('seminars')">Seminars</button>
+        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'cultural' ? 'active' : ''}" onclick="setEventsFilter('cultural')">Cultural</button>
+        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'talks' ? 'active' : ''}" onclick="setEventsFilter('talks')">Talks</button>
+      </div>
+
+      <!-- SECTION TITLE ROW -->
+      <div class="events-section-header">
+        <h2 class="events-section-title">Upcoming Events</h2>
+        <button type="button" class="events-see-all-btn" onclick="setEventsFilter('all')">
+          <span>See All</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- EVENTS DESKTOP GRID (3-Columns) -->
+      <div class="events-grid-desktop desktop-only-grid" id="eventsDesktopGrid"></div>
+
+      <!-- EVENTS MOBILE VERTICAL LIST (< 768px) -->
+      <div class="events-list-mobile mobile-only-block" id="eventsMobileList"></div>
+
+      <!-- EMPTY STATE (When search/filter has 0 matches) -->
+      <div class="events-empty-state" id="eventsEmptyState" style="display:none;">
+        <div class="events-empty-icon">🎪</div>
+        <h3 class="events-empty-title">No events found</h3>
+        <p class="events-empty-desc">Try modifying your search or select "All Events" to view upcoming campus schedules.</p>
+        <button type="button" class="btn-create-team-primary" onclick="setEventsFilter('all')">View All Events</button>
+      </div>
+
+    </div>
+  `;
+
+  container.innerHTML = html;
+  updateEventsDisplay();
+}
+
+function getFilteredEvents() {
+  return CAMPUS_EVENTS_DATA.filter(evt => {
+    let matchesCat = true;
+    if (currentEventsCategory !== "all") {
+      const c = currentEventsCategory.toLowerCase();
+      if (c === "sih") {
+        matchesCat = evt.id.includes("sih") || evt.category.toLowerCase() === "hackathons";
+      } else if (c === "ctf") {
+        matchesCat = evt.id.includes("ctf") || evt.category.toLowerCase() === "competitions";
+      } else if (c === "other") {
+        matchesCat = !["hackathons", "workshops", "seminars", "cultural", "competitions", "talks"].includes(evt.category.toLowerCase());
+      } else {
+        matchesCat = evt.category.toLowerCase() === c;
+      }
+    }
+
+    let matchesQuery = true;
+    if (currentEventsQuery.trim()) {
+      const q = currentEventsQuery.trim().toLowerCase();
+      matchesQuery = (
+        evt.title.toLowerCase().includes(q) ||
+        evt.summary.toLowerCase().includes(q) ||
+        evt.details.toLowerCase().includes(q) ||
+        evt.location.toLowerCase().includes(q) ||
+        evt.category.toLowerCase().includes(q) ||
+        evt.catBadge.toLowerCase().includes(q)
+      );
+    }
+
+    return matchesCat && matchesQuery;
+  });
+}
+
+function updateEventsDisplay() {
+  const filtered = getFilteredEvents();
+  const desktopContainer = document.getElementById("eventsDesktopGrid");
+  const mobileContainer = document.getElementById("eventsMobileList");
+  const emptyState = document.getElementById("eventsEmptyState");
+
+  if (!desktopContainer || !mobileContainer) return;
+
+  if (filtered.length === 0) {
+    desktopContainer.innerHTML = "";
+    mobileContainer.innerHTML = "";
+    if (emptyState) emptyState.style.display = "block";
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = "none";
+
+  // Render Desktop 3-Column Grid Cards
+  desktopContainer.innerHTML = filtered.map(evt => {
+    const isInterested = userInterestedEventsSet.has(evt.id);
+    const count = evt.interestedCount + (isInterested ? 1 : 0);
+
+    return `
+      <div class="event-card" onclick="openEventDetailModal('${evt.id}')">
+        <!-- Banner Image -->
+        <div class="event-card-banner">
+          <img src="${escapeAttr(evt.image)}" alt="${escapeAttr(evt.title)}" class="event-card-img" loading="lazy">
+        </div>
+
+        <!-- Card Body -->
+        <div class="event-card-body">
+          <div class="event-meta-header">
+            <div class="event-date-block">
+              <span class="event-date-day">${escapeHtml(evt.day)}</span>
+              <span class="event-date-month">${escapeHtml(evt.month)}</span>
+            </div>
+            <div class="event-title-meta-wrap">
+              <h3 class="event-card-title">${escapeHtml(evt.title)}</h3>
+              <div class="event-location-row">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2">
+                  <path d="M12 21s-8-7.5-8-12a8 8 0 1 1 16 0c0 4.5-8 12-8 12z"></path>
+                  <circle cx="12" cy="9" r="3"></circle>
+                </svg>
+                <span>${escapeHtml(evt.location)}</span>
+              </div>
+            </div>
+          </div>
+
+          <p class="event-card-desc">${escapeHtml(evt.summary)}</p>
+
+          <!-- Card Footer -->
+          <div class="event-card-footer">
+            <div class="event-attendees-group">
+              <div class="event-avatar-stack">
+                <img src="${EVENT_SAMPLE_AVATARS[0]}" alt="Student" class="event-avatar-mini">
+                <img src="${EVENT_SAMPLE_AVATARS[1]}" alt="Student" class="event-avatar-mini">
+                <img src="${EVENT_SAMPLE_AVATARS[2]}" alt="Student" class="event-avatar-mini">
+              </div>
+              <span class="event-attendees-count">+${count} interested</span>
+            </div>
+
+            <button type="button" class="event-details-action-btn" onclick="event.stopPropagation(); openEventDetailModal('${evt.id}')">
+              <span>View Details</span>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // Render Mobile Vertical Item List Cards (< 768px)
+  mobileContainer.innerHTML = filtered.map(evt => {
+    const isInterested = userInterestedEventsSet.has(evt.id);
+    const count = evt.interestedCount + (isInterested ? 1 : 0);
+
+    return `
+      <div class="mobile-event-card-item" onclick="openEventDetailModal('${evt.id}')">
+        <img src="${escapeAttr(evt.image)}" alt="${escapeAttr(evt.title)}" class="mobile-event-thumb" loading="lazy">
+        
+        <div class="mobile-event-center-info">
+          <span class="mobile-cat-pill theme-${escapeAttr(evt.mobileBadgeTheme || 'mint')}">${escapeHtml(evt.mobileCatBadge || evt.catBadge)}</span>
+          <h4 class="mobile-event-item-title">${escapeHtml(evt.title)}</h4>
+          <div class="mobile-event-loc-line">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 21s-8-7.5-8-12a8 8 0 1 1 16 0c0 4.5-8 12-8 12z"></path>
+              <circle cx="12" cy="9" r="2.5"></circle>
+            </svg>
+            <span>${escapeHtml(evt.location)}</span>
+          </div>
+          <div class="mobile-event-attendees-row">
+            <div class="event-avatar-stack">
+              <img src="${EVENT_SAMPLE_AVATARS[0]}" alt="Student" class="event-avatar-mini mini-sm">
+              <img src="${EVENT_SAMPLE_AVATARS[1]}" alt="Student" class="event-avatar-mini mini-sm">
+              <img src="${EVENT_SAMPLE_AVATARS[2]}" alt="Student" class="event-avatar-mini mini-sm">
+            </div>
+            <span class="mobile-event-interested-text">+${count} interested</span>
+          </div>
+        </div>
+
+        <div class="mobile-event-right-meta">
+          <div class="mobile-date-capsule">
+            <span class="mobile-date-num">${escapeHtml(evt.day)}</span>
+            <span class="mobile-date-mo">${escapeHtml(evt.month)}</span>
+          </div>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" class="mobile-event-chevron">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function setEventsFilter(category) {
+  currentEventsCategory = category;
+
+  // Update desktop pills active class
+  document.querySelectorAll(".events-filter-pill").forEach(btn => {
+    const text = btn.innerText.toLowerCase();
+    const isMatch = (
+      (category === "all" && text.includes("all")) ||
+      (category === "hackathons" && text.includes("hackathons")) ||
+      (category === "workshops" && text.includes("workshops")) ||
+      (category === "seminars" && text.includes("seminars")) ||
+      (category === "cultural" && text.includes("cultural")) ||
+      (category === "competitions" && text.includes("competitions")) ||
+      (category === "talks" && text.includes("talks")) ||
+      (category === "other" && text.includes("other"))
+    );
+    btn.classList.toggle("active", isMatch);
+  });
+
+  // Update mobile pills active class
+  document.querySelectorAll(".events-filter-pill-mob").forEach(btn => {
+    const text = btn.innerText.toLowerCase();
+    const isMatch = (
+      (category === "all" && text === "all") ||
+      (category === "sih" && text === "sih") ||
+      (category === "ctf" && text === "ctf") ||
+      (category === "workshops" && text === "workshops") ||
+      (category === "seminars" && text === "seminars") ||
+      (category === "cultural" && text === "cultural") ||
+      (category === "talks" && text === "talks")
+    );
+    btn.classList.toggle("active", isMatch);
+  });
+
+  updateEventsDisplay();
+}
+
+let eventsSearchTimeout = null;
+function handleEventsSearchInput(val) {
+  clearTimeout(eventsSearchTimeout);
+  eventsSearchTimeout = setTimeout(() => {
+    currentEventsQuery = val;
+    updateEventsDisplay();
+  }, 100);
+}
+
+function openEventDetailModal(eventId) {
+  const evt = CAMPUS_EVENTS_DATA.find(e => e.id === eventId);
+  if (!evt) return;
+
+  const modal = document.getElementById("eventDetailModal");
+  const content = document.getElementById("eventDetailModalContent");
+  if (!modal || !content) return;
+
+  const isInterested = userInterestedEventsSet.has(evt.id);
+  const count = evt.interestedCount + (isInterested ? 1 : 0);
+
+  content.innerHTML = `
+    <div class="event-modal-card">
+      
+      <!-- Top Modal Banner -->
+      <div class="event-modal-banner-wrap">
+        <img src="${escapeAttr(evt.image)}" alt="${escapeAttr(evt.title)}" class="event-modal-banner-img">
+        <button type="button" onclick="closeEventDetailModal()" class="event-modal-close-btn" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <span class="event-modal-cat-tag">${escapeHtml(evt.catBadge)}</span>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="event-modal-body">
+        
+        <div class="event-modal-title-row">
+          <div>
+            <h2 class="event-modal-title">${escapeHtml(evt.title)}</h2>
+            <div class="event-modal-organizer">${escapeHtml(evt.organizer)}</div>
+          </div>
+          <div class="event-date-block lg">
+            <span class="event-date-day">${escapeHtml(evt.day)}</span>
+            <span class="event-date-month">${escapeHtml(evt.month)}</span>
+          </div>
+        </div>
+
+        <!-- Key Meta Badges -->
+        <div class="event-modal-meta-grid">
+          <div class="event-modal-meta-item">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <div>
+              <strong>Time & Schedule</strong>
+              <span>${escapeHtml(evt.time)}</span>
+            </div>
+          </div>
+          <div class="event-modal-meta-item">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-8-7.5-8-12a8 8 0 1 1 16 0c0 4.5-8 12-8 12z"></path><circle cx="12" cy="9" r="3"></circle></svg>
+            <div>
+              <strong>Location & Venue</strong>
+              <span>${escapeHtml(evt.locationDetail || evt.location)}</span>
+            </div>
+          </div>
+          <div class="event-modal-meta-item">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            <div>
+              <strong>Admission & Registration</strong>
+              <span>${escapeHtml(evt.entryFee)}</span>
+            </div>
+          </div>
+          <div class="event-modal-meta-item">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            <div>
+              <strong>Eligibility</strong>
+              <span>${escapeHtml(evt.eligibility)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Full Description -->
+        <div class="event-modal-desc-box">
+          <h4 class="event-modal-desc-heading">About This Event</h4>
+          <p class="event-modal-desc-text">${escapeHtml(evt.details)}</p>
+        </div>
+
+        <!-- Attendee Social Row -->
+        <div class="event-modal-social-row">
+          <div class="event-attendees-group">
+            <div class="event-avatar-stack">
+              <img src="${EVENT_SAMPLE_AVATARS[0]}" alt="Student" class="event-avatar-mini">
+              <img src="${EVENT_SAMPLE_AVATARS[1]}" alt="Student" class="event-avatar-mini">
+              <img src="${EVENT_SAMPLE_AVATARS[2]}" alt="Student" class="event-avatar-mini">
+            </div>
+            <span class="event-attendees-count font-md">+${count} students interested</span>
+          </div>
+
+          <button type="button" id="btnInterestedToggle" class="btn-interested-toggle ${isInterested ? 'active' : ''}" onclick="toggleEventInterest('${evt.id}')">
+            <span>${isInterested ? '★ Interested' : '☆ I\'m Interested'}</span>
+          </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="event-modal-actions-row">
+          <button type="button" class="btn-secondary-pill" onclick="closeEventDetailModal()">Close</button>
+          <button type="button" class="btn-primary-forest-pill" onclick="handleEventRegistration('${evt.id}')">
+            <span>RSVP & Attend Event ➔</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+
+  modal.style.display = "flex";
+  document.body.classList.add("scroll-locked");
+}
+
+function closeEventDetailModal() {
+  const modal = document.getElementById("eventDetailModal");
+  if (modal) modal.style.display = "none";
+  document.body.classList.remove("scroll-locked");
+}
+
+function toggleEventInterest(eventId) {
+  const evt = CAMPUS_EVENTS_DATA.find(e => e.id === eventId);
+  if (!evt) return;
+
+  if (userInterestedEventsSet.has(eventId)) {
+    userInterestedEventsSet.delete(eventId);
+    showToast(`Removed from your interested events`, "info");
+  } else {
+    userInterestedEventsSet.add(eventId);
+    showToast(`You are marked as interested in ${evt.title}!`, "success");
+  }
+  saveUserInterestedEvents();
+  updateEventsDisplay();
+
+  // Update modal button state dynamically if open
+  const btn = document.getElementById("btnInterestedToggle");
+  if (btn) {
+    const isNow = userInterestedEventsSet.has(eventId);
+    btn.classList.toggle("active", isNow);
+    btn.innerHTML = `<span>${isNow ? '★ Interested' : '☆ I\'m Interested'}</span>`;
+  }
+}
+
+function handleEventRegistration(eventId) {
+  const evt = CAMPUS_EVENTS_DATA.find(e => e.id === eventId);
+  if (!evt) return;
+
+  if (!userInterestedEventsSet.has(eventId)) {
+    userInterestedEventsSet.add(eventId);
+    saveUserInterestedEvents();
+    updateEventsDisplay();
+  }
+
+  showToast(`Registration confirmed for ${evt.title}! See you on ${evt.day} ${evt.month}.`, "success");
+  setTimeout(() => {
+    closeEventDetailModal();
+  }, 1000);
+}
+
+function openEventsCalendarModal() {
+  const modal = document.getElementById("eventDetailModal");
+  const content = document.getElementById("eventDetailModalContent");
+  if (!modal || !content) return;
+
+  content.innerHTML = `
+    <div class="event-modal-card">
+      <div class="event-modal-banner-wrap" style="background:linear-gradient(135deg, #0D2E1F 0%, #165337 100%); height:110px; display:flex; align-items:center; padding:20px 24px; color:#FFFFFF;">
+        <button type="button" onclick="closeEventDetailModal()" class="event-modal-close-btn" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <div>
+          <span class="events-eyebrow" style="color:#86EFAC;">JNU CALENDAR</span>
+          <h3 style="font-family:var(--font-serif); font-size:1.35rem; color:#FFFFFF; margin:2px 0 0 0;">Semester & Campus Events Timeline</h3>
+        </div>
+      </div>
+
+      <div class="event-modal-body" style="padding:24px;">
+        <div class="calendar-timeline-list">
+          ${CAMPUS_EVENTS_DATA.map(e => `
+            <div class="cal-timeline-item" onclick="openEventDetailModal('${e.id}')">
+              <div class="cal-date-pill">
+                <strong>${escapeHtml(e.day)}</strong>
+                <span>${escapeHtml(e.month)}</span>
+              </div>
+              <div class="cal-item-info">
+                <h4 class="cal-item-title">${escapeHtml(e.title)}</h4>
+                <div class="cal-item-meta">📍 ${escapeHtml(e.location)} &bull; ${escapeHtml(e.time)}</div>
+              </div>
+              <span class="mobile-cat-pill theme-${escapeAttr(e.mobileBadgeTheme || 'mint')}">${escapeHtml(e.catBadge)}</span>
+            </div>
+          `).join("")}
+        </div>
+
+        <div style="margin-top:20px; text-align:right;">
+          <button type="button" class="btn-primary-forest-pill" onclick="closeEventDetailModal()">Close Calendar</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  modal.style.display = "flex";
+  document.body.classList.add("scroll-locked");
+}
+
+/* ==========================================================================
+   17. ACADEMIC & CAMPUS RESOURCES ENGINE & DATASETS
+   ========================================================================== */
+const CAMPUS_RESOURCES_DATA = [
+  {
+    id: "res-pyqs",
+    title: "JNU PYQs",
+    category: "Exams",
+    categoryGroup: ["all", "academic", "exams"],
+    image: "/static/img/redesign/resources/res_pyqs.png",
+    mobileThumb: "/static/img/redesign/resources/mob_thumb_pyqs.png",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
+    description: "Previous year question papers for all courses and semesters.",
+    metric: "📄 2.4K+ Papers",
+    fullDescription: "Comprehensive database of past 6 years end-semester and mid-term examination question papers across B.Tech (Computer Science, AI, IT, EE, ME, Civil), MCA, BCA, and Allied Sciences. Searchable by subject code, year, and faculty.",
+    tags: ["Question Papers", "Mid-Term", "End-Semester", "All Programs"],
+    links: [
+      { name: "B.Tech CSE & AI End-Semester Archive (2019-2024)", type: "Cloud Archive", size: "840+ PDFs" },
+      { name: "MCA / BCA Question Papers & Model Answers", type: "PDF Library", size: "620+ PDFs" },
+      { name: "Engineering Sciences & Core Mathematics", type: "Subject Bank", size: "410+ PDFs" }
+    ]
+  },
+  {
+    id: "res-syllabus",
+    title: "Syllabus",
+    category: "Academic",
+    categoryGroup: ["all", "academic"],
+    image: "/static/img/redesign/resources/res_syllabus.png",
+    mobileThumb: "/static/img/redesign/resources/mob_thumb_syllabus.png",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`,
+    description: "Latest syllabus for all programs and subjects.",
+    metric: "📖 500+ Syllabi",
+    fullDescription: "Official curriculum blueprints, subject syllabi, credit distribution matrices, and elective lists approved by the Academic Council for current undergraduate and postgraduate batches.",
+    tags: ["Curriculum", "Credit Schemes", "Elective Lists", "Course Outlines"],
+    links: [
+      { name: "B.Tech Computer Science Curriculum (CBCS Scheme)", type: "Official Document", size: "Semesters 1-8" },
+      { name: "MCA Revised Syllabus & Specializations", type: "Official Document", size: "Semesters 1-4" },
+      { name: "BCA Semester Scheme & Lab Guidelines", type: "Official Document", size: "Semesters 1-6" }
+    ]
+  },
+  {
+    id: "res-notes",
+    title: "Notes & Study Material",
+    category: "Academic",
+    categoryGroup: ["all", "academic"],
+    image: "/static/img/redesign/resources/res_notes.png",
+    mobileThumb: "/static/img/redesign/resources/mob_thumb_notes.png",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>`,
+    description: "Class notes, study resources and shared materials.",
+    metric: "📝 1.8K+ Resources",
+    fullDescription: "Verified student toppers' handwritten notebooks, professor presentation slide decks, exam cheat-sheets, and concise revision summaries categorized by unit and topic.",
+    tags: ["Handwritten Notes", "Faculty Slides", "Quick Revision", "Exam Cheat Sheets"],
+    links: [
+      { name: "Data Structures, Algorithms & Complexity Notes", type: "Curated PDF", size: "Topper Verified" },
+      { name: "Database Systems & SQL Comprehensive Guide", type: "Lecture Slides", size: "Complete 5 Units" },
+      { name: "Operating Systems & Networking Quick Revision", type: "Summary Sheets", size: "High-Yield" }
+    ]
+  },
+  {
+    id: "res-calendar",
+    title: "Academic Calendar",
+    category: "Campus Life",
+    categoryGroup: ["all", "campus life", "academic"],
+    image: "/static/img/redesign/resources/res_calendar.png",
+    mobileThumb: "/static/img/redesign/resources/mob_thumb_calendar.png",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`,
+    description: "Important academic dates, exam schedules and notifications.",
+    metric: "📅 Latest Updates",
+    fullDescription: "Official university academic calendar featuring class commencement dates, mid-term evaluation periods, preparatory leaves, gazetted holidays, and university festival weeks.",
+    tags: ["Academic Calendar", "Exam Schedules", "University Holidays", "Timetable"],
+    links: [
+      { name: "Official JNU Academic Calendar 2025-2026", type: "PDF Notice", size: "Verified" },
+      { name: "Semester End Exam Datesheet & Guidelines", type: "Notice Board", size: "Live Update" }
+    ]
+  },
+  {
+    id: "res-placements",
+    title: "Placements",
+    category: "Placements",
+    categoryGroup: ["all", "placements", "career"],
+    image: "/static/img/redesign/resources/res_placements.png",
+    mobileThumb: "/static/img/redesign/resources/mob_thumb_placements.png",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`,
+    description: "Placement drives, interview experiences and preparation resources.",
+    metric: "💼 300+ Resources",
+    fullDescription: "Training and placement cell preparation repository. Includes company-specific test question patterns, real interview transcripts, coding rounds practice sheets, and ATS-friendly resume templates.",
+    tags: ["Placement Drives", "Interview Experiences", "Coding Tests", "Resumes"],
+    links: [
+      { name: "Top 150 Technical Interview Questions & Solutions", type: "Interview Guide", size: "Comprehensive" },
+      { name: "Verified Student Placement Debriefs & Patterns", type: "Alumni Archive", size: "120+ Stories" },
+      { name: "Engineers ATS Resume Templates (LaTeX & DOCX)", type: "Template Pack", size: "8 Styles" }
+    ]
+  },
+  {
+    id: "res-career",
+    title: "Career Guidance",
+    category: "Career",
+    categoryGroup: ["all", "career"],
+    image: "/static/img/redesign/resources/res_career.png",
+    mobileThumb: "/static/img/redesign/resources/mob_thumb_career.png",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>`,
+    description: "Guides, roadmaps and resources to help you plan your future.",
+    metric: "👥 200+ Guides",
+    fullDescription: "Step-by-step developer roadmaps for Full-Stack, AI Engineering, Cloud & DevOps, and Higher Education pathways (GATE, GRE, CAT, civil services).",
+    tags: ["Roadmaps", "GATE Prep", "Certifications", "Career Tracks"],
+    links: [
+      { name: "Software Engineer Interactive Roadmap 2025", type: "Visual Guide", size: "All Tracks" },
+      { name: "GATE CS & IT Comprehensive Subject Tracker", type: "Study Plan", size: "Full Syllabus" },
+      { name: "Cloud Architecture & Certification Free Paths", type: "Curated Kit", size: "AWS & GCP" }
+    ]
+  },
+  {
+    id: "res-ideas",
+    title: "Project Ideas",
+    category: "Academic",
+    categoryGroup: ["all", "academic", "career"],
+    image: "/static/img/redesign/resources/res_ideas.png",
+    mobileThumb: "/static/img/redesign/resources/mob_thumb_ideas.png",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path></svg>`,
+    description: "Mini projects, major projects and research ideas.",
+    metric: "💡 150+ Ideas",
+    fullDescription: "High-impact major and minor capstone project prompts. Complete with technical architecture diagrams, recommended tech stack, datasets, API documentation, and presentation decks.",
+    tags: ["Capstone Projects", "Mini Projects", "AI & Web3", "IoT & Hardware"],
+    links: [
+      { name: "AI/ML Real-World Problem Statements & Datasets", type: "Project Kit", size: "45 Blueprints" },
+      { name: "Full-Stack Web & Distributed Systems Projects", type: "Architecture Specs", size: "35 Blueprints" },
+      { name: "Smart Campus & Internet of Things Prototypes", type: "Hardware Schematics", size: "25 Blueprints" }
+    ]
+  },
+  {
+    id: "res-community",
+    title: "Student Community",
+    category: "Campus Life",
+    categoryGroup: ["all", "campus life"],
+    image: "/static/img/redesign/resources/res_community.png",
+    mobileThumb: "/static/img/redesign/resources/mob_thumb_community.png",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
+    description: "Useful links, study groups and student initiatives.",
+    metric: "👥 100+ Links",
+    fullDescription: "Direct access channels to student-led societies, coding circles, hackathon squads, open-source cohorts, peer mentor lounges, and cultural interest circles.",
+    tags: ["Discord Server", "WhatsApp Guilds", "Coding Circles", "Student Clubs"],
+    links: [
+      { name: "JNU Hackathon Squad & Coders Discord Hub", type: "Discord Community", size: "1,400+ Members" },
+      { name: "Open Source Engineers WhatsApp Guild", type: "Community Group", size: "480+ Students" },
+      { name: "Competitive Programming & Problem Solving Circle", type: "Weekly Meetups", size: "Active" }
+    ]
+  },
+  {
+    id: "res-links",
+    title: "Useful Links",
+    category: "Others",
+    categoryGroup: ["all", "others"],
+    image: "/static/img/redesign/resources/res_links.png",
+    mobileThumb: "/static/img/redesign/resources/mob_thumb_links.png",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`,
+    description: "Important university links and external resources.",
+    metric: "🔗 250+ Links",
+    fullDescription: "Curated portal directory with fast links to the JNU Student ERP, Central Digital Library, Fee Payment Portal, Result Inquiries, Bus Timings, and Hostel Administration.",
+    tags: ["ERP Portal", "Library Access", "Examination Portal", "Campus Helpline"],
+    links: [
+      { name: "Jaipur National University Student ERP Portal", type: "Official Gateway", size: "Direct Portal" },
+      { name: "JNU Digital Library & Research Gateways", type: "Academic Portal", size: "Direct Portal" },
+      { name: "University Examinations & Grade Card Portal", type: "Results Gateway", size: "Direct Portal" }
+    ]
+  }
+];
+
+let currentResourcesCategory = "all";
+let currentResourcesQuery = "";
+
+function loadResourcesView() {
+  const container = document.getElementById("resourcesViewContainer");
+  if (!container) return;
+  currentResourcesCategory = "all";
+  currentResourcesQuery = "";
+  renderResourcesPage();
+}
+
+function renderResourcesPage() {
+  const container = document.getElementById("resourcesViewContainer");
+  if (!container) return;
+
+  const resSearchPlaceholder = (typeof window !== "undefined" && window.innerWidth <= 768) ? "Search resources..." : "Search resources (e.g. PYQs, notes, syllabus, placement, etc.)";
+
+  const html = `
+    <div class="resources-page-shell">
+      
+      <!-- HERO BANNER CARD (Editorial Mint Gradient) -->
+      <div class="resources-hero-card">
+        <div class="resources-hero-content">
+          <span class="resources-eyebrow">RESOURCES</span>
+          <h1 class="resources-hero-title">Learn. Prepare. Grow.</h1>
+          <p class="resources-hero-subtitle">
+            All the resources you need for your academic and campus journey, curated in one place.
+          </p>
+        </div>
+        <div class="resources-hero-graphic-wrap">
+          <img src="/static/img/redesign/resources/resources_hero_sketch.png" alt="Knowledge Shapes Brighter Tomorrows." class="resources-hero-banner-illustration">
+        </div>
+      </div>
+
+      <!-- FULL-WIDTH SEARCH BAR -->
+      <div class="resources-search-container">
+        <div class="resources-search-wrap">
+          <svg class="resources-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="resourcesSearchInput" class="resources-search-input" placeholder="${escapeAttr(resSearchPlaceholder)}" value="${escapeAttr(currentResourcesQuery)}" oninput="handleResourcesSearchInput(this.value)">
+        </div>
+      </div>
+
+      <!-- FILTER ROW: Category Pills (Left) & Editorial Quote (Right) -->
+      <div class="resources-filter-row">
+        
+        <!-- Desktop Category Pills -->
+        <div class="resources-filter-pills desktop-only-flex" id="resourcesFilterPillsDesktop">
+          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'all' ? 'active' : ''}" onclick="setResourcesFilter('all')">All</button>
+          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'academic' ? 'active' : ''}" onclick="setResourcesFilter('academic')">Academic</button>
+          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'exams' ? 'active' : ''}" onclick="setResourcesFilter('exams')">Exams</button>
+          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'placements' ? 'active' : ''}" onclick="setResourcesFilter('placements')">Placements</button>
+          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'career' ? 'active' : ''}" onclick="setResourcesFilter('career')">Career</button>
+          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'campus life' ? 'active' : ''}" onclick="setResourcesFilter('campus life')">Campus Life</button>
+          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'others' ? 'active' : ''}" onclick="setResourcesFilter('others')">Others</button>
+        </div>
+
+        <!-- Right Side Cursive Script Quote -->
+        <div class="resources-quote-box desktop-only-flex">
+          <span class="resources-quote-divider"></span>
+          <span class="resources-quote-script">“Better Resources. Brighter Futures.”</span>
+        </div>
+
+      </div>
+
+      <!-- Mobile Horizontally Scrolling Filter Pills (< 768px) -->
+      <div class="resources-filter-scroll-mobile mobile-only-flex" id="resourcesFilterPillsMobile">
+        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'all' ? 'active' : ''}" onclick="setResourcesFilter('all')">All</button>
+        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'academic' ? 'active' : ''}" onclick="setResourcesFilter('academic')">Academic</button>
+        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'exams' ? 'active' : ''}" onclick="setResourcesFilter('exams')">Exams</button>
+        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'placements' ? 'active' : ''}" onclick="setResourcesFilter('placements')">Placements</button>
+        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'career' ? 'active' : ''}" onclick="setResourcesFilter('career')">Career</button>
+        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'campus life' ? 'active' : ''}" onclick="setResourcesFilter('campus life')">Campus Life</button>
+        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'others' ? 'active' : ''}" onclick="setResourcesFilter('others')">Others</button>
+      </div>
+
+      <!-- RESOURCES DESKTOP 3x3 GRID -->
+      <div class="resources-grid-desktop desktop-only-grid" id="resourcesDesktopGrid"></div>
+
+      <!-- RESOURCES MOBILE VERTICAL LIST (< 768px) -->
+      <div class="resources-list-mobile mobile-only-block" id="resourcesMobileList"></div>
+
+      <!-- EMPTY STATE -->
+      <div class="resources-empty-state" id="resourcesEmptyState" style="display:none;">
+        <div class="resources-empty-icon">📚</div>
+        <h3 class="resources-empty-title">No resources found</h3>
+        <p class="resources-empty-desc">No academic materials matched your query. Try searching for PYQs, notes, or syllabus.</p>
+        <button type="button" class="btn-create-team-primary" onclick="setResourcesFilter('all')">View All Resources</button>
+      </div>
+
+      <!-- EDITORIAL FOOTER (Matching media_1789755997604.jpg) -->
+      <footer class="resources-editorial-footer">
+        <div class="resources-footer-left">
+          &copy; 2026 JnuMate. All rights reserved.
+        </div>
+        <div class="resources-footer-center">
+          <img src="/static/img/redesign/otp_desktop_building.png" alt="Campus Watermark" class="resources-footer-sketch">
+          <div class="resources-footer-script">
+            <span>Learn</span>
+            <span>Grow</span>
+            <span>Belong</span>
+            <em>Together.</em>
+          </div>
+        </div>
+        <div class="resources-footer-right">
+          <a href="javascript:void(0)" onclick="navigateTo('/about')" class="resources-footer-link">About</a>
+          <span class="resources-footer-dot">|</span>
+          <a href="javascript:void(0)" onclick="showToast('Help center & documentation active', 'info')" class="resources-footer-link">Help</a>
+          <span class="resources-footer-dot">|</span>
+          <a href="mailto:inbox.afrozalam@gmail.com" class="resources-footer-link">Contact</a>
+        </div>
+      </footer>
+
+    </div>
+  `;
+
+  container.innerHTML = html;
+  updateResourcesDisplay();
+}
+
+function getFilteredResources() {
+  return CAMPUS_RESOURCES_DATA.filter(res => {
+    let matchesCat = true;
+    if (currentResourcesCategory !== "all") {
+      const c = currentResourcesCategory.toLowerCase();
+      matchesCat = res.categoryGroup.includes(c) || res.category.toLowerCase() === c;
+    }
+
+    let matchesQuery = true;
+    if (currentResourcesQuery.trim()) {
+      const q = currentResourcesQuery.trim().toLowerCase();
+      matchesQuery = (
+        res.title.toLowerCase().includes(q) ||
+        res.description.toLowerCase().includes(q) ||
+        res.fullDescription.toLowerCase().includes(q) ||
+        res.category.toLowerCase().includes(q) ||
+        res.tags.some(t => t.toLowerCase().includes(q))
+      );
+    }
+
+    return matchesCat && matchesQuery;
+  });
+}
+
+function updateResourcesDisplay() {
+  const filtered = getFilteredResources();
+  const desktopContainer = document.getElementById("resourcesDesktopGrid");
+  const mobileContainer = document.getElementById("resourcesMobileList");
+  const emptyState = document.getElementById("resourcesEmptyState");
+
+  if (!desktopContainer || !mobileContainer) return;
+
+  if (filtered.length === 0) {
+    desktopContainer.innerHTML = "";
+    mobileContainer.innerHTML = "";
+    if (emptyState) emptyState.style.display = "block";
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = "none";
+
+  // Desktop 3x3 Grid of 9 Cards
+  desktopContainer.innerHTML = filtered.map(res => {
+    return `
+      <div class="resource-card" onclick="openResourceDetailModal('${res.id}')">
+        
+        <!-- Top Image (Baked-in icon badge) -->
+        <div class="resource-card-image-wrap">
+          <img src="${escapeAttr(res.image)}" alt="${escapeAttr(res.title)}" class="resource-card-img" loading="lazy">
+        </div>
+
+        <!-- Card Content -->
+        <div class="resource-card-content">
+          <div>
+            <h3 class="resource-card-title">${escapeHtml(res.title)}</h3>
+            <p class="resource-card-desc">${escapeHtml(res.description)}</p>
+          </div>
+
+          <!-- Bottom Row with Metric & Arrow Action Button -->
+          <div class="resource-card-bottom-row">
+            <span class="resource-metric-pill">${escapeHtml(res.metric)}</span>
+            <button type="button" class="resource-action-circle-btn" onclick="event.stopPropagation(); openResourceDetailModal('${res.id}')" aria-label="Open Resource">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    `;
+  }).join("");
+
+  // Mobile Vertical Resource List Cards (< 768px)
+  mobileContainer.innerHTML = filtered.map(res => {
+    const thumbSrc = res.mobileThumb || res.image;
+    return `
+      <div class="mobile-resource-card-item" onclick="openResourceDetailModal('${res.id}')">
+        
+        <img src="${escapeAttr(thumbSrc)}" alt="${escapeAttr(res.title)}" class="mobile-res-thumb" loading="lazy">
+        
+        <div class="mobile-res-icon-box">
+          ${res.iconSvg}
+        </div>
+
+        <div class="mobile-res-info-column">
+          <h4 class="mobile-res-item-title">${escapeHtml(res.title)}</h4>
+          <p class="mobile-res-item-desc">${escapeHtml(res.description)}</p>
+          <div class="mobile-res-metric-tag">${escapeHtml(res.metric)}</div>
+        </div>
+
+        <div class="mobile-res-right-chevron">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#16A34A" stroke-width="2.5">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+
+      </div>
+    `;
+  }).join("");
+}
+
+function setResourcesFilter(category) {
+  currentResourcesCategory = category;
+
+  // Update desktop pills
+  document.querySelectorAll(".resources-filter-pill").forEach(btn => {
+    const text = btn.innerText.toLowerCase();
+    const isMatch = (
+      (category === "all" && text === "all") ||
+      (category === "academic" && text === "academic") ||
+      (category === "exams" && text === "exams") ||
+      (category === "placements" && text === "placements") ||
+      (category === "career" && text === "career") ||
+      (category === "campus life" && text === "campus life") ||
+      (category === "others" && text === "others")
+    );
+    btn.classList.toggle("active", isMatch);
+  });
+
+  // Update mobile pills
+  document.querySelectorAll(".resources-filter-pill-mob").forEach(btn => {
+    const text = btn.innerText.toLowerCase();
+    const isMatch = (
+      (category === "all" && text === "all") ||
+      (category === "academic" && text === "academic") ||
+      (category === "exams" && text === "exams") ||
+      (category === "placements" && text === "placements") ||
+      (category === "career" && text === "career") ||
+      (category === "campus life" && text === "campus life") ||
+      (category === "others" && text === "others")
+    );
+    btn.classList.toggle("active", isMatch);
+  });
+
+  updateResourcesDisplay();
+}
+
+let resourcesSearchTimeout = null;
+function handleResourcesSearchInput(val) {
+  clearTimeout(resourcesSearchTimeout);
+  resourcesSearchTimeout = setTimeout(() => {
+    currentResourcesQuery = val;
+    updateResourcesDisplay();
+  }, 100);
+}
+
+function openResourceDetailModal(resourceId) {
+  const res = CAMPUS_RESOURCES_DATA.find(r => r.id === resourceId);
+  if (!res) return;
+
+  const modal = document.getElementById("resourceDetailModal");
+  const content = document.getElementById("resourceDetailModalContent");
+  if (!modal || !content) return;
+
+  content.innerHTML = `
+    <div class="resource-modal-card">
+      
+      <div class="resource-modal-banner-wrap">
+        <img src="${escapeAttr(res.image)}" alt="${escapeAttr(res.title)}" class="resource-modal-banner-img">
+        <button type="button" onclick="closeResourceDetailModal()" class="event-modal-close-btn" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <div class="resource-modal-floating-icon">
+          ${res.iconSvg}
+        </div>
+      </div>
+
+      <div class="resource-modal-body">
+        
+        <div class="resource-modal-title-row">
+          <div>
+            <h2 class="resource-modal-title">${escapeHtml(res.title)}</h2>
+            <p class="resource-modal-subtitle">${escapeHtml(res.description)}</p>
+          </div>
+          <span class="resource-metric-pill lg">${escapeHtml(res.metric)}</span>
+        </div>
+
+        <div class="resource-tags-cloud">
+          ${res.tags.map(t => `<span class="resource-tag-pill">${escapeHtml(t)}</span>`).join("")}
+        </div>
+
+        <div class="resource-modal-desc-box">
+          <h4 class="event-modal-desc-heading">About This Resource</h4>
+          <p class="event-modal-desc-text">${escapeHtml(res.fullDescription)}</p>
+        </div>
+
+        <!-- Available Downloads & Drive Folders -->
+        <div class="resource-links-section">
+          <h4 class="event-modal-desc-heading">Available Materials & Directories</h4>
+          <div class="resource-links-list">
+            ${res.links.map(item => `
+              <div class="resource-link-row">
+                <div class="resource-link-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                </div>
+                <div class="resource-link-details">
+                  <strong class="resource-link-name">${escapeHtml(item.name)}</strong>
+                  <span class="resource-link-type">${escapeHtml(item.type)} &bull; ${escapeHtml(item.size)}</span>
+                </div>
+                <button type="button" class="btn-download-pill" onclick="handleDownloadResource('${escapeAttr(item.name)}')">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  <span>Access</span>
+                </button>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="event-modal-actions-row">
+          <button type="button" class="btn-secondary-pill" onclick="closeResourceDetailModal()">Close</button>
+          <button type="button" class="btn-primary-forest-pill" onclick="handleBookmarkResource('${res.id}')">
+            <span>Bookmark Resource ★</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+
+  modal.style.display = "flex";
+  document.body.classList.add("scroll-locked");
+}
+
+function closeResourceDetailModal() {
+  const modal = document.getElementById("resourceDetailModal");
+  if (modal) modal.style.display = "none";
+  document.body.classList.remove("scroll-locked");
+}
+
+function handleDownloadResource(name) {
+  showToast(`Opening ${name}...`, "success");
+}
+
+function handleBookmarkResource(id) {
+  const res = CAMPUS_RESOURCES_DATA.find(r => r.id === id);
+  showToast(`${res ? res.title : 'Resource'} bookmarked to your profile!`, "success");
+  closeResourceDetailModal();
+}
+

@@ -464,6 +464,14 @@ def auto_import_student_from_json(r_id, conn, cursor):
 @app.route("/students")
 @app.route("/about")
 @app.route("/admin")
+@app.route("/events")
+@app.route("/resources")
+@app.route("/course-select")
+@app.route("/select-program")
+@app.route("/enter-details")
+@app.route("/sync-details")
+@app.route("/otp")
+@app.route("/verify-otp")
 def index(team_id=None):
     return render_template("index.html")
 

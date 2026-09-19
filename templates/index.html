@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,600&family=Outfit:wght@400;500;600;700;800&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fraunces:ital,opsz,wght@0,9..144,600..800;1,9..144,600&family=Outfit:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
@@ -24,6 +24,9 @@
       else if (p === "/profile") activeId = "viewProfile";
       else if (p === "/create-team") activeId = "viewCreateTeam";
       else if (p === "/students") activeId = "viewStudents";
+      else if (p === "/events") activeId = "viewEvents";
+      else if (p === "/resources") activeId = "viewResources";
+      else if (p === "/course-select" || p === "/select-program" || p === "/enter-details" || p === "/sync-details" || p === "/otp" || p === "/verify-otp") activeId = "viewLogin";
       window.__initialActiveViewId = activeId;
     })();
   </script>
@@ -44,7 +47,10 @@
       <header class="mobile-top-bar">
         <a href="/" class="mobile-brand-lockup">
           <img src="{{ url_for('static', filename='img/jnu_logo.png') }}" alt="JNU Crest" class="mobile-crest-logo">
-          <span class="mobile-brand">JnuMate<span class="brand-dot">.</span></span>
+          <div class="mobile-brand-title-wrap">
+            <span class="mobile-brand">JnuMate<span class="brand-dot">.</span></span>
+            <span class="mobile-brand-sub">JAIPUR NATIONAL UNIVERSITY</span>
+          </div>
         </a>
         <div class="mobile-top-actions">
           <button id="btnMobileNotif" onclick="toggleNotificationsPanel()" class="mobile-action-icon-btn"
@@ -73,6 +79,13 @@
             <span class="brand-tagline-tiny">JAIPUR NATIONAL UNIVERSITY</span>
           </div>
         </a>
+
+        <!-- Center Navigation Links -->
+        <nav class="desktop-top-nav-links">
+          <a href="/" class="desktop-nav-link active" data-path="/">Home</a>
+          <a href="/events" class="desktop-nav-link" data-path="/events">Events</a>
+          <a href="/resources" class="desktop-nav-link" data-path="/resources">Resources</a>
+        </nav>
 
         <!-- Right: Notifications & Profile with Floating Dropdown Windows -->
         <div class="desktop-top-right-cluster">
@@ -186,64 +199,120 @@
         <!-- VIEW 1: DISCOVER TEAMS -->
         <section id="viewDiscover" class="view-page-panel">
 
-          <!-- Mobile Editorial Header (Short & Beautiful) -->
-          <div class="forest-header-section home-header-compact mobile-only-block">
-            <div class="home-header-title-box">
-              <h1 class="home-quick-title">Find teammates for your team, or join any open team here.</h1>
+          <!-- Discover Hero Section -->
+          <div class="discover-hero-section">
+            <div class="discover-hero-left">
+              <span class="discover-eyebrow">TEAMS</span>
+              <h1 class="discover-main-title">Find your team, build something great.</h1>
+              <p class="discover-subtitle">Join a team, find open slots, or create your own for upcoming hackathons.</p>
+            </div>
+            <div class="discover-hero-right">
+              <div class="discover-search-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="searchInput" placeholder="Search teams, ideas, skills, members..." class="discover-search-input" oninput="debounceDiscoverSearch()">
+              </div>
+              <a href="/create-team" class="btn-create-team-primary">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Create Team</span>
+              </a>
             </div>
           </div>
 
-          <!-- Unified Controls Bar: Left Filter | Center Search | Right Create Team -->
-          <div class="homescreen-unified-controls-bar">
-            <!-- Left: Filter Segmented Pill with All, SIH, CTF, Open Slots -->
-            <div class="filter-segmented-pill homescreen-filter-pill">
-              <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="filter-btn active"
-                data-filter="all">All</button>
-              <button onclick="setDiscoverFilter('sih')" id="btnFilterSih" class="filter-btn"
-                data-filter="sih">SIH</button>
-              <button onclick="setDiscoverFilter('ctf')" id="btnFilterCtf" class="filter-btn"
-                data-filter="ctf">CTF</button>
-              <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="filter-btn" data-filter="open">Open
-                Slots</button>
+          <!-- Mobile Search & Filter Bar (shown on mobile < 768px) -->
+          <div class="mobile-search-filter-row">
+            <div class="mobile-search-input-box">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              <input type="text" id="mobileSearchInput" placeholder="Search teams, ideas, skills..." class="mobile-search-input" oninput="handleMobileSearch(this)">
             </div>
-
-            <!-- Center: Search Input -->
-            <div class="search-pill-wrapper homescreen-search-box">
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            <button onclick="toggleMobileFilterMenu()" class="mobile-filter-slider-btn" aria-label="Filter Options">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"></line>
+                <line x1="4" y1="10" x2="4" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12" y2="3"></line>
+                <line x1="20" y1="21" x2="20" y2="16"></line>
+                <line x1="20" y1="12" x2="20" y2="3"></line>
+                <line x1="1" y1="14" x2="7" y2="14"></line>
+                <line x1="9" y1="8" x2="15" y2="8"></line>
+                <line x1="17" y1="16" x2="23" y2="16"></line>
               </svg>
-              <input type="text" id="searchInput" placeholder="Search teams, ideas, skills, R-IDs..."
-                class="search-pill-input" oninput="debounceDiscoverSearch()">
+            </button>
+          </div>
+
+          <!-- Filter & Sort Bar -->
+          <div class="discover-filter-sort-bar">
+            <div class="discover-filter-pills">
+              <button onclick="setDiscoverFilter('all')" id="btnFilterAll" class="discover-filter-pill active" data-filter="all">
+                <span class="desktop-filter-label">All</span>
+                <span class="mobile-filter-label">All</span>
+              </button>
+              <button onclick="setDiscoverFilter('sih')" id="btnFilterSih" class="discover-filter-pill" data-filter="sih">
+                <span class="desktop-filter-label">Smart India Hackathon (SIH)</span>
+                <span class="mobile-filter-label">SIH</span>
+              </button>
+              <button onclick="setDiscoverFilter('ctf')" id="btnFilterCtf" class="discover-filter-pill" data-filter="ctf">
+                <span class="desktop-filter-label">Capture The Flag (CTF)</span>
+                <span class="mobile-filter-label">CTF</span>
+              </button>
+              <button onclick="setDiscoverFilter('open')" id="btnFilterOpen" class="discover-filter-pill" data-filter="open">
+                <span class="desktop-filter-label">Open Slots</span>
+                <span class="mobile-filter-label">Open Slots</span>
+              </button>
             </div>
 
-            <!-- Right: Create Team Button -->
-            <div class="homescreen-create-action">
-              <a href="/create-team" class="btn-agro-yellow-pill">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px; height:16px;">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                <span>Create Team</span>
-              </a>
+            <!-- Sort By Dropdown (Desktop) -->
+            <div class="discover-sort-wrapper">
+              <span class="discover-sort-label">Sort by</span>
+              <div class="discover-sort-select-box">
+                <select id="teamSortSelect" onchange="handleSortTeams(this.value)" class="discover-sort-select">
+                  <option value="newest" selected>Newest</option>
+                  <option value="slots">Most Open Slots</option>
+                  <option value="members">Most Members</option>
+                  <option value="name">Name (A-Z)</option>
+                </select>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="discover-sort-chevron"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
             </div>
           </div>
 
           <!-- Teams Grid Cards Container -->
           <div id="teamsGridContainer" class="teams-kanban-board"></div>
 
-          <!-- Pagination Controls -->
-          <div id="discoverPagination" class="discover-pagination-wrapper"></div>
+          <!-- Pagination & Campus Watermark Container -->
+          <div class="discover-pagination-watermark-row">
+            <div id="discoverPagination" class="discover-pagination-wrapper"></div>
+            <div class="discover-campus-watermark">
+              <img src="/static/img/redesign/campus_sketch.png" alt="JNU Campus" class="campus-watermark-img">
+              <div class="campus-watermark-quote">
+                <span>Learn</span>
+                <span>Grow</span>
+                <span>Belong</span>
+                <em>Together.</em>
+              </div>
+            </div>
+          </div>
 
           <!-- Empty State -->
           <div id="emptyStateContainer" style="display:none; text-align:center; padding:60px 20px;">
-            <div style="font-family:var(--font-serif); font-size:1.5rem; font-weight:700; margin-bottom:8px;">No teams
-              found</div>
-            <p style="color:var(--text-sage); margin-bottom:20px;">Be the first to build an unstoppable hackathon team!
-            </p>
-            <a href="/create-team" class="btn-black-pill">
+            <div style="font-family:'Fraunces', Georgia, serif; font-size:1.5rem; font-weight:700; margin-bottom:8px; color:#0F172A;">No teams found</div>
+            <p style="color:#64748B; margin-bottom:20px;">Be the first to build an unstoppable hackathon team!</p>
+            <a href="/create-team" class="btn-create-team-primary" style="margin:0 auto; display:inline-flex;">
               + Create New Team
             </a>
           </div>
+
+          <!-- Page Footer -->
+          <footer class="discover-page-footer">
+            <div class="discover-footer-left">&copy; 2026 JnuMate. All rights reserved.</div>
+            <div class="discover-footer-right">
+              <a href="javascript:void(0)" onclick="navigateTo('/about')" class="discover-footer-link">About</a>
+              <a href="javascript:void(0)" onclick="showToast('Help center coming soon', 'info')" class="discover-footer-link">Help</a>
+              <a href="mailto:inbox.afrozalam@gmail.com" class="discover-footer-link">Contact</a>
+            </div>
+          </footer>
         </section>
 
         <!-- VIEW 2: TEAM DETAIL -->
@@ -274,6 +343,16 @@
         <!-- VIEW 7: ADMIN EXECUTIVE CONSOLE -->
         <section id="viewAdmin" class="view-page-panel">
           <div id="adminViewContainer"></div>
+        </section>
+
+        <!-- VIEW 8: CAMPUS EVENTS -->
+        <section id="viewEvents" class="view-page-panel">
+          <div id="eventsViewContainer"></div>
+        </section>
+
+        <!-- VIEW 9: ACADEMIC & CAMPUS RESOURCES -->
+        <section id="viewResources" class="view-page-panel">
+          <div id="resourcesViewContainer"></div>
         </section>
 
         <!-- Professional Dark 2-Column Compact Global Footer -->
@@ -502,6 +581,85 @@
       <!-- Injected dynamically via JS -->
     </div>
   </div>
+
+  <!-- ================= UNIVERSITY ID CARD QR SCANNER MODAL ================= -->
+  <div id="qrScannerModal" class="forest-modal-overlay" onclick="closeUniversityQrScanner()" style="display:none; z-index:999999;">
+    <div class="qr-scanner-modal-card" onclick="event.stopPropagation()">
+      <div class="qr-scanner-header">
+        <div class="qr-scanner-header-text">
+          <h3 class="qr-scanner-title">Scan University ID Card</h3>
+          <p class="qr-scanner-subtitle">Align the QR code from your student ID within the frame</p>
+        </div>
+        <button type="button" onclick="closeUniversityQrScanner()" class="qr-scanner-close-btn" aria-label="Close Scanner">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="qr-scanner-viewfinder-wrap">
+        <video id="qrScannerVideo" playsinline autoplay muted class="qr-scanner-video"></video>
+        <canvas id="qrScannerCanvas" style="display:none;"></canvas>
+        <div class="qr-scanner-reticle">
+          <span class="qr-corner top-left"></span>
+          <span class="qr-corner top-right"></span>
+          <span class="qr-corner bottom-left"></span>
+          <span class="qr-corner bottom-right"></span>
+          <div class="qr-scan-laser"></div>
+        </div>
+        <div id="qrScannerNotice" class="qr-scanner-notice">Initializing camera...</div>
+      </div>
+
+      <div class="qr-scanner-footer">
+        <label class="qr-upload-btn" title="Upload ID card image">
+          <input type="file" id="qrFileInput" accept="image/*" style="display:none;" onchange="handleQrFileUpload(event)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span>Upload ID Card Photo</span>
+        </label>
+        <div class="qr-helper-hint">Your College R-ID is printed beneath the barcode/QR on your JNU Student ID card.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= EVENT DETAIL MODAL OVERLAY ================= -->
+  <div id="eventDetailModal" class="forest-modal-overlay" onclick="closeEventDetailModal()" style="display:none; z-index:99999;">
+    <div class="forest-modal-sheet event-detail-modal-sheet" onclick="event.stopPropagation()" id="eventDetailModalContent">
+      <!-- Injected dynamically via JS -->
+    </div>
+  </div>
+
+  <!-- ================= RESOURCE DETAIL MODAL OVERLAY ================= -->
+  <div id="resourceDetailModal" class="forest-modal-overlay" onclick="closeResourceDetailModal()" style="display:none; z-index:99999;">
+    <div class="forest-modal-sheet resource-detail-modal-sheet" onclick="event.stopPropagation()" id="resourceDetailModalContent">
+      <!-- Injected dynamically via JS -->
+    </div>
+  </div>
+
+  <!-- ================= MOBILE STICKY CREATE TEAM BAR ================= -->
+  <div id="mobileStickyCreateTeamBar" class="mobile-sticky-create-bar">
+    <a href="/create-team" class="btn-mobile-create-team">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      <span>Create Team</span>
+    </a>
+  </div>
+
+  <!-- ================= MOBILE BOTTOM NAVIGATION BAR (< 768px) ================= -->
+  <nav class="mobile-bottom-nav-bar" id="mobileBottomNavBar">
+    <a href="/" class="mobile-bottom-nav-item active" data-nav="home">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="/events" onclick="event.preventDefault(); navigateTo('/events');" class="mobile-bottom-nav-item" data-nav="events">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+      <span>Events</span>
+    </a>
+    <a href="/resources" onclick="event.preventDefault(); navigateTo('/resources');" class="mobile-bottom-nav-item" data-nav="resources">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+      <span>Resources</span>
+    </a>
+    <a href="/profile" onclick="event.preventDefault(); navigateTo('/profile');" class="mobile-bottom-nav-item" data-nav="profile">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <span>Profile</span>
+    </a>
+  </nav>
 
   <!-- JavaScript SPA Engine -->
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
