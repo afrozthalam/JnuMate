@@ -157,6 +157,11 @@ def init_db():
                 sender_name VARCHAR(150),
                 sender_avatar TEXT,
                 message TEXT NOT NULL,
+                reactions TEXT DEFAULT '{}',
+                attachment_name TEXT,
+                attachment_url TEXT,
+                attachment_size TEXT,
+                attachment_type TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
@@ -306,12 +311,34 @@ def init_db():
                 sender_name TEXT,
                 sender_avatar TEXT,
                 message TEXT NOT NULL,
+                reactions TEXT DEFAULT '{}',
+                attachment_name TEXT,
+                attachment_url TEXT,
+                attachment_size TEXT,
+                attachment_type TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (team_id) REFERENCES teams (id) ON DELETE CASCADE,
                 FOREIGN KEY (sender_r_id) REFERENCES students (r_id)
             );
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_team_messages_team ON team_messages(team_id);")
+
+        # SQLite Safe Migrations for existing team_messages table
+        try:
+            cursor.execute("PRAGMA table_info(team_messages);")
+            cols = [row[1] for row in cursor.fetchall()]
+            if 'reactions' not in cols:
+                cursor.execute("ALTER TABLE team_messages ADD COLUMN reactions TEXT DEFAULT '{}';")
+            if 'attachment_name' not in cols:
+                cursor.execute("ALTER TABLE team_messages ADD COLUMN attachment_name TEXT;")
+            if 'attachment_url' not in cols:
+                cursor.execute("ALTER TABLE team_messages ADD COLUMN attachment_url TEXT;")
+            if 'attachment_size' not in cols:
+                cursor.execute("ALTER TABLE team_messages ADD COLUMN attachment_size TEXT;")
+            if 'attachment_type' not in cols:
+                cursor.execute("ALTER TABLE team_messages ADD COLUMN attachment_type TEXT;")
+        except Exception as e:
+            print(f"Notice running team_messages migrations: {e}")
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS system_settings (
