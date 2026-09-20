@@ -1478,6 +1478,13 @@ function handleMobileJoinRequestClick(teamId) {
     navigateTo('/login');
     return;
   }
+  const mobBox = document.getElementById('mobileJoinRequestBox');
+  const mobInput = document.getElementById('mobileJoinMessageInput');
+  if (mobBox) {
+    mobBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => { if (mobInput) mobInput.focus(); }, 300);
+    return;
+  }
   switchTeamTab('team', teamId);
   const input = document.getElementById('joinMessageInput');
   const card = document.getElementById('joinRequestCardBox');
@@ -1510,28 +1517,69 @@ function toggleTeamMobileOptionsMenu(teamId, teamName) {
     existing.remove();
     return;
   }
-  const menu = document.createElement("div");
-  menu.id = "teamMobileOptionsMenu";
-  menu.className = "team-mobile-options-dropdown";
-  menu.innerHTML = `
-    <button onclick="document.getElementById('teamMobileOptionsMenu')?.remove(); openEditTeamModal('${teamId}', '${escapeAttr(teamName)}', '', '')" class="team-opt-item">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-      <span>Edit Squad Details</span>
-    </button>
-    <button onclick="document.getElementById('teamMobileOptionsMenu')?.remove(); openSlotStudentSearchModalForTeam('${teamId}', 6)" class="team-opt-item">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-      <span>Invite New Member</span>
-    </button>
+  const team = clientCache.teamsMap[teamId] || (clientCache.teamsList ? clientCache.teamsList.find(t => t && t.id == teamId) : null) || {};
+  const currentRid = getCurrentUserRid();
+  const isLeader = Boolean(currentRid && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentRid));
+  const isMember = Boolean(currentRid && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentRid)));
+  const count = team.member_count || (team.members ? team.members.length : 0);
+  const openSlots = Math.max(0, 6 - count);
+
+  let itemsHtml = "";
+  if (isLeader) {
+    itemsHtml += `
+      <button onclick="document.getElementById('teamMobileOptionsMenu')?.remove(); openEditTeamModal('${teamId}', '${escapeAttr(teamName)}', '', '')" class="team-opt-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        <span>Edit Squad Details</span>
+      </button>
+    `;
+    if (openSlots > 0) {
+      itemsHtml += `
+        <button onclick="document.getElementById('teamMobileOptionsMenu')?.remove(); openSlotStudentSearchModalForTeam('${teamId}', 6)" class="team-opt-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          <span>Invite New Member</span>
+        </button>
+      `;
+    }
+  } else if (isMember) {
+    if (openSlots > 0) {
+      itemsHtml += `
+        <button onclick="document.getElementById('teamMobileOptionsMenu')?.remove(); openSlotStudentSearchModalForTeam('${teamId}', 6)" class="team-opt-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          <span>Invite New Member</span>
+        </button>
+      `;
+    }
+  }
+
+  itemsHtml += `
     <button onclick="document.getElementById('teamMobileOptionsMenu')?.remove(); handleShareTeam('${teamId}')" class="team-opt-item">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
       <span>Share Squad Link</span>
     </button>
-    <div class="team-opt-divider"></div>
-    <button onclick="document.getElementById('teamMobileOptionsMenu')?.remove(); confirmLeaveTeam('${teamId}')" class="team-opt-item danger">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-      <span>Leave Squad</span>
-    </button>
   `;
+
+  if (isLeader) {
+    itemsHtml += `
+      <div class="team-opt-divider"></div>
+      <button onclick="document.getElementById('teamMobileOptionsMenu')?.remove(); confirmDisbandTeam('${teamId}')" class="team-opt-item danger">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        <span>Disband Squad</span>
+      </button>
+    `;
+  } else if (isMember) {
+    itemsHtml += `
+      <div class="team-opt-divider"></div>
+      <button onclick="document.getElementById('teamMobileOptionsMenu')?.remove(); confirmLeaveTeam('${teamId}')" class="team-opt-item danger">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        <span>Leave Squad</span>
+      </button>
+    `;
+  }
+
+  const menu = document.createElement("div");
+  menu.id = "teamMobileOptionsMenu";
+  menu.className = "team-mobile-options-dropdown";
+  menu.innerHTML = itemsHtml;
   document.body.appendChild(menu);
   const closeListener = (ev) => {
     if (!menu.contains(ev.target)) {
@@ -1575,6 +1623,7 @@ function renderFullTeamDetail(team) {
   const currentRid = getCurrentUserRid();
   const isLeader = Boolean(currentRid && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentRid));
   const isMember = Boolean(currentRid && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentRid)));
+  const isSquadMember = isLeader || isMember;
   const hasPendingRequest = Boolean(team.user_status === 'pending' || team.has_requested);
   const isSih = (team.hackathon_type || 'sih').toLowerCase() === 'sih';
   const hasFemale = Boolean(team.has_female);
@@ -1720,11 +1769,123 @@ function renderFullTeamDetail(team) {
 
   if (openSlots > 0) {
     mobileMemberCardsHtml += `
-      <div class="team-mob-invite-slot-card" onclick="openSlotStudentSearchModalForTeam('${team.id}', 6)">
-        <div class="team-mob-invite-plus">+ Invite Member</div>
+      <div class="team-mob-invite-slot-card" ${isSquadMember ? `onclick="openSlotStudentSearchModalForTeam('${team.id}', 6)" style="cursor:pointer;"` : 'style="cursor:default;"'}>
+        <div class="team-mob-invite-plus">${isSquadMember ? '+ Invite Member' : `${openSlots} Open ${openSlots === 1 ? 'Slot' : 'Slots'}`}</div>
         <div class="team-mob-invite-sub">${openSlots} spot${openSlots > 1 ? 's' : ''} remaining in this squad</div>
       </div>
     `;
+  }
+
+  // Mobile Action Grid & Mobile Join Box based on role permissions
+  let mobileActionGridHtml = "";
+  let mobileJoinBoxHtml = "";
+
+  if (isLeader) {
+    mobileActionGridHtml = `
+      <div class="team-mob-action-grid">
+        <button type="button" onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="team-mob-action-card">
+          <div class="team-mob-action-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </div>
+          <span class="team-mob-action-label">Edit</span>
+        </button>
+        <button type="button" onclick="openSlotStudentSearchModalForTeam('${team.id}', 6)" class="team-mob-action-card" ${openSlots <= 0 ? 'disabled style="opacity:0.5;"' : ''}>
+          <div class="team-mob-action-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          </div>
+          <span class="team-mob-action-label">Invite</span>
+        </button>
+        <button type="button" onclick="handleShareTeam('${team.id}')" class="team-mob-action-card">
+          <div class="team-mob-action-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          </div>
+          <span class="team-mob-action-label">Share</span>
+        </button>
+        <button type="button" onclick="switchTeamSubView('chat', '${team.id}')" class="team-mob-action-card chat">
+          <div class="team-mob-action-icon chat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          </div>
+          <span class="team-mob-action-label chat">Team Chat</span>
+        </button>
+      </div>
+    `;
+  } else if (isMember) {
+    mobileActionGridHtml = `
+      <div class="team-mob-action-grid">
+        <button type="button" onclick="confirmLeaveTeam('${team.id}')" class="team-mob-action-card leave">
+          <div class="team-mob-action-icon leave">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          </div>
+          <span class="team-mob-action-label leave">Leave</span>
+        </button>
+        <button type="button" onclick="openSlotStudentSearchModalForTeam('${team.id}', 6)" class="team-mob-action-card" ${openSlots <= 0 ? 'disabled style="opacity:0.5;"' : ''}>
+          <div class="team-mob-action-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          </div>
+          <span class="team-mob-action-label">Invite</span>
+        </button>
+        <button type="button" onclick="handleShareTeam('${team.id}')" class="team-mob-action-card">
+          <div class="team-mob-action-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          </div>
+          <span class="team-mob-action-label">Share</span>
+        </button>
+        <button type="button" onclick="switchTeamSubView('chat', '${team.id}')" class="team-mob-action-card chat">
+          <div class="team-mob-action-icon chat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          </div>
+          <span class="team-mob-action-label chat">Team Chat</span>
+        </button>
+      </div>
+    `;
+  } else {
+    // Non-member action grid (strictly no Edit, no Leave, no Chat)
+    mobileActionGridHtml = `
+      <div class="team-mob-action-grid cols-2" style="grid-template-columns: repeat(2, 1fr);">
+        ${hasPendingRequest ? `
+          <div class="team-mob-action-card pending" style="cursor:default; background:#F0FDF4; border-color:#BBF7D0;">
+            <div class="team-mob-action-icon" style="background:#DCFCE7; color:#166534;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <span class="team-mob-action-label" style="color:#166534; font-weight:700;">Request Sent</span>
+          </div>
+        ` : (isFull ? `
+          <div class="team-mob-action-card full" style="cursor:default; background:#FEF2F2; border-color:#FECACA;">
+            <div class="team-mob-action-icon" style="background:#FEE2E2; color:#DC2626;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+            </div>
+            <span class="team-mob-action-label" style="color:#DC2626; font-weight:700;">Squad Full</span>
+          </div>
+        ` : `
+          <button type="button" onclick="handleMobileJoinRequestClick('${team.id}')" class="team-mob-action-card join" style="background:#F0FDF4; border-color:#86EFAC;">
+            <div class="team-mob-action-icon" style="background:#16A34A; color:#FFFFFF;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+            </div>
+            <span class="team-mob-action-label" style="color:#166534; font-weight:750;">Join Squad</span>
+          </button>
+        `)}
+        <button type="button" onclick="handleShareTeam('${team.id}')" class="team-mob-action-card">
+          <div class="team-mob-action-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          </div>
+          <span class="team-mob-action-label">Share Squad</span>
+        </button>
+      </div>
+    `;
+
+    if (!isFull && !hasPendingRequest) {
+      mobileJoinBoxHtml = `
+        <div class="team-mob-join-box" id="mobileJoinRequestBox">
+          <div class="team-mob-join-title">Request to Join Squad</div>
+          <p class="team-mob-join-sub">Tell the captain about your skills or experience (optional):</p>
+          <textarea id="mobileJoinMessageInput" rows="2" maxlength="300" placeholder="e.g. Frontend developer, React, UI/UX..." class="team-mob-join-textarea"></textarea>
+          <button type="button" id="btnMobileSendJoinRequest" onclick="submitJoinRequest('${team.id}')" class="btn-team-send-req" style="margin-top:10px; width:100%; justify-content:center;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <span>Send Join Request</span>
+          </button>
+        </div>
+      `;
+    }
   }
 
   // Assemble Complete Page Shell
@@ -1747,9 +1908,6 @@ function renderFullTeamDetail(team) {
               <div class="team-mob-chat-subtitle">${escapeHtml(team.name)} &bull; ${count} members</div>
             </div>
             <div class="team-mob-chat-header-right">
-              <button type="button" onclick="handleTeamVoiceCall('${team.id}')" class="team-mob-call-btn" aria-label="Voice call">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-              </button>
               <button type="button" onclick="toggleTeamMobileOptionsMenu('${team.id}', '${escapeAttr(team.name)}')" class="team-mob-more-btn" aria-label="Chat options">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="2"></circle><circle cx="19" cy="12" r="2"></circle><circle cx="5" cy="12" r="2"></circle></svg>
               </button>
@@ -1762,17 +1920,21 @@ function renderFullTeamDetail(team) {
           </div>
 
           <!-- Sticky Message Composer -->
-          <form id="mobileTeamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-mob-chat-composer">
-            <button type="button" onclick="handleChatAttachmentClick('${team.id}')" class="team-mob-attach-btn" aria-label="Attach file" title="Attach file">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-            </button>
-            <input type="text" id="mobileTeamChatInput" placeholder="Type a message..." maxlength="1500" autocomplete="off" class="team-mob-chat-input">
-            <button type="submit" id="mobileTeamChatSendBtn" class="team-mob-send-btn" aria-label="Send message" title="Send message">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-              </svg>
-            </button>
-          </form>
+          ${isSquadMember ? `
+            <form id="mobileTeamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-mob-chat-composer">
+              <input type="text" id="mobileTeamChatInput" placeholder="Type a message..." maxlength="1500" autocomplete="off" class="team-mob-chat-input">
+              <button type="submit" id="mobileTeamChatSendBtn" class="team-mob-send-btn" aria-label="Send message" title="Send message">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+              </button>
+            </form>
+          ` : `
+            <div class="team-mob-chat-locked-bar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <span>Squad discussion is reserved for confirmed members.</span>
+            </div>
+          `}
         ` : `
           <!-- SCREEN 1: MOBILE TEAM DETAILS -->
           <header class="team-mob-header-bar">
@@ -1817,33 +1979,11 @@ function renderFullTeamDetail(team) {
                 </div>
               </div>
 
-              <!-- 4 Action Cards Grid -->
-              <div class="team-mob-action-grid">
-                <button type="button" onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="team-mob-action-card">
-                  <div class="team-mob-action-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                  </div>
-                  <span class="team-mob-action-label">Edit</span>
-                </button>
-                <button type="button" onclick="openSlotStudentSearchModalForTeam('${team.id}', 6)" class="team-mob-action-card">
-                  <div class="team-mob-action-icon">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-                  </div>
-                  <span class="team-mob-action-label">Invite</span>
-                </button>
-                <button type="button" onclick="confirmLeaveTeam('${team.id}')" class="team-mob-action-card leave">
-                  <div class="team-mob-action-icon leave">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                  </div>
-                  <span class="team-mob-action-label leave">Leave</span>
-                </button>
-                <button type="button" onclick="switchTeamSubView('chat', '${team.id}')" class="team-mob-action-card chat">
-                  <div class="team-mob-action-icon chat">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                  </div>
-                  <span class="team-mob-action-label chat">Team Chat</span>
-                </button>
-              </div>
+              <!-- Action Cards Grid -->
+              ${mobileActionGridHtml}
+
+              <!-- Non-member Join Request Form Box -->
+              ${mobileJoinBoxHtml}
 
               <!-- Mobile Tabs Bar -->
               <div class="team-mob-tabs-bar">
@@ -1856,7 +1996,7 @@ function renderFullTeamDetail(team) {
               <!-- Members Section Header -->
               <div class="team-mob-members-header" style="${window.__currentMobileSubTab === 'members' ? '' : 'display:none;'}">
                 <h2 class="team-mob-members-title">Team Members (${count}/6)</h2>
-                ${openSlots > 0 ? `
+                ${openSlots > 0 && isSquadMember ? `
                   <button type="button" onclick="openSlotStudentSearchModalForTeam('${team.id}', 6)" class="team-mob-add-member-btn">+ Add Member</button>
                 ` : ''}
               </div>
@@ -1868,7 +2008,6 @@ function renderFullTeamDetail(team) {
             </div>
           </div>
         `}
-
         <!-- Mobile Bottom Navigation Bar -->
         <nav class="team-mob-bottom-nav">
           <a href="javascript:void(0)" onclick="closeTeamDetailModal(false); navigateTo('/');" class="team-mob-nav-item active">
@@ -1894,81 +2033,32 @@ function renderFullTeamDetail(team) {
            2. DESKTOP VIEW SHELL (HIGH-DENSITY 2-COLUMN EXPERIENCE)
            ===================================================================== -->
       <div class="team-desktop-view-shell">
-        <header class="team-top-navbar">
-          <div class="team-top-navbar-inner">
-            <a href="/" onclick="event.preventDefault(); closeTeamDetailModal();" class="team-brand-lockup">
-              <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="team-crest-img">
-              <div class="team-brand-text">
-                <span class="team-brand-name">JnuMate<span class="team-brand-dot">.</span></span>
-                <span class="team-brand-sub">JAIPUR NATIONAL UNIVERSITY</span>
-              </div>
-            </a>
-
-            <nav class="team-nav-links">
-              <a href="/" onclick="event.preventDefault(); closeTeamDetailModal();" class="team-nav-item">Home</a>
-              <a href="javascript:void(0)" class="team-nav-item active">Events</a>
-              <a href="javascript:void(0)" onclick="showToast('Resources section available on home dashboard', 'info')" class="team-nav-item">Resources</a>
-            </nav>
-
-            <div class="team-nav-right">
-              <button onclick="toggleNotificationsPanel()" class="team-notif-btn" aria-label="Notifications" title="Notifications">
-                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                </svg>
-                <span id="desktopTopNotifBadge" class="notif-badge" style="display:none;">0</span>
-              </button>
-
-              ${currentUser ? `
-                <div class="team-user-dropdown-wrap">
-                  <button type="button" onclick="toggleTeamUserDropdown(event)" class="team-user-pill" id="teamUserDropdownBtn" aria-expanded="false" aria-label="User menu">
-                    <img src="${escapeHtml(navAvatar)}" alt="${escapeHtml(navUserName)}" class="team-user-avatar" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
-                    <span class="team-user-name">${escapeHtml(navUserName.toUpperCase())}</span>
-                    <svg class="team-user-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                  </button>
-                  <div class="team-user-dropdown-menu" id="teamUserDropdownMenu" style="display:none;">
-                    <div class="team-user-dropdown-header">
-                      <span class="team-user-dropdown-name">${escapeHtml(navUserName)}</span>
-                      <span class="team-user-dropdown-rid">@${escapeHtml(currentUser.id || '')}</span>
-                    </div>
-                    <div class="team-user-dropdown-divider"></div>
-                    <a href="/profile" onclick="closeTeamDetailModal(false); navigateTo('/profile');" class="team-user-dropdown-item">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                      <span>My Profile</span>
-                    </a>
-                    <a href="javascript:void(0)" onclick="closeTeamDetailModal(false); navigateTo('/directory');" class="team-user-dropdown-item">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                      <span>Student Directory</span>
-                    </a>
-                    <div class="team-user-dropdown-divider"></div>
-                    <button type="button" onclick="handleLogout()" class="team-user-dropdown-item danger">
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                </div>
-              ` : `
-                <a href="/login" class="btn-agro-yellow-pill" style="padding:7px 18px; font-size:0.85rem;">Sign In</a>
-              `}
-            </div>
-          </div>
-        </header>
-
-        <main class="team-content-container">
-          <!-- Breadcrumb & Status Row -->
-          <div class="team-breadcrumb-row">
-            <button onclick="closeTeamDetailModal()" class="team-back-btn" aria-label="Back to Squads">
+        <header class="team-modal-desktop-header">
+          <div class="team-modal-desktop-header-left">
+            <button onclick="closeTeamDetailModal()" class="team-modal-back-btn" title="Back to Discover">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
               </svg>
-              <span>Back to Squads</span>
+              <span>Back to Discover</span>
             </button>
+            <span class="team-header-divider">/</span>
+            <span class="team-header-track-tag">${isSih ? 'Smart India Hackathon 2026' : 'CTF Cyber Challenge 2026'}</span>
+          </div>
 
+          <div class="team-modal-desktop-header-right">
             <div class="team-status-pill ${isFull ? 'full' : 'open'}">
               <span class="team-status-dot"></span>
-              <span>${isFull ? 'Squad Roster Full' : 'Open for Join Requests'}</span>
+              <span>${isFull ? 'Squad Full' : `${openSlots} Open ${openSlots === 1 ? 'Slot' : 'Slots'}`}</span>
             </div>
+            <button type="button" onclick="handleShareTeam('${team.id}')" class="btn-paper-outline" style="padding:6px 14px; font-size:0.8rem; display:flex; align-items:center; gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+              <span>Share</span>
+            </button>
           </div>
+        </header>
+
+        <main class="team-content-container">
 
           <!-- Squad Hero Card -->
           <div class="team-hero-card">
@@ -2223,10 +2313,6 @@ function renderFullTeamDetail(team) {
                   <div style="font-size:0.8125rem; color:#64748B; margin-top:3px;">Real-time communication for verified squad members & captain</div>
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
-                  <button type="button" onclick="handleTeamVoiceCall('${team.id}')" class="btn-paper-outline" style="padding:6px 12px; font-size:0.78rem; display:flex; align-items:center; gap:6px;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                    <span>Voice Channel</span>
-                  </button>
                   ${team.whatsapp_link ? `
                     <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-paper-wa" style="padding:6px 12px; font-size:0.78rem;">
                       <span>WhatsApp Group</span>
@@ -2241,18 +2327,22 @@ function renderFullTeamDetail(team) {
               </div>
 
               <!-- Sticky Message Composer -->
-              <form id="teamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-discussion-composer">
-                <button type="button" onclick="handleChatAttachmentClick('${team.id}')" class="team-discussion-attach-btn" aria-label="Attach file" title="Attach file">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                </button>
-                <input type="text" id="teamChatInput" placeholder="Message your squad... (Press Enter to send)" maxlength="1500" autocomplete="off" class="team-discussion-input">
-                <button type="submit" id="teamChatSendBtn" class="team-discussion-send-btn" aria-label="Send message" title="Send message">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-                </button>
-              </form>
+              ${isSquadMember ? `
+                <form id="teamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-discussion-composer">
+                  <input type="text" id="teamChatInput" placeholder="Message your squad... (Press Enter to send)" maxlength="1500" autocomplete="off" class="team-discussion-input">
+                  <button type="submit" id="teamChatSendBtn" class="team-discussion-send-btn" aria-label="Send message" title="Send message">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </button>
+                </form>
+              ` : `
+                <div class="team-discussion-locked-bar">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <span>Squad discussion is reserved for verified team members. Join this squad to participate.</span>
+                </div>
+              `}
             </div>
           </div>
 
@@ -2430,6 +2520,25 @@ function loadTeamChatMessages(teamId, isInitial) {
   const containers = [desktopContainer, mobileContainer].filter(Boolean);
   if (containers.length === 0) return;
 
+  const team = clientCache.teamsMap[teamId] || (clientCache.teamsList ? clientCache.teamsList.find(t => t && t.id == teamId) : null);
+  const currentRid = getCurrentUserRid();
+  const isLeader = Boolean(currentRid && team && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentRid));
+  const isMember = Boolean(currentRid && team && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentRid)));
+  const isSquadMember = isLeader || isMember;
+
+  if (team && !isSquadMember) {
+    containers.forEach(c => {
+      c.innerHTML = `
+        <div class="team-chat-locked-hero">
+          <div class="team-chat-locked-icon-bubble">🔒</div>
+          <h3 style="font-family:var(--font-serif); font-size:1.2rem; color:#0F172A; margin:0 0 6px 0;">Squad Discussion is Member-Exclusive</h3>
+          <p style="font-size:0.875rem; color:#64748B; max-width:380px; margin:0 auto;">Only confirmed teammates and the squad captain can participate in this channel.</p>
+        </div>
+      `;
+    });
+    return;
+  }
+
   if (isInitial) {
     containers.forEach(c => {
       if (!c.querySelector(".chat-msg-row")) {
@@ -2438,8 +2547,8 @@ function loadTeamChatMessages(teamId, isInitial) {
     });
   }
 
-  const currentRid = getCurrentUserRid() || "R44456";
-  fetch(`/api/teams/${teamId}/messages?r_id=${encodeURIComponent(currentRid)}`)
+  const effectiveRid = currentRid || "R44456";
+  fetch(`/api/teams/${teamId}/messages?r_id=${encodeURIComponent(effectiveRid)}`)
     .then(res => {
       if (!res.ok) throw new Error("Failed to load messages");
       return res.json();
@@ -2474,7 +2583,7 @@ function loadTeamChatMessages(teamId, isInitial) {
       }
 
       let chatRowsHtml = `<div class="chat-day-divider"><span>Today</span></div>`;
-      chatRowsHtml += msgs.map(m => renderChatMessageBubble(m, currentRid, teamId)).join("");
+      chatRowsHtml += msgs.map(m => renderChatMessageBubble(m, effectiveRid, teamId)).join("");
 
       containers.forEach(c => {
         const isScrolledToBottom = (c.scrollHeight - c.scrollTop - c.clientHeight) < 90;
@@ -2496,6 +2605,15 @@ function loadTeamChatMessages(teamId, isInitial) {
 
 function handleSendTeamChatMessage(e, teamId) {
   if (e) e.preventDefault();
+  const team = clientCache.teamsMap[teamId] || (clientCache.teamsList ? clientCache.teamsList.find(t => t && t.id == teamId) : null);
+  const currentRid = getCurrentUserRid();
+  const isLeader = Boolean(currentRid && team && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentRid));
+  const isMember = Boolean(currentRid && team && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentRid)));
+  if (team && !isLeader && !isMember) {
+    showToast("Only confirmed squad members can participate in squad chat.", "error");
+    return;
+  }
+
   const mobileInput = document.getElementById("mobileTeamChatInput");
   const desktopInput = document.getElementById("teamChatInput");
   const text = (mobileInput && mobileInput.value ? mobileInput.value : (desktopInput ? desktopInput.value : "")).trim();
@@ -2505,7 +2623,7 @@ function handleSendTeamChatMessage(e, teamId) {
   if (mobileInput) mobileInput.value = "";
   if (desktopInput) desktopInput.value = "";
 
-  const currentRid = getCurrentUserRid() || "R44456";
+  const effectiveRid = currentRid || "R44456";
 
   // Optimistic UI render
   const containers = [
@@ -2822,13 +2940,17 @@ function handleJoinRequestAction(teamId, reqId, action) {
 }
 
 function submitJoinRequest(teamId) {
-  const msgInput = document.getElementById("joinMessageInput");
-  const btn = document.getElementById("btnSendJoinRequest");
+  if (!currentUser) {
+    navigateTo('/login');
+    return;
+  }
+  const msgInput = document.getElementById("mobileJoinMessageInput") || document.getElementById("joinMessageInput");
+  const btn = document.getElementById("btnMobileSendJoinRequest") || document.getElementById("btnSendJoinRequest");
   const msg = msgInput ? msgInput.value.trim() : "";
 
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Sending Join Request...</span></span>`;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Sending...</span></span>`;
   }
 
   fetch(`/api/teams/${teamId}/request`, {
@@ -2847,21 +2969,9 @@ function submitJoinRequest(teamId) {
           clientCache.teamsMap[teamId].user_status = 'pending';
           clientCache.teamsMap[teamId].has_requested = true;
         }
-        const card = document.getElementById("joinRequestCardBox");
-        if (card) {
-          card.style.border = "2px solid #16a34a";
-          card.style.background = "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)";
-          card.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 12px; padding: 6px 0;">
-              <div style="width: 36px; height: 36px; border-radius: 50%; background: #16a34a; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: bold; flex-shrink: 0; box-shadow: 0 4px 10px rgba(22,163,74,0.3);">
-                ✓
-              </div>
-              <div>
-                <div style="font-weight: 800; font-size: 0.95rem; color: #166534;">Join Request Sent</div>
-                <div style="font-size: 0.8125rem; color: #15803d; margin-top: 2px;">The team leader has been notified. You'll receive a notification upon approval.</div>
-              </div>
-            </div>
-          `;
+        const updatedTeam = clientCache.teamsMap[teamId];
+        if (updatedTeam) {
+          renderFullTeamDetail(updatedTeam);
         }
       } else {
         if (btn) {
@@ -4758,7 +4868,7 @@ function renderAuthProfileSpotlight(student, targetEmail) {
   const gender = student.gender || "Female";
   const rid = student.r_id || student.rid || "R42695";
 
-  const isBlankAvatar = !rawAvatar || rawAvatar.includes("dicebear") || rawAvatar.includes("data:image");
+  const isBlankAvatar = !avatarSrc || avatarSrc === DEFAULT_STUDENT_AVATAR || avatarSrc.includes("dicebear");
   const effectiveAvatar = isBlankAvatar ? "" : avatarSrc;
 
   if (emailNoticeEl) {
@@ -5134,7 +5244,7 @@ function loadLoginView() {
           <!-- Right Actions Cluster -->
           <div class="otp-top-actions">
             <div class="otp-top-bell-btn" onclick="showToast('No new notifications', 'info')" title="Notifications">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
@@ -5149,7 +5259,7 @@ function loadLoginView() {
                 </svg>
               </div>
               <span class="otp-top-user-name">Sign In</span>
-              <svg class="otp-top-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <svg class="otp-top-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#0F172A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </div>
@@ -5309,7 +5419,7 @@ function loadLoginView() {
 
           <div class="course-top-actions">
             <div class="course-top-bell-btn" onclick="showToast('No new notifications', 'info')">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
               </svg>
@@ -5324,7 +5434,7 @@ function loadLoginView() {
                 </svg>
               </div>
               <span class="course-top-user-name" id="courseTopUserName">Nishita Gumber</span>
-              <svg class="course-top-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <svg class="course-top-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#0F172A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </div>

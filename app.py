@@ -2332,14 +2332,26 @@ def post_team_message(team_id):
     cursor = conn.cursor()
 
     try:
-        # If r_id is empty, fallback to team leader so demo/testing works flawlessly
+        # Verify membership: sender must be leader or confirmed member of team_id
+        cursor.execute(f"""
+            SELECT UPPER(leader_r_id) FROM teams WHERE id = {p}
+            UNION
+            SELECT UPPER(student_r_id) FROM team_members WHERE team_id = {p}
+        """, (team_id, team_id))
+        active_members = {row[0] for row in cursor.fetchall() if row[0]}
+        
         if not r_id:
-            cursor.execute(f"SELECT leader_r_id FROM teams WHERE id = {p}", (team_id,))
-            l_row = cursor.fetchone()
-            if l_row and l_row[0]:
-                r_id = l_row[0].strip().upper()
+            # Fallback only if session has user_rid
+            sess_rid = (session.get("user_rid") or "").strip().upper()
+            if sess_rid in active_members:
+                r_id = sess_rid
             else:
-                r_id = "R44456"
+                conn.close()
+                return jsonify({"success": False, "message": "Squad discussion is member-exclusive. Please sign in as a squad member."}), 403
+
+        if r_id not in active_members:
+            conn.close()
+            return jsonify({"success": False, "message": "Unauthorized: Only confirmed squad members can participate in this discussion."}), 403
 
         # Lookup sender name and avatar
         sender_info = STUDENT_CACHE_BY_RID.get(r_id)
