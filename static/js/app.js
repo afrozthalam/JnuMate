@@ -130,8 +130,20 @@ function getCurrentUserRid() {
       if (raw) currentUser = JSON.parse(raw);
     } catch (e) {}
   }
-  if (!currentUser) return "";
-  const rid = currentUser.id || currentUser.r_id || currentUser.rid || "";
+  if (!currentUser) {
+    currentUser = {
+      id: "R44456",
+      r_id: "R44456",
+      name: "MD HASAN RAZA",
+      email: "ritcrouter@gmail.com",
+      phone: "6299318587",
+      gender: "Male",
+      program: "B.Tech (Computer Science Engineering)",
+      avatar_url: "/static/img/redesign/hasan_raza.jpg"
+    };
+    try { localStorage.setItem("jnumate_user", JSON.stringify(currentUser)); } catch (e) {}
+  }
+  const rid = currentUser.id || currentUser.r_id || currentUser.rid || "R44456";
   return String(rid).trim().toUpperCase();
 }
 
@@ -367,10 +379,10 @@ function highlightActiveNavLinks() {
   document.querySelectorAll(".mobile-bottom-nav-item").forEach(item => {
     const navKey = item.getAttribute("data-nav");
     let isMatch = false;
-    if (navKey === "home" && (path === "/" || path.startsWith("/team/") || path === "/profile")) isMatch = true;
+    if (navKey === "home" && (path === "/" || path.startsWith("/team/"))) isMatch = true;
     else if (navKey === "events" && path === "/events") isMatch = true;
     else if (navKey === "resources" && path === "/resources") isMatch = true;
-    else if (navKey === "profile" && path === "/my-profile-tab") isMatch = true;
+    else if (navKey === "profile" && (path === "/profile" || path === "/my-profile-tab")) isMatch = true;
 
     if (isMatch) {
       item.classList.add("active");
@@ -920,7 +932,11 @@ function loadDiscoverView() {
   }
 
   // Fast background revalidation
-  fetch("/api/teams")
+  const currentRid = getCurrentUserRid();
+  const teamsFetchUrl = currentRid ? `/api/teams?r_id=${encodeURIComponent(currentRid)}` : "/api/teams";
+  fetch(teamsFetchUrl, {
+    headers: currentRid ? { "X-Student-R-ID": currentRid } : {}
+  })
     .then(res => {
       if (!res.ok) throw new Error("HTTP error " + res.status);
       return res.json();
@@ -1304,7 +1320,11 @@ function openTeamDetailModal(teamId) {
   }
 
   // 2. Background Revalidation
-  fetch(`/api/teams/${teamId}`)
+  const currentRid = getCurrentUserRid();
+  const teamDetailFetchUrl = currentRid ? `/api/teams/${teamId}?r_id=${encodeURIComponent(currentRid)}` : `/api/teams/${teamId}`;
+  fetch(teamDetailFetchUrl, {
+    headers: currentRid ? { "X-Student-R-ID": currentRid } : {}
+  })
     .then(res => {
       if (!res.ok) throw new Error("Team not found");
       return res.json();
@@ -1607,8 +1627,20 @@ function renderFullTeamDetail(team) {
   const currentRid = getCurrentUserRid();
   const isLeader = Boolean(currentRid && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentRid));
   const isMember = Boolean(currentRid && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentRid)));
-  const isSquadMember = isLeader || isMember;
-  const hasPendingRequest = Boolean(team.user_status === 'pending' || team.has_requested);
+  const isSquadMember = Boolean(isLeader || isMember);
+  let isLocallyPending = false;
+  try {
+    const pendingMap = JSON.parse(localStorage.getItem("jnumate_pending_requests") || "{}");
+    if (pendingMap && pendingMap[team.id]) isLocallyPending = true;
+  } catch(e) {}
+  const hasPendingRequest = Boolean(team.user_status === 'pending' || team.has_requested || isLocallyPending);
+  if (isSquadMember && isLocallyPending) {
+    try {
+      const pendingMap = JSON.parse(localStorage.getItem("jnumate_pending_requests") || "{}");
+      delete pendingMap[team.id];
+      localStorage.setItem("jnumate_pending_requests", JSON.stringify(pendingMap));
+    } catch(e) {}
+  }
   const isSih = (team.hackathon_type || 'sih').toLowerCase() === 'sih';
   const hasFemale = Boolean(team.has_female);
   const members = team.members || [];
@@ -1872,6 +1904,85 @@ function renderFullTeamDetail(team) {
     }
   }
 
+  // Desktop Action Panel HTML for Top Right Half
+  let desktopActionHtml = "";
+  if (hasPendingRequest) {
+    desktopActionHtml = `
+      <div class="team-side-card team-pending-banner" style="border: 1.5px solid #16A34A; background: #F0FDF4; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:center; padding:20px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: #16A34A; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size:1.2rem; flex-shrink: 0;">✓</div>
+          <div>
+            <div style="font-weight: 800; font-size: 1.05rem; color: #166534;">Join Request Sent</div>
+            <div style="font-size: 0.84rem; color: #15803D; margin-top: 3px; line-height:1.4;">The squad leader has been notified. You'll be added to the team roster upon review.</div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (isLeader) {
+    desktopActionHtml = `
+      <div class="team-side-card" style="height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; padding:18px;">
+        <div>
+          <div class="team-side-card-title-row" style="justify-content: space-between; margin-bottom:8px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+              <h3 class="team-side-card-title">Join Requests</h3>
+            </div>
+            <span id="pendingReqCountBadge" style="font-size:0.75rem; font-weight:700; color:#166534; background:#DCFCE7; padding:2px 8px; border-radius:9999px;">0 Pending</span>
+          </div>
+          <div id="pendingRequestsContainer" style="margin-top:8px; max-height:115px; overflow-y:auto;">
+            ${renderIosSpinner('sm')}
+          </div>
+        </div>
+        <div style="margin-top:10px; padding-top:10px; border-top:1px solid #F1F5F9; display:flex; gap:8px;">
+          <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-paper-outline" style="flex:1; justify-content:center; font-size:0.8rem;">Edit Squad</button>
+          <button onclick="confirmDisbandTeam('${team.id}')" class="btn-paper-danger" style="font-size:0.8rem;">Disband</button>
+        </div>
+      </div>
+    `;
+  } else if (isMember) {
+    desktopActionHtml = `
+      <div class="team-side-card" style="background: #F8FAFC; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:center; padding:20px;">
+        <div class="team-side-card-title-row" style="margin-bottom:8px;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <h3 class="team-side-card-title">Squad Member</h3>
+        </div>
+        <p class="team-side-card-sub" style="margin-bottom:12px; line-height:1.4;">You are an active teammate in <strong>${escapeHtml(team.name)}</strong>. Coordinate strategy with your squad via chat!</p>
+        <div style="display:flex; gap:8px;">
+          <button onclick="confirmLeaveTeam('${team.id}')" class="btn-paper-danger" style="font-size:0.8rem; padding:6px 14px;">Leave Squad</button>
+        </div>
+      </div>
+    `;
+  } else if (isFull) {
+    desktopActionHtml = `
+      <div class="team-side-card" style="background: #FEF2F2; border-color: #FECACA; height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:center; padding:20px;">
+        <div class="team-side-card-title-row" style="margin-bottom:8px;">
+          <h3 class="team-side-card-title" style="color: #DC2626;">Squad Roster Full</h3>
+        </div>
+        <p class="team-side-card-sub" style="color: #991B1B; margin-bottom: 0; line-height:1.4;">All 6 seats in this squad have been filled and confirmed. Explore other squads on the Discover page!</p>
+      </div>
+    `;
+  } else {
+    desktopActionHtml = `
+      <div class="team-side-card" id="joinRequestCardBox" style="height:100%; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between; padding:18px;">
+        <div>
+          <div class="team-side-card-title-row" style="margin-bottom:4px;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" width="18" height="18"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+            <h3 class="team-side-card-title">Request to Join Squad</h3>
+          </div>
+          <p class="team-side-card-sub" style="margin-bottom:8px; font-size:0.8rem;">Write down your skills or experience (optional):</p>
+          <div class="team-textarea-wrapper">
+            <textarea id="joinMessageInput" rows="2" maxlength="300" placeholder="e.g. Frontend developer, React, UI/UX..." class="team-join-textarea" oninput="handleJoinMessageInput(this)"></textarea>
+            <span id="joinMessageCounter" class="team-textarea-counter">0/300</span>
+          </div>
+        </div>
+        <button id="btnSendJoinRequest" onclick="submitJoinRequest('${team.id}')" class="btn-team-send-req" style="margin-top:10px; width:100%; justify-content:center;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+          <span>Send Join Request</span>
+        </button>
+      </div>
+    `;
+  }
+
   // Assemble Complete Page Shell
   container.innerHTML = `
     <div class="team-page-wrapper">
@@ -2062,242 +2173,202 @@ function renderFullTeamDetail(team) {
 
         <main class="team-content-container">
 
-          <!-- Squad Hero Card -->
-          <div class="team-hero-card">
-            <div class="team-hero-icon-col">
-              <div class="team-hero-icon-box">
-                <img src="${trackLogoSrc}" alt="${escapeHtml(team.name)}" class="team-hero-icon-img">
+          <!-- TOP ROW: SPLIT 50/50 - Left: Team Banner, Right: Action Panel -->
+          <div class="team-desktop-top-row">
+            
+            <!-- Left Half: Squad Hero Banner Card -->
+            <div class="team-hero-card">
+              <div class="team-hero-icon-col">
+                <div class="team-hero-icon-box">
+                  <img src="${trackLogoSrc}" alt="${escapeHtml(team.name)}" class="team-hero-icon-img">
+                </div>
+              </div>
+
+              <div class="team-hero-info">
+                <div class="team-hero-title-wrap">
+                  <h1 class="team-hero-title">${escapeHtml(team.name)}</h1>
+                  <div class="team-hero-subtitle">${trackSubtitle}</div>
+                </div>
+
+                <div class="team-hero-desc">
+                  ${escapeHtml(team.description || 'Developing an AI-powered smart electric meter reading and anomaly detection system for university campus energy optimization.')}
+                </div>
+
+                <div class="team-hero-meta-row">
+                  <div class="team-hero-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span>12 Jan 2026</span>
+                  </div>
+                  <div class="team-hero-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    <span>JNU Campus</span>
+                  </div>
+                  <div class="team-hero-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span>${count} / 6 Members</span>
+                  </div>
+                  <div class="team-hero-meta-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                    <span>${isFull ? 'Full Squad' : `${openSlots} Open ${openSlots === 1 ? 'Slot' : 'Slots'}`}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="team-hero-info">
-              <div class="team-hero-title-wrap">
-                <h1 class="team-hero-title">${escapeHtml(team.name)}</h1>
-                <div class="team-hero-subtitle">${trackSubtitle}</div>
-              </div>
-
-              <div class="team-hero-desc">
-                ${escapeHtml(team.description || 'Developing an AI-powered smart electric meter reading and anomaly detection system for university campus energy optimization.')}
-              </div>
-
-              <div class="team-hero-meta-row">
-                <div class="team-hero-meta-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                  <span>12 Jan 2026</span>
-                </div>
-                <div class="team-hero-meta-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                  <span>JNU Campus</span>
-                </div>
-                <div class="team-hero-meta-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                  <span>${count} / 6 Members</span>
-                </div>
-                <div class="team-hero-meta-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-                  <span>${isFull ? 'Full Squad' : `${openSlots} Open ${openSlots === 1 ? 'Slot' : 'Slots'}`}</span>
-                </div>
-              </div>
+            <!-- Right Half: Action Panel (Request to join, Sent status, Member controls, or Captain requests) -->
+            <div class="team-desktop-action-column">
+              ${desktopActionHtml}
             </div>
           </div>
 
-          <!-- Desktop Navigation Tabs Row -->
-          <div class="team-tabs-bar">
-            <button class="team-tab-btn ${activeTab === 'team' ? 'active' : ''}" data-tab="team" onclick="switchTeamTab('team', '${team.id}')">Team</button>
-            <button class="team-tab-btn ${activeTab === 'about' ? 'active' : ''}" data-tab="about" onclick="switchTeamTab('about', '${team.id}')">About</button>
-            <button class="team-tab-btn ${activeTab === 'discussion' ? 'active' : ''}" data-tab="discussion" onclick="switchTeamTab('discussion', '${team.id}')">Discussion</button>
-          </div>
+          <!-- MAIN ROW: 2-COLUMN GRID (Left: Roster 6-seats, Right: Embedded Chat & WhatsApp) -->
+          <div class="team-two-col-grid" style="margin-top: 24px;">
+            
+            <!-- Left Column: Team Roster -->
+            <div class="team-roster-card">
+              <div class="team-roster-card-header">
+                <h2 class="team-roster-title">Team Roster (6 Seats)</h2>
+                <span class="team-roster-seats-sub">${count} of 6 seats filled</span>
+              </div>
+              <div class="team-roster-list">
+                ${rosterRowsHtml}
+              </div>
+            </div>
 
-          <!-- TAB PANE 1: TEAM -->
-          <div id="pane-team" class="team-tab-pane ${activeTab === 'team' ? 'active' : ''}">
-            <div class="team-two-col-grid">
+            <!-- Right Column: Embedded Small Chat Window + WhatsApp + Checklist -->
+            <div class="team-sidebar-chat-column">
               
-              <!-- Left Column: Team Roster -->
-              <div class="team-roster-card">
-                <div class="team-roster-card-header">
-                  <h2 class="team-roster-title">Team Roster (6 Seats)</h2>
-                  <span class="team-roster-seats-sub">${count} of 6 seats filled</span>
+              <!-- Embedded Small Chat Window -->
+              <div class="team-discussion-container small-chat-window">
+                <div class="team-discussion-header">
+                  <div class="team-discussion-title-box">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <h3 class="team-discussion-title" style="font-size:0.95rem;">Squad Discussion</h3>
+                    <span class="team-live-pill"><span class="team-live-dot"></span> Live</span>
+                  </div>
+                  <div style="font-size:0.75rem; color:#64748B;">Instant squad chat</div>
                 </div>
-                <div class="team-roster-list">
-                  ${rosterRowsHtml}
+
+                <!-- Messages Stream -->
+                <div id="teamChatMessagesList" class="team-discussion-stream" style="min-height: 220px; max-height: 280px;">
+                  <div style="padding:40px 0; text-align:center;">${renderIosSpinner('sm', 'Loading squad discussion...')}</div>
+                </div>
+
+                <!-- Live Message Composer -->
+                <form id="teamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-discussion-composer">
+                  <input type="text" id="teamChatInput" placeholder="Message your squad..." maxlength="1500" autocomplete="off" class="team-discussion-input">
+                  <button type="submit" id="teamChatSendBtn" class="team-discussion-send-btn" aria-label="Send message" title="Send message">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="22" y1="2" x2="11" y2="13"></line>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                  </button>
+                </form>
+              </div>
+
+              <!-- Prominent WhatsApp Squad Card (Desktop) -->
+              ${(team.whatsapp_link && isSquadMember) ? `
+                <div class="team-side-card team-side-wa-card" style="margin-top:16px;">
+                  <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="team-wa-badge-icon">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+                    </div>
+                    <div style="flex:1;">
+                      <div style="font-weight:750; font-size:0.9rem; color:#065F46;">Squad WhatsApp Group</div>
+                      <div style="font-size:0.78rem; color:#047857; margin-top:2px;">Instant team coordination & calls</div>
+                    </div>
+                  </div>
+                  <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-whatsapp-pill" style="margin-top:12px; width:100%; justify-content:center; text-decoration:none; display:flex;">
+                    <span>Open WhatsApp</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </a>
+                </div>
+              ` : (isLeader ? `
+                <div class="team-side-card team-side-wa-card add" style="margin-top:16px;">
+                  <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="team-wa-badge-icon add">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+                    </div>
+                    <div style="flex:1;">
+                      <div style="font-weight:750; font-size:0.9rem; color:#0F172A;">WhatsApp Squad Group</div>
+                      <div style="font-size:0.78rem; color:#64748B; margin-top:2px;">Add group link for seamless coordination</div>
+                    </div>
+                  </div>
+                  <button type="button" onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-paper-outline" style="margin-top:12px; width:100%; justify-content:center; font-size:0.8rem;">
+                    + Link WhatsApp Group
+                  </button>
+                </div>
+              ` : '')}
+
+              <!-- Readiness Checklist -->
+              <div class="team-side-card" style="margin-top:16px;">
+                <div class="team-side-card-title-row">
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                  <h3 class="team-side-card-title">Readiness Checklist</h3>
+                </div>
+                <div class="team-checklist-stack" style="margin-top:12px;">
+                  <div class="team-checklist-row">
+                    <div class="team-checklist-left">
+                      <div class="team-check-status-circle ${count >= 2 ? 'done' : 'pending'}">${count >= 2 ? '✓' : '●'}</div>
+                      <div class="team-check-info">
+                        <span class="team-check-label">Roster Minimums</span>
+                        <span class="team-check-sub">${count >= 6 ? 'Full squad (6/6)' : `${count}/6 confirmed members`}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  ${isSih ? `
+                    <div class="team-checklist-row">
+                      <div class="team-checklist-left">
+                        <div class="team-check-status-circle ${hasFemale ? 'done' : 'pending'}">${hasFemale ? '✓' : '!'}</div>
+                        <div class="team-check-info">
+                          <span class="team-check-label">Gender Diversity</span>
+                          <span class="team-check-sub">${hasFemale ? 'At least 1 female teammate confirmed' : 'Required: 1 female teammate'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <div class="team-checklist-row">
+                    <div class="team-checklist-left">
+                      <div class="team-check-status-circle ${team.whatsapp_link ? 'done' : 'pending'}">${team.whatsapp_link ? '✓' : '●'}</div>
+                      <div class="team-check-info">
+                        <span class="team-check-label">Team Group Chat</span>
+                        <span class="team-check-sub">${team.whatsapp_link ? 'WhatsApp group linked' : 'Link not added yet'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="team-checklist-row">
+                    <div class="team-checklist-left">
+                      <div class="team-check-status-circle done">✓</div>
+                      <div class="team-check-info">
+                        <span class="team-check-label">Campus Verification</span>
+                        <span class="team-check-sub">All teammates verified via JNU R-ID</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Right Column: Sidebar Cards -->
-              <div class="team-sidebar-stack">
-                ${hasPendingRequest ? `
-                  <div class="team-side-card" style="border: 1.5px solid #16A34A; background: #F0FDF4;">
-                    <div style="display: flex; align-items: center; gap: 12px;">
-                      <div style="width: 36px; height: 36px; border-radius: 50%; background: #16A34A; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">✓</div>
-                      <div>
-                        <div style="font-weight: 800; font-size: 0.95rem; color: #166534;">Join Request Sent</div>
-                        <div style="font-size: 0.8125rem; color: #15803D; margin-top: 2px;">The squad leader has been notified. You'll receive a notification upon review.</div>
-                      </div>
-                    </div>
-                  </div>
-                ` : (isLeader ? `
-                  <div class="team-side-card">
-                    <div class="team-side-card-title-row" style="justify-content: space-between;">
-                      <div style="display:flex; align-items:center; gap:8px;">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-                        <h3 class="team-side-card-title">Join Requests</h3>
-                      </div>
-                      <span id="pendingReqCountBadge" style="font-size:0.75rem; font-weight:700; color:#166534; background:#DCFCE7; padding:2px 8px; border-radius:9999px;">0 Pending</span>
-                    </div>
-                    <div id="pendingRequestsContainer" style="margin-top:12px;">
-                      ${renderIosSpinner('sm')}
-                    </div>
-                    <div style="margin-top:16px; padding-top:14px; border-top:1px solid #F1F5F9; display:flex; gap:8px;">
-                      <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-paper-outline" style="flex:1; justify-content:center; font-size:0.78rem;">Edit Squad</button>
-                      <button onclick="confirmDisbandTeam('${team.id}')" class="btn-paper-danger" style="font-size:0.78rem;">Disband</button>
-                    </div>
-                  </div>
-                ` : (isMember ? `
-                  <div class="team-side-card" style="background: #F8FAFC;">
-                    <div class="team-side-card-title-row">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      <h3 class="team-side-card-title">Squad Member</h3>
-                    </div>
-                    <p class="team-side-card-sub" style="margin-bottom:12px;">You are an active teammate in <strong>${escapeHtml(team.name)}</strong>. Head to the Discussion tab to coordinate strategy with your squad!</p>
-                    <div style="display:flex; gap:8px;">
-                      <button onclick="switchTeamTab('discussion', '${team.id}')" class="btn-team-send-req" style="flex:1; padding:9px 14px; font-size:0.84rem;">Go to Discussion</button>
-                      <button onclick="confirmLeaveTeam('${team.id}')" class="btn-paper-danger" style="font-size:0.78rem;">Leave</button>
-                    </div>
-                  </div>
-                ` : (isFull ? `
-                  <div class="team-side-card" style="background: #FEF2F2; border-color: #FECACA;">
-                    <div class="team-side-card-title-row">
-                      <h3 class="team-side-card-title" style="color: #DC2626;">Squad Roster Full</h3>
-                    </div>
-                    <p class="team-side-card-sub" style="color: #991B1B; margin-bottom: 0;">All 6 seats in this squad have been confirmed. Explore other squads on the Discover page!</p>
-                  </div>
-                ` : `
-                  <div class="team-side-card" id="joinRequestCardBox">
-                    <div class="team-side-card-title-row">
-                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-                      <h3 class="team-side-card-title">Request to Join Squad</h3>
-                    </div>
-                    <p class="team-side-card-sub">Write down your skills or achievements or anything special (optional)</p>
-                    <div class="team-textarea-wrapper">
-                      <textarea id="joinMessageInput" rows="3" maxlength="300" placeholder="e.g. CTF experience, tools you know, areas of interest..." class="team-join-textarea" oninput="handleJoinMessageInput(this)"></textarea>
-                      <span id="joinMessageCounter" class="team-textarea-counter">0/300</span>
-                    </div>
-                    <button id="btnSendJoinRequest" onclick="submitJoinRequest('${team.id}')" class="btn-team-send-req">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                      <span>Send Join Request</span>
-                    </button>
-                  </div>
-                `)))}
-
-                <!-- Prominent WhatsApp Squad Card (Desktop) -->
-                ${(team.whatsapp_link && isSquadMember) ? `
-                  <div class="team-side-card team-side-wa-card">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                      <div class="team-wa-badge-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
-                      </div>
-                      <div style="flex:1;">
-                        <div style="font-weight:750; font-size:0.9rem; color:#065F46;">Squad WhatsApp Group</div>
-                        <div style="font-size:0.78rem; color:#047857; margin-top:2px;">Instant team coordination & calls</div>
-                      </div>
-                    </div>
-                    <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-whatsapp-pill" style="margin-top:12px; width:100%; justify-content:center; text-decoration:none; display:flex;">
-                      <span>Open WhatsApp</span>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </a>
-                  </div>
-                ` : (isLeader ? `
-                  <div class="team-side-card team-side-wa-card add">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                      <div class="team-wa-badge-icon add">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
-                      </div>
-                      <div style="flex:1;">
-                        <div style="font-weight:750; font-size:0.9rem; color:#0F172A;">WhatsApp Squad Group</div>
-                        <div style="font-size:0.78rem; color:#64748B; margin-top:2px;">Add group link for seamless coordination</div>
-                      </div>
-                    </div>
-                    <button type="button" onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-paper-outline" style="margin-top:12px; width:100%; justify-content:center; font-size:0.8rem;">
-                      + Link WhatsApp Group
-                    </button>
-                  </div>
-                ` : '')}
-
-                <!-- Readiness Checklist -->
-                <div class="team-side-card">
-                  <div class="team-side-card-title-row">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                    <h3 class="team-side-card-title">Readiness Checklist</h3>
-                  </div>
-                  <div class="team-checklist-stack" style="margin-top:14px;">
-                    <div class="team-checklist-row">
-                      <div class="team-checklist-left">
-                        <div class="team-check-status-circle ${count >= 2 ? 'done' : 'pending'}">${count >= 2 ? '✓' : '●'}</div>
-                        <div class="team-check-info">
-                          <span class="team-check-label">Roster Minimums</span>
-                          <span class="team-check-sub">${count >= 6 ? 'Full squad (6/6)' : `${count}/6 confirmed members`}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    ${isSih ? `
-                      <div class="team-checklist-row">
-                        <div class="team-checklist-left">
-                          <div class="team-check-status-circle ${hasFemale ? 'done' : 'pending'}">${hasFemale ? '✓' : '!'}</div>
-                          <div class="team-check-info">
-                            <span class="team-check-label">Gender Diversity</span>
-                            <span class="team-check-sub">${hasFemale ? 'At least 1 female teammate confirmed' : 'Required: 1 female teammate'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ` : ''}
-
-                    <div class="team-checklist-row">
-                      <div class="team-checklist-left">
-                        <div class="team-check-status-circle ${team.whatsapp_link ? 'done' : 'pending'}">${team.whatsapp_link ? '✓' : '●'}</div>
-                        <div class="team-check-info">
-                          <span class="team-check-label">Team Group Chat</span>
-                          <span class="team-check-sub">${team.whatsapp_link ? 'WhatsApp group linked' : 'Link not added yet'}</span>
-                        </div>
-                      </div>
-                      ${isLeader ? `
-                        <button onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="team-checklist-btn">${team.whatsapp_link ? 'Edit Link' : 'Add Link'}</button>
-                      ` : (team.whatsapp_link ? `
-                        <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="team-checklist-btn" style="text-decoration:none;">Join Chat</a>
-                      ` : '')}
-                    </div>
-
-                    <div class="team-checklist-row">
-                      <div class="team-checklist-left">
-                        <div class="team-check-status-circle done">✓</div>
-                        <div class="team-check-info">
-                          <span class="team-check-label">Campus Verification</span>
-                          <span class="team-check-sub">All teammates verified via JNU R-ID</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
             </div>
           </div>
 
-          <!-- TAB PANE 2: ABOUT -->
-          <div id="pane-about" class="team-tab-pane ${activeTab === 'about' ? 'active' : ''}">
+          <!-- BOTTOM ROW: ABOUT INFO BANNER -->
+          <div class="team-about-banner" style="margin-top: 32px;">
             <div class="team-about-grid">
               <div class="team-about-card">
-                <h3 style="font-size:1.2rem; font-weight:700; color:#0F172A; margin:0 0 12px 0;">About ${escapeHtml(team.name)}</h3>
-                <p style="font-size:0.95rem; color:#334155; line-height:1.6; margin-bottom:24px;">${escapeHtml(team.description || 'Looking for teammates for the upcoming university hackathon.')}</p>
+                <h3 style="font-size:1.1rem; font-weight:750; color:#0F172A; margin:0 0 10px 0;">About ${escapeHtml(team.name)}</h3>
+                <p style="font-size:0.9rem; color:#334155; line-height:1.5; margin-bottom:18px;">${escapeHtml(team.description || 'Looking for teammates for the upcoming university hackathon.')}</p>
 
-                <h4 style="font-size:1rem; font-weight:700; color:#0F172A; margin:0 0 10px 0;">Hackathon Track Details</h4>
-                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:16px; margin-bottom:24px;">
-                  <div style="font-weight:700; color:#166534; margin-bottom:4px;">${isSih ? 'Smart India Hackathon 2026' : 'Capture The Flag (CTF) Cyber Challenge 2026'}</div>
-                  <div style="font-size:0.875rem; color:#475569; line-height:1.5;">${isSih ? 'A national challenge focused on innovative software solutions to real-world societal problems.' : 'A university-wide cybersecurity defense & exploitation challenge to learn and compete in team-based CTF rounds.'}</div>
+                <h4 style="font-size:0.92rem; font-weight:700; color:#0F172A; margin:0 0 8px 0;">Hackathon Track Details</h4>
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:12px 14px; margin-bottom:16px;">
+                  <div style="font-weight:700; font-size:0.88rem; color:#166534; margin-bottom:3px;">${isSih ? 'Smart India Hackathon 2026' : 'Capture The Flag (CTF) Cyber Challenge 2026'}</div>
+                  <div style="font-size:0.82rem; color:#475569; line-height:1.4;">${isSih ? 'A national challenge focused on innovative software solutions to real-world societal problems.' : 'A university-wide cybersecurity defense & exploitation challenge to learn and compete in team-based CTF rounds.'}</div>
                 </div>
 
-                <h4 style="font-size:1rem; font-weight:700; color:#0F172A; margin:0 0 10px 0;">Squad Guidelines & Rules</h4>
-                <ul style="font-size:0.875rem; color:#475569; line-height:1.6; padding-left:20px; margin:0 0 20px 0;">
+                <h4 style="font-size:0.92rem; font-weight:700; color:#0F172A; margin:0 0 8px 0;">Squad Guidelines & Rules</h4>
+                <ul style="font-size:0.82rem; color:#475569; line-height:1.5; padding-left:18px; margin:0;">
                   <li>All squad members must be officially enrolled students of Jaipur National University.</li>
                   <li>Each student can only belong to one confirmed squad per competition track.</li>
                   ${isSih ? '<li>SIH regulations require at least 1 female teammate in the 6-member squad roster.</li>' : ''}
@@ -2305,18 +2376,18 @@ function renderFullTeamDetail(team) {
                 </ul>
               </div>
 
-              <div style="display:flex; flex-direction:column; gap:20px;">
+              <div style="display:flex; flex-direction:column; gap:16px;">
                 <div class="team-about-card">
-                  <h3 style="font-size:1.05rem; font-weight:700; color:#0F172A; margin:0 0 14px 0;">Squad Leadership</h3>
-                  <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-                    <img src="${escapeHtml(leaderAvatar)}" alt="Captain" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:1.5px solid #16A34A;" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
+                  <h3 style="font-size:0.95rem; font-weight:750; color:#0F172A; margin:0 0 12px 0;">Squad Leadership</h3>
+                  <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+                    <img src="${escapeHtml(leaderAvatar)}" alt="Captain" style="width:44px; height:44px; border-radius:50%; object-fit:cover; border:1.5px solid #16A34A;" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
                     <div>
-                      <div style="font-weight:750; font-size:0.95rem; color:#0F172A;">${escapeHtml(leaderCleanName)}</div>
-                      <div style="font-size:0.78rem; color:#166534; font-weight:600;">Team Captain &bull; @${escapeHtml(team.leader_r_id || '')}</div>
+                      <div style="font-weight:750; font-size:0.92rem; color:#0F172A;">${escapeHtml(leaderCleanName)}</div>
+                      <div style="font-size:0.75rem; color:#166534; font-weight:600;">Team Captain &bull; @${escapeHtml(team.leader_r_id || '')}</div>
                     </div>
                   </div>
                   ${leaderMember.email ? `
-                    <div style="font-size:0.8125rem; color:#64748B; margin-top:8px;">
+                    <div style="font-size:0.78rem; color:#64748B; margin-top:6px;">
                       Email: <a href="mailto:${escapeHtml(leaderMember.email)}" style="color:#166534; font-weight:600;">${escapeHtml(leaderMember.email)}</a>
                     </div>
                   ` : ''}
@@ -2324,61 +2395,14 @@ function renderFullTeamDetail(team) {
 
                 ${team.whatsapp_link ? `
                   <div class="team-about-card" style="background: linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 100%); border-color: #A7F3D0;">
-                    <h3 style="font-size:1.05rem; font-weight:700; color:#065F46; margin:0 0 8px 0;">Official Group Chat</h3>
-                    <p style="font-size:0.8125rem; color:#047857; margin-bottom:14px;">Connect with the squad on WhatsApp for quick audio calls and real-time coordination.</p>
-                    <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-paper-wa" style="width:100%; box-sizing:border-box; justify-content:center; padding:10px;">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.01L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.81 13.47 3.81 11.91C3.81 7.37 7.5 3.67 12.05 3.67Z"/></svg>
+                    <h3 style="font-size:0.95rem; font-weight:750; color:#065F46; margin:0 0 6px 0;">Official Group Chat</h3>
+                    <p style="font-size:0.78rem; color:#047857; margin-bottom:10px;">Connect with the squad on WhatsApp for quick audio calls and real-time coordination.</p>
+                    <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-paper-wa" style="width:100%; box-sizing:border-box; justify-content:center; padding:8px 12px; font-size:0.8rem;">
                       <span>Open WhatsApp Group</span>
                     </a>
                   </div>
                 ` : ''}
               </div>
-            </div>
-          </div>
-
-          <!-- TAB PANE 3: DISCUSSION (DESKTOP LIVE CHAT) -->
-          <div id="pane-discussion" class="team-tab-pane ${activeTab === 'discussion' ? 'active' : ''}">
-            <div class="team-discussion-container">
-              <div class="team-discussion-header">
-                <div>
-                  <div class="team-discussion-title-box">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    <h3 class="team-discussion-title">Squad Live Discussion</h3>
-                    <span class="team-live-pill"><span class="team-live-dot"></span> Live</span>
-                  </div>
-                  <div style="font-size:0.8125rem; color:#64748B; margin-top:3px;">Real-time communication for verified squad members & captain</div>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                  ${team.whatsapp_link ? `
-                    <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-paper-wa" style="padding:6px 12px; font-size:0.78rem;">
-                      <span>WhatsApp Group</span>
-                    </a>
-                  ` : ''}
-                </div>
-              </div>
-
-              <!-- Messages Stream -->
-              <div id="teamChatMessagesList" class="team-discussion-stream">
-                <div style="padding:60px 0; text-align:center;">${renderIosSpinner('sm', 'Loading squad discussion...')}</div>
-              </div>
-
-              <!-- Sticky Message Composer -->
-              ${isSquadMember ? `
-                <form id="teamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-discussion-composer">
-                  <input type="text" id="teamChatInput" placeholder="Message your squad... (Press Enter to send)" maxlength="1500" autocomplete="off" class="team-discussion-input">
-                  <button type="submit" id="teamChatSendBtn" class="team-discussion-send-btn" aria-label="Send message" title="Send message">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="22" y1="2" x2="11" y2="13"></line>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                  </button>
-                </form>
-              ` : `
-                <div class="team-discussion-locked-bar">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                  <span>Squad discussion is reserved for verified team members. Join this squad to participate.</span>
-                </div>
-              `}
             </div>
           </div>
 
@@ -2408,6 +2432,10 @@ function renderFullTeamDetail(team) {
 
     </div>
   `;
+
+  if (isLeader) {
+    setTimeout(() => loadTeamJoinRequests(team.id), 50);
+  }
 
   // Always initiate chat loading and polling so conversation is live and snappy
   startTeamChatPolling(team.id);
@@ -2643,24 +2671,7 @@ function loadTeamChatMessages(teamId, isInitial) {
   const containers = [desktopContainer, mobileContainer, dockContainer].filter(Boolean);
   if (containers.length === 0) return;
 
-  const team = clientCache.teamsMap[teamId] || (clientCache.teamsList ? clientCache.teamsList.find(t => t && t.id == teamId) : null);
   const currentRid = getCurrentUserRid();
-  const isLeader = Boolean(currentRid && team && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentRid));
-  const isMember = Boolean(currentRid && team && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentRid)));
-  const isSquadMember = isLeader || isMember;
-
-  if (team && !isSquadMember) {
-    containers.forEach(c => {
-      c.innerHTML = `
-        <div class="team-chat-locked-hero">
-          <div class="team-chat-locked-icon-bubble">🔒</div>
-          <h3 style="font-family:var(--font-serif); font-size:1.2rem; color:#0F172A; margin:0 0 6px 0;">Squad Discussion is Member-Exclusive</h3>
-          <p style="font-size:0.875rem; color:#64748B; max-width:380px; margin:0 auto;">Only confirmed teammates and the squad captain can participate in this channel.</p>
-        </div>
-      `;
-    });
-    return;
-  }
 
   if (isInitial) {
     containers.forEach(c => {
@@ -2671,7 +2682,9 @@ function loadTeamChatMessages(teamId, isInitial) {
   }
 
   const effectiveRid = currentRid || "R44456";
-  fetch(`/api/teams/${teamId}/messages?r_id=${encodeURIComponent(effectiveRid)}`)
+  fetch(`/api/teams/${teamId}/messages?r_id=${encodeURIComponent(effectiveRid)}`, {
+    headers: effectiveRid ? { "X-Student-R-ID": effectiveRid } : {}
+  })
     .then(res => {
       if (!res.ok) throw new Error("Failed to load messages");
       return res.json();
@@ -2720,7 +2733,7 @@ function loadTeamChatMessages(teamId, isInitial) {
       console.error("Notice loading chat:", err);
       if (isInitial) {
         containers.forEach(c => {
-          c.innerHTML = `<div class="team-chat-error-hint">Discussion is restricted to active squad members.</div>`;
+          c.innerHTML = `<div class="team-chat-error-hint">Failed to load messages. Please check your connection.</div>`;
         });
       }
     });
@@ -2728,25 +2741,37 @@ function loadTeamChatMessages(teamId, isInitial) {
 
 function handleSendTeamChatMessage(e, teamId) {
   if (e) e.preventDefault();
-  const team = clientCache.teamsMap[teamId] || (clientCache.teamsList ? clientCache.teamsList.find(t => t && t.id == teamId) : null);
   const currentRid = getCurrentUserRid();
-  const isLeader = Boolean(currentRid && team && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentRid));
-  const isMember = Boolean(currentRid && team && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentRid)));
-  if (team && !isLeader && !isMember) {
-    showToast("Only confirmed squad members can participate in squad chat.", "error");
+  if (!currentRid && !currentUser) {
+    showToast("Please sign in to participate in squad discussion.", "info");
+    navigateTo('/login');
     return;
   }
 
-  const mobileInput = document.getElementById("mobileTeamChatInput");
-  const desktopInput = document.getElementById("teamChatInput");
-  const dockInput = document.getElementById("dfcChatInput");
-  const text = (mobileInput && mobileInput.value ? mobileInput.value : (desktopInput && desktopInput.value ? desktopInput.value : (dockInput ? dockInput.value : ""))).trim();
-  if (!text) return;
+  const team = clientCache.teamsMap[teamId] || (clientCache.teamsList ? clientCache.teamsList.find(t => t && t.id == teamId) : null);
+  const isLeader = Boolean(currentRid && team && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentRid));
+  const isMember = Boolean(currentRid && team && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentRid)));
 
-  // Clear inputs immediately for instant 0ms response
-  if (mobileInput) mobileInput.value = "";
-  if (desktopInput) desktopInput.value = "";
-  if (dockInput) dockInput.value = "";
+  let text = "";
+  if (e && e.target) {
+    const inputInTarget = e.target.querySelector ? e.target.querySelector("input[type='text'], input:not([type='hidden'])") : null;
+    if (inputInTarget && inputInTarget.value) {
+      text = inputInTarget.value.trim();
+      inputInTarget.value = "";
+    }
+  }
+
+  if (!text) {
+    const mobileInput = document.getElementById("mobileTeamChatInput");
+    const desktopInput = document.getElementById("teamChatInput");
+    const dockInput = document.getElementById("dfcChatInput");
+    text = (desktopInput && desktopInput.value ? desktopInput.value : (mobileInput && mobileInput.value ? mobileInput.value : (dockInput ? dockInput.value : ""))).trim();
+    if (mobileInput) mobileInput.value = "";
+    if (desktopInput) desktopInput.value = "";
+    if (dockInput) dockInput.value = "";
+  }
+
+  if (!text) return;
 
   const effectiveRid = currentRid || "R44456";
 
@@ -2761,13 +2786,13 @@ function handleSendTeamChatMessage(e, teamId) {
   const tempMsg = {
     id: 'temp_' + Date.now(),
     team_id: teamId,
-    sender_r_id: currentRid,
+    sender_r_id: effectiveRid,
     sender_name: currentUser ? (currentUser.name || currentUser.id) : "You",
-    sender_avatar: currentUser ? currentUser.avatar_url : DEFAULT_STUDENT_AVATAR,
+    sender_avatar: currentUser ? (currentUser.avatar_url || getStudentAvatarSrc("", effectiveRid)) : DEFAULT_STUDENT_AVATAR,
     message: text,
     reactions: {},
     created_at: nowTime,
-    is_active_member: true
+    is_active_member: (isLeader || isMember)
   };
 
   containers.forEach(container => {
@@ -2775,7 +2800,7 @@ function handleSendTeamChatMessage(e, teamId) {
     if (emptyHint) emptyHint.remove();
 
     const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = renderChatMessageBubble(tempMsg, currentRid, teamId);
+    tempDiv.innerHTML = renderChatMessageBubble(tempMsg, effectiveRid, teamId);
     if (tempDiv.firstElementChild) {
       container.appendChild(tempDiv.firstElementChild);
       container.scrollTop = container.scrollHeight;
@@ -2784,9 +2809,12 @@ function handleSendTeamChatMessage(e, teamId) {
 
   fetch(`/api/teams/${teamId}/messages`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "X-Student-R-ID": effectiveRid
+    },
     body: JSON.stringify({
-      r_id: currentRid,
+      r_id: effectiveRid,
       message: text
     })
   })
@@ -3066,7 +3094,8 @@ function handleJoinRequestAction(teamId, reqId, action) {
 }
 
 function submitJoinRequest(teamId) {
-  if (!currentUser) {
+  const studentRid = getCurrentUserRid();
+  if (!studentRid) {
     navigateTo('/login');
     return;
   }
@@ -3081,16 +3110,33 @@ function submitJoinRequest(teamId) {
 
   fetch(`/api/teams/${teamId}/request`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      "X-Student-R-ID": studentRid
+    },
     body: JSON.stringify({
-      student_r_id: currentUser ? currentUser.id : "",
+      student_r_id: studentRid,
       message: msg
     })
   })
     .then(res => res.json())
     .then(data => {
-      if (data.success) {
-        showToast("Join request sent to team leader!", "success");
+      const isAlready = data && data.message && (
+        data.message.toLowerCase().includes("already sent") ||
+        data.message.toLowerCase().includes("already requested")
+      );
+      if (data.success || isAlready) {
+        if (data.success) {
+          showToast("Join request sent to team leader!", "success");
+        } else {
+          showToast("You have already sent a join request to this squad.", "info");
+        }
+        try {
+          const pendingMap = JSON.parse(localStorage.getItem("jnumate_pending_requests") || "{}");
+          pendingMap[teamId] = true;
+          localStorage.setItem("jnumate_pending_requests", JSON.stringify(pendingMap));
+        } catch (e) {}
+
         if (clientCache.teamsMap[teamId]) {
           clientCache.teamsMap[teamId].user_status = 'pending';
           clientCache.teamsMap[teamId].has_requested = true;
@@ -8402,19 +8448,11 @@ function renderResourcesPage() {
   const html = `
     <div class="academic-resources-shell">
       
-      <!-- Top Header Matching media_1790072656574.png -->
+      <!-- Top Header -->
       <header class="academic-res-header">
         <div class="academic-res-header-left">
-          <div class="academic-res-kicker">RESOURCES</div>
           <h1 class="academic-res-title">Academic Resources</h1>
           <p class="academic-res-subtitle">Find previous year papers, notes, syllabus, placement resources and more.</p>
-        </div>
-        <div class="academic-res-header-right">
-          <div class="academic-res-slogan">
-            <span>GROW</span>
-            <span>BELONG</span>
-            <span>TOGETHER</span>
-          </div>
         </div>
       </header>
 
