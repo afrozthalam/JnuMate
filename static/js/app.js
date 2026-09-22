@@ -1049,7 +1049,7 @@ function renderSingleTeamCard(team) {
 
   const hackBadgeHtml = isCtf
     ? `<span class="hackathon-tag-pill ctf"><img src="/static/img/ctf_logo.jpg" alt="CTF" style="width:16px; height:16px; object-fit:contain;"> CTF HACKATHON</span>`
-    : `<span class="hackathon-tag-pill sih"><img src="/static/img/sih_logo.jpg" alt="SIH" style="width:16px; height:16px; object-fit:contain;"> SMART INDIA HACKATHON</span>`;
+    : `<span class="hackathon-tag-pill sih"><img src="/static/img/sih_logo.jpg" alt="SIH" style="width:16px; height:16px; object-fit:contain;"> SIH Hackathon</span>`;
 
   // 6 Pronounced Roster Avatars: filled member avatars + empty circle avatars
   const members = team.members || [];
@@ -1344,6 +1344,7 @@ function openTeamDetailModal(teamId) {
 
 function closeTeamDetailModal(restoreUrl = true) {
   stopTeamChatPolling();
+  closeDesktopFloatingChat();
   window.__currentTeamSubView = 'details';
   window.__currentMobileSubTab = 'members';
   const modal = document.getElementById("teamDetailModal");
@@ -1392,6 +1393,9 @@ function switchTeamTab(tabName, teamId) {
   }
 
   if (tabName === "discussion") {
+    if (window.innerWidth > 768) {
+      openDesktopFloatingChat(teamId);
+    }
     loadTeamChatMessages(teamId, true);
     startTeamChatPolling(teamId);
   }
@@ -1433,35 +1437,15 @@ function switchMobileSubTab(subTab, teamId) {
       if (card) card.appendChild(otherPane);
     }
     const cached = clientCache.teamsMap[teamId] || {};
-    if (subTab === 'details') {
-      otherPane.innerHTML = `
-        <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:16px; margin-top:10px;">
-          <h3 style="font-size:1rem; font-weight:750; color:#0F172A; margin:0 0 8px 0;">About ${escapeHtml(cached.name || 'Squad')}</h3>
-          <p style="font-size:0.85rem; color:#475569; line-height:1.5; margin:0 0 14px 0;">${escapeHtml(cached.description || 'University-wide hackathon challenge.')}</p>
-          <div style="font-size:0.82rem; font-weight:750; color:#166534; margin-bottom:4px;">Capture The Flag (CTF) Cyber Challenge 2026</div>
-          <div style="font-size:0.75rem; color:#64748B; line-height:1.4;">Official competition track &bull; Cybersecurity defense, exploitation, and smart meter anomaly detection.</div>
-        </div>
-      `;
-    } else if (subTab === 'submissions') {
-      otherPane.innerHTML = `
-        <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:24px 16px; margin-top:10px; text-align:center;">
-          <div style="font-size:1.8rem; margin-bottom:6px;">🚀</div>
-          <div style="font-weight:750; font-size:0.92rem; color:#0F172A;">Round 1 Submission Pending</div>
-          <p style="font-size:0.8rem; color:#64748B; margin:6px 0 0 0;">Project submissions will open on February 15, 2026.</p>
-        </div>
-      `;
-    } else if (subTab === 'resources') {
-      otherPane.innerHTML = `
-        <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:16px; margin-top:10px;">
-          <div style="font-weight:750; font-size:0.92rem; color:#0F172A; margin-bottom:10px;">Squad Resources</div>
-          <a href="/static/img/redesign/team_smart_meter_banner.png" target="_blank" style="display:flex; align-items:center; gap:10px; padding:10px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; text-decoration:none; color:#0F172A; font-size:0.82rem; margin-bottom:8px;">
-            <span>📄</span>
-            <span style="flex:1; font-weight:600;">System Architecture Diagram</span>
-            <span style="color:#166534; font-weight:700;">View</span>
-          </a>
-        </div>
-      `;
-    }
+    const isSih = Boolean(cached.is_sih || cached.hackathon_type === 'sih');
+    otherPane.innerHTML = `
+      <div style="background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; padding:16px; margin-top:10px;">
+        <h3 style="font-size:1rem; font-weight:750; color:#0F172A; margin:0 0 8px 0;">About ${escapeHtml(cached.name || 'Squad')}</h3>
+        <p style="font-size:0.85rem; color:#475569; line-height:1.5; margin:0 0 14px 0;">${escapeHtml(cached.description || 'University-wide hackathon challenge.')}</p>
+        <div style="font-size:0.82rem; font-weight:750; color:#166534; margin-bottom:4px;">${isSih ? 'Smart India Hackathon (SIH) 2026' : 'Capture The Flag (CTF) Cyber Challenge 2026'}</div>
+        <div style="font-size:0.75rem; color:#64748B; line-height:1.4;">Official competition track &bull; Innovation, development & anomaly detection.</div>
+      </div>
+    `;
   }
 }
 
@@ -1949,35 +1933,55 @@ function renderFullTeamDetail(team) {
 
           <div class="team-mob-scroll-body">
             <div class="team-mob-hero-card">
-              <!-- Smart Meter Circuit Hero Banner -->
-              <div class="team-mob-banner-wrap">
-                <img src="/static/img/redesign/team_smart_meter_banner.png" alt="${escapeHtml(team.name)}" class="team-mob-banner-img">
-                <button type="button" onclick="handleShareTeam('${team.id}')" class="team-mob-banner-share-btn" aria-label="Share Squad" title="Share Squad">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
-                </button>
-              </div>
-
-              <!-- Badges Row -->
-              <div class="team-mob-badges-row">
-                <span class="team-mob-track-pill">${isSih ? 'SIH HACKATHON' : 'CTF HACKATHON'}</span>
-                <span class="team-mob-status-pill"><span class="team-mob-status-dot"></span> Active</span>
+              <!-- Mobile Fluid Header Lockup (Event Logo on Left, Team Info on Right) -->
+              <div class="team-mob-header-identity-box">
+                <div class="team-mob-logo-col">
+                  <img src="${isSih ? '/static/img/sih_logo.jpg' : '/static/img/ctf_logo.png'}" alt="Event Logo" class="team-mob-event-logo" onerror="this.src='/static/img/sih_logo.jpg';">
+                </div>
+                <div class="team-mob-identity-content">
+                  <div class="team-mob-name-share-row">
+                    <h1 class="team-mob-title-fluid" title="${escapeAttr(team.name)}">${escapeHtml(team.name)}</h1>
+                    <button type="button" onclick="handleShareTeam('${team.id}')" class="team-mob-share-pill-btn" aria-label="Share Squad" title="Share Squad">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                      <span>Share</span>
+                    </button>
+                  </div>
+                  <div class="team-mob-identity-meta-pills">
+                    <span class="team-mob-track-pill">${isSih ? 'SIH Hackathon' : 'CTF Hackathon'}</span>
+                    <span class="team-mob-status-pill"><span class="team-mob-status-dot"></span> Active</span>
+                    <span class="team-mob-slots-pill">${openSlots > 0 ? `${openSlots} Open Slot${openSlots > 1 ? 's' : ''}` : 'Squad Full'}</span>
+                    <span class="team-mob-date-pill">12 Jan 2026</span>
+                  </div>
+                </div>
               </div>
 
               <!-- Title & Description -->
-              <h1 class="team-mob-title">${escapeHtml(team.name)}</h1>
               <p class="team-mob-desc">${escapeHtml(team.description || 'Developing an AI-powered smart electric meter reading and anomaly detection system for university campus energy optimization.')}</p>
 
-              <!-- Meta Row -->
-              <div class="team-mob-meta-row">
-                <div class="team-mob-meta-item">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                  <span>Started 12 Jan 2026</span>
-                </div>
-                <div class="team-mob-meta-item">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                  <span>${count} / 6 Members</span>
-                </div>
-              </div>
+              <!-- Prominent Mobile WhatsApp Squad Banner -->
+              ${(team.whatsapp_link && isSquadMember) ? `
+                <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="team-mob-wa-banner-card">
+                  <div class="team-mob-wa-icon-box">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+                  </div>
+                  <div class="team-mob-wa-text-box">
+                    <span class="team-mob-wa-title">WhatsApp Squad Group</span>
+                    <span class="team-mob-wa-subtitle">Connect with teammates for rapid coordination</span>
+                  </div>
+                  <span class="team-mob-wa-btn-tag">Open Chat &rarr;</span>
+                </a>
+              ` : (isLeader ? `
+                <button type="button" onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="team-mob-wa-banner-card add">
+                  <div class="team-mob-wa-icon-box add">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+                  </div>
+                  <div class="team-mob-wa-text-box">
+                    <span class="team-mob-wa-title">WhatsApp Group Link</span>
+                    <span class="team-mob-wa-subtitle">Link your WhatsApp group for easy member join</span>
+                  </div>
+                  <span class="team-mob-wa-btn-tag add">+ Add Link</span>
+                </button>
+              ` : '')}
 
               <!-- Action Cards Grid -->
               ${mobileActionGridHtml}
@@ -1987,10 +1991,8 @@ function renderFullTeamDetail(team) {
 
               <!-- Mobile Tabs Bar -->
               <div class="team-mob-tabs-bar">
-                <button type="button" class="team-mob-tab-btn ${window.__currentMobileSubTab === 'members' ? 'active' : ''}" onclick="switchMobileSubTab('members', '${team.id}')">Members</button>
+                <button type="button" class="team-mob-tab-btn ${(!window.__currentMobileSubTab || window.__currentMobileSubTab === 'members') ? 'active' : ''}" onclick="switchMobileSubTab('members', '${team.id}')">Members</button>
                 <button type="button" class="team-mob-tab-btn ${window.__currentMobileSubTab === 'details' ? 'active' : ''}" onclick="switchMobileSubTab('details', '${team.id}')">Details</button>
-                <button type="button" class="team-mob-tab-btn ${window.__currentMobileSubTab === 'submissions' ? 'active' : ''}" onclick="switchMobileSubTab('submissions', '${team.id}')">Submissions</button>
-                <button type="button" class="team-mob-tab-btn ${window.__currentMobileSubTab === 'resources' ? 'active' : ''}" onclick="switchMobileSubTab('resources', '${team.id}')">Resources</button>
               </div>
 
               <!-- Members Section Header -->
@@ -2187,6 +2189,40 @@ function renderFullTeamDetail(team) {
                   </div>
                 `)))}
 
+                <!-- Prominent WhatsApp Squad Card (Desktop) -->
+                ${(team.whatsapp_link && isSquadMember) ? `
+                  <div class="team-side-card team-side-wa-card">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                      <div class="team-wa-badge-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+                      </div>
+                      <div style="flex:1;">
+                        <div style="font-weight:750; font-size:0.9rem; color:#065F46;">Squad WhatsApp Group</div>
+                        <div style="font-size:0.78rem; color:#047857; margin-top:2px;">Instant team coordination & calls</div>
+                      </div>
+                    </div>
+                    <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-whatsapp-pill" style="margin-top:12px; width:100%; justify-content:center; text-decoration:none; display:flex;">
+                      <span>Open WhatsApp</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                  </div>
+                ` : (isLeader ? `
+                  <div class="team-side-card team-side-wa-card add">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                      <div class="team-wa-badge-icon add">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+                      </div>
+                      <div style="flex:1;">
+                        <div style="font-weight:750; font-size:0.9rem; color:#0F172A;">WhatsApp Squad Group</div>
+                        <div style="font-size:0.78rem; color:#64748B; margin-top:2px;">Add group link for seamless coordination</div>
+                      </div>
+                    </div>
+                    <button type="button" onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-paper-outline" style="margin-top:12px; width:100%; justify-content:center; font-size:0.8rem;">
+                      + Link WhatsApp Group
+                    </button>
+                  </div>
+                ` : '')}
+
                 <!-- Readiness Checklist -->
                 <div class="team-side-card">
                   <div class="team-side-card-title-row">
@@ -2378,6 +2414,92 @@ function renderFullTeamDetail(team) {
 }
 
 /* ==========================================================================
+   DESKTOP DOCKED FLOATING CHAT WINDOW (MESSENGER / LINKEDIN STYLE)
+   ========================================================================== */
+function openDesktopFloatingChat(teamId) {
+  let dock = document.getElementById("desktopFloatingChatDock");
+  const team = clientCache.teamsMap[teamId] || (clientCache.teamsList ? clientCache.teamsList.find(t => t && t.id == teamId) : null) || {};
+  const teamName = team.name || "Squad Discussion";
+  const currentRid = getCurrentUserRid();
+  const isLeader = Boolean(currentRid && team && team.leader_r_id && (team.leader_r_id.toUpperCase() === currentRid));
+  const isMember = Boolean(currentRid && team && (team.members || []).some(m => m && m.r_id && (m.r_id.toUpperCase() === currentRid)));
+  const isSquadMember = isLeader || isMember;
+
+  if (!dock) {
+    dock = document.createElement("div");
+    dock.id = "desktopFloatingChatDock";
+    dock.className = "desktop-floating-chat-dock";
+    document.body.appendChild(dock);
+  }
+
+  dock.style.display = "flex";
+  dock.classList.remove("minimized");
+
+  dock.innerHTML = `
+    <div class="dfc-header" onclick="toggleMinimizeDesktopChat()">
+      <div class="dfc-header-left">
+        <span class="dfc-status-dot"></span>
+        <div class="dfc-title-box">
+          <span class="dfc-title" title="${escapeAttr(teamName)}">${escapeHtml(teamName)}</span>
+          <span class="dfc-sub">Squad Discussion</span>
+        </div>
+      </div>
+      <div class="dfc-header-actions" onclick="event.stopPropagation()">
+        <button type="button" class="dfc-btn-icon" onclick="toggleMinimizeDesktopChat()" title="Minimize" aria-label="Minimize">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button type="button" class="dfc-btn-icon" onclick="closeDesktopFloatingChat()" title="Close chat" aria-label="Close chat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="dfc-body" id="dfcBody">
+      <div id="dfcChatMessagesList" class="dfc-stream">
+        <div style="padding:40px 0; text-align:center;">${renderIosSpinner('sm', 'Loading squad discussion...')}</div>
+      </div>
+      <div id="dfcComposerArea" class="dfc-composer-area">
+        ${isSquadMember ? `
+          <form id="dfcChatForm" onsubmit="handleSendTeamChatMessage(event, '${teamId}')" class="dfc-composer">
+            <input type="text" id="dfcChatInput" placeholder="Write a message..." maxlength="1500" autocomplete="off" class="dfc-input">
+            <button type="submit" id="dfcSendBtn" class="dfc-send-btn" title="Send message" aria-label="Send message">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            </button>
+          </form>
+        ` : `
+          <div class="dfc-locked-bar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <span>Discussion reserved for confirmed squad members.</span>
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+
+  loadTeamChatMessages(teamId, true);
+  startTeamChatPolling(teamId);
+
+  setTimeout(() => {
+    const inp = document.getElementById("dfcChatInput");
+    if (inp) inp.focus();
+  }, 100);
+}
+
+function toggleMinimizeDesktopChat() {
+  const dock = document.getElementById("desktopFloatingChatDock");
+  if (!dock) return;
+  dock.classList.toggle("minimized");
+}
+
+function closeDesktopFloatingChat() {
+  const dock = document.getElementById("desktopFloatingChatDock");
+  if (dock) {
+    dock.style.display = "none";
+  }
+}
+
+/* ==========================================================================
    TEAM LIVE SQUAD CHAT IMPLEMENTATION (AUTHENTIC, FAST & ROBUST)
    ========================================================================== */
 let teamChatPollInterval = null;
@@ -2517,7 +2639,8 @@ window.__lastRenderedChatSignatures = window.__lastRenderedChatSignatures || {};
 function loadTeamChatMessages(teamId, isInitial) {
   const desktopContainer = document.getElementById("teamChatMessagesList");
   const mobileContainer = document.getElementById("mobileTeamChatMessagesList");
-  const containers = [desktopContainer, mobileContainer].filter(Boolean);
+  const dockContainer = document.getElementById("dfcChatMessagesList");
+  const containers = [desktopContainer, mobileContainer, dockContainer].filter(Boolean);
   if (containers.length === 0) return;
 
   const team = clientCache.teamsMap[teamId] || (clientCache.teamsList ? clientCache.teamsList.find(t => t && t.id == teamId) : null);
@@ -2616,19 +2739,22 @@ function handleSendTeamChatMessage(e, teamId) {
 
   const mobileInput = document.getElementById("mobileTeamChatInput");
   const desktopInput = document.getElementById("teamChatInput");
-  const text = (mobileInput && mobileInput.value ? mobileInput.value : (desktopInput ? desktopInput.value : "")).trim();
+  const dockInput = document.getElementById("dfcChatInput");
+  const text = (mobileInput && mobileInput.value ? mobileInput.value : (desktopInput && desktopInput.value ? desktopInput.value : (dockInput ? dockInput.value : ""))).trim();
   if (!text) return;
 
   // Clear inputs immediately for instant 0ms response
   if (mobileInput) mobileInput.value = "";
   if (desktopInput) desktopInput.value = "";
+  if (dockInput) dockInput.value = "";
 
   const effectiveRid = currentRid || "R44456";
 
   // Optimistic UI render
   const containers = [
     document.getElementById("teamChatMessagesList"),
-    document.getElementById("mobileTeamChatMessagesList")
+    document.getElementById("mobileTeamChatMessagesList"),
+    document.getElementById("dfcChatMessagesList")
   ].filter(Boolean);
 
   const nowTime = new Date().toTimeString().substring(0, 5);
@@ -3546,9 +3672,6 @@ function renderFullProfile(prof, userTeams) {
         <div class="profile-hero-left">
           <div class="profile-avatar-wrapper">
             <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cleanName)}" class="profile-hero-avatar" onerror="this.onerror=null; this.src='/static/img/redesign/hasan_raza.jpg';">
-            <button type="button" onclick="openEditProfileModal('avatar')" class="profile-avatar-camera-badge" title="Update Profile Photo" aria-label="Update Profile Photo">
-              <svg fill="currentColor" viewBox="0 0 20 20" class="camera-icon"><path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
-            </button>
           </div>
           <div class="profile-hero-info">
             <h1 class="profile-hero-name">${escapeHtml(cleanName)}</h1>
@@ -3577,18 +3700,6 @@ function renderFullProfile(prof, userTeams) {
                 <span>${escapeHtml(location)}</span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div class="profile-hero-right">
-          <button type="button" onclick="openEditProfileModal('hero')" class="btn-profile-edit-pill">
-            <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-            <span>Edit Profile</span>
-          </button>
-          <div class="profile-quote-card">
-            <p class="profile-quote-text">
-              &ldquo;Discipline today,<br>opportunities tomorrow.&rdquo;
-            </p>
           </div>
         </div>
       </section>
@@ -3651,10 +3762,6 @@ function renderFullProfile(prof, userTeams) {
                 <svg class="card-header-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5"/></svg>
                 <h3 class="profile-card-title">Academic Credentials</h3>
               </div>
-              <button type="button" onclick="openEditProfileModal('academic')" class="btn-profile-edit-sec">
-                <svg class="btn-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                <span>Edit</span>
-              </button>
             </div>
 
             <div class="profile-cred-top-row">
@@ -3712,10 +3819,6 @@ function renderFullProfile(prof, userTeams) {
               <svg class="card-header-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
               <h3 class="profile-card-title">Family & Contact Information</h3>
             </div>
-            <button type="button" onclick="openEditProfileModal('family')" class="btn-profile-edit-sec">
-              <svg class="btn-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-              <span>Edit</span>
-            </button>
           </div>
           <div class="profile-family-boxes-top">
             <div class="profile-info-pill-box">
@@ -3750,10 +3853,6 @@ function renderFullProfile(prof, userTeams) {
               <svg class="card-header-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
               <h3 class="profile-card-title">Residential Address</h3>
             </div>
-            <button type="button" onclick="openEditProfileModal('address')" class="btn-profile-edit-sec">
-              <svg class="btn-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-              <span>Edit</span>
-            </button>
           </div>
           <div class="profile-address-boxes-stack">
             <div class="profile-info-pill-box full-addr-box">
@@ -3772,10 +3871,6 @@ function renderFullProfile(prof, userTeams) {
       <footer class="profile-page-footer">
         <div class="profile-footer-left">
           &copy; 2026 JnuMate. All rights reserved.
-        </div>
-        <div class="profile-footer-right">
-          <span class="profile-footer-dash">&mdash;</span>
-          <span class="profile-footer-motto">Learn &nbsp; Grow &nbsp; Belong</span>
         </div>
       </footer>
     </div>
@@ -5234,35 +5329,15 @@ function loadLoginView() {
             </div>
           </div>
 
-          <!-- Center Navigation Links -->
-          <nav class="otp-top-nav-links">
-            <a href="/" class="otp-top-nav-link" onclick="event.preventDefault(); navigateTo('/')">Home</a>
-            <a href="/events" class="otp-top-nav-link" onclick="event.preventDefault(); navigateTo('/events')">Events</a>
-            <a href="/resources" class="otp-top-nav-link" onclick="event.preventDefault(); navigateTo('/resources')">Resources</a>
-          </nav>
-
-          <!-- Right Actions Cluster -->
+          <!-- Right Actions Cluster: Only Back to Sign In -->
           <div class="otp-top-actions">
-            <div class="otp-top-bell-btn" onclick="showToast('No new notifications', 'info')" title="Notifications">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            <button type="button" onclick="showAuthStep(1)" class="btn-auth-back-nav" title="Back to Login">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
               </svg>
-            </div>
-            
-            <div class="otp-top-user-pill" onclick="showAuthStep(1)" title="Sign In with R-ID">
-              <div class="otp-top-avatar-circle">
-                <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
-                  <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
-                  <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
-                  <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
-                </svg>
-              </div>
-              <span class="otp-top-user-name">Sign In</span>
-              <svg class="otp-top-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#0F172A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
+              <span>Back to Sign In</span>
+            </button>
           </div>
         </header>
 
@@ -5277,20 +5352,12 @@ function loadLoginView() {
           </div>
 
           <div class="otp-mobile-actions">
-            <div class="otp-mobile-bell-btn" onclick="showToast('No new notifications', 'info')">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            <button type="button" onclick="showAuthStep(1)" class="btn-auth-back-nav-mob" title="Back to Login">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
-            </div>
-            
-            <div class="otp-mobile-avatar-circle" onclick="showAuthStep(1)">
-              <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
-                <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
-                <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
-                <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
-              </svg>
-            </div>
+              <span>Sign In</span>
+            </button>
           </div>
         </header>
 
@@ -5575,35 +5642,15 @@ function loadLoginView() {
             </div>
           </div>
 
-          <!-- Center Navigation Links -->
-          <nav class="sync-top-nav-links">
-            <a href="/" class="sync-top-nav-link" onclick="event.preventDefault(); navigateTo('/')">Home</a>
-            <a href="/events" class="sync-top-nav-link" onclick="event.preventDefault(); navigateTo('/events')">Events</a>
-            <a href="/resources" class="sync-top-nav-link" onclick="event.preventDefault(); navigateTo('/resources')">Resources</a>
-          </nav>
-
-          <!-- Right Actions Cluster -->
+          <!-- Right Actions Cluster: Only Back to Sign In -->
           <div class="sync-top-actions">
-            <div class="sync-top-bell-btn" onclick="showToast('No new notifications', 'info')" title="Notifications">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            <button type="button" onclick="showAuthStep(1)" class="btn-auth-back-nav" title="Back to Login">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
               </svg>
-            </div>
-            
-            <div class="sync-top-user-pill" onclick="showAuthStep(1)" title="Sign In with R-ID">
-              <div class="sync-top-avatar-circle">
-                <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
-                  <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
-                  <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
-                  <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
-                </svg>
-              </div>
-              <span class="sync-top-user-name">Sign In</span>
-              <svg class="sync-top-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
+              <span>Back to Sign In</span>
+            </button>
           </div>
         </header>
 
@@ -5618,20 +5665,12 @@ function loadLoginView() {
           </div>
 
           <div class="sync-mobile-actions">
-            <div class="sync-mobile-bell-btn" onclick="showToast('No new notifications', 'info')">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            <button type="button" onclick="showAuthStep(1)" class="btn-auth-back-nav-mob" title="Back to Login">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
-            </div>
-            
-            <div class="sync-mobile-avatar-circle" onclick="showAuthStep(1)">
-              <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
-                <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
-                <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
-                <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
-              </svg>
-            </div>
+              <span>Sign In</span>
+            </button>
           </div>
         </header>
 
@@ -5814,6 +5853,18 @@ function loadLoginView() {
 }
 
 function showAuthStep(step) {
+  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  const appMain = document.querySelector(".app-main-workspace");
+  if (appMain) appMain.scrollTop = 0;
+  const loginView = document.getElementById("viewLogin");
+  if (loginView) loginView.scrollTop = 0;
+  const syncWorkspace = document.querySelector(".sync-main-workspace");
+  if (syncWorkspace) syncWorkspace.scrollTop = 0;
+  const otpWorkspace = document.querySelector(".otp-main-workspace");
+  if (otpWorkspace) otpWorkspace.scrollTop = 0;
+
   const step1Wrap = document.getElementById("loginStep1Wrap");
   const stepSyncWrap = document.getElementById("loginStepSyncWrap");
   const step2Wrap = document.getElementById("loginStep2Wrap");
@@ -8227,6 +8278,23 @@ const CAMPUS_RESOURCES_DATA = [
     ]
   },
   {
+    id: "res-holidays",
+    title: "University Holiday List",
+    category: "Campus Life",
+    categoryGroup: ["all", "campus life"],
+    image: "/static/img/redesign/resources/res_calendar.png",
+    mobileThumb: "/static/img/redesign/resources/mob_thumb_calendar.png",
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`,
+    description: "Official list of university holidays and observances.",
+    metric: "🌴 2026 Holidays",
+    fullDescription: "Official schedule of declared university holidays, gazetted festival leaves, national holidays, winter recess, and summer vacation for Jaipur National University.",
+    tags: ["University Holidays", "Gazetted Leaves", "Festival Recess", "Official List"],
+    links: [
+      { name: "Jaipur National University Holiday List 2026", type: "Official PDF", size: "Gazetted" },
+      { name: "University Festival & Academic Break Schedule", type: "Academic Notice", size: "Approved" }
+    ]
+  },
+  {
     id: "res-placements",
     title: "Placements",
     category: "Placements",
@@ -8324,8 +8392,6 @@ let currentResourcesQuery = "";
 function loadResourcesView() {
   const container = document.getElementById("resourcesViewContainer");
   if (!container) return;
-  currentResourcesCategory = "all";
-  currentResourcesQuery = "";
   renderResourcesPage();
 }
 
@@ -8333,250 +8399,111 @@ function renderResourcesPage() {
   const container = document.getElementById("resourcesViewContainer");
   if (!container) return;
 
-  const resSearchPlaceholder = (typeof window !== "undefined" && window.innerWidth <= 768) ? "Search resources..." : "Search resources (e.g. PYQs, notes, syllabus, placement, etc.)";
-
   const html = `
-    <div class="resources-page-shell">
+    <div class="academic-resources-shell">
       
-      <!-- HERO BANNER CARD (Editorial Mint Gradient) -->
-      <div class="resources-hero-card">
-        <div class="resources-hero-content">
-          <span class="resources-eyebrow">RESOURCES</span>
-          <h1 class="resources-hero-title">Learn. Prepare. Grow.</h1>
-          <p class="resources-hero-subtitle">
-            All the resources you need for your academic and campus journey, curated in one place.
-          </p>
+      <!-- Top Header Matching media_1790072656574.png -->
+      <header class="academic-res-header">
+        <div class="academic-res-header-left">
+          <div class="academic-res-kicker">RESOURCES</div>
+          <h1 class="academic-res-title">Academic Resources</h1>
+          <p class="academic-res-subtitle">Find previous year papers, notes, syllabus, placement resources and more.</p>
         </div>
-        <div class="resources-hero-graphic-wrap">
-          <img src="/static/img/redesign/resources/resources_hero_sketch.png" alt="Knowledge Shapes Brighter Tomorrows." class="resources-hero-banner-illustration">
-        </div>
-      </div>
-
-      <!-- FULL-WIDTH SEARCH BAR -->
-      <div class="resources-search-container">
-        <div class="resources-search-wrap">
-          <svg class="resources-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <input type="text" id="resourcesSearchInput" class="resources-search-input" placeholder="${escapeAttr(resSearchPlaceholder)}" value="${escapeAttr(currentResourcesQuery)}" oninput="handleResourcesSearchInput(this.value)">
-        </div>
-      </div>
-
-      <!-- FILTER ROW: Category Pills (Left) & Editorial Quote (Right) -->
-      <div class="resources-filter-row">
-        
-        <!-- Desktop Category Pills -->
-        <div class="resources-filter-pills desktop-only-flex" id="resourcesFilterPillsDesktop">
-          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'all' ? 'active' : ''}" onclick="setResourcesFilter('all')">All</button>
-          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'academic' ? 'active' : ''}" onclick="setResourcesFilter('academic')">Academic</button>
-          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'exams' ? 'active' : ''}" onclick="setResourcesFilter('exams')">Exams</button>
-          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'placements' ? 'active' : ''}" onclick="setResourcesFilter('placements')">Placements</button>
-          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'career' ? 'active' : ''}" onclick="setResourcesFilter('career')">Career</button>
-          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'campus life' ? 'active' : ''}" onclick="setResourcesFilter('campus life')">Campus Life</button>
-          <button type="button" class="resources-filter-pill ${currentResourcesCategory === 'others' ? 'active' : ''}" onclick="setResourcesFilter('others')">Others</button>
-        </div>
-
-        <!-- Right Side Cursive Script Quote -->
-        <div class="resources-quote-box desktop-only-flex">
-          <span class="resources-quote-divider"></span>
-          <span class="resources-quote-script">“Better Resources. Brighter Futures.”</span>
-        </div>
-
-      </div>
-
-      <!-- Mobile Horizontally Scrolling Filter Pills (< 768px) -->
-      <div class="resources-filter-scroll-mobile mobile-only-flex" id="resourcesFilterPillsMobile">
-        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'all' ? 'active' : ''}" onclick="setResourcesFilter('all')">All</button>
-        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'academic' ? 'active' : ''}" onclick="setResourcesFilter('academic')">Academic</button>
-        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'exams' ? 'active' : ''}" onclick="setResourcesFilter('exams')">Exams</button>
-        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'placements' ? 'active' : ''}" onclick="setResourcesFilter('placements')">Placements</button>
-        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'career' ? 'active' : ''}" onclick="setResourcesFilter('career')">Career</button>
-        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'campus life' ? 'active' : ''}" onclick="setResourcesFilter('campus life')">Campus Life</button>
-        <button type="button" class="resources-filter-pill-mob ${currentResourcesCategory === 'others' ? 'active' : ''}" onclick="setResourcesFilter('others')">Others</button>
-      </div>
-
-      <!-- RESOURCES DESKTOP 3x3 GRID -->
-      <div class="resources-grid-desktop desktop-only-grid" id="resourcesDesktopGrid"></div>
-
-      <!-- RESOURCES MOBILE VERTICAL LIST (< 768px) -->
-      <div class="resources-list-mobile mobile-only-block" id="resourcesMobileList"></div>
-
-      <!-- EMPTY STATE -->
-      <div class="resources-empty-state" id="resourcesEmptyState" style="display:none;">
-        <div class="resources-empty-icon">📚</div>
-        <h3 class="resources-empty-title">No resources found</h3>
-        <p class="resources-empty-desc">No academic materials matched your query. Try searching for PYQs, notes, or syllabus.</p>
-        <button type="button" class="btn-create-team-primary" onclick="setResourcesFilter('all')">View All Resources</button>
-      </div>
-
-      <!-- EDITORIAL FOOTER (Matching media_1789755997604.jpg) -->
-      <footer class="resources-editorial-footer">
-        <div class="resources-footer-left">
-          &copy; 2026 JnuMate. All rights reserved.
-        </div>
-        <div class="resources-footer-center">
-          <img src="/static/img/redesign/otp_desktop_building.png" alt="Campus Watermark" class="resources-footer-sketch">
-          <div class="resources-footer-script">
-            <span>Learn</span>
-            <span>Grow</span>
-            <span>Belong</span>
-            <em>Together.</em>
+        <div class="academic-res-header-right">
+          <div class="academic-res-slogan">
+            <span>GROW</span>
+            <span>BELONG</span>
+            <span>TOGETHER</span>
           </div>
         </div>
-        <div class="resources-footer-right">
-          <a href="javascript:void(0)" onclick="navigateTo('/about')" class="resources-footer-link">About</a>
-          <span class="resources-footer-dot">|</span>
-          <a href="javascript:void(0)" onclick="showToast('Help center & documentation active', 'info')" class="resources-footer-link">Help</a>
-          <span class="resources-footer-dot">|</span>
-          <a href="mailto:inbox.afrozalam@gmail.com" class="resources-footer-link">Contact</a>
+      </header>
+
+      <!-- 2-Column Desktop, 1-Column Mobile Pastel Cards Grid -->
+      <div class="academic-res-grid">
+        
+        <!-- Card 1: JNU PYQs -->
+        <div class="academic-res-card mint" onclick="openResourceDetailModal('res-pyqs')">
+          <div class="res-card-blob mint"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">JNU PYQs</h2>
+            <p class="res-card-desc">Previous year question papers for all courses and semesters.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore mint">Explore &rarr;</span>
+              <div class="res-card-circle-btn mint">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
         </div>
-      </footer>
+
+        <!-- Card 2: Syllabus -->
+        <div class="academic-res-card blue" onclick="openResourceDetailModal('res-syllabus')">
+          <div class="res-card-blob blue"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Syllabus</h2>
+            <p class="res-card-desc">Latest syllabus for all programs and subjects.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore blue">Explore &rarr;</span>
+              <div class="res-card-circle-btn blue">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Academic Calendar -->
+        <div class="academic-res-card rose" onclick="openResourceDetailModal('res-calendar')">
+          <div class="res-card-blob rose"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Academic Calendar</h2>
+            <p class="res-card-desc">Important academic dates, exam schedules and notifications.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore rose">Explore &rarr;</span>
+              <div class="res-card-circle-btn rose">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: University Holiday List -->
+        <div class="academic-res-card amber" onclick="openResourceDetailModal('res-holidays')">
+          <div class="res-card-blob amber"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">University Holiday List</h2>
+            <p class="res-card-desc">Official list of university holidays and observances.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore amber">Explore &rarr;</span>
+              <div class="res-card-circle-btn amber">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: Useful Links -->
+        <div class="academic-res-card slate" onclick="openResourceDetailModal('res-links')">
+          <div class="res-card-blob slate"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Useful Links</h2>
+            <p class="res-card-desc">Important university links and external resources.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore slate">Explore &rarr;</span>
+              <div class="res-card-circle-btn slate">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
 
     </div>
   `;
 
   container.innerHTML = html;
-  updateResourcesDisplay();
 }
 
-function getFilteredResources() {
-  return CAMPUS_RESOURCES_DATA.filter(res => {
-    let matchesCat = true;
-    if (currentResourcesCategory !== "all") {
-      const c = currentResourcesCategory.toLowerCase();
-      matchesCat = res.categoryGroup.includes(c) || res.category.toLowerCase() === c;
-    }
-
-    let matchesQuery = true;
-    if (currentResourcesQuery.trim()) {
-      const q = currentResourcesQuery.trim().toLowerCase();
-      matchesQuery = (
-        res.title.toLowerCase().includes(q) ||
-        res.description.toLowerCase().includes(q) ||
-        res.fullDescription.toLowerCase().includes(q) ||
-        res.category.toLowerCase().includes(q) ||
-        res.tags.some(t => t.toLowerCase().includes(q))
-      );
-    }
-
-    return matchesCat && matchesQuery;
-  });
-}
-
-function updateResourcesDisplay() {
-  const filtered = getFilteredResources();
-  const desktopContainer = document.getElementById("resourcesDesktopGrid");
-  const mobileContainer = document.getElementById("resourcesMobileList");
-  const emptyState = document.getElementById("resourcesEmptyState");
-
-  if (!desktopContainer || !mobileContainer) return;
-
-  if (filtered.length === 0) {
-    desktopContainer.innerHTML = "";
-    mobileContainer.innerHTML = "";
-    if (emptyState) emptyState.style.display = "block";
-    return;
-  }
-
-  if (emptyState) emptyState.style.display = "none";
-
-  // Desktop 3x3 Grid of 9 Cards
-  desktopContainer.innerHTML = filtered.map(res => {
-    return `
-      <div class="resource-card" onclick="openResourceDetailModal('${res.id}')">
-        
-        <!-- Top Image (Baked-in icon badge) -->
-        <div class="resource-card-image-wrap">
-          <img src="${escapeAttr(res.image)}" alt="${escapeAttr(res.title)}" class="resource-card-img" loading="lazy">
-        </div>
-
-        <!-- Card Content -->
-        <div class="resource-card-content">
-          <div>
-            <h3 class="resource-card-title">${escapeHtml(res.title)}</h3>
-            <p class="resource-card-desc">${escapeHtml(res.description)}</p>
-          </div>
-
-          <!-- Bottom Row with Metric & Arrow Action Button -->
-          <div class="resource-card-bottom-row">
-            <span class="resource-metric-pill">${escapeHtml(res.metric)}</span>
-            <button type="button" class="resource-action-circle-btn" onclick="event.stopPropagation(); openResourceDetailModal('${res.id}')" aria-label="Open Resource">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-      </div>
-    `;
-  }).join("");
-
-  // Mobile Vertical Resource List Cards (< 768px)
-  mobileContainer.innerHTML = filtered.map(res => {
-    const thumbSrc = res.mobileThumb || res.image;
-    return `
-      <div class="mobile-resource-card-item" onclick="openResourceDetailModal('${res.id}')">
-        
-        <img src="${escapeAttr(thumbSrc)}" alt="${escapeAttr(res.title)}" class="mobile-res-thumb" loading="lazy">
-        
-        <div class="mobile-res-icon-box">
-          ${res.iconSvg}
-        </div>
-
-        <div class="mobile-res-info-column">
-          <h4 class="mobile-res-item-title">${escapeHtml(res.title)}</h4>
-          <p class="mobile-res-item-desc">${escapeHtml(res.description)}</p>
-          <div class="mobile-res-metric-tag">${escapeHtml(res.metric)}</div>
-        </div>
-
-        <div class="mobile-res-right-chevron">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#16A34A" stroke-width="2.5">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-
-      </div>
-    `;
-  }).join("");
-}
-
-function setResourcesFilter(category) {
-  currentResourcesCategory = category;
-
-  // Update desktop pills
-  document.querySelectorAll(".resources-filter-pill").forEach(btn => {
-    const text = btn.innerText.toLowerCase();
-    const isMatch = (
-      (category === "all" && text === "all") ||
-      (category === "academic" && text === "academic") ||
-      (category === "exams" && text === "exams") ||
-      (category === "placements" && text === "placements") ||
-      (category === "career" && text === "career") ||
-      (category === "campus life" && text === "campus life") ||
-      (category === "others" && text === "others")
-    );
-    btn.classList.toggle("active", isMatch);
-  });
-
-  // Update mobile pills
-  document.querySelectorAll(".resources-filter-pill-mob").forEach(btn => {
-    const text = btn.innerText.toLowerCase();
-    const isMatch = (
-      (category === "all" && text === "all") ||
-      (category === "academic" && text === "academic") ||
-      (category === "exams" && text === "exams") ||
-      (category === "placements" && text === "placements") ||
-      (category === "career" && text === "career") ||
-      (category === "campus life" && text === "campus life") ||
-      (category === "others" && text === "others")
-    );
-    btn.classList.toggle("active", isMatch);
-  });
-
-  updateResourcesDisplay();
-}
 
 let resourcesSearchTimeout = null;
 function handleResourcesSearchInput(val) {
