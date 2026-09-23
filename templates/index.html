@@ -25,6 +25,7 @@
       else if (p === "/create-team") activeId = "viewCreateTeam";
       else if (p === "/students") activeId = "viewStudents";
       else if (p === "/events") activeId = "viewEvents";
+      else if (p.startsWith("/events/") || p.startsWith("/event/")) activeId = "viewEventDetail";
       else if (p === "/resources") activeId = "viewResources";
       else if (p === "/course-select" || p === "/select-program" || p === "/enter-details" || p === "/sync-details" || p === "/otp" || p === "/verify-otp") activeId = "viewLogin";
       window.__initialActiveViewId = activeId;
@@ -341,33 +342,28 @@
           <div id="eventsViewContainer"></div>
         </section>
 
+        <!-- VIEW: DEDICATED INDIVIDUAL EVENT DETAIL PAGE -->
+        <section id="viewEventDetail" class="view-page-panel">
+          <div id="eventDetailViewContainer"></div>
+        </section>
+
         <!-- VIEW 9: ACADEMIC & CAMPUS RESOURCES -->
         <section id="viewResources" class="view-page-panel">
           <div id="resourcesViewContainer"></div>
         </section>
 
-        <!-- Global Sleek Minimalist Footer -->
+        <!-- Global Sleek Minimalist Floating Bar Footer (Exact match to mockup) -->
         <footer class="homescreen-editorial-footer" id="homescreenFooter">
-          <div class="footer-compact-container">
-            <!-- Left Side: Brand Lockup & University Affiliation -->
-            <div class="footer-compact-brand">
-              <a href="/" class="footer-brand-link">
-                <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="footer-crest-logo" onerror="this.src='/static/img/jnu_logo.jpg';">
-                <div class="footer-brand-text">
-                  <span class="footer-brand-title">JnuMate<span class="brand-dot">.</span></span>
-                  <span class="footer-brand-sub">JAIPUR NATIONAL UNIVERSITY</span>
-                </div>
-              </a>
-              <span class="footer-compact-copyright">&copy; 2026 JnuMate. Built by Afroz Alam for Jaipur National University.</span>
+          <div class="footer-floating-bar">
+            <div class="footer-bar-left">
+              <span>&copy; 2026 JnuMate. All rights reserved.</span>
+              <span class="footer-bar-bullet">&bull;</span>
+              <span class="footer-bar-author">Built by Afroz Alam for Jaipur National University.</span>
             </div>
-
-            <!-- Right Side: Sleek Minimalist Links -->
-            <div class="footer-compact-links">
-              <a href="https://github.com/afrozthalam" target="_blank" rel="noopener noreferrer" class="footer-sleek-link">GitHub</a>
-              <span class="footer-link-divider">&bull;</span>
-              <a href="mailto:inbox.afrozalam@gmail.com" class="footer-sleek-link">Contact</a>
-              <span class="footer-link-divider">&bull;</span>
-              <a href="javascript:void(0)" class="footer-sleek-link">Privacy</a>
+            <div class="footer-bar-right">
+              <a href="/about" onclick="event.preventDefault(); navigateTo('/about');" class="footer-bar-link">About</a>
+              <a href="mailto:inbox.afrozalam@gmail.com" class="footer-bar-link">Help</a>
+              <a href="mailto:inbox.afrozalam@gmail.com" class="footer-bar-link">Contact</a>
             </div>
           </div>
         </footer>

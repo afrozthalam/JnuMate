@@ -271,7 +271,7 @@ function handleCurrentRoute() {
   // Login & Create Team & Events & Resources & Profile Viewport Isolation & Footer Visibility Control
   const isLoginRoute = path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp";
   const isCreateTeamRoute = path === "/create-team";
-  const isEventsRoute = path === "/events";
+  const isEventsRoute = path === "/events" || path.startsWith("/events/") || path.startsWith("/event/");
   const isResourcesRoute = path === "/resources";
   const isProfileRoute = path === "/profile";
   document.body.classList.toggle("is-login-route", isLoginRoute);
@@ -281,7 +281,7 @@ function handleCurrentRoute() {
   document.body.classList.toggle("is-profile-route", isProfileRoute);
   const footerEl = document.getElementById("homescreenFooter");
   if (footerEl) {
-    footerEl.style.display = (isLoginRoute || isCreateTeamRoute || isEventsRoute || isResourcesRoute || isProfileRoute) ? "none" : "";
+    footerEl.style.display = (isLoginRoute || isCreateTeamRoute) ? "none" : "";
   }
 
   // Hide discover top header pitch on interior views (login, admin, profile, etc.)
@@ -321,6 +321,13 @@ function handleCurrentRoute() {
     if (p) {
       p.classList.add("active");
       loadEventsView();
+    }
+  } else if (path.startsWith("/events/") || path.startsWith("/event/")) {
+    const p = document.getElementById("viewEventDetail");
+    if (p) {
+      p.classList.add("active");
+      const eventSlugOrId = path.split("/")[2];
+      loadEventDetailView(eventSlugOrId);
     }
   } else if (path === "/resources") {
     const p = document.getElementById("viewResources");
@@ -368,7 +375,7 @@ function highlightActiveNavLinks() {
   // Modern Desktop Top Navbar Links (Home, Events, Resources)
   document.querySelectorAll(".desktop-nav-link").forEach(link => {
     const linkPath = link.getAttribute("data-path") || link.getAttribute("href");
-    if (linkPath === path || (linkPath !== "/" && path.startsWith(linkPath)) || (path === "/profile" && linkPath === "/")) {
+    if (linkPath === path || (linkPath !== "/" && path.startsWith(linkPath)) || (path.startsWith("/event") && linkPath === "/events") || (path === "/profile" && linkPath === "/")) {
       link.classList.add("active");
     } else {
       link.classList.remove("active");
@@ -380,7 +387,7 @@ function highlightActiveNavLinks() {
     const navKey = item.getAttribute("data-nav");
     let isMatch = false;
     if (navKey === "home" && (path === "/" || path.startsWith("/team/"))) isMatch = true;
-    else if (navKey === "events" && path === "/events") isMatch = true;
+    else if (navKey === "events" && (path === "/events" || path.startsWith("/events/") || path.startsWith("/event/"))) isMatch = true;
     else if (navKey === "resources" && path === "/resources") isMatch = true;
     else if (navKey === "profile" && (path === "/profile" || path === "/my-profile-tab")) isMatch = true;
 
@@ -7112,9 +7119,10 @@ function loadAdminDashboardData() {
   Promise.all([
     fetch("/api/admin/settings").then(r => r.json()),
     fetch("/api/admin/stats").then(r => r.json()),
-    fetch("/api/admin/activity").then(r => r.json()).catch(() => ({ success: false }))
+    fetch("/api/admin/activity").then(r => r.json()).catch(() => ({ success: false })),
+    fetch("/api/events").then(r => r.json()).catch(() => ({ success: false, events: [] }))
   ])
-    .then(([settingsRes, statsRes, activityRes]) => {
+    .then(([settingsRes, statsRes, activityRes, eventsRes]) => {
       if (!settingsRes || !statsRes) {
         renderAdminLoginForm();
         return;
@@ -7131,6 +7139,7 @@ function loadAdminDashboardData() {
         sih_teams: 0,
         ctf_teams: 0,
         total_members: 0,
+        total_events: 0,
         open_slots: 0,
         otp_email_enabled: true,
         default_bypass_otp: "123456"
@@ -7141,7 +7150,9 @@ function loadAdminDashboardData() {
         recent_teams: [],
         recent_requests: []
       };
-      renderAdminDashboard(settings, stats, activity);
+      const eventsList = (eventsRes && eventsRes.success && Array.isArray(eventsRes.events)) ? eventsRes.events : [];
+      window.__adminEventsList = eventsList;
+      renderAdminDashboard(settings, stats, activity, eventsList);
     })
     .catch(err => {
       console.warn("Admin dashboard data notice:", err);
@@ -7149,7 +7160,7 @@ function loadAdminDashboardData() {
     });
 }
 
-function renderAdminDashboard(settings, stats, activityData) {
+function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
   const container = document.getElementById("adminViewContainer");
   if (!container) return;
 
@@ -7285,6 +7296,78 @@ function renderAdminDashboard(settings, stats, activityData) {
             Students assigned to active squads
           </div>
         </div>
+
+        <div class="admin-metric-card">
+          <div class="admin-metric-label">Campus Events</div>
+          <div class="admin-metric-value" style="color:#10B981;">
+            ${eventsList.length || stats.total_events || 0}
+          </div>
+          <div class="admin-metric-footnote">
+            Published university events
+          </div>
+        </div>
+      </div>
+
+      <!-- Campus Events Management Section -->
+      <div class="admin-events-card">
+        <div class="admin-events-header">
+          <div>
+            <div class="admin-panel-kicker">Campus Program Management</div>
+            <h3 class="admin-activity-title" style="margin-top:2px;">Campus Events Management</h3>
+            <p style="font-size:0.78rem; color:#64748B; margin:2px 0 0 0;">Publish, update, or remove university hackathons, workshops, and campus events.</p>
+          </div>
+          <button type="button" onclick="openAdminEventModal()" class="btn-admin-add-event">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ Add New Event</span>
+          </button>
+        </div>
+
+        ${eventsList.length === 0 ? `
+          <div style="text-align:center; padding:36px; color:#64748B;">
+            <p>No events found. Click "+ Add New Event" to publish your first campus event.</p>
+          </div>
+        ` : `
+          <div class="admin-events-table-wrap">
+            <table class="admin-events-table">
+              <thead>
+                <tr>
+                  <th style="width:64px;">Cover</th>
+                  <th>Title & Category</th>
+                  <th>Date & Time</th>
+                  <th>Venue</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${eventsList.map(ev => `
+                  <tr>
+                    <td>
+                      <img src="${escapeAttr(ev.cover_image || '/static/img/redesign/events/event_sih.png')}" alt="${escapeAttr(ev.title)}" class="admin-event-thumb-mini" onerror="this.src='/static/img/redesign/events/event_sih.png'">
+                    </td>
+                    <td>
+                      <div style="font-weight:700; color:#0F172A; margin-bottom:2px;">${escapeHtml(ev.title)}</div>
+                      <span class="event-cat-badge badge-${escapeAttr((ev.badge_color || 'green').toLowerCase())}">${escapeHtml(ev.badge_text || ev.category)}</span>
+                    </td>
+                    <td>
+                      <div style="font-weight:600; color:#334155;">${escapeHtml(ev.event_date)}</div>
+                      <div style="font-size:0.75rem; color:#64748B;">${escapeHtml(ev.event_time || '')}</div>
+                    </td>
+                    <td>
+                      <div style="color:#334155;">📍 ${escapeHtml(ev.venue)}</div>
+                      <div style="font-size:0.75rem; color:#64748B;">${escapeHtml(ev.venue_detail || '')}</div>
+                    </td>
+                    <td style="text-align:right;">
+                      <div class="admin-event-actions-col" style="justify-content:flex-end;">
+                        <button type="button" class="btn-admin-event-edit" onclick="openAdminEventModal(${ev.id})">Edit</button>
+                        <button type="button" class="btn-admin-event-delete" onclick="confirmAdminDeleteEvent(${ev.id}, '${escapeAttr(ev.title)}')">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        `}
       </div>
 
       <!-- Live Registered Students Directory -->
@@ -7541,6 +7624,288 @@ function logoutAdmin() {
     .catch(() => loadAdminView());
 }
 
+function openAdminEventModal(eventId = null) {
+  const overlay = document.getElementById("glassModalOverlay");
+  const sheet = document.getElementById("glassModalSheet");
+  if (!overlay || !sheet) return;
+
+  const eventsList = window.__adminEventsList || [];
+  const ev = eventId ? eventsList.find(e => Number(e.id) === Number(eventId)) : null;
+  const isEdit = Boolean(ev);
+
+  const title = ev ? ev.title : "";
+  const category = ev ? ev.category : "Hackathons";
+  const badgeText = ev ? (ev.badge_text || ev.category) : "Hackathon";
+  const badgeColor = ev ? (ev.badge_color || "green") : "green";
+  const coverImage = ev ? (ev.cover_image || "/static/img/redesign/events/event_sih.png") : "/static/img/redesign/events/event_sih.png";
+  const eventDate = ev ? ev.event_date : "";
+  const eventDay = ev ? ev.event_day : "";
+  const eventMonth = ev ? ev.event_month : "";
+  const eventTime = ev ? (ev.event_time || "09:00 AM - 06:00 PM IST") : "09:00 AM - 06:00 PM IST";
+  const venue = ev ? ev.venue : "JNU Main Campus";
+  const venueDetail = ev ? (ev.venue_detail || "") : "";
+  const audience = ev ? (ev.audience || "Open to all JNU students / UG & PG (All Departments)") : "Open to all JNU students / UG & PG (All Departments)";
+  const summary = ev ? (ev.summary || "") : "";
+  const about = ev ? (ev.about || "") : "";
+  const themesStr = (ev && Array.isArray(ev.themes)) ? ev.themes.join("\n") : "";
+  const registrationLink = ev ? (ev.registration_link || "/create-team") : "/create-team";
+
+  sheet.innerHTML = `
+    <div style="max-height:82vh; overflow-y:auto; padding-right:4px;">
+      <h3 class="forest-modal-title" style="margin-bottom:4px;">${isEdit ? 'Edit Event Details' : 'Add New Campus Event'}</h3>
+      <p class="forest-modal-message" style="margin-bottom:20px;">${isEdit ? 'Update event schedule, venue, cover and details.' : 'Fill in the information below to publish a new event.'}</p>
+
+      <form id="adminEventForm" onsubmit="event.preventDefault(); submitAdminEventForm(${isEdit ? ev.id : 'null'});" style="display:flex; flex-direction:column; gap:16px;">
+        <div>
+          <label class="form-label-forest">Event Title *</label>
+          <input type="text" id="adminEvTitle" class="input-forest" value="${escapeAttr(title)}" required placeholder="e.g. Smart India Hackathon 2025">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <div>
+            <label class="form-label-forest">Category *</label>
+            <select id="adminEvCategory" class="input-forest" style="background:#0E3421; color:#fff;" onchange="document.getElementById('adminEvBadgeText').value = this.value">
+              <option value="Hackathons" ${category === 'Hackathons' ? 'selected' : ''}>Hackathons</option>
+              <option value="Workshops" ${category === 'Workshops' ? 'selected' : ''}>Workshops</option>
+              <option value="Seminars" ${category === 'Seminars' ? 'selected' : ''}>Seminars</option>
+              <option value="Cultural" ${category === 'Cultural' ? 'selected' : ''}>Cultural</option>
+              <option value="Competitions" ${category === 'Competitions' ? 'selected' : ''}>Competitions</option>
+              <option value="Talks" ${category === 'Talks' ? 'selected' : ''}>Talks</option>
+              <option value="Other" ${category === 'Other' ? 'selected' : ''}>Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label-forest">Badge Color</label>
+            <select id="adminEvBadgeColor" class="input-forest" style="background:#0E3421; color:#fff;">
+              <option value="green" ${badgeColor === 'green' ? 'selected' : ''}>Green (Hackathons / Active)</option>
+              <option value="blue" ${badgeColor === 'blue' ? 'selected' : ''}>Blue (Workshops)</option>
+              <option value="orange" ${badgeColor === 'orange' ? 'selected' : ''}>Orange/Brown (Seminars)</option>
+              <option value="purple" ${badgeColor === 'purple' ? 'selected' : ''}>Purple (Cultural)</option>
+              <option value="red" ${badgeColor === 'red' ? 'selected' : ''}>Red (Competitions / CTF)</option>
+              <option value="teal" ${badgeColor === 'teal' ? 'selected' : ''}>Teal (Talks / Founder)</option>
+              <option value="other" ${badgeColor === 'other' ? 'selected' : ''}>Slate (Other)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <div>
+            <label class="form-label-forest">Badge Text</label>
+            <input type="text" id="adminEvBadgeText" class="input-forest" value="${escapeAttr(badgeText)}" placeholder="e.g. Hackathon">
+          </div>
+          <div>
+            <label class="form-label-forest">Registration Link</label>
+            <input type="text" id="adminEvRegLink" class="input-forest" value="${escapeAttr(registrationLink)}" placeholder="/create-team or external URL">
+          </div>
+        </div>
+
+        <!-- Cover Photo Zone -->
+        <div>
+          <label class="form-label-forest">Cover Photo</label>
+          <div class="cover-upload-zone" onclick="document.getElementById('adminEvCoverFileInput').click()" style="cursor:pointer; text-align:center; padding:16px; border:2px dashed rgba(255,255,255,0.2); border-radius:10px; background:rgba(0,0,0,0.2);">
+            <input type="file" id="adminEvCoverFileInput" accept="image/*" style="display:none;" onchange="handleAdminEventCoverUpload(event)">
+            <div style="color:var(--text-sage); font-size:0.85rem;">📁 Click to upload image (JPG, PNG, WEBP)</div>
+          </div>
+          <div style="margin-top:8px;">
+            <input type="text" id="adminEvCoverUrl" class="input-forest" value="${escapeAttr(coverImage)}" placeholder="Or paste direct image URL">
+          </div>
+          <div id="adminCoverPreviewWrap" style="margin-top:10px; text-align:center; ${coverImage ? '' : 'display:none;'}">
+            <img id="adminCoverPreview" src="${escapeAttr(coverImage)}" style="max-height:140px; border-radius:8px; object-fit:cover; border:1px solid #CBD5E1;">
+          </div>
+        </div>
+
+        <!-- Date & Time Row -->
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:10px;">
+          <div>
+            <label class="form-label-forest">Event Date *</label>
+            <input type="text" id="adminEvDate" class="input-forest" value="${escapeAttr(eventDate)}" required placeholder="e.g. 15 November 2025">
+          </div>
+          <div>
+            <label class="form-label-forest">Day (e.g. 15)</label>
+            <input type="text" id="adminEvDay" class="input-forest" value="${escapeAttr(eventDay)}" placeholder="15">
+          </div>
+          <div>
+            <label class="form-label-forest">Month (e.g. NOV)</label>
+            <input type="text" id="adminEvMonth" class="input-forest" value="${escapeAttr(eventMonth)}" placeholder="NOV">
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label-forest">Event Time</label>
+          <input type="text" id="adminEvTime" class="input-forest" value="${escapeAttr(eventTime)}" placeholder="e.g. 09:00 AM - 06:00 PM IST">
+        </div>
+
+        <!-- Venue -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <div>
+            <label class="form-label-forest">Venue *</label>
+            <input type="text" id="adminEvVenue" class="input-forest" value="${escapeAttr(venue)}" required placeholder="e.g. JNU Main Campus">
+          </div>
+          <div>
+            <label class="form-label-forest">Venue Detail / Location</label>
+            <input type="text" id="adminEvVenueDetail" class="input-forest" value="${escapeAttr(venueDetail)}" placeholder="e.g. Central Auditorium & Innovation Lab">
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label-forest">Target Audience / Eligibility</label>
+          <input type="text" id="adminEvAudience" class="input-forest" value="${escapeAttr(audience)}" placeholder="e.g. Open to all JNU students / UG & PG">
+        </div>
+
+        <div>
+          <label class="form-label-forest">Short Summary (Preview card description) *</label>
+          <textarea id="adminEvSummary" class="input-forest" rows="2" required placeholder="1-2 sentences summarizing the event">${escapeHtml(summary)}</textarea>
+        </div>
+
+        <div>
+          <label class="form-label-forest">Detailed About Description</label>
+          <textarea id="adminEvAbout" class="input-forest" rows="4" placeholder="Full rich description for the event detail page">${escapeHtml(about)}</textarea>
+        </div>
+
+        <div>
+          <label class="form-label-forest">Themes / Problem Statements (One per line)</label>
+          <textarea id="adminEvThemes" class="input-forest" rows="3" placeholder="Smart Automation&#10;Healthcare & Assistive Technology&#10;Sustainability & Clean Energy">${escapeHtml(themesStr)}</textarea>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button type="button" onclick="closeGlassModal()" class="btn-outline-pill">Cancel</button>
+          <button type="submit" id="btnAdminSaveEvent" class="btn-primary-forest-pill">
+            ${isEdit ? 'Save Changes' : 'Publish Event'}
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  overlay.classList.add("active");
+}
+
+function handleAdminEventCoverUpload(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  showToast("Uploading cover image...", "info");
+  fetch("/api/admin/events/upload", {
+    method: "POST",
+    body: formData
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.url) {
+        const urlInput = document.getElementById("adminEvCoverUrl");
+        if (urlInput) urlInput.value = data.url;
+        const prevWrap = document.getElementById("adminCoverPreviewWrap");
+        const prevImg = document.getElementById("adminCoverPreview");
+        if (prevWrap && prevImg) {
+          prevImg.src = data.url;
+          prevWrap.style.display = "";
+        }
+        showToast("Cover photo uploaded successfully", "success");
+      } else {
+        showToast(data.message || "Failed to upload image", "error");
+      }
+    })
+    .catch(() => showToast("Error uploading cover image", "error"));
+}
+
+function submitAdminEventForm(eventId = null) {
+  const title = (document.getElementById("adminEvTitle")?.value || "").trim();
+  const category = (document.getElementById("adminEvCategory")?.value || "Hackathons").trim();
+  const badgeText = (document.getElementById("adminEvBadgeText")?.value || category).trim();
+  const badgeColor = (document.getElementById("adminEvBadgeColor")?.value || "green").trim();
+  const coverImage = (document.getElementById("adminEvCoverUrl")?.value || "").trim();
+  const eventDate = (document.getElementById("adminEvDate")?.value || "").trim();
+  const eventDay = (document.getElementById("adminEvDay")?.value || "").trim();
+  const eventMonth = (document.getElementById("adminEvMonth")?.value || "").trim();
+  const eventTime = (document.getElementById("adminEvTime")?.value || "").trim();
+  const venue = (document.getElementById("adminEvVenue")?.value || "").trim();
+  const venueDetail = (document.getElementById("adminEvVenueDetail")?.value || "").trim();
+  const audience = (document.getElementById("adminEvAudience")?.value || "").trim();
+  const summary = (document.getElementById("adminEvSummary")?.value || "").trim();
+  const about = (document.getElementById("adminEvAbout")?.value || summary).trim();
+  const themesRaw = (document.getElementById("adminEvThemes")?.value || "").trim();
+  const registrationLink = (document.getElementById("adminEvRegLink")?.value || "/create-team").trim();
+
+  if (!title || !eventDate || !venue || !summary) {
+    showToast("Please fill in all required fields (Title, Date, Venue, Summary)", "error");
+    return;
+  }
+
+  const themes = themesRaw.split("\n").map(t => t.trim()).filter(Boolean);
+
+  const payload = {
+    title, category, badge_text: badgeText, badge_color: badgeColor,
+    cover_image: coverImage, event_date: eventDate, event_day: eventDay,
+    event_month: eventMonth, event_time: eventTime, venue, venue_detail: venueDetail,
+    audience, summary, about, themes, registration_link: registrationLink
+  };
+
+  const isEdit = Boolean(eventId);
+  const url = isEdit ? `/api/admin/events/${eventId}` : "/api/admin/events";
+  const method = isEdit ? "PUT" : "POST";
+
+  const btn = document.getElementById("btnAdminSaveEvent");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = isEdit ? "Saving..." : "Publishing...";
+  }
+
+  fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast(isEdit ? "Event updated successfully" : "Event created successfully", "success");
+        closeGlassModal();
+        loadAdminDashboardData();
+        dynamicCampusEvents = [];
+      } else {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = isEdit ? "Save Changes" : "Publish Event";
+        }
+        showToast(data.message || "Failed to save event", "error");
+      }
+    })
+    .catch(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = isEdit ? "Save Changes" : "Publish Event";
+      }
+      showToast("Network error saving event", "error");
+    });
+}
+
+function confirmAdminDeleteEvent(eventId, eventTitle) {
+  showGlassModal({
+    title: "Delete Event",
+    message: `Are you sure you want to permanently remove "${eventTitle}"? This cannot be undone.`,
+    confirmText: "Delete Event",
+    cancelText: "Cancel",
+    isDanger: true,
+    onConfirm: () => {
+      fetch(`/api/admin/events/${eventId}`, { method: "DELETE" })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            showToast("Event deleted successfully", "success");
+            loadAdminDashboardData();
+            dynamicCampusEvents = [];
+          } else {
+            showToast(data.message || "Failed to delete event", "error");
+          }
+        })
+        .catch(() => showToast("Error deleting event", "error"));
+    }
+  });
+}
+
 document.addEventListener("click", (e) => {
   const overlay = document.getElementById("glassModalOverlay");
   if (overlay && e.target === overlay) {
@@ -7582,200 +7947,78 @@ function escapeAttr(str) {
     .replace(/'/g, "&#39;");
 }
 
-/* ==========================================================================
-   16. CAMPUS EVENTS ENGINE & DATASETS
+/*/* ==========================================================================
+   16. CAMPUS EVENTS ENGINE & DATASETS (DYNAMIC DATABASE BACKED)
    ========================================================================== */
-const EVENT_SAMPLE_AVATARS = [
-  "/static/img/redesign/events/attendee_1.png",
-  "/static/img/redesign/events/attendee_2.png",
-  "/static/img/redesign/events/attendee_3.png"
-];
 
-const CAMPUS_EVENTS_DATA = [
-  {
-    id: "sih-2025",
-    title: "Smart India Hackathon 2025",
-    category: "Hackathons",
-    catBadge: "Hackathon",
-    mobileCatBadge: "SIH",
-    mobileBadgeTheme: "orange",
-    image: "/static/img/redesign/events/event_sih.png",
-    day: "15",
-    month: "NOV",
-    dateFull: "Saturday, 15 November 2025",
-    time: "09:00 AM - 06:00 PM IST",
-    location: "JNU Main Campus",
-    locationDetail: "Central Auditorium & Innovation Lab, Academic Block A",
-    summary: "Innovate for a better tomorrow. Build solutions for real-world problems.",
-    details: "Smart India Hackathon 2025 is India's premier nationwide product innovation competition. JNU students collaborate in interdisciplinary teams of 6 to solve critical problem statements posed by ministries, departments, and industry leaders.",
-    interestedCount: 234,
-    organizer: "Ministry of Education & JNU Innovation Cell",
-    entryFee: "Free Registration",
-    eligibility: "All undergraduate & postgraduate students (6-member teams with at least 1 female leader/member)"
-  },
-  {
-    id: "ai-ml-workshop-2025",
-    title: "AI & Machine Learning Workshop",
-    category: "Workshops",
-    catBadge: "Workshop",
-    mobileCatBadge: "Workshop",
-    mobileBadgeTheme: "mint",
-    image: "/static/img/redesign/events/event_ai.png",
-    day: "22",
-    month: "NOV",
-    dateFull: "Saturday, 22 November 2025",
-    time: "10:00 AM - 04:30 PM IST",
-    location: "Computer Science Block",
-    locationDetail: "CS Advanced Lab 304, Third Floor",
-    summary: "Hands-on session on modern AI tools and applications.",
-    details: "Master practical machine learning pipelines from dataset preparation to training neural networks, exploring LLM fine-tuning, and deploying transformer models with Python and PyTorch. Bring your laptops. Certificates provided.",
-    interestedCount: 120,
-    organizer: "Department of Computer Science & Engineering",
-    entryFee: "Free (Pre-registration required)",
-    eligibility: "Open to all engineering and tech enthusiasts"
-  },
-  {
-    id: "future-tech-talk",
-    title: "Future of Tech: Expert Talk",
-    category: "Seminars",
-    catBadge: "Seminar",
-    mobileCatBadge: "Seminar",
-    mobileBadgeTheme: "teal",
-    image: "/static/img/redesign/events/event_future_tech.png",
-    day: "28",
-    month: "NOV",
-    dateFull: "Friday, 28 November 2025",
-    time: "02:00 PM - 05:00 PM IST",
-    location: "Auditorium, JNU",
-    locationDetail: "Dr. APJ Abdul Kalam Central University Auditorium",
-    summary: "Insights from industry experts on emerging technologies.",
-    details: "Distinguished keynote session and interactive fireside chat exploring quantum computing, edge artificial intelligence, hyperscale cloud architecture, and high-growth engineering careers with senior leaders.",
-    interestedCount: 98,
-    organizer: "JNU Tech Leaders Forum & IEEE Student Chapter",
-    entryFee: "Free Admission",
-    eligibility: "Open to all university students and faculty members"
-  },
-  {
-    id: "cultural-fest-2025",
-    title: "JNU Cultural Fest 2025",
-    category: "Cultural",
-    catBadge: "Cultural",
-    mobileCatBadge: "Cultural",
-    mobileBadgeTheme: "pink",
-    image: "/static/img/redesign/events/event_cultural.png",
-    day: "05",
-    month: "DEC",
-    dateFull: "Friday, 05 December 2025",
-    time: "04:00 PM - 10:00 PM IST",
-    location: "Open Air Ground",
-    locationDetail: "University Amphitheater & Campus Open Air Lawn",
-    summary: "Music, art, dance and much more. Celebrate the spirit of JNU.",
-    details: "The university's flagship annual cultural festival bringing together live music bands, theatrical drama, folk and western dance battles, fashion runway, photography exhibitions, and a vibrant night food carnival.",
-    interestedCount: 320,
-    organizer: "JNU Student Activity Council (SAC)",
-    entryFee: "Free Entry (Valid Student ID Required)",
-    eligibility: "Open to all JNU students, alumni, and faculty"
-  },
-  {
-    id: "ctf-competition-2025",
-    title: "Capture The Flag (CTF)",
-    category: "Competitions",
-    catBadge: "Competition",
-    mobileCatBadge: "CTF",
-    mobileBadgeTheme: "purple",
-    image: "/static/img/redesign/events/event_ctf.png",
-    day: "12",
-    month: "DEC",
-    dateFull: "Friday, 12 December 2025",
-    time: "11:00 AM - 07:00 PM IST",
-    location: "Computer Science Block",
-    locationDetail: "Cyber Defense Systems Lab, 2nd Floor",
-    summary: "Test your cybersecurity skills in this thrilling competition.",
-    details: "An intensive 8-hour live offensive and defensive cybersecurity jeopardy tournament. Hack through web app vulnerabilities, reverse engineer binaries, crack cryptographic puzzles, and analyze memory forensics. Cash prizes for the top 3 teams!",
-    interestedCount: 176,
-    organizer: "JNU Cybersecurity Club (SecNet)",
-    entryFee: "Free Entry",
-    eligibility: "Solo or Teams of 2-3 students"
-  },
-  {
-    id: "startup-stories-2025",
-    title: "Startup Stories",
-    category: "Talks",
-    catBadge: "Talk",
-    mobileCatBadge: "Talk",
-    mobileBadgeTheme: "amber",
-    image: "/static/img/redesign/events/event_startup.png",
-    day: "18",
-    month: "DEC",
-    dateFull: "Thursday, 18 December 2025",
-    time: "03:00 PM - 06:00 PM IST",
-    location: "Management Block",
-    locationDetail: "Executive Conference Hall 102, School of Management",
-    summary: "Learn from founders, builders and innovators.",
-    details: "Candid founder stories from alumni entrepreneurs who scaled venture-backed tech startups. Learn practical lessons on initial customer discovery, prototyping on a student budget, fundraising, and pitch decks.",
-    interestedCount: 64,
-    organizer: "JNU E-Cell & Incubation Center",
-    entryFee: "Free Entry",
-    eligibility: "Open to all aspiring student founders and creators"
-  }
-];
-
+let dynamicCampusEvents = [];
 let currentEventsCategory = "all";
 let currentEventsQuery = "";
-let userInterestedEventsSet = new Set();
-
-function initUserInterestedEvents() {
-  try {
-    const raw = localStorage.getItem("jnumate_interested_events");
-    if (raw) {
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) userInterestedEventsSet = new Set(arr);
-    }
-  } catch (e) {}
-}
-initUserInterestedEvents();
-
-function saveUserInterestedEvents() {
-  try {
-    localStorage.setItem("jnumate_interested_events", JSON.stringify(Array.from(userInterestedEventsSet)));
-  } catch (e) {}
-}
+let eventsSearchTimeout = null;
 
 function loadEventsView() {
   const container = document.getElementById("eventsViewContainer");
   if (!container) return;
+
   currentEventsCategory = "all";
   currentEventsQuery = "";
-  renderEventsPage();
+
+  if (dynamicCampusEvents && dynamicCampusEvents.length > 0) {
+    renderEventsPage();
+  } else {
+    container.innerHTML = `
+      <div style="display:flex; justify-content:center; align-items:center; padding:80px 20px;">
+        ${renderIosSpinner('lg')}
+      </div>
+    `;
+  }
+
+  fetch("/api/events")
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && Array.isArray(data.events)) {
+        dynamicCampusEvents = data.events;
+      }
+      renderEventsPage();
+    })
+    .catch(() => {
+      renderEventsPage();
+    });
 }
 
 function renderEventsPage() {
   const container = document.getElementById("eventsViewContainer");
   if (!container) return;
 
-  const evSearchPlaceholder = (typeof window !== "undefined" && window.innerWidth <= 768) ? "Search events..." : "Search events, e.g. hackathon, workshop...";
+  const evSearchPlaceholder = (typeof window !== "undefined" && window.innerWidth <= 768) ? "Search events..." : "Search events...";
 
-  const html = `
+  container.innerHTML = `
     <div class="events-page-shell">
       
-      <!-- HERO BANNER CARD (Editorial Mint Gradient) -->
-      <div class="events-hero-card">
-        <div class="events-hero-content">
-          <span class="events-eyebrow">CAMPUS EVENTS</span>
-          <h1 class="events-hero-title">Discover What's Happening<br class="desktop-br">at JNU</h1>
-          <p class="events-hero-subtitle">
-            Hackathons, workshops, seminars, cultural events and more.<br class="desktop-br">
-            Stay updated and never miss an opportunity.
+      <!-- HERO BANNER CARD (Exact match to media_1790157271040.jpg) -->
+      <div class="events-hero-card" style="background:#F0FDF4; border:1px solid #DCFCE7; border-radius:18px; padding:32px 36px; display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; position:relative; overflow:hidden;">
+        <div class="events-hero-content" style="max-width:580px; z-index:2;">
+          <span class="events-hero-kicker" style="display:inline-block; font-size:0.75rem; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#064E3B; margin-bottom:8px;">EVENTS</span>
+          <h1 class="events-hero-title" style="font-family:var(--font-serif); font-size:2.35rem; font-weight:750; color:#0F172A; line-height:1.15; margin:0 0 10px 0;">
+            Discover What's<br>Happening at JNU
+          </h1>
+          <p class="events-hero-subtitle" style="font-size:0.92rem; color:#64748B; line-height:1.55; margin:0;">
+            Hackathons, workshops, seminars, cultural events and more.<br>
+            Stay updated and be part of the campus life.
           </p>
         </div>
-        <div class="events-hero-graphic-wrap">
-          <img src="/static/img/redesign/events/events_hero_sketch.png" alt="Learn Grow Belong Together" class="events-hero-banner-illustration">
+        <div class="events-hero-graphic-wrap" style="position:relative; width:340px; height:180px; display:flex; align-items:center; justify-content:flex-end; border-radius:14px; overflow:hidden;">
+          <img src="/static/img/redesign/campus_sketch.png" alt="JNU Campus Architecture" style="width:100%; height:100%; object-fit:cover; opacity:0.85; filter:contrast(1.05);" onerror="this.style.display='none'">
+          <div style="position:absolute; right:16px; top:24px; display:flex; flex-direction:column; gap:4px; font-size:0.82rem; font-weight:700; color:#064E3B; letter-spacing:0.08em; text-transform:uppercase; background:rgba(255,255,255,0.75); padding:8px 14px; border-radius:8px; backdrop-filter:blur(4px);">
+            <span>Ideas</span>
+            <span>People</span>
+            <span>Opportunities</span>
+          </div>
         </div>
       </div>
 
       <!-- FILTER & SEARCH BAR -->
       <div class="events-filter-bar">
-        
         <!-- Desktop Pill Filters -->
         <div class="events-filter-pills desktop-only-flex" id="eventsFilterPillsDesktop">
           <button type="button" class="events-filter-pill ${currentEventsCategory === 'all' ? 'active' : ''}" onclick="setEventsFilter('all')">All Events</button>
@@ -7788,7 +8031,7 @@ function renderEventsPage() {
           <button type="button" class="events-filter-pill ${currentEventsCategory === 'other' ? 'active' : ''}" onclick="setEventsFilter('other')">Other</button>
         </div>
 
-        <!-- Search Box & Calendar Button (Desktop & Mobile) -->
+        <!-- Search Box & Calendar Button -->
         <div class="events-search-actions-wrap">
           <div class="events-search-box">
             <svg class="events-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -7798,7 +8041,7 @@ function renderEventsPage() {
             <input type="text" id="eventsSearchInput" class="events-search-input" placeholder="${escapeAttr(evSearchPlaceholder)}" value="${escapeAttr(currentEventsQuery)}" oninput="handleEventsSearchInput(this.value)">
           </div>
 
-          <button type="button" class="events-calendar-btn" onclick="openEventsCalendarModal()" title="View Academic & Events Calendar" aria-label="Events Calendar">
+          <button type="button" class="events-calendar-btn" onclick="openEventsCalendarModal()" title="View Campus Events Calendar" aria-label="Events Calendar">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
               <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -7807,18 +8050,18 @@ function renderEventsPage() {
             </svg>
           </button>
         </div>
-
       </div>
 
       <!-- Mobile Horizontally Scrolling Filter Pills (< 768px) -->
       <div class="events-filter-scroll-mobile mobile-only-flex" id="eventsFilterPillsMobile">
         <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'all' ? 'active' : ''}" onclick="setEventsFilter('all')">All</button>
-        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'sih' ? 'active' : ''}" onclick="setEventsFilter('sih')">SIH</button>
-        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'ctf' ? 'active' : ''}" onclick="setEventsFilter('ctf')">CTF</button>
+        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'hackathons' ? 'active' : ''}" onclick="setEventsFilter('hackathons')">Hackathons</button>
         <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'workshops' ? 'active' : ''}" onclick="setEventsFilter('workshops')">Workshops</button>
         <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'seminars' ? 'active' : ''}" onclick="setEventsFilter('seminars')">Seminars</button>
         <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'cultural' ? 'active' : ''}" onclick="setEventsFilter('cultural')">Cultural</button>
+        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'competitions' ? 'active' : ''}" onclick="setEventsFilter('competitions')">Competitions</button>
         <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'talks' ? 'active' : ''}" onclick="setEventsFilter('talks')">Talks</button>
+        <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'other' ? 'active' : ''}" onclick="setEventsFilter('other')">Other</button>
       </div>
 
       <!-- SECTION TITLE ROW -->
@@ -7839,34 +8082,34 @@ function renderEventsPage() {
       <!-- EVENTS MOBILE VERTICAL LIST (< 768px) -->
       <div class="events-list-mobile mobile-only-block" id="eventsMobileList"></div>
 
-      <!-- EMPTY STATE (When search/filter has 0 matches) -->
-      <div class="events-empty-state" id="eventsEmptyState" style="display:none;">
-        <div class="events-empty-icon">🎪</div>
-        <h3 class="events-empty-title">No events found</h3>
-        <p class="events-empty-desc">Try modifying your search or select "All Events" to view upcoming campus schedules.</p>
+      <!-- EMPTY STATE -->
+      <div class="events-empty-state" id="eventsEmptyState" style="display:none; text-align:center; padding:60px 20px;">
+        <div style="font-size:2.5rem; margin-bottom:12px;">🎪</div>
+        <h3 style="font-family:var(--font-serif); font-size:1.35rem; color:#0F172A; margin:0 0 6px 0;">No events found</h3>
+        <p style="font-size:0.88rem; color:#64748B; margin:0 0 16px 0;">Try modifying your search or select "All Events" to view upcoming campus schedules.</p>
         <button type="button" class="btn-create-team-primary" onclick="setEventsFilter('all')">View All Events</button>
       </div>
 
     </div>
   `;
 
-  container.innerHTML = html;
   updateEventsDisplay();
 }
 
 function getFilteredEvents() {
-  return CAMPUS_EVENTS_DATA.filter(evt => {
+  return dynamicCampusEvents.filter(evt => {
     let matchesCat = true;
     if (currentEventsCategory !== "all") {
       const c = currentEventsCategory.toLowerCase();
+      const evCat = (evt.category || "").toLowerCase();
       if (c === "sih") {
-        matchesCat = evt.id.includes("sih") || evt.category.toLowerCase() === "hackathons";
+        matchesCat = evCat.includes("hackathon") || (evt.slug && evt.slug.includes("sih"));
       } else if (c === "ctf") {
-        matchesCat = evt.id.includes("ctf") || evt.category.toLowerCase() === "competitions";
+        matchesCat = evCat.includes("competition") || (evt.slug && evt.slug.includes("ctf"));
       } else if (c === "other") {
-        matchesCat = !["hackathons", "workshops", "seminars", "cultural", "competitions", "talks"].includes(evt.category.toLowerCase());
+        matchesCat = !["hackathons", "workshops", "seminars", "cultural", "competitions", "talks"].includes(evCat);
       } else {
-        matchesCat = evt.category.toLowerCase() === c;
+        matchesCat = evCat === c;
       }
     }
 
@@ -7874,12 +8117,11 @@ function getFilteredEvents() {
     if (currentEventsQuery.trim()) {
       const q = currentEventsQuery.trim().toLowerCase();
       matchesQuery = (
-        evt.title.toLowerCase().includes(q) ||
-        evt.summary.toLowerCase().includes(q) ||
-        evt.details.toLowerCase().includes(q) ||
-        evt.location.toLowerCase().includes(q) ||
-        evt.category.toLowerCase().includes(q) ||
-        evt.catBadge.toLowerCase().includes(q)
+        (evt.title && evt.title.toLowerCase().includes(q)) ||
+        (evt.summary && evt.summary.toLowerCase().includes(q)) ||
+        (evt.about && evt.about.toLowerCase().includes(q)) ||
+        (evt.venue && evt.venue.toLowerCase().includes(q)) ||
+        (evt.category && evt.category.toLowerCase().includes(q))
       );
     }
 
@@ -7904,98 +8146,87 @@ function updateEventsDisplay() {
 
   if (emptyState) emptyState.style.display = "none";
 
-  // Render Desktop 3-Column Grid Cards
+  // Desktop 3-Column Grid Cards (Matching media_1790157271040.jpg)
   desktopContainer.innerHTML = filtered.map(evt => {
-    const isInterested = userInterestedEventsSet.has(evt.id);
-    const count = evt.interestedCount + (isInterested ? 1 : 0);
+    const badgeColor = (evt.badge_color || "green").toLowerCase();
+    const badgeText = evt.badge_text || evt.category;
+    const day = evt.event_day || "15";
+    const month = evt.event_month || "NOV";
+    const cover = evt.cover_image || "/static/img/redesign/events/event_sih.png";
+    const targetUrl = "/events/" + (evt.slug || evt.id);
 
     return `
-      <div class="event-card" onclick="openEventDetailModal('${evt.id}')">
-        <!-- Banner Image -->
-        <div class="event-card-banner">
-          <img src="${escapeAttr(evt.image)}" alt="${escapeAttr(evt.title)}" class="event-card-img" loading="lazy">
+      <div class="event-card-redesign" onclick="navigateTo('${targetUrl}')">
+        <div class="event-card-cover-wrap">
+          <img src="${escapeAttr(cover)}" alt="${escapeAttr(evt.title)}" class="event-card-cover-img" loading="lazy" onerror="this.src='/static/img/redesign/events/event_sih.png'">
+          <div class="event-card-cover-badge">
+            <span class="event-cat-badge badge-${escapeAttr(badgeColor)}">${escapeHtml(badgeText)}</span>
+          </div>
         </div>
 
-        <!-- Card Body -->
-        <div class="event-card-body">
-          <div class="event-meta-header">
-            <div class="event-date-block">
-              <span class="event-date-day">${escapeHtml(evt.day)}</span>
-              <span class="event-date-month">${escapeHtml(evt.month)}</span>
+        <div class="event-card-body-content">
+          <div class="event-card-info-row">
+            <div class="event-card-date-box">
+              <span class="event-card-date-day">${escapeHtml(day)}</span>
+              <span class="event-card-date-month">${escapeHtml(month)}</span>
             </div>
-            <div class="event-title-meta-wrap">
-              <h3 class="event-card-title">${escapeHtml(evt.title)}</h3>
-              <div class="event-location-row">
+            <div class="event-card-text-col">
+              <h3 class="event-card-heading">${escapeHtml(evt.title)}</h3>
+              <div class="event-card-venue">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2">
                   <path d="M12 21s-8-7.5-8-12a8 8 0 1 1 16 0c0 4.5-8 12-8 12z"></path>
                   <circle cx="12" cy="9" r="3"></circle>
                 </svg>
-                <span>${escapeHtml(evt.location)}</span>
+                <span>${escapeHtml(evt.venue)}</span>
               </div>
+              <p class="event-card-summary">${escapeHtml(evt.summary || '')}</p>
             </div>
           </div>
 
-          <p class="event-card-desc">${escapeHtml(evt.summary)}</p>
-
-          <!-- Card Footer -->
-          <div class="event-card-footer">
-            <div class="event-attendees-group">
-              <div class="event-avatar-stack">
-                <img src="${EVENT_SAMPLE_AVATARS[0]}" alt="Student" class="event-avatar-mini">
-                <img src="${EVENT_SAMPLE_AVATARS[1]}" alt="Student" class="event-avatar-mini">
-                <img src="${EVENT_SAMPLE_AVATARS[2]}" alt="Student" class="event-avatar-mini">
-              </div>
-              <span class="event-attendees-count">+${count} interested</span>
-            </div>
-
-            <button type="button" class="event-details-action-btn" onclick="event.stopPropagation(); openEventDetailModal('${evt.id}')">
-              <span>View Details</span>
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+          <div class="event-card-bottom-row">
+            <div class="event-card-circle-arrow-btn" title="View Event">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
                 <polyline points="12 5 19 12 12 19"></polyline>
               </svg>
-            </button>
+            </div>
           </div>
         </div>
       </div>
     `;
   }).join("");
 
-  // Render Mobile Vertical Item List Cards (< 768px)
+  // Mobile Horizontal List Items (< 768px, matching media_1790157271040.jpg)
   mobileContainer.innerHTML = filtered.map(evt => {
-    const isInterested = userInterestedEventsSet.has(evt.id);
-    const count = evt.interestedCount + (isInterested ? 1 : 0);
+    const badgeColor = (evt.badge_color || "green").toLowerCase();
+    const badgeText = evt.badge_text || evt.category;
+    const day = evt.event_day || "15";
+    const month = evt.event_month || "NOV";
+    const cover = evt.cover_image || "/static/img/redesign/events/event_sih.png";
+    const targetUrl = "/events/" + (evt.slug || evt.id);
 
     return `
-      <div class="mobile-event-card-item" onclick="openEventDetailModal('${evt.id}')">
-        <img src="${escapeAttr(evt.image)}" alt="${escapeAttr(evt.title)}" class="mobile-event-thumb" loading="lazy">
+      <div class="mobile-event-row-redesign" onclick="navigateTo('${targetUrl}')">
+        <img src="${escapeAttr(cover)}" alt="${escapeAttr(evt.title)}" class="mobile-event-row-thumb" loading="lazy" onerror="this.src='/static/img/redesign/events/event_sih.png'">
         
-        <div class="mobile-event-center-info">
-          <span class="mobile-cat-pill theme-${escapeAttr(evt.mobileBadgeTheme || 'mint')}">${escapeHtml(evt.mobileCatBadge || evt.catBadge)}</span>
-          <h4 class="mobile-event-item-title">${escapeHtml(evt.title)}</h4>
-          <div class="mobile-event-loc-line">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="mobile-event-row-center">
+          <span class="event-cat-badge badge-${escapeAttr(badgeColor)}" style="font-size:0.65rem; padding:2px 8px; margin-bottom:2px;">${escapeHtml(badgeText)}</span>
+          <h4 class="mobile-event-row-title">${escapeHtml(evt.title)}</h4>
+          <div class="mobile-event-row-venue">
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 21s-8-7.5-8-12a8 8 0 1 1 16 0c0 4.5-8 12-8 12z"></path>
               <circle cx="12" cy="9" r="2.5"></circle>
             </svg>
-            <span>${escapeHtml(evt.location)}</span>
-          </div>
-          <div class="mobile-event-attendees-row">
-            <div class="event-avatar-stack">
-              <img src="${EVENT_SAMPLE_AVATARS[0]}" alt="Student" class="event-avatar-mini mini-sm">
-              <img src="${EVENT_SAMPLE_AVATARS[1]}" alt="Student" class="event-avatar-mini mini-sm">
-              <img src="${EVENT_SAMPLE_AVATARS[2]}" alt="Student" class="event-avatar-mini mini-sm">
-            </div>
-            <span class="mobile-event-interested-text">+${count} interested</span>
+            <span>${escapeHtml(evt.venue)}</span>
           </div>
         </div>
 
-        <div class="mobile-event-right-meta">
-          <div class="mobile-date-capsule">
-            <span class="mobile-date-num">${escapeHtml(evt.day)}</span>
-            <span class="mobile-date-mo">${escapeHtml(evt.month)}</span>
+        <div class="mobile-event-row-right">
+          <div class="mobile-event-date-stamp">
+            <span class="mo-day">${escapeHtml(day)}</span>
+            <span class="mo-month">${escapeHtml(month)}</span>
           </div>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" class="mobile-event-chevron">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="color:#94A3B8;">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </div>
@@ -8007,7 +8238,6 @@ function updateEventsDisplay() {
 function setEventsFilter(category) {
   currentEventsCategory = category;
 
-  // Update desktop pills active class
   document.querySelectorAll(".events-filter-pill").forEach(btn => {
     const text = btn.innerText.toLowerCase();
     const isMatch = (
@@ -8023,17 +8253,17 @@ function setEventsFilter(category) {
     btn.classList.toggle("active", isMatch);
   });
 
-  // Update mobile pills active class
   document.querySelectorAll(".events-filter-pill-mob").forEach(btn => {
     const text = btn.innerText.toLowerCase();
     const isMatch = (
       (category === "all" && text === "all") ||
-      (category === "sih" && text === "sih") ||
-      (category === "ctf" && text === "ctf") ||
+      (category === "hackathons" && text === "hackathons") ||
       (category === "workshops" && text === "workshops") ||
       (category === "seminars" && text === "seminars") ||
       (category === "cultural" && text === "cultural") ||
-      (category === "talks" && text === "talks")
+      (category === "competitions" && text === "competitions") ||
+      (category === "talks" && text === "talks") ||
+      (category === "other" && text === "other")
     );
     btn.classList.toggle("active", isMatch);
   });
@@ -8041,7 +8271,6 @@ function setEventsFilter(category) {
   updateEventsDisplay();
 }
 
-let eventsSearchTimeout = null;
 function handleEventsSearchInput(val) {
   clearTimeout(eventsSearchTimeout);
   eventsSearchTimeout = setTimeout(() => {
@@ -8050,157 +8279,343 @@ function handleEventsSearchInput(val) {
   }, 100);
 }
 
-function openEventDetailModal(eventId) {
-  const evt = CAMPUS_EVENTS_DATA.find(e => e.id === eventId);
-  if (!evt) return;
+/* ==========================================================================
+   DEDICATED EVENT DETAIL VIEW (media_1790157271171.jpg)
+   ========================================================================== */
+function loadEventDetailView(eventIdOrSlug) {
+  const container = document.getElementById("eventDetailViewContainer");
+  if (!container) return;
 
-  const modal = document.getElementById("eventDetailModal");
-  const content = document.getElementById("eventDetailModalContent");
-  if (!modal || !content) return;
+  container.innerHTML = `
+    <div style="display:flex; justify-content:center; align-items:center; padding:100px 20px;">
+      ${renderIosSpinner('lg')}
+    </div>
+  `;
 
-  const isInterested = userInterestedEventsSet.has(evt.id);
-  const count = evt.interestedCount + (isInterested ? 1 : 0);
+  fetch("/api/events/" + encodeURIComponent(eventIdOrSlug))
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.event) {
+        renderEventDetailPage(data.event);
+      } else {
+        renderEventNotFound();
+      }
+    })
+    .catch(() => {
+      renderEventNotFound();
+    });
+}
 
-  content.innerHTML = `
-    <div class="event-modal-card">
+function renderEventNotFound() {
+  const container = document.getElementById("eventDetailViewContainer");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="text-align:center; padding:80px 20px;">
+      <div style="font-size:3rem; margin-bottom:12px;">🔍</div>
+      <h2 style="font-family:var(--font-serif); font-size:1.8rem; color:#0F172A; margin-bottom:8px;">Event Not Found</h2>
+      <p style="color:#64748B; margin-bottom:24px;">The event you are looking for may have concluded or been relocated.</p>
+      <button onclick="navigateTo('/events')" class="btn-create-team-primary" style="display:inline-flex;">
+        ← Back to Campus Events
+      </button>
+    </div>
+  `;
+}
+
+function renderEventDetailPage(evt) {
+  const container = document.getElementById("eventDetailViewContainer");
+  if (!container) return;
+
+  const category = evt.category || "Hackathons";
+  const badgeColor = (evt.badge_color || "green").toLowerCase();
+  const badgeText = evt.badge_text || category;
+  const cover = evt.cover_image || "/static/img/redesign/events/event_sih.png";
+  const dateStr = evt.event_date || "Upcoming";
+  const timeStr = evt.event_time || "09:00 AM - 06:00 PM IST";
+  const venueStr = evt.venue || "JNU Main Campus";
+  const venueDetailStr = evt.venue_detail || "Jaipur, Rajasthan";
+  const audienceStr = evt.audience || "Open to all JNU students / UG & PG (All Departments)";
+  const summaryStr = evt.summary || "";
+  const aboutStr = evt.about || summaryStr;
+  const regLink = evt.registration_link || "/create-team";
+
+  // Themes list
+  let themes = [];
+  if (Array.isArray(evt.themes)) {
+    themes = evt.themes;
+  } else if (typeof evt.themes === "string") {
+    try { themes = JSON.parse(evt.themes); } catch (e) { themes = [evt.themes]; }
+  }
+  if (!themes || themes.length === 0) {
+    themes = [
+      "Smart Automation & Robotics",
+      "Healthcare & Assistive Technology",
+      "Sustainability & Clean Energy",
+      "Education & Skill Development",
+      "Agriculture & Rural Development"
+    ];
+  }
+
+  // Important Dates list
+  let importantDates = [];
+  if (Array.isArray(evt.important_dates)) {
+    importantDates = evt.important_dates;
+  } else if (typeof evt.important_dates === "string") {
+    try { importantDates = JSON.parse(evt.important_dates); } catch (e) { importantDates = []; }
+  }
+  if (!importantDates || importantDates.length === 0) {
+    importantDates = [
+      { date: "01 Oct 2025", label: "Registrations Open" },
+      { date: "31 Oct 2025", label: "Team Formation Deadline" },
+      { date: "10 Nov 2025", label: "Final Shortlisting" },
+      { date: "15 Nov 2025", label: "Event Day" }
+    ];
+  }
+
+  // Organizers list
+  let organizers = [];
+  if (Array.isArray(evt.organizers)) {
+    organizers = evt.organizers;
+  } else if (typeof evt.organizers === "string") {
+    try { organizers = JSON.parse(evt.organizers); } catch (e) { organizers = []; }
+  }
+  if (!organizers || organizers.length === 0) {
+    organizers = [
+      { name: "Jaipur National University", sub: "Nodal Center & Host Campus", logo: "/static/img/jnu_logo.png" },
+      { name: "Ministry of Education", sub: "Innovation Cell", logo: "/static/img/jnu_logo.png" }
+    ];
+  }
+
+  const aboutParagraphs = aboutStr.split("\n\n").filter(Boolean);
+
+  container.innerHTML = `
+    <div class="event-detail-shell">
       
-      <!-- Top Modal Banner -->
-      <div class="event-modal-banner-wrap">
-        <img src="${escapeAttr(evt.image)}" alt="${escapeAttr(evt.title)}" class="event-modal-banner-img">
-        <button type="button" onclick="closeEventDetailModal()" class="event-modal-close-btn" aria-label="Close">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-        <span class="event-modal-cat-tag">${escapeHtml(evt.catBadge)}</span>
+      <!-- Top Breadcrumbs / Back Link -->
+      <div class="event-breadcrumbs desktop-only-flex">
+        <a href="/events" onclick="event.preventDefault(); navigateTo('/events')" class="event-breadcrumb-link">Events</a>
+        <span class="event-breadcrumb-sep">&gt;</span>
+        <a href="/events" onclick="event.preventDefault(); setEventsFilter('${escapeAttr(category.toLowerCase())}'); navigateTo('/events')" class="event-breadcrumb-link">${escapeHtml(category)}</a>
+        <span class="event-breadcrumb-sep">&gt;</span>
+        <span class="event-breadcrumb-current">${escapeHtml(evt.title)}</span>
       </div>
 
-      <!-- Modal Body -->
-      <div class="event-modal-body">
-        
-        <div class="event-modal-title-row">
+      <div class="mobile-only-block" style="margin-bottom:14px;">
+        <button class="event-detail-back-mobile" onclick="navigateTo('/events')" style="display:inline-flex; align-items:center; gap:6px; font-size:0.88rem; font-weight:700; color:#064E3B; background:none; border:none; cursor:pointer; padding:4px 0;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Events</span>
+        </button>
+      </div>
+
+      <!-- Panoramic Hero Banner (Exact match to media_1790157271171.jpg) -->
+      <div class="event-hero-panoramic" style="background-image:url('${escapeAttr(cover)}');">
+        <div class="event-hero-overlay">
+          <div class="event-hero-left-content">
+            <span class="event-cat-badge badge-${escapeAttr(badgeColor)}" style="margin-bottom:12px;">${escapeHtml(badgeText)}</span>
+            <h1 class="event-hero-title">${escapeHtml(evt.title)}</h1>
+            <p class="event-hero-tagline">${escapeHtml(summaryStr)}</p>
+          </div>
+          <div class="event-hero-right-motif desktop-only-flex">
+            <div class="event-hero-motif-lines">
+              <span>IDEAS</span>
+              <span>PEOPLE</span>
+              <span>IMPACT</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 Quick Stat Cards Row -->
+      <div class="event-quick-stats-row">
+        <div class="event-quick-stat-card">
+          <div class="event-quick-stat-icon-wrap">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+          </div>
           <div>
-            <h2 class="event-modal-title">${escapeHtml(evt.title)}</h2>
-            <div class="event-modal-organizer">${escapeHtml(evt.organizer)}</div>
-          </div>
-          <div class="event-date-block lg">
-            <span class="event-date-day">${escapeHtml(evt.day)}</span>
-            <span class="event-date-month">${escapeHtml(evt.month)}</span>
+            <h4 class="event-quick-stat-title">${escapeHtml(dateStr)}</h4>
+            <p class="event-quick-stat-sub">${escapeHtml(timeStr)}</p>
           </div>
         </div>
 
-        <!-- Key Meta Badges -->
-        <div class="event-modal-meta-grid">
-          <div class="event-modal-meta-item">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <div>
-              <strong>Time & Schedule</strong>
-              <span>${escapeHtml(evt.time)}</span>
-            </div>
+        <div class="event-quick-stat-card">
+          <div class="event-quick-stat-icon-wrap">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 21s-8-7.5-8-12a8 8 0 1 1 16 0c0 4.5-8 12-8 12z"></path>
+              <circle cx="12" cy="9" r="3"></circle>
+            </svg>
           </div>
-          <div class="event-modal-meta-item">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-8-7.5-8-12a8 8 0 1 1 16 0c0 4.5-8 12-8 12z"></path><circle cx="12" cy="9" r="3"></circle></svg>
-            <div>
-              <strong>Location & Venue</strong>
-              <span>${escapeHtml(evt.locationDetail || evt.location)}</span>
-            </div>
-          </div>
-          <div class="event-modal-meta-item">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-            <div>
-              <strong>Admission & Registration</strong>
-              <span>${escapeHtml(evt.entryFee)}</span>
-            </div>
-          </div>
-          <div class="event-modal-meta-item">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-            <div>
-              <strong>Eligibility</strong>
-              <span>${escapeHtml(evt.eligibility)}</span>
-            </div>
+          <div>
+            <h4 class="event-quick-stat-title">${escapeHtml(venueStr)}</h4>
+            <p class="event-quick-stat-sub">${escapeHtml(venueDetailStr)}</p>
           </div>
         </div>
 
-        <!-- Full Description -->
-        <div class="event-modal-desc-box">
-          <h4 class="event-modal-desc-heading">About This Event</h4>
-          <p class="event-modal-desc-text">${escapeHtml(evt.details)}</p>
+        <div class="event-quick-stat-card">
+          <div class="event-quick-stat-icon-wrap">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <div>
+            <h4 class="event-quick-stat-title">Target Audience</h4>
+            <p class="event-quick-stat-sub">${escapeHtml(audienceStr)}</p>
+          </div>
         </div>
+      </div>
 
-        <!-- Attendee Social Row -->
-        <div class="event-modal-social-row">
-          <div class="event-attendees-group">
-            <div class="event-avatar-stack">
-              <img src="${EVENT_SAMPLE_AVATARS[0]}" alt="Student" class="event-avatar-mini">
-              <img src="${EVENT_SAMPLE_AVATARS[1]}" alt="Student" class="event-avatar-mini">
-              <img src="${EVENT_SAMPLE_AVATARS[2]}" alt="Student" class="event-avatar-mini">
-            </div>
-            <span class="event-attendees-count font-md">+${count} students interested</span>
+      <!-- Main 2-Column Detail Grid -->
+      <div class="event-detail-grid">
+        
+        <!-- Left Content Column -->
+        <div class="event-detail-main-col">
+          
+          <!-- About Section -->
+          <div class="event-content-section">
+            <h2 class="event-content-section-title">About</h2>
+            ${aboutParagraphs.length > 0 
+              ? aboutParagraphs.map(p => `<p class="event-content-body-p">${escapeHtml(p)}</p>`).join("")
+              : `<p class="event-content-body-p">${escapeHtml(aboutStr)}</p>`
+            }
           </div>
 
-          <button type="button" id="btnInterestedToggle" class="btn-interested-toggle ${isInterested ? 'active' : ''}" onclick="toggleEventInterest('${evt.id}')">
-            <span>${isInterested ? '★ Interested' : '☆ I\'m Interested'}</span>
-          </button>
+          <!-- Themes / Problem Statements Section -->
+          <div class="event-content-section">
+            <h2 class="event-content-section-title">Themes / Problem Statements</h2>
+            <p style="font-size:0.9rem; color:#64748B; margin:0 0 8px 0;">Problem statements will be released by the nodal center. Topics typically include:</p>
+            
+            <ul class="event-themes-list">
+              ${themes.map(t => `<li class="event-theme-item"><span>${escapeHtml(t)}</span></li>`).join("")}
+            </ul>
+
+            <div class="event-doc-notice-card">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              <span>Detailed problem statements and guidelines will be shared soon.</span>
+            </div>
+          </div>
+
+          <!-- Important Dates Stepper Timeline -->
+          <div class="event-content-section">
+            <h2 class="event-content-section-title">Important Dates</h2>
+            <div class="event-timeline-stepper">
+              <div class="event-timeline-track"></div>
+              ${importantDates.map(node => `
+                <div class="event-timeline-step-node">
+                  <div class="event-timeline-dot"></div>
+                  <div class="event-timeline-date">${escapeHtml(node.date || '')}</div>
+                  <div class="event-timeline-label">${escapeHtml(node.label || '')}</div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+
         </div>
 
-        <!-- Action Buttons -->
-        <div class="event-modal-actions-row">
-          <button type="button" class="btn-secondary-pill" onclick="closeEventDetailModal()">Close</button>
-          <button type="button" class="btn-primary-forest-pill" onclick="handleEventRegistration('${evt.id}')">
-            <span>RSVP & Attend Event ➔</span>
-          </button>
+        <!-- Right Sidebar Column -->
+        <div class="event-detail-sidebar-col">
+          
+          <!-- Registration & Details Box -->
+          <div class="event-sidebar-box">
+            <a href="${escapeAttr(regLink)}" onclick="${regLink.startsWith('/') ? `event.preventDefault(); navigateTo('${escapeAttr(regLink)}');` : ''}" ${regLink.startsWith('http') ? 'target="_blank" rel="noopener noreferrer"' : ''} class="btn-register-primary-cta">
+              <span>Register Now</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </a>
+
+            <div class="event-sidebar-meta-list">
+              <div class="event-sidebar-meta-item">
+                <svg class="event-sidebar-meta-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <div>
+                  <div class="event-sidebar-meta-heading">${escapeHtml(dateStr)}</div>
+                  <div class="event-sidebar-meta-detail">Event Schedule</div>
+                </div>
+              </div>
+
+              <div class="event-sidebar-meta-item">
+                <svg class="event-sidebar-meta-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <div>
+                  <div class="event-sidebar-meta-heading">${escapeHtml(timeStr)}</div>
+                  <div class="event-sidebar-meta-detail">Full Day Sessions</div>
+                </div>
+              </div>
+
+              <div class="event-sidebar-meta-item">
+                <svg class="event-sidebar-meta-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 21s-8-7.5-8-12a8 8 0 1 1 16 0c0 4.5-8 12-8 12z"></path>
+                  <circle cx="12" cy="9" r="3"></circle>
+                </svg>
+                <div>
+                  <div class="event-sidebar-meta-heading">${escapeHtml(venueStr)}</div>
+                  <div class="event-sidebar-meta-detail">${escapeHtml(venueDetailStr)}</div>
+                </div>
+              </div>
+
+              <div class="event-sidebar-meta-item">
+                <svg class="event-sidebar-meta-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                <div>
+                  <div class="event-sidebar-meta-heading">${escapeHtml(audienceStr)}</div>
+                  <div class="event-sidebar-meta-detail">Eligible Participants</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Organized By Box -->
+          <div class="event-sidebar-box">
+            <h4 style="font-size:0.95rem; font-weight:700; color:#0F172A; margin:0 0 14px 0;">Organized By</h4>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              ${organizers.map(org => `
+                <div class="event-organizer-row">
+                  <img src="${escapeAttr(org.logo || '/static/img/jnu_logo.png')}" alt="${escapeAttr(org.name)}" class="event-organizer-logo" onerror="this.src='/static/img/jnu_logo.png'">
+                  <div>
+                    <div class="event-organizer-name">${escapeHtml(org.name)}</div>
+                    <div class="event-organizer-sub">${escapeHtml(org.sub || '')}</div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+
+          <!-- Questions Box -->
+          <div class="event-questions-card">
+            <h4 class="event-questions-title">Have questions?</h4>
+            <p class="event-questions-desc">Reach out to the event coordinators through the official university notice.</p>
+          </div>
+
         </div>
 
       </div>
 
     </div>
   `;
-
-  modal.style.display = "flex";
-  document.body.classList.add("scroll-locked");
-}
-
-function closeEventDetailModal() {
-  const modal = document.getElementById("eventDetailModal");
-  if (modal) modal.style.display = "none";
-  document.body.classList.remove("scroll-locked");
-}
-
-function toggleEventInterest(eventId) {
-  const evt = CAMPUS_EVENTS_DATA.find(e => e.id === eventId);
-  if (!evt) return;
-
-  if (userInterestedEventsSet.has(eventId)) {
-    userInterestedEventsSet.delete(eventId);
-    showToast(`Removed from your interested events`, "info");
-  } else {
-    userInterestedEventsSet.add(eventId);
-    showToast(`You are marked as interested in ${evt.title}!`, "success");
-  }
-  saveUserInterestedEvents();
-  updateEventsDisplay();
-
-  // Update modal button state dynamically if open
-  const btn = document.getElementById("btnInterestedToggle");
-  if (btn) {
-    const isNow = userInterestedEventsSet.has(eventId);
-    btn.classList.toggle("active", isNow);
-    btn.innerHTML = `<span>${isNow ? '★ Interested' : '☆ I\'m Interested'}</span>`;
-  }
-}
-
-function handleEventRegistration(eventId) {
-  const evt = CAMPUS_EVENTS_DATA.find(e => e.id === eventId);
-  if (!evt) return;
-
-  if (!userInterestedEventsSet.has(eventId)) {
-    userInterestedEventsSet.add(eventId);
-    saveUserInterestedEvents();
-    updateEventsDisplay();
-  }
-
-  showToast(`Registration confirmed for ${evt.title}! See you on ${evt.day} ${evt.month}.`, "success");
-  setTimeout(() => {
-    closeEventDetailModal();
-  }, 1000);
 }
 
 function openEventsCalendarModal() {
@@ -8208,31 +8623,33 @@ function openEventsCalendarModal() {
   const content = document.getElementById("eventDetailModalContent");
   if (!modal || !content) return;
 
+  const events = dynamicCampusEvents.length > 0 ? dynamicCampusEvents : [];
+
   content.innerHTML = `
     <div class="event-modal-card">
-      <div class="event-modal-banner-wrap" style="background:linear-gradient(135deg, #0D2E1F 0%, #165337 100%); height:110px; display:flex; align-items:center; padding:20px 24px; color:#FFFFFF;">
+      <div class="event-modal-banner-wrap" style="background:linear-gradient(135deg, #0D2E1F 0%, #165337 100%); height:100px; display:flex; align-items:center; padding:20px 24px; color:#FFFFFF;">
         <button type="button" onclick="closeEventDetailModal()" class="event-modal-close-btn" aria-label="Close">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
         <div>
-          <span class="events-eyebrow" style="color:#86EFAC;">JNU CALENDAR</span>
-          <h3 style="font-family:var(--font-serif); font-size:1.35rem; color:#FFFFFF; margin:2px 0 0 0;">Semester & Campus Events Timeline</h3>
+          <span style="font-size:0.75rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:#86EFAC;">CAMPUS CALENDAR</span>
+          <h3 style="font-family:var(--font-serif); font-size:1.3rem; color:#FFFFFF; margin:2px 0 0 0;">University Events Schedule</h3>
         </div>
       </div>
 
       <div class="event-modal-body" style="padding:24px;">
-        <div class="calendar-timeline-list">
-          ${CAMPUS_EVENTS_DATA.map(e => `
-            <div class="cal-timeline-item" onclick="openEventDetailModal('${e.id}')">
-              <div class="cal-date-pill">
-                <strong>${escapeHtml(e.day)}</strong>
-                <span>${escapeHtml(e.month)}</span>
+        <div class="calendar-timeline-list" style="display:flex; flex-direction:column; gap:12px;">
+          ${events.map(e => `
+            <div class="cal-timeline-item" onclick="closeEventDetailModal(); navigateTo('/events/' + ('${e.slug || e.id}'))" style="display:flex; align-items:center; gap:14px; padding:12px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; cursor:pointer;">
+              <div class="cal-date-pill" style="width:40px; height:44px; background:#FFFFFF; border:1px solid #CBD5E1; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0;">
+                <strong style="font-size:1.05rem; font-weight:800; color:#0F172A; line-height:1;">${escapeHtml(e.event_day || '15')}</strong>
+                <span style="font-size:0.6rem; font-weight:750; color:#64748B; text-transform:uppercase;">${escapeHtml(e.event_month || 'NOV')}</span>
               </div>
-              <div class="cal-item-info">
-                <h4 class="cal-item-title">${escapeHtml(e.title)}</h4>
-                <div class="cal-item-meta">📍 ${escapeHtml(e.location)} &bull; ${escapeHtml(e.time)}</div>
+              <div class="cal-item-info" style="flex:1; min-width:0;">
+                <h4 class="cal-item-title" style="font-size:0.92rem; font-weight:700; color:#0F172A; margin:0 0 2px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(e.title)}</h4>
+                <div class="cal-item-meta" style="font-size:0.75rem; color:#64748B;">📍 ${escapeHtml(e.venue)} &bull; ${escapeHtml(e.event_time || '')}</div>
               </div>
-              <span class="mobile-cat-pill theme-${escapeAttr(e.mobileBadgeTheme || 'mint')}">${escapeHtml(e.catBadge)}</span>
+              <span class="event-cat-badge badge-${escapeAttr((e.badge_color || 'green').toLowerCase())}" style="font-size:0.68rem; padding:3px 10px;">${escapeHtml(e.badge_text || e.category)}</span>
             </div>
           `).join("")}
         </div>
@@ -8246,6 +8663,12 @@ function openEventsCalendarModal() {
 
   modal.style.display = "flex";
   document.body.classList.add("scroll-locked");
+}
+
+function closeEventDetailModal() {
+  const modal = document.getElementById("eventDetailModal");
+  if (modal) modal.style.display = "none";
+  document.body.classList.remove("scroll-locked");
 }
 
 /* ==========================================================================

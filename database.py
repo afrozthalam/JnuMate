@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import json
 
 # Supabase PostgreSQL or local SQLite fallback
 DATABASE_URL = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_DB_URL")
@@ -41,6 +42,196 @@ def get_db():
         conn = sqlite3.connect(get_sqlite_path())
         conn.row_factory = sqlite3.Row
         return conn
+
+def seed_initial_events(cursor, p):
+    try:
+        cursor.execute("SELECT COUNT(*) FROM events")
+        row = cursor.fetchone()
+        count = row[0] if row else 0
+        if count == 0:
+            initial_events = [
+                (
+                    "smart-india-hackathon-2025",
+                    "Smart India Hackathon 2025",
+                    "Hackathons",
+                    "Hackathon",
+                    "green",
+                    "/static/img/redesign/events/event_sih.png",
+                    "15 November 2025",
+                    "15",
+                    "NOV",
+                    "9:00 AM - 6:00 PM (Full Day)",
+                    "JNU Main Campus",
+                    "Jaipur, Rajasthan",
+                    "Open to all JNU students / UG & PG (All Departments)",
+                    "Innovate for a better tomorrow. Build solutions for real-world problems.",
+                    "Smart India Hackathon (SIH) is a nationwide initiative to provide students a platform to solve some of the pressing problems we face in our daily lives, and thus inculcate a culture of product innovation and a mindset of problem solving.\n\nStudents work in teams to develop innovative solutions for real problems posed by various ministries, industries and organizations. It's an opportunity to learn, collaborate and create an impact beyond the classroom.",
+                    json.dumps(["Smart Automation", "Healthcare & Assistive Technology", "Sustainability & Clean Energy", "Education & Skill Development", "Agriculture & Rural Development", "And more"]),
+                    "Detailed problem statements and guidelines will be shared soon.",
+                    json.dumps([
+                        {"date": "01 Oct 2025", "label": "Registrations Open"},
+                        {"date": "31 Oct 2025", "label": "Team Formation Deadline"},
+                        {"date": "10 Nov 2025", "label": "Final Shortlisting"},
+                        {"date": "15 Nov 2025", "label": "Hackathon Event"}
+                    ]),
+                    json.dumps([
+                        {"name": "Ministry of Education", "sub": "Government of India", "logo": "/static/img/jnu_logo.png"},
+                        {"name": "Nodal Center", "sub": "Jaipur National University, Jaipur, Rajasthan", "logo": "/static/img/jnu_logo.png"}
+                    ]),
+                    "/create-team"
+                ),
+                (
+                    "ai-machine-learning-workshop",
+                    "AI & Machine Learning Workshop",
+                    "Workshops",
+                    "Workshop",
+                    "blue",
+                    "/static/img/redesign/events/event_ai.png",
+                    "22 November 2025",
+                    "22",
+                    "NOV",
+                    "10:00 AM - 4:30 PM IST",
+                    "Computer Science Block",
+                    "CS Advanced Lab 304, Third Floor",
+                    "Open to all engineering and tech enthusiasts",
+                    "Hands-on session on modern AI tools and applications.",
+                    "Master practical machine learning pipelines from dataset preparation to training neural networks, exploring LLM fine-tuning, and deploying transformer models with Python and PyTorch. Bring your laptops. Certificates provided.",
+                    json.dumps(["Transformer Models & Hugging Face", "Dataset Wrangling with Pandas", "Fine-tuning Small LLMs", "Edge AI & ONNX Deployment"]),
+                    "Prerequisites: Python fundamentals and a laptop with 8GB+ RAM.",
+                    json.dumps([
+                        {"date": "10 Nov 2025", "label": "Registrations Open"},
+                        {"date": "20 Nov 2025", "label": "Seat Allocation"},
+                        {"date": "22 Nov 2025", "label": "Hands-on Workshop"}
+                    ]),
+                    json.dumps([
+                        {"name": "Department of Computer Science", "sub": "Jaipur National University", "logo": "/static/img/jnu_logo.png"}
+                    ]),
+                    "/events"
+                ),
+                (
+                    "future-of-tech-expert-talk",
+                    "Future of Tech: Expert Talk",
+                    "Seminars",
+                    "Seminar",
+                    "brown",
+                    "/static/img/redesign/events/event_future_tech.png",
+                    "28 November 2025",
+                    "28",
+                    "NOV",
+                    "2:00 PM - 5:00 PM IST",
+                    "Auditorium, JNU",
+                    "Dr. APJ Abdul Kalam Central University Auditorium",
+                    "Open to all university students and faculty members",
+                    "Insights from industry experts on emerging technologies.",
+                    "Distinguished keynote session and interactive fireside chat exploring quantum computing, edge artificial intelligence, hyperscale cloud architecture, and high-growth engineering careers with senior industry leaders.",
+                    json.dumps(["Quantum Computing Horizons", "Generative AI Systems", "Distributed Cloud Infrastructure"]),
+                    "Entry is free for all students carrying a valid college identity card.",
+                    json.dumps([
+                        {"date": "15 Nov 2025", "label": "RSVP Opens"},
+                        {"date": "27 Nov 2025", "label": "Pass Generation"},
+                        {"date": "28 Nov 2025", "label": "Keynote & Fireside Chat"}
+                    ]),
+                    json.dumps([
+                        {"name": "JNU Tech Leaders Forum", "sub": "IEEE Student Chapter", "logo": "/static/img/jnu_logo.png"}
+                    ]),
+                    "/events"
+                ),
+                (
+                    "jnu-cultural-fest-2025",
+                    "JNU Cultural Fest 2025",
+                    "Cultural",
+                    "Cultural",
+                    "purple",
+                    "/static/img/redesign/events/event_cultural.png",
+                    "05 December 2025",
+                    "05",
+                    "DEC",
+                    "4:00 PM - 10:00 PM IST",
+                    "Open Air Ground",
+                    "University Amphitheater & Campus Open Air Lawn",
+                    "Open to all JNU students, alumni, and faculty",
+                    "Music, art, dance and much more. Celebrate the spirit of JNU.",
+                    "The university's flagship annual cultural festival bringing together live music bands, theatrical drama, folk and western dance battles, fashion runway, photography exhibitions, and a vibrant night food carnival.",
+                    json.dumps(["Battle of the Bands", "Theatrical Street Play (Nukkad Natak)", "Contemporary & Folk Dance", "Runway Fashion Show"]),
+                    "Entry passes are mandatory. Pick up your physical pass from the SAC office.",
+                    json.dumps([
+                        {"date": "20 Nov 2025", "label": "Auditions Begin"},
+                        {"date": "30 Nov 2025", "label": "Stage Rehearsals"},
+                        {"date": "05 Dec 2025", "label": "Gala Opening Night"}
+                    ]),
+                    json.dumps([
+                        {"name": "JNU Student Activity Council (SAC)", "sub": "Jaipur National University", "logo": "/static/img/jnu_logo.png"}
+                    ]),
+                    "/events"
+                ),
+                (
+                    "capture-the-flag-ctf",
+                    "Capture The Flag (CTF)",
+                    "Competitions",
+                    "Competition",
+                    "red",
+                    "/static/img/redesign/events/event_ctf.png",
+                    "12 December 2025",
+                    "12",
+                    "DEC",
+                    "11:00 AM - 7:00 PM IST",
+                    "Computer Science Block",
+                    "Cyber Defense Systems Lab, 2nd Floor",
+                    "Solo or Teams of 2-3 students",
+                    "Test your cybersecurity skills in this thrilling competition.",
+                    "An intensive 8-hour live offensive and defensive cybersecurity jeopardy tournament. Hack through web app vulnerabilities, reverse engineer binaries, crack cryptographic puzzles, and analyze memory forensics. Cash prizes for the top 3 teams!",
+                    json.dumps(["Web Exploitation & Injection", "Binary Reverse Engineering", "Cryptography & Ciphers", "Network Packet Forensics"]),
+                    "Official rules: strictly target designated tournament VMs only.",
+                    json.dumps([
+                        {"date": "25 Nov 2025", "label": "Team Registration"},
+                        {"date": "08 Dec 2025", "label": "Platform Sandbox Trial"},
+                        {"date": "12 Dec 2025", "label": "Live 8-Hour CTF"}
+                    ]),
+                    json.dumps([
+                        {"name": "JNU Cybersecurity Club (SecNet)", "sub": "Jaipur National University", "logo": "/static/img/jnu_logo.png"}
+                    ]),
+                    "/create-team"
+                ),
+                (
+                    "startup-stories",
+                    "Startup Stories",
+                    "Talks",
+                    "Talk",
+                    "teal",
+                    "/static/img/redesign/events/event_startup.png",
+                    "18 December 2025",
+                    "18",
+                    "DEC",
+                    "3:00 PM - 6:00 PM IST",
+                    "Management Block",
+                    "Executive Conference Hall 102, School of Management",
+                    "Open to all aspiring student founders and creators",
+                    "Learn from founders, builders and innovators.",
+                    "Candid founder stories from alumni entrepreneurs who scaled venture-backed tech startups. Learn practical lessons on initial customer discovery, prototyping on a student budget, fundraising, and pitch decks.",
+                    json.dumps(["Bootstrapping vs Venture Capital", "First 100 Paying Users", "Product-Market Fit in College"]),
+                    "Interactive Q&A session follows the presentations.",
+                    json.dumps([
+                        {"date": "01 Dec 2025", "label": "Registration Open"},
+                        {"date": "15 Dec 2025", "label": "Registration Close"},
+                        {"date": "18 Dec 2025", "label": "Founder Session & Networking"}
+                    ]),
+                    json.dumps([
+                        {"name": "JNU E-Cell & Incubation Center", "sub": "Jaipur National University", "logo": "/static/img/jnu_logo.png"}
+                    ]),
+                    "/events"
+                )
+            ]
+            for ev in initial_events:
+                cursor.execute(f"""
+                    INSERT INTO events (
+                        slug, title, category, badge_text, badge_color, cover_image,
+                        event_date, event_day, event_month, event_time, venue, venue_detail,
+                        audience, summary, about, themes, guidelines_link, important_dates,
+                        organizers, registration_link
+                    ) VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p})
+                """, ev)
+    except Exception as e:
+        print(f"Notice seeding initial events: {e}")
 
 def init_db():
     if is_postgres():
@@ -175,10 +366,33 @@ def init_db():
             );
         """)
         cursor.execute("""
-            INSERT INTO system_settings (key, value)
-            VALUES ('otp_email_enabled', 'true'), ('default_bypass_otp', '123456')
-            ON CONFLICT (key) DO NOTHING;
+            CREATE TABLE IF NOT EXISTS events (
+                id SERIAL PRIMARY KEY,
+                slug VARCHAR(150) UNIQUE,
+                title VARCHAR(200) NOT NULL,
+                category VARCHAR(50) NOT NULL DEFAULT 'Hackathons',
+                badge_text VARCHAR(50) DEFAULT 'Hackathon',
+                badge_color VARCHAR(30) DEFAULT 'green',
+                cover_image TEXT,
+                event_date VARCHAR(50) NOT NULL,
+                event_day VARCHAR(10),
+                event_month VARCHAR(10),
+                event_time VARCHAR(100),
+                venue VARCHAR(150) NOT NULL,
+                venue_detail TEXT,
+                audience VARCHAR(200) DEFAULT 'Open to all JNU students / UG & PG (All Departments)',
+                summary TEXT,
+                about TEXT,
+                themes TEXT DEFAULT '[]',
+                guidelines_link TEXT,
+                important_dates TEXT DEFAULT '[]',
+                organizers TEXT DEFAULT '[]',
+                registration_link TEXT DEFAULT '/create-team',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
         """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_category ON events(category);")
+        seed_initial_events(cursor, "%s")
 
         conn.commit()
         conn.close()
@@ -350,13 +564,35 @@ def init_db():
         cursor.execute("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('otp_email_enabled', 'true');")
         cursor.execute("INSERT OR IGNORE INTO system_settings (key, value) VALUES ('default_bypass_otp', '123456');")
 
-        # Performance Indexes for sub-millisecond query execution
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(team_id);")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_team_members_student_rid ON team_members(student_r_id);")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_join_requests_team_id ON join_requests(team_id);")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_join_requests_student_rid ON join_requests(student_r_id);")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_notifications_recipient ON notifications(recipient_r_id);")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_teams_hackathon_type ON teams(hackathon_type);")
+        # Events Table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                slug TEXT UNIQUE,
+                title TEXT NOT NULL,
+                category TEXT NOT NULL DEFAULT 'Hackathons',
+                badge_text TEXT DEFAULT 'Hackathon',
+                badge_color TEXT DEFAULT 'green',
+                cover_image TEXT,
+                event_date TEXT NOT NULL,
+                event_day TEXT,
+                event_month TEXT,
+                event_time TEXT,
+                venue TEXT NOT NULL,
+                venue_detail TEXT,
+                audience TEXT DEFAULT 'Open to all JNU students / UG & PG (All Departments)',
+                summary TEXT,
+                about TEXT,
+                themes TEXT DEFAULT '[]',
+                guidelines_link TEXT,
+                important_dates TEXT DEFAULT '[]',
+                organizers TEXT DEFAULT '[]',
+                registration_link TEXT DEFAULT '/create-team',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_category ON events(category);")
+        seed_initial_events(cursor, "?")
 
         conn.commit()
         conn.close()

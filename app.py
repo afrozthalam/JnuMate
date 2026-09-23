@@ -2,6 +2,7 @@ import os
 import json
 import random
 import datetime
+import time
 import smtplib
 import threading
 import re
@@ -465,6 +466,8 @@ def auto_import_student_from_json(r_id, conn, cursor):
 @app.route("/about")
 @app.route("/admin")
 @app.route("/events")
+@app.route("/events/<event_id_or_slug>")
+@app.route("/event/<event_id_or_slug>")
 @app.route("/resources")
 @app.route("/course-select")
 @app.route("/select-program")
@@ -472,7 +475,7 @@ def auto_import_student_from_json(r_id, conn, cursor):
 @app.route("/sync-details")
 @app.route("/otp")
 @app.route("/verify-otp")
-def index(team_id=None):
+def index(team_id=None, event_id_or_slug=None):
     return render_template("index.html")
 
 # --- ADMIN CREDENTIALS & CONTROL ENDPOINTS ---
@@ -551,6 +554,9 @@ def admin_stats():
         cursor.execute("SELECT COUNT(*) FROM team_members")
         members_count = cursor.fetchone()[0]
 
+        cursor.execute("SELECT COUNT(*) FROM events")
+        events_count = cursor.fetchone()[0]
+
         # Calculate open slots across all teams (Postgres compatible GROUP BY t.id, t.seat_modes)
         cursor.execute("SELECT t.id, t.seat_modes, COUNT(tm.id) as filled FROM teams t LEFT JOIN team_members tm ON t.id = tm.team_id GROUP BY t.id, t.seat_modes")
         team_seat_rows = cursor.fetchall()
@@ -574,6 +580,7 @@ def admin_stats():
         sih_count = 0
         ctf_count = 0
         members_count = 0
+        events_count = 0
         open_slots_count = 0
         otp_rows = []
 
@@ -589,6 +596,7 @@ def admin_stats():
             "sih_teams": sih_count,
             "ctf_teams": ctf_count,
             "total_members": members_count,
+            "total_events": events_count,
             "open_slots": open_slots_count,
             "otp_email_enabled": otp_on,
             "default_bypass_otp": bypass_code
@@ -652,6 +660,261 @@ def admin_activity():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+# --- EVENTS PUBLIC & ADMIN ENDPOINTS ---
+
+def format_event_row(row):
+    d = dict(row)
+    for field in ["themes", "important_dates", "organizers"]:
+        val = d.get(field)
+        if isinstance(val, str):
+            try:
+                d[field] = json.loads(val)
+            except Exception:
+                d[field] = []
+        elif val is None:
+            d[field] = []
+    return d
+
+@app.route("/api/events", methods=["GET"])
+def get_events():
+    category = request.args.get("category", "").strip()
+    search = request.args.get("search", "").strip()
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        query = "SELECT * FROM events WHERE 1=1"
+        params = []
+        if category and category.lower() != "all events":
+            query += f" AND LOWER(category) = LOWER({p})"
+            params.append(category)
+        if search:
+            query += f" AND (LOWER(title) LIKE LOWER({p}) OR LOWER(venue) LIKE LOWER({p}) OR LOWER(summary) LIKE LOWER({p}))"
+            params.append(f"%{search}%")
+            params.append(f"%{search}%")
+            params.append(f"%{search}%")
+        query += " ORDER BY id ASC"
+        cursor.execute(query, tuple(params))
+        events = [format_event_row(r) for r in cursor.fetchall()]
+        conn.close()
+        return jsonify({"success": True, "events": events})
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/events/<event_id_or_slug>", methods=["GET"])
+def get_event_detail(event_id_or_slug):
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        slug_raw = str(event_id_or_slug).strip().lower()
+        if slug_raw.isdigit():
+            cursor.execute(f"SELECT * FROM events WHERE id = {p}", (int(slug_raw),))
+            row = cursor.fetchone()
+        else:
+            cursor.execute(f"SELECT * FROM events WHERE lower(slug) = {p}", (slug_raw,))
+            row = cursor.fetchone()
+            if not row and "sih" in slug_raw:
+                cursor.execute(f"SELECT * FROM events WHERE slug LIKE {p} OR title LIKE {p}", ("%hackathon%", "%Hackathon%"))
+                row = cursor.fetchone()
+            elif not row and "ctf" in slug_raw:
+                cursor.execute(f"SELECT * FROM events WHERE slug LIKE {p} OR title LIKE {p}", ("%flag%", "%Flag%"))
+                row = cursor.fetchone()
+            elif not row:
+                cursor.execute(f"SELECT * FROM events WHERE slug LIKE {p} OR title LIKE {p}", (f"%{slug_raw}%", f"%{slug_raw}%"))
+                row = cursor.fetchone()
+        conn.close()
+        if not row:
+            return jsonify({"success": False, "message": "Event not found"}), 404
+        return jsonify({"success": True, "event": format_event_row(row)})
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/admin/events", methods=["POST"])
+def admin_create_event():
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    data = request.json or {}
+    title = (data.get("title") or "").strip()
+    if not title:
+        return jsonify({"success": False, "message": "Event title is required"}), 400
+
+    category = (data.get("category") or "Hackathons").strip()
+    badge_text = (data.get("badge_text") or category).strip()
+    badge_color = (data.get("badge_color") or "green").strip()
+    cover_image = (data.get("cover_image") or "/static/img/redesign/events/event_sih.png").strip()
+    event_date = (data.get("event_date") or "").strip()
+    event_day = (data.get("event_day") or "").strip()
+    event_month = (data.get("event_month") or "").strip()
+    event_time = (data.get("event_time") or "").strip()
+    venue = (data.get("venue") or "JNU Campus").strip()
+    venue_detail = (data.get("venue_detail") or venue).strip()
+    audience = (data.get("audience") or "Open to all JNU students / UG & PG (All Departments)").strip()
+    summary = (data.get("summary") or "").strip()
+    about = (data.get("about") or summary).strip()
+    guidelines_link = (data.get("guidelines_link") or "").strip()
+    registration_link = (data.get("registration_link") or "/create-team").strip()
+
+    slug = (data.get("slug") or "").strip().lower()
+    if not slug:
+        slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
+        if not slug:
+            slug = f"event-{int(time.time())}"
+        else:
+            slug = f"{slug}-{int(time.time()) % 10000}"
+
+    themes = data.get("themes") or []
+    if isinstance(themes, list):
+        themes_json = json.dumps(themes)
+    else:
+        themes_json = json.dumps([t.strip() for t in str(themes).split("\n") if t.strip()])
+
+    important_dates = data.get("important_dates") or []
+    if not isinstance(important_dates, list):
+        important_dates = []
+    important_dates_json = json.dumps(important_dates)
+
+    organizers = data.get("organizers") or []
+    if not isinstance(organizers, list):
+        organizers = []
+    organizers_json = json.dumps(organizers)
+
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"""
+            INSERT INTO events (
+                slug, title, category, badge_text, badge_color, cover_image,
+                event_date, event_day, event_month, event_time, venue, venue_detail,
+                audience, summary, about, themes, guidelines_link, important_dates,
+                organizers, registration_link
+            ) VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p})
+        """, (
+            slug, title, category, badge_text, badge_color, cover_image,
+            event_date, event_day, event_month, event_time, venue, venue_detail,
+            audience, summary, about, themes_json, guidelines_link, important_dates_json,
+            organizers_json, registration_link
+        ))
+        conn.commit()
+        new_id = cursor.lastrowid
+        conn.close()
+        return jsonify({"success": True, "message": "Event created successfully", "id": new_id, "slug": slug})
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/admin/events/<int:event_id>", methods=["PUT"])
+def admin_update_event(event_id):
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    data = request.json or {}
+    title = (data.get("title") or "").strip()
+    if not title:
+        return jsonify({"success": False, "message": "Event title is required"}), 400
+
+    category = (data.get("category") or "Hackathons").strip()
+    badge_text = (data.get("badge_text") or category).strip()
+    badge_color = (data.get("badge_color") or "green").strip()
+    cover_image = (data.get("cover_image") or "").strip()
+    event_date = (data.get("event_date") or "").strip()
+    event_day = (data.get("event_day") or "").strip()
+    event_month = (data.get("event_month") or "").strip()
+    event_time = (data.get("event_time") or "").strip()
+    venue = (data.get("venue") or "JNU Campus").strip()
+    venue_detail = (data.get("venue_detail") or venue).strip()
+    audience = (data.get("audience") or "").strip()
+    summary = (data.get("summary") or "").strip()
+    about = (data.get("about") or summary).strip()
+    guidelines_link = (data.get("guidelines_link") or "").strip()
+    registration_link = (data.get("registration_link") or "/create-team").strip()
+
+    themes = data.get("themes") or []
+    if isinstance(themes, list):
+        themes_json = json.dumps(themes)
+    else:
+        themes_json = json.dumps([t.strip() for t in str(themes).split("\n") if t.strip()])
+
+    important_dates = data.get("important_dates") or []
+    if not isinstance(important_dates, list):
+        important_dates = []
+    important_dates_json = json.dumps(important_dates)
+
+    organizers = data.get("organizers") or []
+    if not isinstance(organizers, list):
+        organizers = []
+    organizers_json = json.dumps(organizers)
+
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"""
+            UPDATE events SET
+                title = {p}, category = {p}, badge_text = {p}, badge_color = {p},
+                cover_image = CASE WHEN {p} != '' THEN {p} ELSE cover_image END,
+                event_date = {p}, event_day = {p}, event_month = {p}, event_time = {p},
+                venue = {p}, venue_detail = {p}, audience = {p}, summary = {p}, about = {p},
+                themes = {p}, guidelines_link = {p}, important_dates = {p},
+                organizers = {p}, registration_link = {p}
+            WHERE id = {p}
+        """, (
+            title, category, badge_text, badge_color,
+            cover_image, cover_image,
+            event_date, event_day, event_month, event_time,
+            venue, venue_detail, audience, summary, about,
+            themes_json, guidelines_link, important_dates_json,
+            organizers_json, registration_link,
+            event_id
+        ))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Event updated successfully"})
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/admin/events/<int:event_id>", methods=["DELETE"])
+def admin_delete_event(event_id):
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"DELETE FROM events WHERE id = {p}", (event_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Event deleted successfully"})
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/admin/events/upload", methods=["POST"])
+def admin_upload_event_cover():
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+    if "file" not in request.files:
+        return jsonify({"success": False, "message": "No file part in the request"}), 400
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"success": False, "message": "No file selected"}), 400
+    
+    from werkzeug.utils import secure_filename
+    allowed_exts = {".png", ".jpg", ".jpeg", ".webp", ".svg", ".gif"}
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in allowed_exts:
+        return jsonify({"success": False, "message": "Invalid image file type. Allowed: PNG, JPG, WEBP, SVG, GIF"}), 400
+    
+    upload_folder = os.path.join(app.root_path, "static", "uploads", "events")
+    os.makedirs(upload_folder, exist_ok=True)
+    filename = f"event_{int(time.time())}_{secure_filename(file.filename)}"
+    dest_path = os.path.join(upload_folder, filename)
+    file.save(dest_path)
+    url = f"/static/uploads/events/{filename}"
+    return jsonify({"success": True, "url": url, "filename": filename})
 
 
 # --- AUTH ENDPOINTS ---
