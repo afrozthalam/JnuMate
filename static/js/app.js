@@ -130,20 +130,9 @@ function getCurrentUserRid() {
       if (raw) currentUser = JSON.parse(raw);
     } catch (e) {}
   }
-  if (!currentUser) {
-    currentUser = {
-      id: "R44456",
-      r_id: "R44456",
-      name: "MD HASAN RAZA",
-      email: "ritcrouter@gmail.com",
-      phone: "6299318587",
-      gender: "Male",
-      program: "B.Tech (Computer Science Engineering)",
-      avatar_url: "/static/img/redesign/hasan_raza.jpg"
-    };
-    try { localStorage.setItem("jnumate_user", JSON.stringify(currentUser)); } catch (e) {}
-  }
-  const rid = currentUser.id || currentUser.r_id || currentUser.rid || "R44456";
+  if (!currentUser) return "";
+  if (currentUser.is_admin || currentUser.role === "admin") return "admin";
+  const rid = currentUser.id || currentUser.r_id || currentUser.rid || "";
   return String(rid).trim().toUpperCase();
 }
 
@@ -480,58 +469,90 @@ function loadUserFromSession(callback) {
     if (raw) savedUser = JSON.parse(raw);
   } catch (e) {}
 
-  if (savedUser && savedUser.id) {
-    currentUser = savedUser;
-    renderNavUserSlots();
-    renderDrawerUserSlot();
-  }
-
-  const verifyUrl = "/api/auth/me" + (savedUser && savedUser.id ? `?r_id=${encodeURIComponent(savedUser.id)}` : "");
-  fetch(verifyUrl)
-    .then(res => res.json())
-    .then(data => {
-      if (data.authenticated && data.user) {
-        currentUser = data.user;
-        try { localStorage.setItem("jnumate_user", JSON.stringify(data.user)); } catch (e) {}
+  // 1. Check if admin session is active on server
+  fetch("/api/admin/status", { credentials: "same-origin" })
+    .then(r => r.json())
+    .then(adminData => {
+      if (adminData && adminData.authenticated) {
+        currentUser = {
+          id: "admin",
+          r_id: "admin",
+          name: "Administrator",
+          role: "admin",
+          is_admin: true,
+          avatar_url: "/static/img/blank_pfp.jpg"
+        };
+        try { localStorage.setItem("jnumate_user", JSON.stringify(currentUser)); } catch (e) {}
         renderNavUserSlots();
         renderDrawerUserSlot();
         if (typeof callback === "function") callback();
-      } else if (savedUser && savedUser.id) {
-        fetch("/api/auth/restore-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ r_id: savedUser.id })
-        })
-          .then(r => r.json())
-          .then(res => {
-            if (res.success && res.user) {
-              currentUser = res.user;
-              try { localStorage.setItem("jnumate_user", JSON.stringify(res.user)); } catch (e) {}
-            } else {
-              currentUser = null;
-              try { localStorage.removeItem("jnumate_user"); } catch (e) {}
-            }
-            renderNavUserSlots();
-            renderDrawerUserSlot();
-            if (typeof callback === "function") callback();
-          })
-          .catch(() => {
-            renderNavUserSlots();
-            renderDrawerUserSlot();
-            if (typeof callback === "function") callback();
-          });
-      } else {
-        currentUser = null;
-        try { localStorage.removeItem("jnumate_user"); } catch (e) {}
-        renderNavUserSlots();
-        renderDrawerUserSlot();
-        if (typeof callback === "function") callback();
+        return;
       }
+
+      // If not admin, clean any stale admin user from localStorage
+      if (savedUser && (savedUser.is_admin || savedUser.role === 'admin' || savedUser.id === 'admin')) {
+        savedUser = null;
+        try { localStorage.removeItem("jnumate_user"); } catch (e) {}
+      }
+
+      if (savedUser && savedUser.id) {
+        currentUser = savedUser;
+        renderNavUserSlots();
+        renderDrawerUserSlot();
+      }
+
+      const verifyUrl = "/api/auth/me" + (savedUser && savedUser.id ? `?r_id=${encodeURIComponent(savedUser.id)}` : "");
+      fetch(verifyUrl)
+        .then(res => res.json())
+        .then(data => {
+          if (data.authenticated && data.user) {
+            currentUser = data.user;
+            try { localStorage.setItem("jnumate_user", JSON.stringify(data.user)); } catch (e) {}
+            renderNavUserSlots();
+            renderDrawerUserSlot();
+            if (typeof callback === "function") callback();
+          } else if (savedUser && savedUser.id) {
+            fetch("/api/auth/restore-session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ r_id: savedUser.id })
+            })
+              .then(r => r.json())
+              .then(res => {
+                if (res.success && res.user) {
+                  currentUser = res.user;
+                  try { localStorage.setItem("jnumate_user", JSON.stringify(res.user)); } catch (e) {}
+                } else {
+                  currentUser = null;
+                  try { localStorage.removeItem("jnumate_user"); } catch (e) {}
+                }
+                renderNavUserSlots();
+                renderDrawerUserSlot();
+                if (typeof callback === "function") callback();
+              })
+              .catch(() => {
+                renderNavUserSlots();
+                renderDrawerUserSlot();
+                if (typeof callback === "function") callback();
+              });
+          } else {
+            currentUser = null;
+            try { localStorage.removeItem("jnumate_user"); } catch (e) {}
+            renderNavUserSlots();
+            renderDrawerUserSlot();
+            if (typeof callback === "function") callback();
+          }
+        })
+        .catch(() => {
+          if (!savedUser) {
+            currentUser = null;
+          }
+          renderNavUserSlots();
+          renderDrawerUserSlot();
+          if (typeof callback === "function") callback();
+        });
     })
     .catch(() => {
-      if (!savedUser) {
-        currentUser = null;
-      }
       renderNavUserSlots();
       renderDrawerUserSlot();
       if (typeof callback === "function") callback();
@@ -546,6 +567,52 @@ function renderNavUserSlots() {
   const mobileAuthSlot = document.getElementById("mobileAuthSlot");
 
   if (currentUser) {
+    const isAdmin = Boolean(currentUser.is_admin || currentUser.role === 'admin' || currentUser.id === 'admin');
+
+    if (isAdmin) {
+      if (mobileAuthSlot) {
+        mobileAuthSlot.innerHTML = `
+          <div style="display:flex; align-items:center; gap:6px;">
+            <a href="/admin" class="btn-black-pill sm" style="padding:5px 10px; font-size:0.75rem; background:#04382A; border:1px solid #10B981; color:#ECFDF5; text-decoration:none;">
+              Admin
+            </a>
+            <button type="button" onclick="logoutAdmin()" class="btn-paper-outline" style="padding:4px 8px; font-size:0.72rem; cursor:pointer;">
+              Exit
+            </button>
+          </div>
+        `;
+      }
+      if (dtSlot) {
+        dtSlot.innerHTML = `
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <a href="/admin" style="display:flex; align-items:center; gap:10px; text-decoration:none; padding:10px 14px; border-radius:12px; background:#04382A; border:1px solid #10B981; color:#ECFDF5;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span style="font-weight:700; font-size:0.85rem;">Admin Console</span>
+            </a>
+            <button onclick="logoutAdmin()" class="sidebar-footer-link" style="width:100%; border:none; background:none; cursor:pointer; color:#EF4444;">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>
+              <span>Admin Sign Out</span>
+            </button>
+          </div>
+        `;
+      }
+      if (topSlot) {
+        topSlot.innerHTML = `
+          <div style="display:flex; align-items:center; gap:10px;">
+            <a href="/admin" class="btn-black-pill sm" style="padding:7px 16px; font-size:0.84rem; background:#04382A; border:1px solid #10B981; color:#ECFDF5; text-decoration:none; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(4,56,42,0.15);">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span>Admin Console</span>
+            </a>
+            <button type="button" onclick="logoutAdmin()" class="btn-paper-outline" style="padding:6px 14px; font-size:0.82rem; cursor:pointer;" title="Sign out of Administrator Console">
+              <span>Sign Out</span>
+            </button>
+          </div>
+        `;
+      }
+      if (profileDropdown) profileDropdown.innerHTML = "";
+      return;
+    }
+
     const rawName = (currentUser.name || currentUser.id || "Student") + "";
     const cleanName = rawName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim() || "Student";
     const firstName = cleanName.split(' ')[0] || cleanName;
@@ -913,7 +980,27 @@ function showNoTeamPromptModal() {
   document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 
+function logoutAdmin() {
+  closeMobileDrawer();
+  try {
+    localStorage.removeItem("jnumate_user");
+    sessionStorage.removeItem("jnumate_admin");
+  } catch (e) {}
+  fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" })
+    .finally(() => {
+      currentUser = null;
+      renderNavUserSlots();
+      renderDrawerUserSlot();
+      showToast("Administrator signed out successfully", "info");
+      navigateTo("/login");
+    });
+}
+
 function logoutUser() {
+  if (currentUser && (currentUser.is_admin || currentUser.role === "admin" || currentUser.id === "admin")) {
+    logoutAdmin();
+    return;
+  }
   closeMobileDrawer();
   try { localStorage.removeItem("jnumate_user"); } catch (e) {}
   fetch("/api/auth/logout", { method: "POST" })
@@ -6467,6 +6554,20 @@ function submitAdminLoginFromNormalForm() {
         btn.innerHTML = `<span>Open Admin Console &rarr;</span>`;
       }
       if (data.success) {
+        currentUser = {
+          id: "admin",
+          r_id: "admin",
+          name: "Administrator",
+          role: "admin",
+          is_admin: true,
+          avatar_url: "/static/img/blank_pfp.jpg"
+        };
+        try {
+          localStorage.setItem("jnumate_user", JSON.stringify(currentUser));
+          sessionStorage.setItem("jnumate_admin", "true");
+        } catch (e) {}
+        renderNavUserSlots();
+        renderDrawerUserSlot();
         showToast("Welcome to Administrator Console!", "success");
         navigateTo("/admin");
       } else {
@@ -8429,15 +8530,7 @@ function copyAdminBypassCode() {
   }
 }
 
-function logoutAdmin() {
-  fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" })
-    .then(() => {
-      showToast("Signed out of Admin Console", "info");
-      postLoginRedirect = null;
-      navigateTo("/login");
-    })
-    .catch(() => navigateTo("/login"));
-}
+// Unified logoutAdmin is defined at line 983
 
 function openAdminEventModal(eventId = null) {
   const overlay = document.getElementById("glassModalOverlay");

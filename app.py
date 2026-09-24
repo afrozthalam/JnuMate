@@ -1221,6 +1221,10 @@ def api_get_pyqs():
     p_type = request.args.get("type", "").strip().lower()
     year = request.args.get("year", "").strip()
 
+    # Tokenize query for smart multi-field matching
+    import re
+    tokens = [t for t in re.split(r'[\s\-_,.]+', q) if t] if q else []
+
     filtered = []
     for item in items:
         # 1. School filter
@@ -1240,7 +1244,6 @@ def api_get_pyqs():
         # 3. Semester filter
         if sem and sem.lower() not in ["any sem", "any semester", "all", ""]:
             item_sem = str(item.get("semester") or "").strip().lower()
-            # Clean "Sem 4" or "4" or "Semester 4"
             clean_filter_sem = sem.lower().replace("semester", "").replace("sem", "").strip()
             clean_item_sem = item_sem.replace("semester", "").replace("sem", "").strip()
             if clean_filter_sem != clean_item_sem:
@@ -1260,13 +1263,40 @@ def api_get_pyqs():
             if str(year) != item_year:
                 continue
 
-        # 6. Text Query Search (subject name, subject code, or branch)
-        if q:
+        # 6. Smart Multi-Field Tokenized Search (all query words must match anywhere in paper metadata)
+        if tokens:
             subj_name = str(item.get("subject_name") or "").lower()
             subj_code = str(item.get("subject_code") or "").lower()
-            file_name = str(item.get("file_name") or "").lower()
+            file_name = str(item.get("file_name") or "").lower().replace("_", " ").replace("-", " ")
+            school_txt = str(item.get("school") or "").lower()
             courses_str = " ".join([str(c).lower() for c in (item.get("courses") or [])])
-            if q not in subj_name and q not in subj_code and q not in file_name and q not in courses_str:
+            type_txt = str(item.get("type") or "").lower()
+            sem_txt = f"sem {item.get('semester') or ''} semester {item.get('semester') or ''}"
+            year_txt = str(item.get("year") or "")
+            
+            searchable_corpus = f"{subj_name} {subj_code} {file_name} {school_txt} {courses_str} {type_txt} {sem_txt} {year_txt}".lower()
+            
+            match_all = True
+            for tok in tokens:
+                if tok in searchable_corpus:
+                    continue
+                # Common synonym stems
+                if tok in ["math", "maths"] and ("mathematical" in searchable_corpus or "mathematics" in searchable_corpus or "math" in searchable_corpus):
+                    continue
+                if tok == "cse" and ("computer science" in searchable_corpus or "cse" in searchable_corpus):
+                    continue
+                if tok == "ai" and ("artificial intelligence" in searchable_corpus or "ai" in searchable_corpus):
+                    continue
+                if tok == "ml" and ("machine learning" in searchable_corpus or "ml" in searchable_corpus):
+                    continue
+                if tok == "dbms" and ("data base" in searchable_corpus or "database" in searchable_corpus or "dbms" in searchable_corpus):
+                    continue
+                if tok == "cn" and ("computer network" in searchable_corpus or "cn" in searchable_corpus):
+                    continue
+                match_all = False
+                break
+            
+            if not match_all:
                 continue
 
         filtered.append(item)
