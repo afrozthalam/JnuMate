@@ -177,6 +177,7 @@ function renderIosSpinner(size = '', text = '') {
         <div class="ios-spinner-blade"></div>
         <div class="ios-spinner-blade"></div>
       </div>
+      ${text ? `<div class="ios-spinner-text">${escapeHtml(text)}</div>` : ''}
     </div>
   `;
 }
@@ -186,8 +187,7 @@ function renderCleanPageLoader(message = "Loading...") {
   if (footerEl) footerEl.style.display = "none";
   return `
     <div class="page-loading-center-stage">
-      <div class="clean-loader-spinner-ring"></div>
-      <div class="clean-loader-label">${escapeHtml(message)}</div>
+      ${renderIosSpinner('lg', message)}
     </div>
   `;
 }
@@ -226,16 +226,21 @@ document.addEventListener("DOMContentLoaded", () => {
 function setupRouter() {
   document.addEventListener("click", (e) => {
     const anchor = e.target.closest("a");
-    if (anchor && anchor.href && anchor.origin === window.location.origin) {
-      const targetPath = anchor.pathname;
+    if (anchor && anchor.href) {
       if (anchor.target === "_blank") return;
+      if (anchor.hasAttribute("download") || anchor.getAttribute("download") !== null) return;
+      if (anchor.pathname.startsWith("/api/") || anchor.pathname.startsWith("/tools/")) return;
 
-      e.preventDefault();
-      closeMobileDrawer();
-      closeNotificationsPanel();
-      if (window.location.pathname !== targetPath) {
-        history.pushState(null, "", targetPath);
-        handleCurrentRoute();
+      if (anchor.origin === window.location.origin) {
+        const targetPath = anchor.pathname;
+
+        e.preventDefault();
+        closeMobileDrawer();
+        closeNotificationsPanel();
+        if (window.location.pathname !== targetPath) {
+          history.pushState(null, "", targetPath);
+          handleCurrentRoute();
+        }
       }
     }
   });
@@ -966,8 +971,8 @@ function loadDiscoverView() {
     }
   } else {
     grid.innerHTML = `
-      <div style="grid-column: 1 / -1;">
-        ${renderCleanPageLoader("Discovering campus squads...")}
+      <div style="grid-column: 1 / -1; text-align:center; padding:80px 20px;">
+        ${renderIosSpinner('lg')}
       </div>
     `;
   }
@@ -7132,9 +7137,8 @@ function loadAdminView() {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="page-loading-center-stage">
-      <div class="clean-loader-spinner-ring"></div>
-      <div class="clean-loader-label">Verifying administrative access...</div>
+    <div style="text-align:center; padding:100px 20px;">
+      ${renderIosSpinner('lg', 'Verifying administrative access...')}
     </div>
   `;
 
@@ -7160,9 +7164,8 @@ function loadAdminDashboardData(preferredTab = null) {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="page-loading-center-stage">
-      <div class="clean-loader-spinner-ring"></div>
-      <div class="clean-loader-label">Synchronizing executive control console...</div>
+    <div style="text-align:center; padding:100px 20px;">
+      ${renderIosSpinner('lg', 'Synchronizing executive control console...')}
     </div>
   `;
 
@@ -7929,8 +7932,7 @@ function openAdminUserActivity(rId) {
   modal.style.display = "flex";
   content.innerHTML = `
     <div style="padding:40px; text-align:center;">
-      <div class="clean-loader-spinner-ring" style="margin:0 auto 16px;"></div>
-      <div style="color:var(--text-sage); font-size:0.88rem;">Retrieving student lifecycle activity for @${escapeHtml(rId)}...</div>
+      ${renderIosSpinner('lg', `Retrieving student lifecycle activity for @${rId}...`)}
     </div>
   `;
 
@@ -8780,7 +8782,11 @@ function loadEventsView() {
     renderEventsPage();
     showFooterAfterLoad();
   } else {
-    container.innerHTML = renderCleanPageLoader("Loading Campus Events...");
+    container.innerHTML = `
+      <div style="display:flex; justify-content:center; align-items:center; padding:80px 20px;">
+        ${renderIosSpinner('lg')}
+      </div>
+    `;
   }
 
   fetch("/api/events")
@@ -10193,7 +10199,7 @@ function renderPyqsList(papers) {
             <span class="pyq-badge year">${escapeHtml(String(item.year || '2024'))}</span>
           </div>
 
-          <button type="button" class="btn-pyq-download" onclick="downloadPyqPaper('${escapeAttr(dlUrl)}', '${escapeAttr(item.file_name || '')}', '${escapeAttr(item.subject_name || 'paper')}')">
+          <button type="button" class="btn-pyq-download" onclick="downloadPyqPaper('${escapeAttr(dlUrl)}', '${escapeAttr(item.file_name || '')}', '${escapeAttr(item.subject_name || 'paper')}', this)">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
@@ -10207,17 +10213,112 @@ function renderPyqsList(papers) {
   }).join("");
 }
 
-function downloadPyqPaper(url, fileName, subjectName) {
-  showToast(`Downloading ${subjectName}...`, "info");
-  const safeName = fileName || `${subjectName.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
-  const downloadApi = `/api/pyqs/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(safeName)}`;
+async function downloadPyqPaper(url, fileName, subjectName, btn) {
+  const targetBtn = btn || (window.event && window.event.currentTarget) || null;
+  const originalBtnHtml = targetBtn ? targetBtn.innerHTML : null;
   
-  const a = document.createElement("a");
-  a.href = downloadApi;
-  a.download = safeName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const cleanBase = (fileName && fileName.trim())
+    ? fileName.trim()
+    : `${(subjectName || 'question_paper').replace(/[^a-zA-Z0-9_.-]/g, "_")}.pdf`;
+  const safeName = cleanBase.toLowerCase().endsWith(".pdf") ? cleanBase : `${cleanBase}.pdf`;
+
+  if (targetBtn) {
+    targetBtn.disabled = true;
+    targetBtn.style.opacity = "0.75";
+    targetBtn.innerHTML = `
+      <div class="ios-spinner sm" style="color:currentColor;">
+        <div class="ios-spinner-blade"></div><div class="ios-spinner-blade"></div><div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div><div class="ios-spinner-blade"></div><div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div><div class="ios-spinner-blade"></div><div class="ios-spinner-blade"></div>
+        <div class="ios-spinner-blade"></div><div class="ios-spinner-blade"></div><div class="ios-spinner-blade"></div>
+      </div>
+      <span>Downloading...</span>
+    `;
+  }
+
+  showToast(`Downloading ${subjectName || 'paper'}...`, "info");
+  
+  const downloadApi = `/api/pyqs/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(safeName)}`;
+
+  let downloadSucceeded = false;
+
+  // Primary: Fetch as Blob and trigger instant native browser download
+  try {
+    const res = await fetch(downloadApi);
+    if (res.ok) {
+      const blob = await res.blob();
+      if (blob && blob.size > 0) {
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.style.display = "none";
+        link.href = blobUrl;
+        link.download = safeName;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          window.URL.revokeObjectURL(blobUrl);
+          link.remove();
+        }, 1500);
+        downloadSucceeded = true;
+      }
+    }
+  } catch (err) {
+    console.warn("Download proxy fetch error:", err);
+  }
+
+  // Secondary fallback: Direct fetch if remote URL is accessible directly
+  if (!downloadSucceeded && url && url !== "#" && !url.startsWith("/")) {
+    try {
+      const res2 = await fetch(url);
+      if (res2.ok) {
+        const blob2 = await res2.blob();
+        if (blob2 && blob2.size > 0) {
+          const blobUrl2 = window.URL.createObjectURL(blob2);
+          const link2 = document.createElement("a");
+          link2.style.display = "none";
+          link2.href = blobUrl2;
+          link2.download = safeName;
+          document.body.appendChild(link2);
+          link2.click();
+          setTimeout(() => {
+            window.URL.revokeObjectURL(blobUrl2);
+            link2.remove();
+          }, 1500);
+          downloadSucceeded = true;
+        }
+      }
+    } catch (err2) {
+      console.warn("Direct blob download error:", err2);
+    }
+  }
+
+  // Tertiary fallback: Trigger browser download via target="_blank" anchor so router ignores it
+  if (!downloadSucceeded) {
+    const fallbackLink = document.createElement("a");
+    fallbackLink.style.display = "none";
+    fallbackLink.target = "_blank";
+    fallbackLink.href = downloadApi;
+    fallbackLink.setAttribute("download", safeName);
+    document.body.appendChild(fallbackLink);
+    fallbackLink.click();
+    setTimeout(() => fallbackLink.remove(), 2000);
+  }
+
+  if (targetBtn && originalBtnHtml) {
+    targetBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <span>Saved!</span>
+    `;
+    setTimeout(() => {
+      targetBtn.innerHTML = originalBtnHtml;
+      targetBtn.disabled = false;
+      targetBtn.style.opacity = "";
+    }, 2000);
+  }
+
+  showToast(`Downloaded ${subjectName || safeName}`, "success");
 }
 
 

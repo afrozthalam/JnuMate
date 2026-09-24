@@ -1286,6 +1286,10 @@ def api_pyqs_download():
     if not target_url:
         return jsonify({"success": False, "message": "Missing file URL"}), 400
 
+    # Auto convert standard GitHub file URLs to raw content URLs
+    if "github.com/" in target_url and "/blob/" in target_url:
+        target_url = target_url.replace("github.com/", "raw.githubusercontent.com/").replace("/blob/", "/")
+
     safe_filename = custom_name or os.path.basename(target_url.split("?")[0]) or "pyq_paper.pdf"
     if not safe_filename.lower().endswith(".pdf"):
         safe_filename += ".pdf"
@@ -1293,12 +1297,22 @@ def api_pyqs_download():
     # Clean characters for header
     from werkzeug.utils import secure_filename
     clean_name = secure_filename(safe_filename) or "question_paper.pdf"
+    if not clean_name.lower().endswith(".pdf"):
+        clean_name += ".pdf"
+
+    # Support local paths (e.g. /static/uploads/... or local files)
+    if target_url.startswith("/") or target_url.startswith("./") or ":\\" in target_url:
+        local_rel = target_url.lstrip("/")
+        local_abs = os.path.join(os.path.dirname(__file__), local_rel)
+        if os.path.exists(local_abs):
+            from flask import send_file
+            return send_file(local_abs, as_attachment=True, download_name=clean_name, mimetype="application/pdf")
 
     import urllib.request
     try:
         req = urllib.request.Request(
             target_url,
-            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) JnuMate/2.0"}
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
         )
         response = urllib.request.urlopen(req, timeout=15)
         pdf_bytes = response.read()
@@ -1310,11 +1324,13 @@ def api_pyqs_download():
             headers={
                 "Content-Disposition": f'attachment; filename="{clean_name}"',
                 "Content-Length": str(len(pdf_bytes)),
-                "Access-Control-Allow-Origin": "*"
+                "Access-Control-Allow-Origin": "*",
+                "Cache-Control": "public, max-age=86400"
             }
         )
     except Exception as e:
-        # If remote fetch fails or is simulated, return sample response or redirect
+        # If remote fetch fails or is simulated, return redirect
+        from flask import redirect
         return redirect(target_url)
 
 @app.route("/api/local/pyq-metadata/save", methods=["POST"])
