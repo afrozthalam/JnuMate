@@ -459,16 +459,30 @@ def auto_import_student_from_json(r_id, conn, cursor):
         conn.commit()
     except Exception as e:
         try:
+            conn.rollback()
+        except Exception:
+            pass
+        try:
             cursor.execute(f"""
                 INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, is_registered)
                 VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, 0)
             """, (r_id.upper(), name, email, phone, gender_clean, dob, avatar_url))
             conn.commit()
         except Exception:
-            pass
+            try:
+                conn.rollback()
+            except Exception:
+                pass
 
-    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id.upper(),))
-    return cursor.fetchone()
+    try:
+        cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id.upper(),))
+        return cursor.fetchone()
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        return None
 
 @app.route("/")
 @app.route("/team/<int:team_id>")
@@ -672,6 +686,240 @@ def admin_activity():
     except Exception as e:
         conn.close()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/admin/teams", methods=["GET"])
+def admin_get_teams():
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT t.id, t.name, t.description, t.leader_r_id, t.whatsapp_link, t.seat_modes, t.hackathon_type, t.created_at,
+                   s.name as leader_name, s.avatar_url as leader_avatar, s.email as leader_email
+            FROM teams t
+            LEFT JOIN students s ON UPPER(t.leader_r_id) = UPPER(s.r_id)
+            ORDER BY t.id DESC
+        """)
+        team_rows = [dict(r) for r in cursor.fetchall()]
+
+        cursor.execute("SELECT team_id, COUNT(*) as mcount FROM team_members GROUP BY team_id")
+        member_counts = {r[0]: r[1] for r in cursor.fetchall()}
+
+        for tm in team_rows:
+            mcount = 1 + member_counts.get(tm["id"], 0)
+            tm["member_count"] = mcount
+            tm["members_count"] = mcount
+            tm["team_size"] = tm.get("team_size") or 6
+            tm["problem_statement"] = tm.get("description") or ""
+            tm["tags"] = tm.get("seat_modes") or ""
+            tm["vacancies"] = max(0, tm["team_size"] - mcount)
+            tm["created_at"] = str(tm.get("created_at") or "")
+
+        conn.close()
+        return jsonify({"success": True, "teams": team_rows, "total": len(team_rows)})
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route("/api/admin/teams/<int:team_id>", methods=["PUT"])
+def admin_update_team(team_id):
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    data = request.json or {}
+    name = (data.get("name") or "").strip()
+    description = (data.get("description") or data.get("problem_statement") or "").strip()
+    hackathon_type = (data.get("hackathon_type") or "sih").strip().lower()
+    whatsapp_link = (data.get("whatsapp_link") or "").strip()
+    leader_r_id = (data.get("leader_r_id") or "").strip().upper()
+
+    if not name:
+        return jsonify({"success": False, "message": "Team name is required"}), 400
+
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        if leader_r_id:
+            cursor.execute(f"""
+                UPDATE teams
+                SET name = {p}, description = {p}, hackathon_type = {p}, whatsapp_link = {p}, leader_r_id = {p}
+                WHERE id = {p}
+            """, (name, description, hackathon_type, whatsapp_link, leader_r_id, team_id))
+        else:
+            cursor.execute(f"""
+                UPDATE teams
+                SET name = {p}, description = {p}, hackathon_type = {p}
+                WHERE id = {p}
+            """, (name, description, hackathon_type, team_id))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Team updated successfully"})
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        conn.close()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route("/api/admin/teams/<int:team_id>", methods=["DELETE"])
+def admin_delete_team(team_id):
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"DELETE FROM team_messages WHERE team_id = {p}", (team_id,))
+        cursor.execute(f"DELETE FROM join_requests WHERE team_id = {p}", (team_id,))
+        cursor.execute(f"DELETE FROM team_members WHERE team_id = {p}", (team_id,))
+        cursor.execute(f"DELETE FROM teams WHERE id = {p}", (team_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Team deleted successfully"})
+    except Exception as e:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        conn.close()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route("/api/admin/users", methods=["GET"])
+def admin_get_users():
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            SELECT r_id, name, email, phone, gender, avatar_url, is_registered, dob, program, semester_year
+            FROM students
+            WHERE is_registered = 1
+        """)
+        users = [dict(r) for r in cursor.fetchall()]
+        for u in users:
+            r_id = u.get("r_id") or ""
+            cached = STUDENT_CACHE_BY_RID.get(r_id.upper()) or {}
+            u["bio"] = cached.get("bio") or ""
+            u["skills"] = cached.get("skills") or ""
+            u["created_at"] = str(u.get("created_at") or "")
+        conn.close()
+        return jsonify({"success": True, "users": users, "total": len(users)})
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route("/api/admin/users/<r_id>/activity", methods=["GET"])
+def admin_get_user_activity(r_id):
+    if not session.get("is_admin"):
+        return jsonify({"success": False, "message": "Unauthorized"}), 403
+
+    r_id = r_id.strip().upper()
+    p = get_placeholder()
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+        profile_row = cursor.fetchone()
+        profile = dict(profile_row) if profile_row else {}
+        if profile.get("created_at"):
+            profile["created_at"] = str(profile["created_at"])
+
+        cursor.execute(f"""
+            SELECT id, name, description, hackathon_type, created_at
+            FROM teams WHERE UPPER(leader_r_id) = {p} ORDER BY id DESC
+        """, (r_id,))
+        teams_led = [dict(r) for r in cursor.fetchall()]
+        for t in teams_led:
+            t["created_at"] = str(t.get("created_at") or "")
+
+        cursor.execute(f"""
+            SELECT t.id, t.name, t.hackathon_type, tm.role, tm.joined_at
+            FROM team_members tm
+            JOIN teams t ON tm.team_id = t.id
+            WHERE UPPER(tm.student_r_id) = {p}
+            ORDER BY tm.id DESC
+        """, (r_id,))
+        teams_joined = [dict(r) for r in cursor.fetchall()]
+        for t in teams_joined:
+            t["joined_at"] = str(t.get("joined_at") or "")
+
+        cursor.execute(f"""
+            SELECT jr.id, jr.team_id, t.name as team_name, jr.status, jr.message, jr.created_at
+            FROM join_requests jr
+            JOIN teams t ON jr.team_id = t.id
+            WHERE UPPER(jr.student_r_id) = {p}
+            ORDER BY jr.id DESC
+        """, (r_id,))
+        join_requests = [dict(r) for r in cursor.fetchall()]
+        for j in join_requests:
+            j["created_at"] = str(j.get("created_at") or "")
+
+        cursor.execute(f"""
+            SELECT m.id, m.team_id, t.name as team_name, m.message, m.created_at
+            FROM team_messages m
+            LEFT JOIN teams t ON m.team_id = t.id
+            WHERE UPPER(m.sender_r_id) = {p}
+            ORDER BY m.id DESC LIMIT 40
+        """, (r_id,))
+        messages = [dict(r) for r in cursor.fetchall()]
+        for m in messages:
+            m["created_at"] = str(m.get("created_at") or "")
+
+        cursor.execute(f"""
+            SELECT id, title, message, type, is_read, created_at
+            FROM notifications WHERE UPPER(recipient_r_id) = {p}
+            ORDER BY id DESC LIMIT 20
+        """, (r_id,))
+        notifications = [dict(r) for r in cursor.fetchall()]
+        for n in notifications:
+            n["created_at"] = str(n.get("created_at") or "")
+
+        cursor.execute(f"""
+            SELECT id, email, used, created_at
+            FROM email_otps WHERE UPPER(r_id) = {p}
+            ORDER BY id DESC LIMIT 15
+        """, (r_id,))
+        otps = [dict(r) for r in cursor.fetchall()]
+        for o in otps:
+            o["created_at"] = str(o.get("created_at") or "")
+
+        conn.close()
+        for t in teams_led:
+            t["problem_statement"] = t.get("description") or t.get("problem_statement") or ""
+        return jsonify({
+            "success": True,
+            "student": profile,
+            "profile": profile,
+            "activity": {
+                "teams_led": teams_led,
+                "teams_joined": teams_joined,
+                "join_requests_sent": join_requests,
+                "chat_messages": messages,
+                "notifications": notifications,
+                "otp_log": otps
+            },
+            "teams_led": teams_led,
+            "teams_joined": teams_joined,
+            "join_requests": join_requests,
+            "messages": messages,
+            "notifications": notifications,
+            "login_history": otps
+        })
+    except Exception as e:
+        conn.close()
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
 # --- EVENTS PUBLIC & ADMIN ENDPOINTS ---
@@ -1130,6 +1378,13 @@ def auth_send_otp():
 
     if not r_id:
         return jsonify({"success": False, "message": "Please enter your R-ID"}), 400
+
+    if r_id.lower() == "admin":
+        return jsonify({
+            "success": True,
+            "is_admin": True,
+            "message": "Administrator account detected. Please enter your password to proceed."
+        })
 
     conn = get_db()
     cursor = conn.cursor()
@@ -2860,57 +3115,100 @@ def post_team_message(team_id):
                 r_id = "R44456"
 
         # Guarantee student exists in students table to prevent FOREIGN KEY constraint failures
-        cursor.execute(f"SELECT r_id FROM students WHERE UPPER(r_id) = {p}", (r_id,))
-        s_row = cursor.fetchone()
-        if not s_row:
-            s_row = auto_import_student_from_json(r_id, conn, cursor)
-        if not s_row:
-            try:
-                cursor.execute(f"""
-                    INSERT INTO students (r_id, name, email, gender, dob, avatar_url, program, is_registered)
-                    VALUES ({p}, {p}, {p}, 'Student', 'N/A', '', 'Jaipur National University', 0)
-                """, (r_id, r_id, f"{r_id.lower()}@student.edu"))
+        try:
+            cursor.execute(f"SELECT r_id FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+            s_row = cursor.fetchone()
+            if not s_row:
+                s_row = auto_import_student_from_json(r_id, conn, cursor)
+            if not s_row:
+                if is_postgres():
+                    cursor.execute("""
+                        INSERT INTO students (r_id, name, email, gender, dob, avatar_url, program, is_registered)
+                        VALUES (%s, %s, %s, 'Student', 'N/A', '', 'Jaipur National University', 0)
+                        ON CONFLICT (r_id) DO NOTHING
+                    """, (r_id, r_id, f"{r_id.lower()}@student.edu"))
+                else:
+                    cursor.execute("""
+                        INSERT OR IGNORE INTO students (r_id, name, email, gender, dob, avatar_url, program, is_registered)
+                        VALUES (?, ?, ?, 'Student', 'N/A', '', 'Jaipur National University', 0)
+                    """, (r_id, r_id, f"{r_id.lower()}@student.edu"))
                 conn.commit()
+        except Exception as e:
+            try:
+                conn.rollback()
             except Exception:
                 pass
 
         # Lookup sender name and avatar
         sender_info = STUDENT_CACHE_BY_RID.get(r_id)
         if not sender_info:
-            cursor.execute(f"SELECT name, avatar_url FROM students WHERE UPPER(r_id) = {p}", (r_id,))
-            s_row = cursor.fetchone()
-            sender_info = dict(s_row) if s_row else {}
+            try:
+                cursor.execute(f"SELECT name, avatar_url FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+                s_row = cursor.fetchone()
+                sender_info = dict(s_row) if s_row else {}
+            except Exception:
+                sender_info = {}
 
         sender_name = (sender_info.get("name") or f"Student @{r_id}").strip()
         sender_avatar = sender_info.get("avatar_url") or DEFAULT_AVATAR_PATH
         if not is_valid_student_image(sender_avatar, r_id):
             sender_avatar = DEFAULT_AVATAR_PATH
 
-        if is_postgres():
-            cursor.execute("""
-                INSERT INTO team_messages (team_id, sender_r_id, sender_name, sender_avatar, message, reactions,
-                                           attachment_name, attachment_url, attachment_size, attachment_type)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                RETURNING id, team_id, sender_r_id, sender_name, sender_avatar, message, reactions,
-                          attachment_name, attachment_url, attachment_size, attachment_type, created_at
-            """, (team_id, r_id, sender_name, sender_avatar, raw_msg, '{}', att_name, att_url, att_size, att_type))
-            new_row = cursor.fetchone()
-            conn.commit()
-            new_msg = dict(new_row) if new_row else {}
-        else:
-            cursor.execute("""
-                INSERT INTO team_messages (team_id, sender_r_id, sender_name, sender_avatar, message, reactions,
-                                           attachment_name, attachment_url, attachment_size, attachment_type)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (team_id, r_id, sender_name, sender_avatar, raw_msg, '{}', att_name, att_url, att_size, att_type))
-            conn.commit()
-            cursor.execute("""
-                SELECT id, team_id, sender_r_id, sender_name, sender_avatar, message, reactions,
-                       attachment_name, attachment_url, attachment_size, attachment_type, created_at
-                FROM team_messages WHERE id = last_insert_rowid()
-            """)
-            new_row = cursor.fetchone()
-            new_msg = dict(new_row) if new_row else {}
+        new_msg = {}
+        try:
+            if is_postgres():
+                cursor.execute("""
+                    INSERT INTO team_messages (team_id, sender_r_id, sender_name, sender_avatar, message, reactions,
+                                               attachment_name, attachment_url, attachment_size, attachment_type)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id, team_id, sender_r_id, sender_name, sender_avatar, message, reactions,
+                              attachment_name, attachment_url, attachment_size, attachment_type, created_at
+                """, (team_id, r_id, sender_name, sender_avatar, raw_msg, '{}', att_name, att_url, att_size, att_type))
+                new_row = cursor.fetchone()
+                conn.commit()
+                new_msg = dict(new_row) if new_row else {}
+            else:
+                cursor.execute("""
+                    INSERT INTO team_messages (team_id, sender_r_id, sender_name, sender_avatar, message, reactions,
+                                               attachment_name, attachment_url, attachment_size, attachment_type)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (team_id, r_id, sender_name, sender_avatar, raw_msg, '{}', att_name, att_url, att_size, att_type))
+                conn.commit()
+                cursor.execute("""
+                    SELECT id, team_id, sender_r_id, sender_name, sender_avatar, message, reactions,
+                           attachment_name, attachment_url, attachment_size, attachment_type, created_at
+                    FROM team_messages WHERE id = last_insert_rowid()
+                """)
+                new_row = cursor.fetchone()
+                new_msg = dict(new_row) if new_row else {}
+        except Exception as insert_err:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            print(f"[RETRYING CORE MSG INSERT] {insert_err}")
+            # Fallback without attachment / reactions columns in case older schema exists on live Supabase
+            if is_postgres():
+                cursor.execute("""
+                    INSERT INTO team_messages (team_id, sender_r_id, sender_name, sender_avatar, message)
+                    VALUES (%s, %s, %s, %s, %s)
+                    RETURNING id, team_id, sender_r_id, sender_name, sender_avatar, message, created_at
+                """, (team_id, r_id, sender_name, sender_avatar, raw_msg))
+                new_row = cursor.fetchone()
+                conn.commit()
+                new_msg = dict(new_row) if new_row else {}
+            else:
+                cursor.execute("""
+                    INSERT INTO team_messages (team_id, sender_r_id, sender_name, sender_avatar, message)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (team_id, r_id, sender_name, sender_avatar, raw_msg))
+                conn.commit()
+                cursor.execute("""
+                    SELECT id, team_id, sender_r_id, sender_name, sender_avatar, message, created_at
+                    FROM team_messages WHERE id = last_insert_rowid()
+                """)
+                new_row = cursor.fetchone()
+                new_msg = dict(new_row) if new_row else {}
 
         if new_msg:
             new_msg["created_at"] = str(new_msg.get("created_at") or "")

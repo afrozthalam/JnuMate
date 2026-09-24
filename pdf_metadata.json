@@ -1,154 +1,1027 @@
 [
   {
-    "id": "pyq-1790164705084",
-    "file_name": "SOET_Sem4_COA_EndTerm_2024.pdf",
-    "subject_name": "Cloud Architecture & Security",
-    "subject_code": "MCAS 502",
-    "school": "School of Computer & Systems Sciences",
-    "courses": [
-      "BCA Specialization in Cyber Security",
-      "BCA Specilization in Artificial Intelligence and Machine Learning"
-    ],
-    "semester": 5,
-    "type": "End Term",
-    "year": 2024,
-    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/engineering/SOET_Sem4_COA_EndTerm_2024.pdf"
-  },
-  {
+    "id": "pyq-1790248691535",
+    "file_name": "Advanced_Python_End-term_2025.pdf",
+    "subject_name": "Advanced Python",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
     "courses": [
       "B.Tech. (Computer Science)",
       "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
       "B.Tech. CSE(Hons.) in Cyber Security"
     ],
-    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/engineering/SOET_Sem3_DSA_MidTerm_2024.pdf",
-    "file_name": "SOET_Sem3_DSA_MidTerm_2024.pdf",
-    "id": "pyq-2",
-    "school": "School of Engineering & Technology",
-    "semester": 3,
-    "subject_code": "BTCS 302",
-    "subject_name": "Data Structures & Algorithms",
-    "type": "Mid Term",
-    "year": 2024
+    "semester": 6,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Advanced_Python_End-term_2025.pdf"
   },
   {
+    "id": "pyq-1790248847838",
+    "file_name": "Analog_Electronics_Circuits_End-term_2024.pdf",
+    "subject_name": "Analog Electronics Circuits",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
     "courses": [
       "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
       "B.Tech. CSE(Hons.) in Cyber Security"
     ],
-    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/engineering/SOET_Sem5_OS_EndTerm_2023.pdf",
-    "file_name": "SOET_Sem5_OS_EndTerm_2023.pdf",
-    "id": "pyq-3",
+    "semester": 3,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Analog_Electronics_Circuits_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790248872521",
+    "file_name": "Analog_Electronics_Circuits_End-term_2025.pdf",
+    "subject_name": "Analog Electronics Circuits",
+    "subject_code": "",
     "school": "School of Engineering & Technology",
-    "semester": 5,
-    "subject_code": "BTCS 501",
-    "subject_name": "Operating Systems",
-    "type": "End Term",
-    "year": 2023
-  },
-  {
     "courses": [
-      "Bachelor of Computer Application",
-      "BCA Specialization in Cyber Security",
-      "BCA Specilization in Artificial Intelligence and Machine Learning"
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security"
     ],
-    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/computer_applications/SCSS_Sem3_DBMS_EndTerm_2024.pdf",
-    "file_name": "SCSS_Sem3_DBMS_EndTerm_2024.pdf",
-    "id": "pyq-4",
-    "school": "School of Computer & Systems Sciences",
     "semester": 3,
-    "subject_code": "BCA 303",
-    "subject_name": "Database Management Systems",
     "type": "End Term",
-    "year": 2024
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Analog_Electronics_Circuits_End-term_2025.pdf"
   },
   {
+    "id": "pyq-1790248926852",
+    "file_name": "Basic_Computer_network_-_Everyone_Must_Know_End-term_2024.pdf",
+    "subject_name": "Basic Computer network   Everyone Must Know",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
     "courses": [
-      "Bachelor of Computer Application"
+      "B.Tech. (Computer Science)"
     ],
-    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/computer_applications/SCSS_Sem4_Java_MidTerm_2024.pdf",
-    "file_name": "SCSS_Sem4_Java_MidTerm_2024.pdf",
-    "id": "pyq-5",
-    "school": "School of Computer & Systems Sciences",
+    "semester": 3,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Basic_Computer_network_-_Everyone_Must_Know_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790248974673",
+    "file_name": "Communication_Fundamentals_End-term_2025.pdf",
+    "subject_name": "Communication Fundamentals",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning"
+    ],
     "semester": 4,
-    "subject_code": "BCA 402",
-    "subject_name": "Object Oriented Programming with Java",
-    "type": "Mid Term",
-    "year": 2024
-  },
-  {
-    "courses": [
-      "Bachelor of Business Administration (BBA)",
-      "Bachelor of Commerce (B.Com.)",
-      "B.Com. (Honours)"
-    ],
-    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/management/SBM_Sem1_Financial_Accounting_EndTerm_2024.pdf",
-    "file_name": "SBM_Sem1_Financial_Accounting_EndTerm_2024.pdf",
-    "id": "pyq-6",
-    "school": "School of Business & Management",
-    "semester": 1,
-    "subject_code": "BBA 102",
-    "subject_name": "Financial Accounting & Reporting",
     "type": "End Term",
-    "year": 2024
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Communication_Fundamentals_End-term_2025.pdf"
   },
   {
+    "id": "pyq-1790249032019",
+    "file_name": "Communication_and_Soft_skills_End-term_2023.pdf",
+    "subject_name": "Communication and Soft skills",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
     "courses": [
-      "Bachelor of Business Administration (BBA)",
-      "BBA (Aviation Management)"
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning"
     ],
-    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/management/SBM_Sem3_Marketing_Management_MidTerm_2023.pdf",
-    "file_name": "SBM_Sem3_Marketing_Management_MidTerm_2023.pdf",
-    "id": "pyq-7",
-    "school": "School of Business & Management",
-    "semester": 3,
-    "subject_code": "BBA 301",
-    "subject_name": "Marketing Management",
-    "type": "Mid Term",
-    "year": 2023
-  },
-  {
-    "courses": [
-      "Bachelor of Pharmacy",
-      "Diploma in Pharmacy"
-    ],
-    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/pharmacy/SPS_Sem1_HAP_EndTerm_2024.pdf",
-    "file_name": "SPS_Sem1_HAP_EndTerm_2024.pdf",
-    "id": "pyq-8",
-    "school": "School of Pharmaceutical Sciences",
-    "semester": 1,
-    "subject_code": "BP 101T",
-    "subject_name": "Human Anatomy & Physiology I",
-    "type": "End Term",
-    "year": 2024
-  },
-  {
-    "courses": [
-      "B.A.,LL.B.",
-      "BBA,LL.B. (Hons.)"
-    ],
-    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/law/SLG_Sem2_Constitutional_Law_EndTerm_2024.pdf",
-    "file_name": "SLG_Sem2_Constitutional_Law_EndTerm_2024.pdf",
-    "id": "pyq-9",
-    "school": "Seedling School of Law and Governance",
     "semester": 2,
-    "subject_code": "LAW 201",
-    "subject_name": "Constitutional Law of India I",
     "type": "End Term",
-    "year": 2024
+    "year": 2023,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Communication_and_Soft_skills_End-term_2023.pdf"
   },
   {
+    "id": "pyq-1790249058919",
+    "file_name": "Communication_and_Soft_skills_End-term_2024.pdf",
+    "subject_name": "Communication and Soft skills",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
     "courses": [
-      "Bachelor of Physiotherapy",
-      "B.Sc. (Cardio Vascular Technology)"
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning"
     ],
-    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/allied_health/SAHS_Sem1_Physiotherapy_MidTerm_2023.pdf",
-    "file_name": "SAHS_Sem1_Physiotherapy_MidTerm_2023.pdf",
-    "id": "pyq-10",
-    "school": "School of Allied Health Sciences",
+    "semester": 2,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Communication_and_Soft_skills_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790249091952",
+    "file_name": "Computer_Graphics_End-term_2025.pdf",
+    "subject_name": "Computer Graphics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning"
+    ],
+    "semester": 5,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Computer_Graphics_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249124817",
+    "file_name": "Computer_Network_End-term_2025.pdf",
+    "subject_name": "Computer Network",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 6,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Computer_Network_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249168250",
+    "file_name": "Data_Base_Management_System_End-term_2025.pdf",
+    "subject_name": "Data Base Management System",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 5,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Data_Base_Management_System_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249197201",
+    "file_name": "Digital_Electronics_End-term_2024.pdf",
+    "subject_name": "Digital Electronics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 3,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Digital_Electronics_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790249223167",
+    "file_name": "Discrete_Mathematical_Structure_End-term_2024.pdf",
+    "subject_name": "Discrete Mathematical Structure",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 3,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Discrete_Mathematical_Structure_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790249453664",
+    "file_name": "End_user_database_management_system_End-term_2025.pdf",
+    "subject_name": "End user database management system",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)"
+    ],
+    "semester": 4,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/End_user_database_management_system_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249504068",
+    "file_name": "Engineering_Chemistry_-II_End-term_2022.pdf",
+    "subject_name": "Engineering Chemistry  II",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2022,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Chemistry_-II_End-term_2022.pdf"
+  },
+  {
+    "id": "pyq-1790249513948",
+    "file_name": "Engineering_Chemistry_End-term_2024.pdf",
+    "subject_name": "Engineering Chemistry",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Chemistry_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790249528582",
+    "file_name": "Engineering_Graphics_and_Visualization_End-term_2025.pdf",
+    "subject_name": "Engineering Graphics and Visualization",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
     "semester": 1,
-    "subject_code": "BPT 101",
-    "subject_name": "General Anatomy & Histology",
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Graphics_and_Visualization_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249536667",
+    "file_name": "Engineering_Mathematics-II_End-term_2022.pdf",
+    "subject_name": "Engineering Mathematics II",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2022,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Mathematics-II_End-term_2022.pdf"
+  },
+  {
+    "id": "pyq-1790249545199",
+    "file_name": "Engineering_Mathematics-II_End-term_2023.pdf",
+    "subject_name": "Engineering Mathematics II",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2023,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Mathematics-II_End-term_2023.pdf"
+  },
+  {
+    "id": "pyq-1790249552898",
+    "file_name": "Engineering_Mathematics-II_End-term_2025.pdf",
+    "subject_name": "Engineering Mathematics II",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Mathematics-II_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249560619",
+    "file_name": "Engineering_Mathematics-I_End-term_2023.pdf",
+    "subject_name": "Engineering Mathematics I",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 1,
+    "type": "End Term",
+    "year": 2023,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Mathematics-I_End-term_2023.pdf"
+  },
+  {
+    "id": "pyq-1790249570780",
+    "file_name": "Engineering_Mathematics_2_End-term_2024.pdf",
+    "subject_name": "Engineering Mathematics 2",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Mathematics_2_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790249584918",
+    "file_name": "Engineering_Mechanics_End-term_2022.pdf",
+    "subject_name": "Engineering Mechanics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2022,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Mechanics_End-term_2022.pdf"
+  },
+  {
+    "id": "pyq-1790249593267",
+    "file_name": "Engineering_Mechanics_End-term_2023.pdf",
+    "subject_name": "Engineering Mechanics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2023,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Mechanics_End-term_2023.pdf"
+  },
+  {
+    "id": "pyq-1790249600098",
+    "file_name": "Engineering_Mechanics_End-term_2024.pdf",
+    "subject_name": "Engineering Mechanics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Mechanics_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790249607002",
+    "file_name": "Engineering_Mechanics_Mid-term_2022.pdf",
+    "subject_name": "Engineering Mechanics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
     "type": "Mid Term",
-    "year": 2023
+    "year": 2022,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_Mechanics_Mid-term_2022.pdf"
+  },
+  {
+    "id": "pyq-1790249622799",
+    "file_name": "Engineering_physics_End-term_2023 (1).pdf",
+    "subject_name": "Engineering physics   (1)",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 1,
+    "type": "End Term",
+    "year": 2023,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_physics_End-term_2023 (1).pdf"
+  },
+  {
+    "id": "pyq-1790249633550",
+    "file_name": "Engineering_physics_End-term_2023.pdf",
+    "subject_name": "Engineering physics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 1,
+    "type": "End Term",
+    "year": 2023,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_physics_End-term_2023.pdf"
+  },
+  {
+    "id": "pyq-1790249641714",
+    "file_name": "Engineering_physics_End-term_2024.pdf",
+    "subject_name": "Engineering physics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 1,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_physics_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790249650733",
+    "file_name": "Engineering_physics_End-term_2025.pdf",
+    "subject_name": "Engineering physics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 1,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Engineering_physics_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249658896",
+    "file_name": "English_End-term_2023.pdf",
+    "subject_name": "English",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 1,
+    "type": "End Term",
+    "year": 2023,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/English_End-term_2023.pdf"
+  },
+  {
+    "id": "pyq-1790249670378",
+    "file_name": "Fundamental_of_Electrical_and_electronics_End-term_2023.pdf",
+    "subject_name": "Fundamental of Electrical and electronics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 1,
+    "type": "End Term",
+    "year": 2023,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Fundamental_of_Electrical_and_electronics_End-term_2023.pdf"
+  },
+  {
+    "id": "pyq-1790249678712",
+    "file_name": "Fundamental_of_Electrical_and_electronics_End-term_2024.pdf",
+    "subject_name": "Fundamental of Electrical and electronics",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 1,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Fundamental_of_Electrical_and_electronics_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790249726849",
+    "file_name": "Internet_of_Things_End-term_2024.pdf",
+    "subject_name": "Internet of Things",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 3,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Internet_of_Things_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790249757190",
+    "file_name": "Introduction_to_Data_Science_End-term_2025.pdf",
+    "subject_name": "Introduction to Data Science",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 5,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Introduction_to_Data_Science_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249793833",
+    "file_name": "Introduction_to_Machine_Learning_End-term_2025.pdf",
+    "subject_name": "Introduction to Machine Learning",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 4,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Introduction_to_Machine_Learning_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249838070",
+    "file_name": "Introduction_to_software_solution_building_End-term_2025.pdf",
+    "subject_name": "Introduction to software solution building",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)"
+    ],
+    "semester": 5,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Introduction_to_software_solution_building_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249889551",
+    "file_name": "Java_for_Non_techies_End-term_2025.pdf",
+    "subject_name": "Java for Non techies",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 6,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Java_for_Non_techies_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249902627",
+    "file_name": "Java_for_non_techies_Mid-term_2026.pdf",
+    "subject_name": "Java for non techies",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 6,
+    "type": "Mid Term",
+    "year": 2026,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Java_for_non_techies_Mid-term_2026.pdf"
+  },
+  {
+    "id": "pyq-1790249946964",
+    "file_name": "Mathematics_III_End-term_2024.pdf",
+    "subject_name": "Mathematics III",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 3,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Mathematics_III_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790249979668",
+    "file_name": "Object_Oriented_Programming_using_C  _OOPS_End-term_2025.pdf",
+    "subject_name": "Object Oriented Programming using C   OOPS",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 4,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Object_Oriented_Programming_using_C  _OOPS_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790249997449",
+    "file_name": "Operating_system_End-term_2025.pdf",
+    "subject_name": "Operating system",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 5,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Operating_system_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790250024380",
+    "file_name": "Optimization_Techniques_End-term_2025.pdf",
+    "subject_name": "Optimization Techniques",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning"
+    ],
+    "semester": 4,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Optimization_Techniques_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790250078517",
+    "file_name": "Programming_For_Problem_Solving_End-term_2022.pdf",
+    "subject_name": "Programming For Problem Solving",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Data Science",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2022,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Programming_For_Problem_Solving_End-term_2022.pdf"
+  },
+  {
+    "id": "pyq-1790250088965",
+    "file_name": "Programming_For_Problem_Solving_End-term_2024.pdf",
+    "subject_name": "Programming For Problem Solving",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Data Science",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Programming_For_Problem_Solving_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790250096046",
+    "file_name": "Programming_for_problem_solving___C_End-term_2024.pdf",
+    "subject_name": "Programming for problem solving   C",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Data Science",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Programming_for_problem_solving___C_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790250137866",
+    "file_name": "Programming_in_java_End-term_2025.pdf",
+    "subject_name": "Programming in java",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning"
+    ],
+    "semester": 5,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Programming_in_java_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790250172383",
+    "file_name": "Smart_and_Sustainable_Energy_End-term_2024.pdf",
+    "subject_name": "Smart and Sustainable Energy",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Smart_and_Sustainable_Energy_End-term_2024.pdf"
+  },
+  {
+    "id": "pyq-1790250179766",
+    "file_name": "Smart_and_sustainable_Energy_End-term_2023.pdf",
+    "subject_name": "Smart and sustainable Energy",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2023,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Smart_and_sustainable_Energy_End-term_2023.pdf"
+  },
+  {
+    "id": "pyq-1790250187682",
+    "file_name": "Videography_End-term_2023.pdf",
+    "subject_name": "Videography",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. (Biotechnology)",
+      "B.Tech. (Biomedical Engineering)",
+      "B.Tech. (Civil Engineering)",
+      "B.Tech. (Electronics & Communication)",
+      "B.Tech. (Electrical Engineering)",
+      "B.Tech. (Food Technology)",
+      "B.Tech. (Mechanical Engineering)",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 2,
+    "type": "End Term",
+    "year": 2023,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Videography_End-term_2023.pdf"
+  },
+  {
+    "id": "pyq-1790250224817",
+    "file_name": "Software_Engineering_End-term_2025.pdf",
+    "subject_name": "Software Engineering",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 5,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/Software_Engineering_End-term_2025.pdf"
+  },
+  {
+    "id": "pyq-1790250260229",
+    "file_name": "artifical_intelligence_End-term_2025.pdf",
+    "subject_name": "artifical intelligence",
+    "subject_code": "",
+    "school": "School of Engineering & Technology",
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security",
+      "B.Tech. CSE(Hons.) in Data Science"
+    ],
+    "semester": 5,
+    "type": "End Term",
+    "year": 2025,
+    "download_url": "https://raw.githubusercontent.com/rizcyberme-cmd/jnupyq/main/artifical_intelligence_End-term_2025.pdf"
   }
 ]

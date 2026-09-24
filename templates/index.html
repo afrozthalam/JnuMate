@@ -26,7 +26,8 @@
       else if (p === "/students") activeId = "viewStudents";
       else if (p === "/events") activeId = "viewEvents";
       else if (p.startsWith("/events/") || p.startsWith("/event/")) activeId = "viewEventDetail";
-      else if (p === "/resources" || p === "/pyqs") activeId = "viewResources";
+      else if (p === "/resources") activeId = "viewResources";
+      else if (p === "/pyqs") activeId = "viewPyqs";
       else if (p === "/course-select" || p === "/select-program" || p === "/enter-details" || p === "/sync-details" || p === "/otp" || p === "/verify-otp") activeId = "viewLogin";
       window.__initialActiveViewId = activeId;
     })();
@@ -352,6 +353,11 @@
           <div id="resourcesViewContainer"></div>
         </section>
 
+        <!-- VIEW 10: JNU PYQS DEDICATED PORTAL -->
+        <section id="viewPyqs" class="view-page-panel">
+          <div id="pyqsViewContainer"></div>
+        </section>
+
         <!-- Global Sleek Minimalist Floating Bar Footer (Exact match to mockup) -->
         <footer class="homescreen-editorial-footer" id="homescreenFooter">
           <div class="footer-floating-bar">
@@ -556,6 +562,20 @@
   <!-- ================= RESOURCE DETAIL MODAL OVERLAY ================= -->
   <div id="resourceDetailModal" class="forest-modal-overlay" onclick="closeResourceDetailModal()" style="display:none; z-index:99999;">
     <div class="forest-modal-sheet resource-detail-modal-sheet" onclick="event.stopPropagation()" id="resourceDetailModalContent">
+      <!-- Injected dynamically via JS -->
+    </div>
+  </div>
+
+  <!-- ================= ADMIN USER ACTIVITY MODAL OVERLAY ================= -->
+  <div id="adminUserActivityModal" class="forest-modal-overlay" onclick="closeAdminUserActivityModal()" style="display:none; z-index:99999;">
+    <div class="forest-modal-sheet admin-activity-modal-sheet" onclick="event.stopPropagation()" id="adminUserActivityModalContent">
+      <!-- Injected dynamically via JS -->
+    </div>
+  </div>
+
+  <!-- ================= ADMIN EDIT TEAM MODAL OVERLAY ================= -->
+  <div id="adminEditTeamModal" class="forest-modal-overlay" onclick="closeAdminEditTeamModal()" style="display:none; z-index:99999;">
+    <div class="forest-modal-sheet admin-edit-team-modal-sheet" onclick="event.stopPropagation()" id="adminEditTeamModalContent">
       <!-- Injected dynamically via JS -->
     </div>
   </div>

@@ -344,7 +344,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS team_messages (
                 id SERIAL PRIMARY KEY,
                 team_id INT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
-                sender_r_id VARCHAR(50) NOT NULL REFERENCES students(r_id),
+                sender_r_id VARCHAR(50) NOT NULL,
                 sender_name VARCHAR(150),
                 sender_avatar TEXT,
                 message TEXT NOT NULL,
@@ -357,6 +357,24 @@ def init_db():
             );
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_team_messages_team ON team_messages(team_id);")
+
+        # Postgres migrations for team_messages (vital for existing Supabase DBs)
+        for tm_col in [
+            "ALTER TABLE team_messages ADD COLUMN IF NOT EXISTS reactions TEXT DEFAULT '{}';",
+            "ALTER TABLE team_messages ADD COLUMN IF NOT EXISTS attachment_name TEXT;",
+            "ALTER TABLE team_messages ADD COLUMN IF NOT EXISTS attachment_url TEXT;",
+            "ALTER TABLE team_messages ADD COLUMN IF NOT EXISTS attachment_size TEXT;",
+            "ALTER TABLE team_messages ADD COLUMN IF NOT EXISTS attachment_type TEXT;",
+            "ALTER TABLE team_messages DROP CONSTRAINT IF EXISTS team_messages_sender_r_id_fkey;",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS semester_year VARCHAR(50);",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS phone VARCHAR(50);",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS gender VARCHAR(20);"
+        ]:
+            try:
+                cursor.execute(tm_col)
+                conn.commit()
+            except Exception as e:
+                conn.rollback()
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS system_settings (

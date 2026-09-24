@@ -181,6 +181,32 @@ function renderIosSpinner(size = '', text = '') {
   `;
 }
 
+function renderCleanPageLoader(message = "Loading...") {
+  const footerEl = document.getElementById("homescreenFooter");
+  if (footerEl) footerEl.style.display = "none";
+  return `
+    <div class="page-loading-center-stage">
+      <div class="clean-loader-spinner-ring"></div>
+      <div class="clean-loader-label">${escapeHtml(message)}</div>
+    </div>
+  `;
+}
+
+function showFooterAfterLoad() {
+  const path = window.location.pathname;
+  const isLoginRoute = path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp";
+  const isCreateTeamRoute = path === "/create-team";
+  const isEventDetailRoute = path.startsWith("/events/") || path.startsWith("/event/");
+  const footerEl = document.getElementById("homescreenFooter");
+  if (footerEl) {
+    if (isLoginRoute || isCreateTeamRoute || isEventDetailRoute) {
+      footerEl.style.display = "none";
+    } else {
+      footerEl.style.display = "";
+    }
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   setupRouter();
   try {
@@ -272,12 +298,14 @@ function handleCurrentRoute() {
   const isLoginRoute = path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp";
   const isCreateTeamRoute = path === "/create-team";
   const isEventsRoute = path === "/events" || path.startsWith("/events/") || path.startsWith("/event/");
-  const isResourcesRoute = path === "/resources" || path === "/pyqs";
+  const isResourcesRoute = path === "/resources";
+  const isPyqsRoute = path === "/pyqs";
   const isProfileRoute = path === "/profile";
   document.body.classList.toggle("is-login-route", isLoginRoute);
   document.body.classList.toggle("is-create-team-route", isCreateTeamRoute);
   document.body.classList.toggle("is-events-route", isEventsRoute);
   document.body.classList.toggle("is-resources-route", isResourcesRoute);
+  document.body.classList.toggle("is-pyqs-route", isPyqsRoute);
   document.body.classList.toggle("is-profile-route", isProfileRoute);
   const footerEl = document.getElementById("homescreenFooter");
   if (footerEl) {
@@ -329,11 +357,17 @@ function handleCurrentRoute() {
       const eventSlugOrId = path.split("/")[2];
       loadEventDetailView(eventSlugOrId);
     }
-  } else if (path === "/resources" || path === "/pyqs") {
+  } else if (path === "/resources") {
     const p = document.getElementById("viewResources");
     if (p) {
       p.classList.add("active");
       loadResourcesView();
+    }
+  } else if (path === "/pyqs") {
+    const p = document.getElementById("viewPyqs");
+    if (p) {
+      p.classList.add("active");
+      loadPyqsView();
     }
   } else if (path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp") {
     const p = document.getElementById("viewLogin");
@@ -933,7 +967,7 @@ function loadDiscoverView() {
   } else {
     grid.innerHTML = `
       <div style="grid-column: 1 / -1;">
-        ${renderIosSpinner('lg')}
+        ${renderCleanPageLoader("Discovering campus squads...")}
       </div>
     `;
   }
@@ -958,6 +992,7 @@ function loadDiscoverView() {
       try {
         renderFilteredTeams(clientCache.teamsList);
         updateLeaderboardWidget(clientCache.teamsList);
+        showFooterAfterLoad();
       } catch (renderError) {
         console.error("renderFilteredTeams error:", renderError);
       }
@@ -2245,31 +2280,42 @@ function renderFullTeamDetail(team) {
             <!-- Right Column: Embedded Small Chat Window + WhatsApp + Checklist -->
             <div class="team-sidebar-chat-column">
               
-              <!-- Embedded Small Chat Window -->
-              <div class="team-discussion-container small-chat-window">
-                <div class="team-discussion-header">
+              <!-- Embedded Modern Squad Chat Window (Discord/Slack Grade) -->
+              <div class="team-discussion-container small-chat-window modern-squad-chat-box">
+                <div class="team-discussion-header modern-chat-header">
                   <div class="team-discussion-title-box">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    <h3 class="team-discussion-title" style="font-size:0.95rem;">Squad Discussion</h3>
-                    <span class="team-live-pill"><span class="team-live-dot"></span> Live</span>
+                    <div class="chat-header-icon-badge">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <div>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <h3 class="team-discussion-title" style="margin:0; font-size:0.95rem; font-weight:750;">Squad Channel</h3>
+                        <span class="team-live-pill"><span class="team-live-dot"></span> Live</span>
+                      </div>
+                      <div class="chat-header-topic" style="font-size:0.75rem; color:#64748B; margin-top:2px;"># ${escapeHtml(team.name)} &bull; ${count} members</div>
+                    </div>
                   </div>
-                  <div style="font-size:0.75rem; color:#64748B;">Instant squad chat</div>
+                  <button type="button" class="chat-refresh-btn" onclick="loadTeamChatMessages('${team.id}', true)" title="Refresh messages" aria-label="Refresh">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                  </button>
                 </div>
 
                 <!-- Messages Stream -->
-                <div id="teamChatMessagesList" class="team-discussion-stream" style="min-height: 220px; max-height: 280px;">
+                <div id="teamChatMessagesList" class="team-discussion-stream modern-chat-stream">
                   <div style="padding:40px 0; text-align:center;">${renderIosSpinner('sm', 'Loading squad discussion...')}</div>
                 </div>
 
                 <!-- Live Message Composer -->
-                <form id="teamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-discussion-composer">
-                  <input type="text" id="teamChatInput" placeholder="Message your squad..." maxlength="1500" autocomplete="off" class="team-discussion-input">
-                  <button type="submit" id="teamChatSendBtn" class="team-discussion-send-btn" aria-label="Send message" title="Send message">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="22" y1="2" x2="11" y2="13"></line>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                    </svg>
-                  </button>
+                <form id="teamChatForm" onsubmit="handleSendTeamChatMessage(event, '${team.id}')" class="team-discussion-composer modern-chat-composer">
+                  <div class="modern-composer-pill">
+                    <input type="text" id="teamChatInput" placeholder="Message your squad..." maxlength="1500" autocomplete="off" class="team-discussion-input modern-composer-input">
+                    <button type="submit" id="teamChatSendBtn" class="team-discussion-send-btn modern-send-btn" aria-label="Send message" title="Send message">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                      </svg>
+                    </button>
+                  </div>
                 </form>
               </div>
 
@@ -6329,6 +6375,11 @@ function submitInitialRid() {
       btn.disabled = false;
       btn.innerHTML = defaultBtnText;
 
+      if (data.is_admin || rid.toLowerCase() === "admin") {
+        showAdminPasswordStep();
+        return;
+      }
+
       if (data.exists) {
         pendingRegistrationData = { rid: rid };
         pendingStudentProfile = data.student || { r_id: rid };
@@ -6349,6 +6400,80 @@ function submitInitialRid() {
       btn.disabled = false;
       btn.innerHTML = defaultBtnText;
       showToast(err && err.message ? err.message : "Network error checking R-ID", "error");
+    });
+}
+
+function showAdminPasswordStep() {
+  const stage = document.getElementById("authStep1");
+  const portalTitle = document.getElementById("loginPortalTitle");
+  const portalSub = document.getElementById("loginPortalSubtitle");
+  if (portalTitle) portalTitle.textContent = "Administrator Sign In";
+  if (portalSub) portalSub.textContent = "Enter your administrator password to proceed";
+
+  if (!stage) return;
+  stage.innerHTML = `
+    <div class="login-field-group">
+      <label class="login-field-label">ADMINISTRATOR PASSWORD</label>
+      <div class="login-input-wrap">
+        <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <input type="password" id="adminPasswordInput" placeholder="Enter admin password" class="login-input-field" autofocus onkeyup="if(event.key==='Enter') submitAdminLoginFromNormalForm()">
+      </div>
+    </div>
+
+    <button type="button" onclick="submitAdminLoginFromNormalForm()" id="btnAdminLoginSubmit" class="btn-login-submit">
+      <span>Open Admin Console &rarr;</span>
+    </button>
+
+    <div style="text-align:center; margin-top:16px;">
+      <a href="javascript:void(0)" onclick="loadLoginView()" style="font-size:0.8rem; color:#64748B; font-weight:600; text-decoration:none;">
+        &larr; Back to Student Sign In
+      </a>
+    </div>
+  `;
+}
+
+function submitAdminLoginFromNormalForm() {
+  const pwdInput = document.getElementById("adminPasswordInput");
+  const btn = document.getElementById("btnAdminLoginSubmit");
+  const pwd = pwdInput ? pwdInput.value.trim() : "";
+
+  if (!pwd) {
+    showToast("Please enter the administrator password", "error");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;"><span class="inline-btn-spinner"></span> <span>Verifying...</span></span>`;
+  }
+
+  fetch("/api/admin/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: "admin", password: pwd })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Open Admin Console &rarr;</span>`;
+      }
+      if (data.success) {
+        showToast("Welcome to Administrator Console!", "success");
+        navigateTo("/admin");
+      } else {
+        showToast(data.message || "Invalid administrator credentials", "error");
+      }
+    })
+    .catch(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Open Admin Console &rarr;</span>`;
+      }
+      showToast("Network error authenticating admin", "error");
     });
 }
 
@@ -7007,8 +7132,9 @@ function loadAdminView() {
   if (!container) return;
 
   container.innerHTML = `
-    <div class="admin-loading-wrap">
-      ${renderIosSpinner('lg')}
+    <div class="page-loading-center-stage">
+      <div class="clean-loader-spinner-ring"></div>
+      <div class="clean-loader-label">Verifying administrative access...</div>
     </div>
   `;
 
@@ -7018,121 +7144,45 @@ function loadAdminView() {
       if (data.authenticated) {
         loadAdminDashboardData();
       } else {
-        renderAdminLoginForm();
+        postLoginRedirect = "/admin";
+        navigateTo("/login");
+        showToast("Enter administrator credentials in the sign-in form", "info");
       }
     })
     .catch(() => {
-      renderAdminLoginForm();
+      postLoginRedirect = "/admin";
+      navigateTo("/login");
     });
 }
 
-function renderAdminLoginForm() {
+function loadAdminDashboardData(preferredTab = null) {
   const container = document.getElementById("adminViewContainer");
   if (!container) return;
 
   container.innerHTML = `
-    <div class="admin-auth-wrap">
-      <div class="admin-auth-card">
-        <div class="admin-auth-crest">
-          <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="jnu-admin-logo" onerror="this.src='/static/img/jnu_logo.jpg';">
-        </div>
-        <h2 class="admin-auth-title font-serif">JnuMate Administration</h2>
-        <p class="admin-auth-subtitle">Enter administrator credentials to access platform controls.</p>
-
-        <form onsubmit="event.preventDefault(); submitAdminLogin();" class="admin-auth-form">
-          <div class="form-group" style="margin-bottom:14px; text-align:left;">
-            <label class="form-label-forest">Administrator ID</label>
-            <input type="text" id="adminUserIdInput" class="input-forest" placeholder="e.g. admin" value="admin" required autocomplete="username">
-          </div>
-
-          <div class="form-group" style="margin-bottom:20px; text-align:left;">
-            <label class="form-label-forest">Admin Password</label>
-            <input type="password" id="adminPasswordInput" class="input-forest" placeholder="Enter password" required autocomplete="current-password" onkeyup="if(event.key==='Enter') submitAdminLogin()">
-          </div>
-
-          <button type="submit" id="btnAdminLogin" class="btn-auth-submit" style="width:100%;">
-            Sign In ➔
-          </button>
-        </form>
-      </div>
-    </div>
-  `;
-}
-
-function submitAdminLogin() {
-  const userEl = document.getElementById("adminUserIdInput");
-  const passEl = document.getElementById("adminPasswordInput");
-  const btn = document.getElementById("btnAdminLogin");
-  if (!userEl || !passEl) return;
-
-  const username = userEl.value.trim();
-  const password = passEl.value.trim();
-
-  if (!username || !password) {
-    showToast("Please enter User ID and Password", "error");
-    return;
-  }
-
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;">${renderIosSpinner('sm')} <span>Authenticating...</span></span>`;
-  }
-
-  fetch("/api/admin/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ user_id: username, password: password })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        showToast("Administrator authenticated", "success");
-        loadAdminDashboardData();
-      } else {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerText = "Sign In ➔";
-        }
-        showToast(data.message || "Invalid admin credentials", "error");
-      }
-    })
-    .catch(() => {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerText = "Sign In ➔";
-      }
-      showToast("Connection error authenticating admin", "error");
-    });
-}
-
-function loadAdminDashboardData() {
-  const container = document.getElementById("adminViewContainer");
-  if (!container) return;
-
-  container.innerHTML = `
-    <div class="admin-loading-wrap">
-      ${renderIosSpinner('lg')}
+    <div class="page-loading-center-stage">
+      <div class="clean-loader-spinner-ring"></div>
+      <div class="clean-loader-label">Synchronizing executive control console...</div>
     </div>
   `;
 
   Promise.all([
-    fetch("/api/admin/settings").then(r => r.json()),
-    fetch("/api/admin/stats").then(r => r.json()),
-    fetch("/api/admin/activity").then(r => r.json()).catch(() => ({ success: false })),
-    fetch("/api/events").then(r => r.json()).catch(() => ({ success: false, events: [] }))
+    fetch("/api/admin/settings", { credentials: "same-origin" }).then(r => r.json()).catch(() => ({ success: false })),
+    fetch("/api/admin/stats", { credentials: "same-origin" }).then(r => r.json()).catch(() => ({ success: false })),
+    fetch("/api/admin/activity", { credentials: "same-origin" }).then(r => r.json()).catch(() => ({ success: false })),
+    fetch("/api/events").then(r => r.json()).catch(() => ({ success: false, events: [] })),
+    fetch("/api/admin/teams", { credentials: "same-origin" }).then(r => r.json()).catch(() => ({ success: false, teams: [] })),
+    fetch("/api/admin/users", { credentials: "same-origin" }).then(r => r.json()).catch(() => ({ success: false, users: [] }))
   ])
-    .then(([settingsRes, statsRes, activityRes, eventsRes]) => {
-      if (!settingsRes || !statsRes) {
-        renderAdminLoginForm();
+    .then(([settingsRes, statsRes, activityRes, eventsRes, teamsRes, usersRes]) => {
+      if ((settingsRes && settingsRes.message === "Unauthorized") || (statsRes && statsRes.message === "Unauthorized")) {
+        postLoginRedirect = "/admin";
+        navigateTo("/login");
         return;
       }
-      if (settingsRes.message === "Unauthorized" || statsRes.message === "Unauthorized") {
-        renderAdminLoginForm();
-        return;
-      }
-      const settings = settingsRes.success ? settingsRes : { otp_email_enabled: true, default_bypass_otp: "123456" };
-      const stats = (statsRes.success && statsRes.stats) ? statsRes.stats : {
+
+      const settings = (settingsRes && settingsRes.success) ? settingsRes : { otp_email_enabled: true, default_bypass_otp: "123456" };
+      const stats = (statsRes && statsRes.success && statsRes.stats) ? statsRes.stats : {
         total_students: 16199,
         registered_students: 0,
         total_teams: 0,
@@ -7151,26 +7201,49 @@ function loadAdminDashboardData() {
         recent_requests: []
       };
       const eventsList = (eventsRes && eventsRes.success && Array.isArray(eventsRes.events)) ? eventsRes.events : [];
+      const teamsList = (teamsRes && teamsRes.success && Array.isArray(teamsRes.teams)) ? teamsRes.teams : [];
+      const usersList = (usersRes && usersRes.success && Array.isArray(usersRes.users)) ? usersRes.users : [];
+
+      const currentActiveTab = preferredTab || (window.__adminState ? window.__adminState.activeTab : null) || 'overview';
+
+      window.__adminState = {
+        settings,
+        stats,
+        activity,
+        eventsList,
+        teamsList,
+        usersList,
+        activeTab: currentActiveTab
+      };
       window.__adminEventsList = eventsList;
-      renderAdminDashboard(settings, stats, activity, eventsList);
+
+      renderAdminDashboard();
     })
     .catch(err => {
-      console.warn("Admin dashboard data notice:", err);
-      renderAdminLoginForm();
+      console.warn("Admin dashboard sync notice:", err);
+      postLoginRedirect = "/admin";
+      navigateTo("/login");
     });
 }
 
-function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
-  const container = document.getElementById("adminViewContainer");
-  if (!container) return;
+function switchAdminTab(tabKey) {
+  if (!window.__adminState) return;
+  window.__adminState.activeTab = tabKey;
+  renderAdminDashboard();
+}
 
+function renderAdminDashboard() {
+  const container = document.getElementById("adminViewContainer");
+  if (!container || !window.__adminState) return;
+
+  const { settings, stats, activity, eventsList, teamsList, usersList, activeTab } = window.__adminState;
   const isEmailOn = Boolean(settings.otp_email_enabled);
   const bypassOtp = settings.default_bypass_otp || "123456";
 
-  const registeredStudents = (activityData && activityData.registered_students) || [];
-  const recentTeams = (activityData && activityData.recent_teams) || [];
-  const recentRequests = (activityData && activityData.recent_requests) || [];
-  const recentOtps = Array.isArray(activityData) ? activityData : ((activityData && activityData.recent_otps) || []);
+  const registeredStudents = (usersList && usersList.length) ? usersList : ((activity && activity.registered_students) || []);
+  const recentTeams = (activity && activity.recent_teams) || [];
+  const recentRequests = (activity && activity.recent_requests) || [];
+  const recentOtps = Array.isArray(activity) ? activity : ((activity && activity.recent_otps) || []);
 
   container.innerHTML = `
     <div class="admin-dashboard-wrap">
@@ -7190,90 +7263,80 @@ function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
             <span class="indicator-dot pulse"></span>
             Superuser Active
           </span>
-          <button onclick="logoutAdmin()" class="btn-admin-signout">
+          <button type="button" onclick="loadAdminDashboardData()" class="btn-admin-refresh" title="Reload live database data">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            <span>Sync</span>
+          </button>
+          <button type="button" onclick="logoutAdmin()" class="btn-admin-signout">
             Sign Out
           </button>
         </div>
       </div>
 
-      <!-- Master Control: OTP & Email Dispatch Switch -->
-      <div class="admin-toggle-panel ${isEmailOn ? 'email-active' : 'email-paused'}">
-        <div class="admin-toggle-main-row">
-          <div class="admin-toggle-desc-col">
-            <div class="admin-panel-kicker">Master Communication Engine</div>
-            <h2 class="admin-panel-title">Student Email & OTP Dispatch</h2>
-            <p class="admin-panel-subtitle">
-              ${isEmailOn 
-                ? "Live dispatch is <strong>ACTIVE</strong>. Brevo SMTP relays real OTP codes and notifications to student university emails."
-                : "Live dispatch is <strong>HALTED</strong>. Zero emails are sent under any circumstance. All students can log in using the confidential default bypass OTP below."
-              }
-            </p>
-          </div>
-          <div class="admin-toggle-switch-box">
-            <div class="admin-toggle-status-badge ${isEmailOn ? 'live' : 'paused'}">
-              ${isEmailOn ? '● LIVE DISPATCH (ON)' : '■ ZERO EMAILS (OFF)'}
-            </div>
-            <label class="admin-switch">
-              <input type="checkbox" id="adminOtpEmailToggle" ${isEmailOn ? 'checked' : ''} onchange="handleAdminToggleOtp(this.checked)">
-              <span class="admin-slider"></span>
-            </label>
-          </div>
-        </div>
+      <!-- Admin Responsive Navigation Tabs Bar -->
+      <div class="admin-tab-nav-bar">
+        <button type="button" class="admin-tab-btn ${activeTab === 'overview' ? 'active' : ''}" onclick="switchAdminTab('overview')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Overview</span>
+        </button>
 
-        ${!isEmailOn ? `
-          <!-- CONFIDENTIAL MASTER BYPASS CODE (VISIBLE STRICTLY WHEN EMAIL DISPATCH IS OFF) -->
-          <div class="admin-bypass-card" id="adminBypassBox">
-            <div class="admin-bypass-header">
-              <div class="admin-bypass-title-row">
-                <span class="admin-lock-icon">🔒</span>
-                <div>
-                  <h3 class="admin-bypass-heading">Default Master Bypass OTP</h3>
-                  <p class="admin-bypass-sub">Use this code to sign in to any student account without sending emails.</p>
-                </div>
-              </div>
-              <button onclick="copyAdminBypassCode()" class="btn-admin-copy-code" title="Copy code to clipboard">
-                📋 Copy Code
-              </button>
-            </div>
+        <button type="button" class="admin-tab-btn ${activeTab === 'users' ? 'active' : ''}" onclick="switchAdminTab('users')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span>Students & Users</span>
+          <span class="admin-tab-count">${registeredStudents.length}</span>
+        </button>
 
-            <div class="admin-bypass-code-box">
-              <span class="admin-bypass-digits" id="adminBypassCodeDisplay">${escapeHtml(bypassOtp)}</span>
-            </div>
+        <button type="button" class="admin-tab-btn ${activeTab === 'teams' ? 'active' : ''}" onclick="switchAdminTab('teams')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+          <span>Teams Management</span>
+          <span class="admin-tab-count">${teamsList.length}</span>
+        </button>
 
-            <div class="admin-bypass-update-row">
-              <div class="admin-bypass-input-group">
-                <input type="text" id="adminNewBypassInput" placeholder="Set custom OTP" maxlength="8" class="input-forest" style="width:160px; height:36px; text-align:center; font-weight:700;">
-                <button onclick="handleAdminUpdateBypassOtp()" class="btn-admin-save-code">
-                  Update Bypass Code
-                </button>
-              </div>
-              <span class="admin-bypass-confidential-note">
-                Strictly Confidential: Visible only on this admin dashboard. Hidden from students and public API responses.
-              </span>
-            </div>
-          </div>
-        ` : ''}
+        <button type="button" class="admin-tab-btn ${activeTab === 'events' ? 'active' : ''}" onclick="switchAdminTab('events')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>Campus Events</span>
+          <span class="admin-tab-count">${eventsList.length}</span>
+        </button>
+
+        <button type="button" class="admin-tab-btn ${activeTab === 'settings' ? 'active' : ''}" onclick="switchAdminTab('settings')">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Platform Settings</span>
+        </button>
       </div>
 
+      <!-- Tab Content Display -->
+      ${activeTab === 'overview' ? renderAdminOverviewTab(stats, settings, recentTeams, recentRequests, recentOtps, eventsList, registeredStudents, teamsList) : ''}
+      ${activeTab === 'users' ? renderAdminUsersTab(registeredStudents) : ''}
+      ${activeTab === 'teams' ? renderAdminTeamsTab(teamsList) : ''}
+      ${activeTab === 'events' ? renderAdminEventsTab(eventsList) : ''}
+      ${activeTab === 'settings' ? renderAdminSettingsTab(settings, stats) : ''}
+    </div>
+  `;
+}
+
+function renderAdminOverviewTab(stats, settings, recentTeams, recentRequests, recentOtps, eventsList, registeredStudents, teamsList) {
+  const isEmailOn = Boolean(settings.otp_email_enabled);
+  return `
+    <div class="admin-tab-pane">
       <!-- Executive Platform Metrics Grid -->
       <div class="admin-metrics-grid">
-        <div class="admin-metric-card">
+        <div class="admin-metric-card" onclick="switchAdminTab('users')" style="cursor:pointer;" title="Click to view all registered students">
           <div class="admin-metric-label">Registered Students</div>
           <div class="admin-metric-value" style="color:var(--badge-mint);">
-            ${stats.registered_students || 0}
+            ${registeredStudents.length || stats.registered_students || 0}
           </div>
           <div class="admin-metric-footnote">
-            out of ${stats.total_students ? stats.total_students.toLocaleString() : '16,199'} campus records
+            out of ${stats.total_students ? stats.total_students.toLocaleString() : '16,199'} campus records ➔
           </div>
         </div>
 
-        <div class="admin-metric-card">
+        <div class="admin-metric-card" onclick="switchAdminTab('teams')" style="cursor:pointer;" title="Click to manage squads">
           <div class="admin-metric-label">Hackathon Squads</div>
           <div class="admin-metric-value" style="color:var(--badge-yellow);">
-            ${stats.total_teams || 0}
+            ${teamsList.length || stats.total_teams || 0}
           </div>
           <div class="admin-metric-footnote">
-            ${stats.sih_teams || 0} SIH Squads &nbsp;•&nbsp; ${stats.ctf_teams || 0} CTF Squads
+            ${stats.sih_teams || 0} SIH Squads &nbsp;•&nbsp; ${stats.ctf_teams || 0} CTF Squads ➔
           </div>
         </div>
 
@@ -7283,7 +7346,7 @@ function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
             ${stats.open_slots || 0}
           </div>
           <div class="admin-metric-footnote">
-            Seats available for join requests
+            Seats available for student applications
           </div>
         </div>
 
@@ -7297,121 +7360,33 @@ function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
           </div>
         </div>
 
-        <div class="admin-metric-card">
+        <div class="admin-metric-card" onclick="switchAdminTab('events')" style="cursor:pointer;" title="Click to manage campus events">
           <div class="admin-metric-label">Campus Events</div>
           <div class="admin-metric-value" style="color:#10B981;">
             ${eventsList.length || stats.total_events || 0}
           </div>
           <div class="admin-metric-footnote">
-            Published university events
+            Published university programs ➔
           </div>
         </div>
       </div>
 
-      <!-- Campus Events Management Section -->
-      <div class="admin-events-card">
-        <div class="admin-events-header">
+      <!-- Quick Communication Engine Status Banner -->
+      <div class="admin-quick-comm-card ${isEmailOn ? 'comm-live' : 'comm-off'}">
+        <div class="admin-quick-comm-left">
+          <span class="admin-comm-icon">${isEmailOn ? '⚡' : '🔒'}</span>
           <div>
-            <div class="admin-panel-kicker">Campus Program Management</div>
-            <h3 class="admin-activity-title" style="margin-top:2px;">Campus Events Management</h3>
-            <p style="font-size:0.78rem; color:#64748B; margin:2px 0 0 0;">Publish, update, or remove university hackathons, workshops, and campus events.</p>
+            <div class="admin-comm-title">${isEmailOn ? 'Student Brevo Email Dispatch is ACTIVE' : 'Student Email Dispatch is HALTED (Zero Emails Mode)'}</div>
+            <p class="admin-comm-desc">
+              ${isEmailOn 
+                ? 'All login verification codes and alerts are relayed live to university email accounts.' 
+                : `Zero emails are dispatched. Students can sign in using master bypass code: <strong>${escapeHtml(settings.default_bypass_otp || '123456')}</strong>`}
+            </p>
           </div>
-          <button type="button" onclick="openAdminEventModal()" class="btn-admin-add-event">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            <span>+ Add New Event</span>
-          </button>
         </div>
-
-        ${eventsList.length === 0 ? `
-          <div style="text-align:center; padding:36px; color:#64748B;">
-            <p>No events found. Click "+ Add New Event" to publish your first campus event.</p>
-          </div>
-        ` : `
-          <div class="admin-events-table-wrap">
-            <table class="admin-events-table">
-              <thead>
-                <tr>
-                  <th style="width:64px;">Cover</th>
-                  <th>Title & Category</th>
-                  <th>Date & Time</th>
-                  <th>Venue</th>
-                  <th style="text-align:right;">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${eventsList.map(ev => `
-                  <tr>
-                    <td>
-                      <img src="${escapeAttr(ev.cover_image || '/static/img/redesign/events/event_sih.png')}" alt="${escapeAttr(ev.title)}" class="admin-event-thumb-mini" onerror="this.src='/static/img/redesign/events/event_sih.png'">
-                    </td>
-                    <td>
-                      <div style="font-weight:700; color:#0F172A; margin-bottom:2px;">${escapeHtml(ev.title)}</div>
-                      <span class="event-cat-badge badge-${escapeAttr((ev.badge_color || 'green').toLowerCase())}">${escapeHtml(ev.badge_text || ev.category)}</span>
-                    </td>
-                    <td>
-                      <div style="font-weight:600; color:#334155;">${escapeHtml(ev.event_date)}</div>
-                      <div style="font-size:0.75rem; color:#64748B;">${escapeHtml(ev.event_time || '')}</div>
-                    </td>
-                    <td>
-                      <div style="color:#334155;">📍 ${escapeHtml(ev.venue)}</div>
-                      <div style="font-size:0.75rem; color:#64748B;">${escapeHtml(ev.venue_detail || '')}</div>
-                    </td>
-                    <td style="text-align:right;">
-                      <div class="admin-event-actions-col" style="justify-content:flex-end;">
-                        <button type="button" class="btn-admin-event-edit" onclick="openAdminEventModal(${ev.id})">Edit</button>
-                        <button type="button" class="btn-admin-event-delete" onclick="confirmAdminDeleteEvent(${ev.id}, '${escapeAttr(ev.title)}')">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-        `}
-      </div>
-
-      <!-- Live Registered Students Directory -->
-      <div class="admin-activity-card" style="margin-bottom: 24px;">
-        <div class="admin-activity-header">
-          <div>
-            <h3 class="admin-activity-title">Live Registered Students</h3>
-            <p style="font-size:0.75rem; color:var(--text-sage); margin:2px 0 0 0;">Verified student profiles active on JnuMate platform</p>
-          </div>
-          <span class="admin-activity-badge">${registeredStudents.length} Students</span>
-        </div>
-
-        ${registeredStudents.length === 0 ? `
-          <div class="admin-empty-log">No registered students found in database.</div>
-        ` : `
-          <div class="admin-table-responsive" style="max-height:360px; overflow-y:auto;">
-            <table class="admin-log-table">
-              <thead style="position:sticky; top:0; background:#08170E; z-index:2;">
-                <tr>
-                  <th>Student R-ID</th>
-                  <th>Name</th>
-                  <th>Gender</th>
-                  <th>Program / Dept</th>
-                  <th>Email / Mobile</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${registeredStudents.map(s => `
-                  <tr>
-                    <td><strong style="color:var(--badge-yellow);">@${escapeHtml(s.r_id || '')}</strong></td>
-                    <td style="color:#FFFFFF; font-weight:600;">${escapeHtml(s.name || 'Anonymous Student')}</td>
-                    <td style="color:var(--text-sage);">${escapeHtml(s.gender || 'Not Specified')}</td>
-                    <td style="color:var(--text-sage-light); font-size:0.78rem;">${escapeHtml(s.program || 'General')}</td>
-                    <td style="color:var(--text-sage); font-size:0.78rem;">${escapeHtml(s.email || s.phone || 'N/A')}</td>
-                    <td>
-                      <span class="admin-badge verified">Registered</span>
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        `}
+        <button type="button" onclick="switchAdminTab('settings')" class="btn-admin-comm-config">
+          Configure Dispatch ⚙️
+        </button>
       </div>
 
       <!-- Dual Activity Timeline: Squad Formations & Join Requests -->
@@ -7429,7 +7404,7 @@ function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
           ${recentTeams.length === 0 ? `
             <div class="admin-empty-log">No hackathon squads created yet.</div>
           ` : `
-            <div class="admin-table-responsive" style="max-height:320px; overflow-y:auto;">
+            <div class="admin-table-responsive" style="max-height:300px; overflow-y:auto;">
               <table class="admin-log-table">
                 <thead style="position:sticky; top:0; background:#08170E; z-index:2;">
                   <tr>
@@ -7445,7 +7420,7 @@ function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
                     return `
                       <tr>
                         <td style="color:#FFFFFF; font-weight:600;">${escapeHtml(t.name || '')}</td>
-                        <td><strong style="color:var(--badge-yellow);">@${escapeHtml(t.leader_r_id || '')}</strong></td>
+                        <td><strong style="color:var(--badge-yellow); cursor:pointer;" onclick="openAdminUserActivity('${escapeAttr(t.leader_r_id)}')">@${escapeHtml(t.leader_r_id || '')}</strong></td>
                         <td><span class="admin-badge" style="background:rgba(234,179,8,0.15); color:#FBBF24;">${escapeHtml((t.hackathon_type || 'SIH').toUpperCase())}</span></td>
                         <td style="color:var(--text-sage); font-size:0.75rem;">${escapeHtml(dateStr)}</td>
                       </tr>
@@ -7470,7 +7445,7 @@ function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
           ${recentRequests.length === 0 ? `
             <div class="admin-empty-log">No join requests dispatched yet.</div>
           ` : `
-            <div class="admin-table-responsive" style="max-height:320px; overflow-y:auto;">
+            <div class="admin-table-responsive" style="max-height:300px; overflow-y:auto;">
               <table class="admin-log-table">
                 <thead style="position:sticky; top:0; background:#08170E; z-index:2;">
                   <tr>
@@ -7485,7 +7460,7 @@ function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
                     return `
                       <tr>
                         <td>
-                          <strong style="color:var(--badge-yellow);">@${escapeHtml(jr.student_r_id || '')}</strong>
+                          <strong style="color:var(--badge-yellow); cursor:pointer;" onclick="openAdminUserActivity('${escapeAttr(jr.student_r_id)}')">@${escapeHtml(jr.student_r_id || '')}</strong>
                           ${jr.student_name ? `<div style="color:var(--text-sage); font-size:0.7rem;">${escapeHtml(jr.student_name)}</div>` : ''}
                         </td>
                         <td>
@@ -7538,7 +7513,7 @@ function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
                   return `
                     <tr>
                       <td style="color:var(--text-sage); font-family:monospace;">${escapeHtml(dateStr)}</td>
-                      <td><strong style="color:var(--badge-yellow);">@${escapeHtml(a.r_id)}</strong></td>
+                      <td><strong style="color:var(--badge-yellow); cursor:pointer;" onclick="openAdminUserActivity('${escapeAttr(a.r_id)}')">@${escapeHtml(a.r_id)}</strong></td>
                       <td style="color:var(--text-sage-light);">${escapeHtml(a.email)}</td>
                       <td><code class="admin-code-pill">${escapeHtml(a.otp || '••••••')}</code></td>
                       <td>
@@ -7554,21 +7529,854 @@ function renderAdminDashboard(settings, stats, activityData, eventsList = []) {
           </div>
         `}
       </div>
-
     </div>
   `;
+}
+
+function renderAdminUsersTab(registeredStudents) {
+  return `
+    <div class="admin-tab-pane">
+      <div class="admin-pane-header-row">
+        <div>
+          <div class="admin-panel-kicker">University Directory</div>
+          <h2 class="admin-activity-title">Registered Students & Users</h2>
+          <p style="font-size:0.8rem; color:#94A3B8; margin:2px 0 0 0;">Click on any student record to view their comprehensive lifecycle activity drill-down (teams, applications, chats, logins).</p>
+        </div>
+        <div class="admin-search-wrapper">
+          <input type="text" id="adminUsersSearchInput" class="admin-search-input" placeholder="Search by name, R-ID, program, email..." oninput="filterAdminUsersTable(this.value)">
+          <span class="admin-count-pill" id="adminUsersCountPill">${registeredStudents.length} Students</span>
+        </div>
+      </div>
+
+      ${registeredStudents.length === 0 ? `
+        <div class="admin-empty-log">No registered students found in database.</div>
+      ` : `
+        <div class="admin-table-responsive" style="margin-top:16px;">
+          <table class="admin-log-table" id="adminUsersTable">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>R-ID</th>
+                <th>Gender</th>
+                <th>Program / Course</th>
+                <th>Contact Information</th>
+                <th>Joined</th>
+                <th style="text-align:right;">User Activity</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${registeredStudents.map(s => {
+                const joinedDate = s.created_at ? new Date(s.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'Verified';
+                return `
+                  <tr class="admin-user-row" data-search="${escapeAttr((s.name || '') + ' ' + (s.r_id || '') + ' ' + (s.program || '') + ' ' + (s.email || '') + ' ' + (s.phone || '')).toLowerCase()}" onclick="openAdminUserActivity('${escapeAttr(s.r_id)}')" style="cursor:pointer;">
+                    <td>
+                      <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="admin-user-avatar-mini">${escapeHtml((s.name || 'S').charAt(0).toUpperCase())}</div>
+                        <div>
+                          <div style="font-weight:700; color:#FFFFFF;">${escapeHtml(s.name || 'Anonymous Student')}</div>
+                          <div style="font-size:0.72rem; color:var(--text-sage);">${escapeHtml(s.semester_year || getAcademicYearByRid(s.r_id))}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <strong style="color:var(--badge-yellow); font-family:monospace;">@${escapeHtml(s.r_id || '')}</strong>
+                    </td>
+                    <td style="color:var(--text-sage);">${escapeHtml(s.gender || 'Not Specified')}</td>
+                    <td style="color:var(--text-sage-light); font-size:0.78rem; max-width:200px;">
+                      ${escapeHtml(s.program || 'General Academic')}
+                    </td>
+                    <td style="color:var(--text-sage); font-size:0.78rem;">
+                      <div>📧 ${escapeHtml(s.email || 'N/A')}</div>
+                      ${s.phone ? `<div style="font-size:0.72rem; color:#94A3B8;">📞 ${escapeHtml(s.phone)}</div>` : ''}
+                    </td>
+                    <td style="color:var(--text-sage); font-size:0.75rem;">${escapeHtml(joinedDate)}</td>
+                    <td style="text-align:right;" onclick="event.stopPropagation()">
+                      <button type="button" class="btn-admin-row-action" onclick="openAdminUserActivity('${escapeAttr(s.r_id)}')" title="View complete activity history">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <span>View Activity ➔</span>
+                      </button>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function filterAdminUsersTable(searchTerm) {
+  const term = (searchTerm || "").trim().toLowerCase();
+  const rows = document.querySelectorAll(".admin-user-row");
+  let visibleCount = 0;
+  rows.forEach(row => {
+    const hay = row.getAttribute("data-search") || "";
+    if (!term || hay.includes(term)) {
+      row.style.display = "";
+      visibleCount++;
+    } else {
+      row.style.display = "none";
+    }
+  });
+  const pill = document.getElementById("adminUsersCountPill");
+  if (pill) pill.innerText = `${visibleCount} of ${rows.length} Students`;
+}
+
+function renderAdminTeamsTab(teamsList) {
+  return `
+    <div class="admin-tab-pane">
+      <div class="admin-pane-header-row">
+        <div>
+          <div class="admin-panel-kicker">Hackathon Operations</div>
+          <h2 class="admin-activity-title">Hackathon Squads Management</h2>
+          <p style="font-size:0.8rem; color:#94A3B8; margin:2px 0 0 0;">Manage student squads, modify metadata or disband teams with direct database synchronization.</p>
+        </div>
+        <div class="admin-search-wrapper">
+          <input type="text" id="adminTeamsSearchInput" class="admin-search-input" placeholder="Search squads by name, leader, type..." oninput="filterAdminTeamsTable(this.value)">
+          <span class="admin-count-pill" id="adminTeamsCountPill">${teamsList.length} Squads</span>
+        </div>
+      </div>
+
+      ${teamsList.length === 0 ? `
+        <div class="admin-empty-log">No hackathon squads found in database.</div>
+      ` : `
+        <div class="admin-table-responsive" style="margin-top:16px;">
+          <table class="admin-log-table" id="adminTeamsTable">
+            <thead>
+              <tr>
+                <th style="width:40px;">#ID</th>
+                <th>Squad Name</th>
+                <th>Category</th>
+                <th>Squad Leader</th>
+                <th>Roster / Capacity</th>
+                <th>Vacancies</th>
+                <th>Created</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${teamsList.map(t => {
+                const createdDate = t.created_at ? new Date(t.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'Active';
+                const memberCount = Number(t.member_count || 1);
+                const teamSize = Number(t.team_size || 6);
+                const vacancies = Math.max(0, teamSize - memberCount);
+                return `
+                  <tr class="admin-team-row" data-search="${escapeAttr((t.name || '') + ' ' + (t.hackathon_type || '') + ' ' + (t.leader_r_id || '') + ' ' + (t.leader_name || '')).toLowerCase()}">
+                    <td style="font-family:monospace; color:#64748B;">#${t.id}</td>
+                    <td>
+                      <div style="font-weight:700; color:#FFFFFF;">${escapeHtml(t.name || '')}</div>
+                      ${t.problem_statement ? `<div style="font-size:0.73rem; color:var(--text-sage); max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(t.problem_statement)}</div>` : ''}
+                    </td>
+                    <td>
+                      <span class="admin-badge" style="background:rgba(234,179,8,0.15); color:#FBBF24; font-weight:700;">
+                        ${escapeHtml((t.hackathon_type || 'SIH').toUpperCase())}
+                      </span>
+                    </td>
+                    <td>
+                      <div>
+                        <strong style="color:var(--badge-yellow); cursor:pointer;" onclick="openAdminUserActivity('${escapeAttr(t.leader_r_id)}')">@${escapeHtml(t.leader_r_id || '')}</strong>
+                        ${t.leader_name ? `<div style="font-size:0.72rem; color:var(--text-sage);">${escapeHtml(t.leader_name)}</div>` : ''}
+                      </div>
+                    </td>
+                    <td>
+                      <div style="font-weight:600; color:#E2E8F0;">${memberCount} / ${teamSize}</div>
+                      <div class="admin-roster-progress-track">
+                        <div class="admin-roster-progress-bar" style="width:${Math.min(100, Math.round((memberCount / teamSize) * 100))}%;"></div>
+                      </div>
+                    </td>
+                    <td>
+                      ${vacancies === 0 
+                        ? `<span class="admin-badge" style="background:rgba(239,68,68,0.15); color:#F87171;">FULL</span>`
+                        : `<span class="admin-badge verified">${vacancies} Open</span>`
+                      }
+                    </td>
+                    <td style="color:var(--text-sage); font-size:0.75rem;">${escapeHtml(createdDate)}</td>
+                    <td style="text-align:right;">
+                      <div class="admin-event-actions-col" style="justify-content:flex-end;">
+                        <button type="button" class="btn-admin-event-edit" onclick="openAdminEditTeamModal(${t.id})">Edit</button>
+                        <button type="button" class="btn-admin-event-delete" onclick="confirmAdminDeleteTeam(${t.id}, '${escapeAttr(t.name)}')">Disband</button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function filterAdminTeamsTable(searchTerm) {
+  const term = (searchTerm || "").trim().toLowerCase();
+  const rows = document.querySelectorAll(".admin-team-row");
+  let visibleCount = 0;
+  rows.forEach(row => {
+    const hay = row.getAttribute("data-search") || "";
+    if (!term || hay.includes(term)) {
+      row.style.display = "";
+      visibleCount++;
+    } else {
+      row.style.display = "none";
+    }
+  });
+  const pill = document.getElementById("adminTeamsCountPill");
+  if (pill) pill.innerText = `${visibleCount} of ${rows.length} Squads`;
+}
+
+function renderAdminEventsTab(eventsList) {
+  return `
+    <div class="admin-tab-pane">
+      <div class="admin-events-card" style="border:none; box-shadow:none; padding:0; background:transparent;">
+        <div class="admin-events-header" style="padding-top:0;">
+          <div>
+            <div class="admin-panel-kicker">Campus Program Management</div>
+            <h3 class="admin-activity-title" style="margin-top:2px;">Campus Events Management</h3>
+            <p style="font-size:0.8rem; color:#94A3B8; margin:2px 0 0 0;">Publish, update, or remove university hackathons, workshops, and campus events.</p>
+          </div>
+          <button type="button" onclick="openAdminEventModal()" class="btn-admin-add-event">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ Add New Event</span>
+          </button>
+        </div>
+
+        ${eventsList.length === 0 ? `
+          <div style="text-align:center; padding:36px; color:#64748B;">
+            <p>No events found. Click "+ Add New Event" to publish your first campus event.</p>
+          </div>
+        ` : `
+          <div class="admin-events-table-wrap" style="margin-top:16px;">
+            <table class="admin-events-table">
+              <thead>
+                <tr>
+                  <th style="width:64px;">Cover</th>
+                  <th>Title & Category</th>
+                  <th>Date & Time</th>
+                  <th>Venue</th>
+                  <th style="text-align:right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${eventsList.map(ev => `
+                  <tr>
+                    <td>
+                      <img src="${escapeAttr(ev.cover_image || '/static/img/redesign/events/event_sih.png')}" alt="${escapeAttr(ev.title)}" class="admin-event-thumb-mini" onerror="this.src='/static/img/redesign/events/event_sih.png'">
+                    </td>
+                    <td>
+                      <div style="font-weight:700; color:#0F172A; margin-bottom:2px;">${escapeHtml(ev.title)}</div>
+                      <span class="event-cat-badge badge-${escapeAttr((ev.badge_color || 'green').toLowerCase())}">${escapeHtml(ev.badge_text || ev.category)}</span>
+                    </td>
+                    <td>
+                      <div style="font-weight:600; color:#334155;">${escapeHtml(ev.event_date)}</div>
+                      <div style="font-size:0.75rem; color:#64748B;">${escapeHtml(ev.event_time || '')}</div>
+                    </td>
+                    <td>
+                      <div style="color:#334155;">📍 ${escapeHtml(ev.venue)}</div>
+                      <div style="font-size:0.75rem; color:#64748B;">${escapeHtml(ev.venue_detail || '')}</div>
+                    </td>
+                    <td style="text-align:right;">
+                      <div class="admin-event-actions-col" style="justify-content:flex-end;">
+                        <button type="button" class="btn-admin-event-edit" onclick="openAdminEventModal(${ev.id})">Edit</button>
+                        <button type="button" class="btn-admin-event-delete" onclick="confirmAdminDeleteEvent(${ev.id}, '${escapeAttr(ev.title)}')">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+function renderAdminSettingsTab(settings, stats) {
+  const isEmailOn = Boolean(settings.otp_email_enabled);
+  const bypassOtp = settings.default_bypass_otp || "123456";
+
+  return `
+    <div class="admin-tab-pane">
+      <!-- Master Control: OTP & Email Dispatch Switch -->
+      <div class="admin-toggle-panel ${isEmailOn ? 'email-active' : 'email-paused'}">
+        <div class="admin-toggle-main-row">
+          <div class="admin-toggle-desc-col">
+            <div class="admin-panel-kicker">Master Communication Engine</div>
+            <h2 class="admin-panel-title">Student Email & OTP Dispatch</h2>
+            <p class="admin-panel-subtitle">
+              ${isEmailOn 
+                ? "Live dispatch is <strong>ACTIVE</strong>. Brevo SMTP relays real OTP codes and notifications to student university emails."
+                : "Live dispatch is <strong>HALTED</strong>. Zero emails are sent under any circumstance. All students can log in using the confidential default bypass OTP below."
+              }
+            </p>
+          </div>
+          <div class="admin-toggle-switch-box">
+            <div class="admin-toggle-status-badge ${isEmailOn ? 'live' : 'paused'}">
+              ${isEmailOn ? '● LIVE DISPATCH (ON)' : '■ ZERO EMAILS (OFF)'}
+            </div>
+            <label class="admin-switch">
+              <input type="checkbox" id="adminOtpEmailToggle" ${isEmailOn ? 'checked' : ''} onchange="handleAdminToggleOtp(this.checked)">
+              <span class="admin-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        ${!isEmailOn ? `
+          <!-- CONFIDENTIAL MASTER BYPASS CODE (VISIBLE STRICTLY WHEN EMAIL DISPATCH IS OFF) -->
+          <div class="admin-bypass-card" id="adminBypassBox">
+            <div class="admin-bypass-header">
+              <div class="admin-bypass-title-row">
+                <span class="admin-lock-icon">🔒</span>
+                <div>
+                  <h3 class="admin-bypass-heading">Default Master Bypass OTP</h3>
+                  <p class="admin-bypass-sub">Use this code to sign in to any student account without sending emails.</p>
+                </div>
+              </div>
+              <button type="button" onclick="copyAdminBypassCode()" class="btn-admin-copy-code" title="Copy code to clipboard">
+                📋 Copy Code
+              </button>
+            </div>
+
+            <div class="admin-bypass-code-box">
+              <span class="admin-bypass-digits" id="adminBypassCodeDisplay">${escapeHtml(bypassOtp)}</span>
+            </div>
+
+            <div class="admin-bypass-update-row">
+              <div class="admin-bypass-input-group">
+                <input type="text" id="adminNewBypassInput" placeholder="Set custom OTP" maxlength="8" class="input-forest" style="width:160px; height:36px; text-align:center; font-weight:700;">
+                <button type="button" onclick="handleAdminUpdateBypassOtp()" class="btn-admin-save-code">
+                  Update Bypass Code
+                </button>
+              </div>
+              <span class="admin-bypass-confidential-note">
+                Strictly Confidential: Visible only on this admin dashboard. Hidden from students and public API responses.
+              </span>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+
+      <!-- Diagnostics & System Architecture Info -->
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top:20px;">
+        <div class="admin-activity-card">
+          <div class="admin-activity-header">
+            <div>
+              <h3 class="admin-activity-title">Cloud Infrastructure</h3>
+              <p style="font-size:0.75rem; color:var(--text-sage); margin:2px 0 0 0;">Runtime environment & storage layer</p>
+            </div>
+            <span class="admin-activity-badge">Postgres / Supabase</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; font-size:0.82rem; color:#CBD5E1;">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
+              <span style="color:#94A3B8;">Host Engine:</span>
+              <span style="font-weight:600; color:#FFFFFF;">Vercel Serverless (Python 3.11 WSGI)</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
+              <span style="color:#94A3B8;">Primary Database:</span>
+              <span style="font-weight:600; color:#10B981;">Supabase Cloud PostgreSQL</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
+              <span style="color:#94A3B8;">Read-Only Metadata:</span>
+              <span style="font-weight:600; color:#FFFFFF;">education_details.db (Protected)</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:#94A3B8;">Email Service Provider:</span>
+              <span style="font-weight:600; color:#38BDF8;">Brevo SMTP Relay (Transactional)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-activity-card">
+          <div class="admin-activity-header">
+            <div>
+              <h3 class="admin-activity-title">Administrator Security</h3>
+              <p style="font-size:0.75rem; color:var(--text-sage); margin:2px 0 0 0;">Authentication protocol & credentials</p>
+            </div>
+            <span class="admin-activity-badge verified">Session Protected</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:10px; font-size:0.82rem; color:#CBD5E1;">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
+              <span style="color:#94A3B8;">Sign-In Mechanism:</span>
+              <span style="font-weight:600; color:#FFFFFF;">Standard /login portal via R-ID "admin"</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px;">
+              <span style="color:#94A3B8;">Admin Session:</span>
+              <span style="font-weight:600; color:#10B981;">Permanent HTTP-Only Cookie</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span style="color:#94A3B8;">Database Mutations:</span>
+              <span style="font-weight:600; color:#FBBF24;">Atomic Transactions with Auto-Rollback</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ==========================================================================
+   USER ACTIVITY DRILL-DOWN MODAL
+   ========================================================================== */
+function openAdminUserActivity(rId) {
+  if (!rId) return;
+  const modal = document.getElementById("adminUserActivityModal");
+  const content = document.getElementById("adminUserActivityModalContent");
+  if (!modal || !content) return;
+
+  modal.style.display = "flex";
+  content.innerHTML = `
+    <div style="padding:40px; text-align:center;">
+      <div class="clean-loader-spinner-ring" style="margin:0 auto 16px;"></div>
+      <div style="color:var(--text-sage); font-size:0.88rem;">Retrieving student lifecycle activity for @${escapeHtml(rId)}...</div>
+    </div>
+  `;
+
+  fetch(`/api/admin/users/${encodeURIComponent(rId)}/activity`, { credentials: "same-origin" })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success || !data.student) {
+        content.innerHTML = `
+          <div style="padding:30px; text-align:center;">
+            <h3 style="color:#EF4444; margin-bottom:8px;">User Record Not Found</h3>
+            <p style="color:#94A3B8; font-size:0.85rem;">No activity log or registered profile found for R-ID ${escapeHtml(rId)}.</p>
+            <button type="button" class="btn-outline-pill" style="margin-top:16px;" onclick="closeAdminUserActivityModal()">Close</button>
+          </div>
+        `;
+        return;
+      }
+
+      const s = data.student;
+      const act = data.activity || {};
+      const teamsLed = act.teams_led || [];
+      const teamsJoined = act.teams_joined || [];
+      const joinRequests = act.join_requests_sent || [];
+      const chatMessages = act.chat_messages || [];
+      const otpLog = act.otp_log || [];
+
+      const joinedDate = s.created_at ? new Date(s.created_at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' }) : 'Verified Campus Profile';
+
+      content.innerHTML = `
+        <div class="admin-activity-modal-inner">
+          <!-- Modal Top Bar -->
+          <div class="admin-modal-top-bar">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <div class="admin-modal-avatar">
+                ${escapeHtml((s.name || 'S').charAt(0).toUpperCase())}
+              </div>
+              <div>
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                  <h2 style="font-size:1.25rem; font-weight:700; color:#FFFFFF; margin:0;">${escapeHtml(s.name || 'Anonymous Student')}</h2>
+                  <span class="admin-badge" style="background:rgba(234,179,8,0.18); color:#FBBF24; font-weight:700;">@${escapeHtml(s.r_id)}</span>
+                  <span class="admin-badge verified">Verified User</span>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text-sage); margin-top:2px;">
+                  ${escapeHtml(s.program || 'General Program')} &bull; ${escapeHtml(s.semester_year || getAcademicYearByRid(s.r_id))}
+                </div>
+              </div>
+            </div>
+            <button type="button" class="admin-modal-close-btn" onclick="closeAdminUserActivityModal()" aria-label="Close dialog">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+
+          <!-- Student Profile Detail Card -->
+          <div class="admin-user-profile-strip">
+            <div class="user-strip-col">
+              <span class="strip-label">University Email</span>
+              <span class="strip-val">${escapeHtml(s.email || 'N/A')}</span>
+            </div>
+            <div class="user-strip-col">
+              <span class="strip-label">Mobile Phone</span>
+              <span class="strip-val">${escapeHtml(s.phone || 'N/A')}</span>
+            </div>
+            <div class="user-strip-col">
+              <span class="strip-label">Gender</span>
+              <span class="strip-val">${escapeHtml(s.gender || 'Not Specified')}</span>
+            </div>
+            <div class="user-strip-col">
+              <span class="strip-label">Profile Created</span>
+              <span class="strip-val">${escapeHtml(joinedDate)}</span>
+            </div>
+          </div>
+
+          ${s.bio ? `
+            <div style="background:rgba(0,0,0,0.25); border-left:3px solid #10B981; padding:10px 14px; border-radius:0 8px 8px 0; margin-bottom:18px; font-size:0.82rem; color:#E2E8F0;">
+              <strong>Student Bio:</strong> "${escapeHtml(s.bio)}"
+            </div>
+          ` : ''}
+
+          <!-- Lifecycle Activity Counters -->
+          <div class="admin-user-stat-pills-row">
+            <div class="user-stat-pill">
+              <span class="user-stat-num" style="color:#FBBF24;">${teamsLed.length}</span>
+              <span class="user-stat-lbl">Squads Led</span>
+            </div>
+            <div class="user-stat-pill">
+              <span class="user-stat-num" style="color:#60A5FA;">${teamsJoined.length}</span>
+              <span class="user-stat-lbl">Squads Joined</span>
+            </div>
+            <div class="user-stat-pill">
+              <span class="user-stat-num" style="color:#34D399;">${joinRequests.length}</span>
+              <span class="user-stat-lbl">Applications Sent</span>
+            </div>
+            <div class="user-stat-pill">
+              <span class="user-stat-num" style="color:#A78BFA;">${chatMessages.length}</span>
+              <span class="user-stat-lbl">Chat Messages</span>
+            </div>
+            <div class="user-stat-pill">
+              <span class="user-stat-num" style="color:#F472B6;">${otpLog.length}</span>
+              <span class="user-stat-lbl">Login Dispatches</span>
+            </div>
+          </div>
+
+          <!-- Section 1: Squads Led & Joined -->
+          <div class="admin-activity-section-block">
+            <h4 class="admin-act-section-heading">
+              <span>🏆 Hackathon Squad Memberships (${teamsLed.length + teamsJoined.length})</span>
+            </h4>
+            ${(teamsLed.length === 0 && teamsJoined.length === 0) ? `
+              <div class="admin-empty-sublog">No squad memberships recorded for this student.</div>
+            ` : `
+              <div class="admin-act-grid">
+                ${teamsLed.map(t => `
+                  <div class="admin-act-card leader-border">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                      <div>
+                        <div style="font-weight:700; color:#FFFFFF; font-size:0.92rem;">${escapeHtml(t.name)}</div>
+                        <span class="admin-badge" style="background:rgba(234,179,8,0.2); color:#FBBF24; font-size:0.65rem;">LEADER & FOUNDER</span>
+                        <span class="admin-badge" style="background:rgba(16,185,129,0.15); color:#34D399; font-size:0.65rem;">${escapeHtml((t.hackathon_type || 'SIH').toUpperCase())}</span>
+                      </div>
+                      <span style="font-size:0.7rem; color:var(--text-sage); font-family:monospace;">#${t.id}</span>
+                    </div>
+                    ${t.problem_statement ? `<p style="font-size:0.75rem; color:#94A3B8; margin:6px 0 0 0; line-height:1.4;">${escapeHtml(t.problem_statement)}</p>` : ''}
+                    <div style="font-size:0.7rem; color:var(--text-sage); margin-top:8px;">
+                      Created on ${t.created_at ? new Date(t.created_at).toLocaleDateString() : 'N/A'}
+                    </div>
+                  </div>
+                `).join('')}
+
+                ${teamsJoined.map(t => `
+                  <div class="admin-act-card">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                      <div>
+                        <div style="font-weight:700; color:#FFFFFF; font-size:0.92rem;">${escapeHtml(t.name)}</div>
+                        <span class="admin-badge" style="background:rgba(96,165,250,0.2); color:#60A5FA; font-size:0.65rem;">SQUAD MEMBER</span>
+                        <span class="admin-badge" style="background:rgba(16,185,129,0.15); color:#34D399; font-size:0.65rem;">${escapeHtml((t.hackathon_type || 'SIH').toUpperCase())}</span>
+                      </div>
+                      <span style="font-size:0.7rem; color:var(--text-sage); font-family:monospace;">#${t.id}</span>
+                    </div>
+                    <div style="font-size:0.7rem; color:var(--text-sage); margin-top:8px;">
+                      Leader: @${escapeHtml(t.leader_r_id || '')} &bull; Joined ${t.created_at ? new Date(t.created_at).toLocaleDateString() : 'Active'}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+
+          <!-- Section 2: Join Requests & Applications -->
+          <div class="admin-activity-section-block">
+            <h4 class="admin-act-section-heading">
+              <span>📩 Join Requests & Squad Applications (${joinRequests.length})</span>
+            </h4>
+            ${joinRequests.length === 0 ? `
+              <div class="admin-empty-sublog">No join requests dispatched by this student.</div>
+            ` : `
+              <div class="admin-table-responsive">
+                <table class="admin-log-table" style="font-size:0.8rem;">
+                  <thead>
+                    <tr>
+                      <th>Target Squad</th>
+                      <th>Note / Application Pitch</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${joinRequests.map(jr => {
+                      const st = jr.status === 'accepted' ? 'verified' : (jr.status === 'rejected' ? 'status-declined' : 'pending');
+                      return `
+                        <tr>
+                          <td style="color:#FFFFFF; font-weight:600;">${escapeHtml(jr.team_name || ('Team #' + jr.team_id))}</td>
+                          <td style="color:#CBD5E1; max-width:260px;">${escapeHtml(jr.message || 'No application note provided')}</td>
+                          <td style="color:var(--text-sage); font-size:0.72rem;">${jr.created_at ? new Date(jr.created_at).toLocaleDateString() : 'N/A'}</td>
+                          <td><span class="admin-badge ${st}">${escapeHtml((jr.status || 'pending').toUpperCase())}</span></td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+
+          <!-- Section 3: Team Discussion Messages -->
+          <div class="admin-activity-section-block">
+            <h4 class="admin-act-section-heading">
+              <span>💬 Team Chat Activity (${chatMessages.length})</span>
+            </h4>
+            ${chatMessages.length === 0 ? `
+              <div class="admin-empty-sublog">No messages posted in team channels yet.</div>
+            ` : `
+              <div style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding-right:4px;">
+                ${chatMessages.map(m => `
+                  <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:10px 12px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.72rem;">
+                      <strong style="color:#34D399;">Squad #${m.team_id} ${m.team_name ? `(${escapeHtml(m.team_name)})` : ''}</strong>
+                      <span style="color:#64748B;">${m.created_at ? new Date(m.created_at).toLocaleDateString() + ' ' + new Date(m.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) : ''}</span>
+                    </div>
+                    <div style="color:#FFFFFF; font-size:0.82rem; word-break:break-word;">${escapeHtml(m.content || '')}</div>
+                    ${m.attachment_name ? `<div style="margin-top:4px; font-size:0.72rem; color:#60A5FA;">📎 ${escapeHtml(m.attachment_name)}</div>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            `}
+          </div>
+
+          <!-- Section 4: Sign-In OTP History -->
+          <div class="admin-activity-section-block">
+            <h4 class="admin-act-section-heading">
+              <span>🔑 Authentication & OTP Verification History (${otpLog.length})</span>
+            </h4>
+            ${otpLog.length === 0 ? `
+              <div class="admin-empty-sublog">No recent verification dispatches recorded.</div>
+            ` : `
+              <div class="admin-table-responsive" style="max-height:200px; overflow-y:auto;">
+                <table class="admin-log-table" style="font-size:0.78rem;">
+                  <thead>
+                    <tr>
+                      <th>Timestamp</th>
+                      <th>Target Address</th>
+                      <th>OTP Code</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${otpLog.map(o => `
+                      <tr>
+                        <td style="color:var(--text-sage); font-family:monospace;">${o.created_at ? new Date(o.created_at).toLocaleString() : 'Recent'}</td>
+                        <td style="color:#CBD5E1;">${escapeHtml(o.email || '')}</td>
+                        <td><code class="admin-code-pill">${escapeHtml(o.otp || '••••••')}</code></td>
+                        <td>
+                          <span class="admin-badge ${o.used ? 'verified' : 'pending'}">
+                            ${o.used ? 'Verified & Signed In' : 'Dispatched'}
+                          </span>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+
+        </div>
+      `;
+    })
+    .catch(err => {
+      console.error("openAdminUserActivity error:", err);
+      content.innerHTML = `
+        <div style="padding:30px; text-align:center;">
+          <h3 style="color:#EF4444; margin-bottom:8px;">Error Retrieving User Activity</h3>
+          <p style="color:#94A3B8; font-size:0.85rem;">Could not load student activity history.</p>
+          <button type="button" class="btn-outline-pill" style="margin-top:16px;" onclick="closeAdminUserActivityModal()">Close</button>
+        </div>
+      `;
+    });
+}
+
+function closeAdminUserActivityModal() {
+  const modal = document.getElementById("adminUserActivityModal");
+  if (modal) modal.style.display = "none";
+}
+
+/* ==========================================================================
+   ADMIN TEAMS CRUD & EDIT MODAL
+   ========================================================================== */
+function openAdminEditTeamModal(teamId) {
+  const modal = document.getElementById("adminEditTeamModal");
+  const content = document.getElementById("adminEditTeamModalContent");
+  if (!modal || !content || !window.__adminState) return;
+
+  const team = window.__adminState.teamsList.find(t => Number(t.id) === Number(teamId));
+  if (!team) {
+    showToast("Squad record not found", "error");
+    return;
+  }
+
+  modal.style.display = "flex";
+  content.innerHTML = `
+    <div style="padding:4px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div>
+          <div class="admin-panel-kicker">Database Mutation</div>
+          <h3 class="forest-modal-title" style="margin:0;">Edit Squad Details</h3>
+        </div>
+        <button type="button" class="admin-modal-close-btn" onclick="closeAdminEditTeamModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <form id="adminEditTeamForm" onsubmit="event.preventDefault(); handleAdminSaveTeam(${team.id});" style="display:flex; flex-direction:column; gap:14px;">
+        <div>
+          <label class="form-label-forest">Squad Name *</label>
+          <input type="text" id="adminTeamNameInput" class="input-forest" value="${escapeAttr(team.name || '')}" required placeholder="e.g. Neural Mavericks">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <label class="form-label-forest">Hackathon Category *</label>
+            <select id="adminTeamCategorySelect" class="input-forest" style="background:#0E3421; color:#fff;">
+              <option value="SIH" ${String(team.hackathon_type).toUpperCase() === 'SIH' ? 'selected' : ''}>Smart India Hackathon (SIH)</option>
+              <option value="CTF" ${String(team.hackathon_type).toUpperCase() === 'CTF' ? 'selected' : ''}>Cyber CTF / Security</option>
+              <option value="Web3" ${String(team.hackathon_type).toUpperCase() === 'WEB3' ? 'selected' : ''}>Web3 & Blockchain</option>
+              <option value="AI/ML" ${String(team.hackathon_type).toUpperCase() === 'AI/ML' ? 'selected' : ''}>AI & Machine Learning</option>
+              <option value="Open" ${String(team.hackathon_type).toUpperCase() === 'OPEN' ? 'selected' : ''}>Open Innovation</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label-forest">Max Team Size *</label>
+            <select id="adminTeamSizeSelect" class="input-forest" style="background:#0E3421; color:#fff;">
+              <option value="2" ${Number(team.team_size) === 2 ? 'selected' : ''}>2 Members</option>
+              <option value="3" ${Number(team.team_size) === 3 ? 'selected' : ''}>3 Members</option>
+              <option value="4" ${Number(team.team_size) === 4 ? 'selected' : ''}>4 Members</option>
+              <option value="5" ${Number(team.team_size) === 5 ? 'selected' : ''}>5 Members</option>
+              <option value="6" ${Number(team.team_size) === 6 ? 'selected' : ''}>6 Members (Standard)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label-forest">Problem Statement / Squad Pitch</label>
+          <textarea id="adminTeamDescInput" class="input-forest" rows="3" placeholder="Describe the squad objective or problem statement">${escapeHtml(team.problem_statement || '')}</textarea>
+        </div>
+
+        <div>
+          <label class="form-label-forest">Looking For / Skills (comma separated)</label>
+          <input type="text" id="adminTeamTagsInput" class="input-forest" value="${escapeAttr(team.tags || '')}" placeholder="e.g. Python, React, UI/UX, Flutter">
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+          <button type="button" class="btn-outline-pill" onclick="closeAdminEditTeamModal()">Cancel</button>
+          <button type="submit" id="btnAdminSaveTeamSubmit" class="btn-primary-forest-pill">
+            Save Squad Updates
+          </button>
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+function closeAdminEditTeamModal() {
+  const modal = document.getElementById("adminEditTeamModal");
+  if (modal) modal.style.display = "none";
+}
+
+function handleAdminSaveTeam(teamId) {
+  const name = (document.getElementById("adminTeamNameInput")?.value || "").trim();
+  const hackathonType = (document.getElementById("adminTeamCategorySelect")?.value || "SIH").trim();
+  const teamSize = parseInt(document.getElementById("adminTeamSizeSelect")?.value || "6", 10);
+  const problemStatement = (document.getElementById("adminTeamDescInput")?.value || "").trim();
+  const tags = (document.getElementById("adminTeamTagsInput")?.value || "").trim();
+
+  if (!name) {
+    showToast("Please enter a squad name", "error");
+    return;
+  }
+
+  const btn = document.getElementById("btnAdminSaveTeamSubmit");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = "Updating Database...";
+  }
+
+  fetch(`/api/admin/teams/${teamId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({
+      name,
+      hackathon_type: hackathonType,
+      team_size: teamSize,
+      problem_statement: problemStatement,
+      tags
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast("Squad updated successfully", "success");
+        closeAdminEditTeamModal();
+        // Update local state
+        if (window.__adminState && Array.isArray(window.__adminState.teamsList)) {
+          const t = window.__adminState.teamsList.find(x => Number(x.id) === Number(teamId));
+          if (t) {
+            t.name = name;
+            t.hackathon_type = hackathonType;
+            t.team_size = teamSize;
+            t.problem_statement = problemStatement;
+            t.tags = tags;
+          }
+        }
+        renderAdminDashboard();
+      } else {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "Save Squad Updates";
+        }
+        showToast(data.message || "Failed to update squad", "error");
+      }
+    })
+    .catch(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Save Squad Updates";
+      }
+      showToast("Network error saving squad", "error");
+    });
+}
+
+function confirmAdminDeleteTeam(teamId, teamName) {
+  const confirmed = window.confirm(`Are you sure you want to permanently disband and delete squad "${teamName}"? This will delete all team messages, roster memberships, and join requests from the database.`);
+  if (!confirmed) return;
+
+  showToast("Disbanding squad...", "info");
+  fetch(`/api/admin/teams/${teamId}`, {
+    method: "DELETE",
+    credentials: "same-origin"
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        showToast(`Squad "${teamName}" removed from database`, "success");
+        if (window.__adminState && Array.isArray(window.__adminState.teamsList)) {
+          window.__adminState.teamsList = window.__adminState.teamsList.filter(t => Number(t.id) !== Number(teamId));
+        }
+        renderAdminDashboard();
+      } else {
+        showToast(data.message || "Failed to delete team", "error");
+      }
+    })
+    .catch(() => showToast("Network error deleting squad", "error"));
 }
 
 function handleAdminToggleOtp(checked) {
   fetch("/api/admin/settings", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify({ otp_email_enabled: checked })
   })
     .then(res => res.json())
     .then(data => {
       if (data.success) {
         showToast(checked ? "Email dispatch turned ON (Students receive emails)" : "Email dispatch turned OFF (Zero emails sent)", "success");
+        if (window.__adminState && window.__adminState.settings) {
+          window.__adminState.settings.otp_email_enabled = checked;
+        }
         loadAdminDashboardData();
       } else {
         showToast(data.message || "Failed to update setting", "error");
@@ -7587,12 +8395,16 @@ function handleAdminUpdateBypassOtp() {
   fetch("/api/admin/settings", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
     body: JSON.stringify({ default_bypass_otp: newCode })
   })
     .then(res => res.json())
     .then(data => {
       if (data.success) {
         showToast(`Default bypass OTP updated to ${newCode}`, "success");
+        if (window.__adminState && window.__adminState.settings) {
+          window.__adminState.settings.default_bypass_otp = newCode;
+        }
         loadAdminDashboardData();
       } else {
         showToast(data.message || "Failed to update code", "error");
@@ -7616,12 +8428,13 @@ function copyAdminBypassCode() {
 }
 
 function logoutAdmin() {
-  fetch("/api/admin/logout", { method: "POST" })
+  fetch("/api/admin/logout", { method: "POST", credentials: "same-origin" })
     .then(() => {
       showToast("Signed out of Admin Console", "info");
-      loadAdminView();
+      postLoginRedirect = null;
+      navigateTo("/login");
     })
-    .catch(() => loadAdminView());
+    .catch(() => navigateTo("/login"));
 }
 
 function openAdminEventModal(eventId = null) {
@@ -7965,12 +8778,9 @@ function loadEventsView() {
 
   if (dynamicCampusEvents && dynamicCampusEvents.length > 0) {
     renderEventsPage();
+    showFooterAfterLoad();
   } else {
-    container.innerHTML = `
-      <div style="display:flex; justify-content:center; align-items:center; padding:80px 20px;">
-        ${renderIosSpinner('lg')}
-      </div>
-    `;
+    container.innerHTML = renderCleanPageLoader("Loading Campus Events...");
   }
 
   fetch("/api/events")
@@ -7980,9 +8790,11 @@ function loadEventsView() {
         dynamicCampusEvents = data.events;
       }
       renderEventsPage();
+      showFooterAfterLoad();
     })
     .catch(() => {
       renderEventsPage();
+      showFooterAfterLoad();
     });
 }
 
@@ -7995,26 +8807,14 @@ function renderEventsPage() {
   container.innerHTML = `
     <div class="events-page-shell">
       
-      <!-- HERO BANNER CARD (Exact match to media_1790157271040.jpg) -->
-      <div class="events-hero-card" style="background:#F0FDF4; border:1px solid #DCFCE7; border-radius:18px; padding:32px 36px; display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; position:relative; overflow:hidden;">
-        <div class="events-hero-content" style="max-width:580px; z-index:2;">
-          <span class="events-hero-kicker" style="display:inline-block; font-size:0.75rem; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; color:#064E3B; margin-bottom:8px;">EVENTS</span>
-          <h1 class="events-hero-title" style="font-family:var(--font-serif); font-size:2.35rem; font-weight:750; color:#0F172A; line-height:1.15; margin:0 0 10px 0;">
-            Discover What's<br>Happening at JNU
-          </h1>
-          <p class="events-hero-subtitle" style="font-size:0.92rem; color:#64748B; line-height:1.55; margin:0;">
-            Hackathons, workshops, seminars, cultural events and more.<br>
-            Stay updated and be part of the campus life.
-          </p>
-        </div>
-        <div class="events-hero-graphic-wrap" style="position:relative; width:340px; height:180px; display:flex; align-items:center; justify-content:flex-end; border-radius:14px; overflow:hidden;">
-          <img src="/static/img/redesign/campus_sketch.png" alt="JNU Campus Architecture" style="width:100%; height:100%; object-fit:cover; opacity:0.85; filter:contrast(1.05);" onerror="this.style.display='none'">
-          <div style="position:absolute; right:16px; top:24px; display:flex; flex-direction:column; gap:4px; font-size:0.82rem; font-weight:700; color:#064E3B; letter-spacing:0.08em; text-transform:uppercase; background:rgba(255,255,255,0.75); padding:8px 14px; border-radius:8px; backdrop-filter:blur(4px);">
-            <span>Ideas</span>
-            <span>People</span>
-            <span>Opportunities</span>
-          </div>
-        </div>
+      <!-- Clean Minimal Header (No Clutter) -->
+      <div class="events-clean-header" style="margin-bottom: 22px; padding: 6px 0 2px 0;">
+        <h1 style="font-family: var(--font-serif); font-size: 2.15rem; font-weight: 750; color: #0F172A; margin: 0 0 6px 0; letter-spacing: -0.02em;">
+          Campus Events
+        </h1>
+        <p style="font-size: 0.94rem; color: #64748B; margin: 0; line-height: 1.5;">
+          Hackathons, workshops, seminars, cultural fests and competitions across Jaipur National University.
+        </p>
       </div>
 
       <!-- FILTER & SEARCH BAR -->
@@ -8892,9 +9692,192 @@ function loadResourcesView() {
   const container = document.getElementById("resourcesViewContainer");
   if (!container) return;
 
+  renderResourcesPage();
+  showFooterAfterLoad();
+}
+
+function renderResourcesPage() {
+  const container = document.getElementById("resourcesViewContainer");
+  if (!container) return;
+
+  const html = `
+    <div class="academic-resources-shell">
+      
+      <!-- Top Header -->
+      <header class="academic-res-header">
+        <div class="academic-res-header-left">
+          <h1 class="academic-res-title">Academic Resources</h1>
+          <p class="academic-res-subtitle">Find previous year papers, notes, syllabus, placement resources and more.</p>
+        </div>
+      </header>
+
+      <!-- 2-Column Desktop, 1-Column Mobile Pastel Cards Grid -->
+      <div class="academic-res-grid">
+        
+        <!-- Card 1: JNU PYQs (Directly Navigates to /pyqs dedicated page) -->
+        <div class="academic-res-card mint" onclick="navigateTo('/pyqs')">
+          <div class="res-card-blob mint"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">JNU PYQs</h2>
+            <p class="res-card-desc">Previous year question papers for all courses and semesters.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore mint">Browse PYQs &rarr;</span>
+              <div class="res-card-circle-btn mint">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Syllabus -->
+        <div class="academic-res-card blue" onclick="openResourceDetailModal('res-syllabus')">
+          <div class="res-card-blob blue"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Syllabus</h2>
+            <p class="res-card-desc">Latest syllabus for all programs and subjects.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore blue">Explore &rarr;</span>
+              <div class="res-card-circle-btn blue">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Notes & Study Material -->
+        <div class="academic-res-card rose" onclick="openResourceDetailModal('res-notes')">
+          <div class="res-card-blob rose"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Notes & Study Material</h2>
+            <p class="res-card-desc">Class notes, study resources and shared materials.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore rose">Explore &rarr;</span>
+              <div class="res-card-circle-btn rose">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Academic Calendar -->
+        <div class="academic-res-card amber" onclick="openResourceDetailModal('res-calendar')">
+          <div class="res-card-blob amber"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Academic Calendar</h2>
+            <p class="res-card-desc">Important academic dates, exam schedules and notifications.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore amber">Explore &rarr;</span>
+              <div class="res-card-circle-btn amber">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 5: University Holiday List -->
+        <div class="academic-res-card slate" onclick="openResourceDetailModal('res-holidays')">
+          <div class="res-card-blob slate"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">University Holiday List</h2>
+            <p class="res-card-desc">Official list of university holidays and observances.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore slate">Explore &rarr;</span>
+              <div class="res-card-circle-btn slate">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 6: Placements -->
+        <div class="academic-res-card mint" onclick="openResourceDetailModal('res-placements')">
+          <div class="res-card-blob mint"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Placements</h2>
+            <p class="res-card-desc">Placement drives, interview experiences and preparation resources.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore mint">Explore &rarr;</span>
+              <div class="res-card-circle-btn mint">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 7: Career Guidance -->
+        <div class="academic-res-card blue" onclick="openResourceDetailModal('res-career')">
+          <div class="res-card-blob blue"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Career Guidance</h2>
+            <p class="res-card-desc">Guides, roadmaps and resources to help you plan your future.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore blue">Explore &rarr;</span>
+              <div class="res-card-circle-btn blue">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 8: Project Ideas -->
+        <div class="academic-res-card rose" onclick="openResourceDetailModal('res-ideas')">
+          <div class="res-card-blob rose"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Project Ideas</h2>
+            <p class="res-card-desc">Mini projects, major projects and research ideas.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore rose">Explore &rarr;</span>
+              <div class="res-card-circle-btn rose">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 9: Student Community -->
+        <div class="academic-res-card amber" onclick="openResourceDetailModal('res-community')">
+          <div class="res-card-blob amber"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Student Community</h2>
+            <p class="res-card-desc">Useful links, study groups and student initiatives.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore amber">Explore &rarr;</span>
+              <div class="res-card-circle-btn amber">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 10: Useful Links -->
+        <div class="academic-res-card slate" onclick="openResourceDetailModal('res-links')">
+          <div class="res-card-blob slate"></div>
+          <div class="res-card-inner">
+            <h2 class="res-card-title">Useful Links</h2>
+            <p class="res-card-desc">Important university links and external resources.</p>
+            <div class="res-card-footer">
+              <span class="res-card-explore slate">Explore &rarr;</span>
+              <div class="res-card-circle-btn slate">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+function loadPyqsView() {
+  const container = document.getElementById("pyqsViewContainer") || document.getElementById("resourcesViewContainer");
+  if (!container) return;
+
   renderPyqsPage();
 
-  // Load schools map from API
   fetch("/api/pyqs/schools-map")
     .then(res => res.json())
     .then(data => {
@@ -8910,12 +9893,12 @@ function loadResourcesView() {
       populatePyqSchoolsDropdown();
     });
 
-  // Load initial PYQ papers
   fetchPyqsFromApi();
+  showFooterAfterLoad();
 }
 
 function renderPyqsPage() {
-  const container = document.getElementById("resourcesViewContainer");
+  const container = document.getElementById("pyqsViewContainer") || document.getElementById("resourcesViewContainer");
   if (!container) return;
 
   container.innerHTML = `
