@@ -26,7 +26,7 @@
       else if (p === "/students") activeId = "viewStudents";
       else if (p === "/events") activeId = "viewEvents";
       else if (p.startsWith("/events/") || p.startsWith("/event/")) activeId = "viewEventDetail";
-      else if (p === "/resources") activeId = "viewResources";
+      else if (p === "/resources" || p === "/pyqs") activeId = "viewResources";
       else if (p === "/course-select" || p === "/select-program" || p === "/enter-details" || p === "/sync-details" || p === "/otp" || p === "/verify-otp") activeId = "viewLogin";
       window.__initialActiveViewId = activeId;
     })();

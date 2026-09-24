@@ -1,0 +1,154 @@
+[
+  {
+    "id": "pyq-1790164705084",
+    "file_name": "SOET_Sem4_COA_EndTerm_2024.pdf",
+    "subject_name": "Cloud Architecture & Security",
+    "subject_code": "MCAS 502",
+    "school": "School of Computer & Systems Sciences",
+    "courses": [
+      "BCA Specialization in Cyber Security",
+      "BCA Specilization in Artificial Intelligence and Machine Learning"
+    ],
+    "semester": 5,
+    "type": "End Term",
+    "year": 2024,
+    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/engineering/SOET_Sem4_COA_EndTerm_2024.pdf"
+  },
+  {
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/engineering/SOET_Sem3_DSA_MidTerm_2024.pdf",
+    "file_name": "SOET_Sem3_DSA_MidTerm_2024.pdf",
+    "id": "pyq-2",
+    "school": "School of Engineering & Technology",
+    "semester": 3,
+    "subject_code": "BTCS 302",
+    "subject_name": "Data Structures & Algorithms",
+    "type": "Mid Term",
+    "year": 2024
+  },
+  {
+    "courses": [
+      "B.Tech. (Computer Science)",
+      "B.Tech. CSE(Hons.) in Cyber Security"
+    ],
+    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/engineering/SOET_Sem5_OS_EndTerm_2023.pdf",
+    "file_name": "SOET_Sem5_OS_EndTerm_2023.pdf",
+    "id": "pyq-3",
+    "school": "School of Engineering & Technology",
+    "semester": 5,
+    "subject_code": "BTCS 501",
+    "subject_name": "Operating Systems",
+    "type": "End Term",
+    "year": 2023
+  },
+  {
+    "courses": [
+      "Bachelor of Computer Application",
+      "BCA Specialization in Cyber Security",
+      "BCA Specilization in Artificial Intelligence and Machine Learning"
+    ],
+    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/computer_applications/SCSS_Sem3_DBMS_EndTerm_2024.pdf",
+    "file_name": "SCSS_Sem3_DBMS_EndTerm_2024.pdf",
+    "id": "pyq-4",
+    "school": "School of Computer & Systems Sciences",
+    "semester": 3,
+    "subject_code": "BCA 303",
+    "subject_name": "Database Management Systems",
+    "type": "End Term",
+    "year": 2024
+  },
+  {
+    "courses": [
+      "Bachelor of Computer Application"
+    ],
+    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/computer_applications/SCSS_Sem4_Java_MidTerm_2024.pdf",
+    "file_name": "SCSS_Sem4_Java_MidTerm_2024.pdf",
+    "id": "pyq-5",
+    "school": "School of Computer & Systems Sciences",
+    "semester": 4,
+    "subject_code": "BCA 402",
+    "subject_name": "Object Oriented Programming with Java",
+    "type": "Mid Term",
+    "year": 2024
+  },
+  {
+    "courses": [
+      "Bachelor of Business Administration (BBA)",
+      "Bachelor of Commerce (B.Com.)",
+      "B.Com. (Honours)"
+    ],
+    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/management/SBM_Sem1_Financial_Accounting_EndTerm_2024.pdf",
+    "file_name": "SBM_Sem1_Financial_Accounting_EndTerm_2024.pdf",
+    "id": "pyq-6",
+    "school": "School of Business & Management",
+    "semester": 1,
+    "subject_code": "BBA 102",
+    "subject_name": "Financial Accounting & Reporting",
+    "type": "End Term",
+    "year": 2024
+  },
+  {
+    "courses": [
+      "Bachelor of Business Administration (BBA)",
+      "BBA (Aviation Management)"
+    ],
+    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/management/SBM_Sem3_Marketing_Management_MidTerm_2023.pdf",
+    "file_name": "SBM_Sem3_Marketing_Management_MidTerm_2023.pdf",
+    "id": "pyq-7",
+    "school": "School of Business & Management",
+    "semester": 3,
+    "subject_code": "BBA 301",
+    "subject_name": "Marketing Management",
+    "type": "Mid Term",
+    "year": 2023
+  },
+  {
+    "courses": [
+      "Bachelor of Pharmacy",
+      "Diploma in Pharmacy"
+    ],
+    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/pharmacy/SPS_Sem1_HAP_EndTerm_2024.pdf",
+    "file_name": "SPS_Sem1_HAP_EndTerm_2024.pdf",
+    "id": "pyq-8",
+    "school": "School of Pharmaceutical Sciences",
+    "semester": 1,
+    "subject_code": "BP 101T",
+    "subject_name": "Human Anatomy & Physiology I",
+    "type": "End Term",
+    "year": 2024
+  },
+  {
+    "courses": [
+      "B.A.,LL.B.",
+      "BBA,LL.B. (Hons.)"
+    ],
+    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/law/SLG_Sem2_Constitutional_Law_EndTerm_2024.pdf",
+    "file_name": "SLG_Sem2_Constitutional_Law_EndTerm_2024.pdf",
+    "id": "pyq-9",
+    "school": "Seedling School of Law and Governance",
+    "semester": 2,
+    "subject_code": "LAW 201",
+    "subject_name": "Constitutional Law of India I",
+    "type": "End Term",
+    "year": 2024
+  },
+  {
+    "courses": [
+      "Bachelor of Physiotherapy",
+      "B.Sc. (Cardio Vascular Technology)"
+    ],
+    "download_url": "https://raw.githubusercontent.com/afrozthalam/jnu-pyqs/main/allied_health/SAHS_Sem1_Physiotherapy_MidTerm_2023.pdf",
+    "file_name": "SAHS_Sem1_Physiotherapy_MidTerm_2023.pdf",
+    "id": "pyq-10",
+    "school": "School of Allied Health Sciences",
+    "semester": 1,
+    "subject_code": "BPT 101",
+    "subject_name": "General Anatomy & Histology",
+    "type": "Mid Term",
+    "year": 2023
+  }
+]

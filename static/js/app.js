@@ -272,7 +272,7 @@ function handleCurrentRoute() {
   const isLoginRoute = path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp";
   const isCreateTeamRoute = path === "/create-team";
   const isEventsRoute = path === "/events" || path.startsWith("/events/") || path.startsWith("/event/");
-  const isResourcesRoute = path === "/resources";
+  const isResourcesRoute = path === "/resources" || path === "/pyqs";
   const isProfileRoute = path === "/profile";
   document.body.classList.toggle("is-login-route", isLoginRoute);
   document.body.classList.toggle("is-create-team-route", isCreateTeamRoute);
@@ -329,7 +329,7 @@ function handleCurrentRoute() {
       const eventSlugOrId = path.split("/")[2];
       loadEventDetailView(eventSlugOrId);
     }
-  } else if (path === "/resources") {
+  } else if (path === "/resources" || path === "/pyqs") {
     const p = document.getElementById("viewResources");
     if (p) {
       p.classList.add("active");
@@ -375,7 +375,7 @@ function highlightActiveNavLinks() {
   // Modern Desktop Top Navbar Links (Home, Events, Resources)
   document.querySelectorAll(".desktop-nav-link").forEach(link => {
     const linkPath = link.getAttribute("data-path") || link.getAttribute("href");
-    if (linkPath === path || (linkPath !== "/" && path.startsWith(linkPath)) || (path.startsWith("/event") && linkPath === "/events") || (path === "/profile" && linkPath === "/")) {
+    if (linkPath === path || (linkPath !== "/" && path.startsWith(linkPath)) || (path.startsWith("/event") && linkPath === "/events") || (path === "/profile" && linkPath === "/") || (path === "/pyqs" && linkPath === "/resources")) {
       link.classList.add("active");
     } else {
       link.classList.remove("active");
@@ -388,7 +388,7 @@ function highlightActiveNavLinks() {
     let isMatch = false;
     if (navKey === "home" && (path === "/" || path.startsWith("/team/"))) isMatch = true;
     else if (navKey === "events" && (path === "/events" || path.startsWith("/events/") || path.startsWith("/event/"))) isMatch = true;
-    else if (navKey === "resources" && path === "/resources") isMatch = true;
+    else if (navKey === "resources" && (path === "/resources" || path === "/pyqs")) isMatch = true;
     else if (navKey === "profile" && (path === "/profile" || path === "/my-profile-tab")) isMatch = true;
 
     if (isMatch) {
@@ -8855,115 +8855,388 @@ const CAMPUS_RESOURCES_DATA = [
   }
 ];
 
-let currentResourcesCategory = "all";
-let currentResourcesQuery = "";
+let currentPyqFilters = {
+  school: "All Schools",
+  branch: "All Branches",
+  sem: "Any Sem",
+  type: "Any Type",
+  year: "Any Year",
+  query: ""
+};
+
+let dynamicPyqList = [];
+let dynamicSchoolsCoursesMap = null;
+let pyqSearchDebounceTimer = null;
+
+// Fallback precomputed map in case offline
+const JNU_DEFAULT_SCHOOLS_MAP = {
+  "Collaborative Course": ["B.Des (Gaming & Animation)(In Coll.)", "B.Tech AI & DS -Coding Pro", "B.Tech AI & ML -Coding Pro", "B.Tech CSE (AI & ML) Hons.-Samatrix", "B.Tech CSE (AI) Hons.-Coding Pro", "B.Tech Computer Science (RPA)(In Coll.)", "BBA (Digital Marketing)(In Coll.)", "BBA-Fintech & Digital Banking(In Coll.)", "BCA Full Stack Development (In Coll.)"],
+  "School of Agriculture Sciences": ["B.Sc. (Hons.) - Agriculture", "M.Sc. - (Ag.) Agronomy", "M.Sc. - (Ag.) Genetics and Plant Breeding", "M.Sc. - (Ag.) Horticulture"],
+  "School of Allied Health Sciences": ["Advanced Certificate Course in Diabetology-1Y", "Advanced Certificate Course in Diabetology-2Y", "B.Sc. (Cardio Vascular Technology)", "B.Sc. (Clinical Dietetics)", "B.Sc. (Forensic Science)", "B.Sc. (MLT) (Y)", "B.Sc. (Medical Imaging Technology)(Y)", "B.Sc. (Operation Theater Technology)", "B.Sc. (Optometry)(Y)", "Bachelor of Physiotherapy", "Bachelor of Physiotherapy(Y)", "Diploma in ECG Technician", "Diploma in Operation Theatre Technology", "Diploma in Radiation Technology", "M.Sc. (Forensic Science)", "M.Sc. - Clinical Nutrition", "M.Sc. - Medical Microbiology", "Master of Physiotherapy(Y)", "Ph.D. (Food & Nutrition)", "Ph.D. (Physiotherapy)", "Ph.D. Forensic Science"],
+  "School of Business & Management": ["B.Com. (Honours)", "BBA (Aviation Management)", "Bachelor of Business Administration (BBA)", "Bachelor of Commerce (B.Com.)", "MBA (Digital Marketing)", "MBA (Dual Specialization)", "MBA (Hospital & Healthcare Management)", "MBA in Business Intelligence & Data Analytics", "Master of Business Administration (MBA)", "Ph.D. (Management)"],
+  "School of Computer & Systems Sciences": ["BCA Specialization in Cyber Security", "BCA Specilization in Artificial Intelligence and Machine Learning", "Bachelor of Computer Application", "MCA Specialization in Artificial Intelligence and Machine Learning", "MCA Specialization in Cyber Security", "Master of Computer Applications (MCA)-2 Years", "PGDCA", "Ph.D. (Computer Science)"],
+  "School of Education": ["B.A. (Hons.) Psychology", "B.A. (Pass Course)", "B.Sc. (Hons.) Psychology", "Diploma in Yoga", "M.Ed (PMET)", "Ph.D. (Education)", "Ph.D.(History)"],
+  "School of Engineering & Technology": ["B.Tech. (Biomedical Engineering)", "B.Tech. (Biotechnology)", "B.Tech. (Civil Engineering)", "B.Tech. (Computer Science)", "B.Tech. (Electrical Engineering)", "B.Tech. (Electronics & Communication)", "B.Tech. (Food Technology)", "B.Tech. (Mechanical Engineering)", "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning", "B.Tech. CSE(Hons.) in Cyber Security", "B.Tech. CSE(Hons.) in Data Science", "M. Tech. (CSE) Specialization in Data Science", "M.Tech in Electronics & Instrumentation with specialization in Biomedical Engineering", "M.Tech. - Computer Science", "Ph.D. (Computer Science & Engineering)"],
+  "School of Fashion Design": ["B. Sc. Fashion Design", "Diploma in Fashion Design", "MBA (Fashion Design)"],
+  "School of Hotel Management & Catering Technology": ["B.Sc. (Hospitality & Hotel Administration)", "BHMCT", "Diploma In Bakery and Confectionery"],
+  "School of Languages, Literature and Society": ["B.A. (Hons.) - English 4 Yr", "M.A. English (Literature & Language)", "Ph.D. (English)"],
+  "School of Life & Basic Sciences": ["B.Sc. (Hons.) - Biotechnology", "B.Sc. (Hons.) - Biotechnology-4Y", "B.Sc. (Hons.) - Mathematics", "B.Sc. (Hons.) - Microbiology", "B.Sc. (Hons.) - Microbiology-4Y", "B.Sc. Pass Course (CBZ)", "B.Sc. Pass Course (PCM)", "M. Sc. Bioinformatics and Data Science", "M.Sc. - Biotechnology", "M.Sc. - Botany", "M.Sc. - Chemistry", "M.Sc. - Microbiology", "Ph.D. (Biotechnology)", "Ph.D. (Botany)", "Ph.D. (Chemistry)", "Ph.D. (Life Science)", "Ph.D. (Mathematics)", "Ph.D. (Microbiology)", "Ph.D. (Physics)", "Ph.D. Zoology"],
+  "School of Media Studies": ["Bachelor of Arts (Journalism & Mass Communication)", "Master of Arts (Journalism & Mass Communication)", "Ph.D. (Journalism & Mass Communication)"],
+  "School of Medical Sciences": ["Ph.D. (Biochemistry)"],
+  "School of Pharmaceutical Sciences": ["Bachelor of Pharmacy", "Diploma in Pharmacy", "M. Pharm. (Pharmaceutical Chemistry)", "M. Pharm. (Pharmaceutics)", "M. Pharm. (Pharmacology)", "M. Pharm. (Quality Assurance)", "Ph.D. (Pharmaceutical Science)", "Pharm. D (PB)", "Pharm. D."],
+  "Seedling School of Law and Governance": ["B.A.,LL.B.", "BBA,LL.B. (Hons.)", "LLB-3YR", "LLM", "Ph.D. (Law)"],
+  "Seedling School of Nursing": ["B.Sc. (Nursing)", "Diploma in General Nursing and Midwifery (GNM)", "Ph.D. (Nursing)", "Post Basic B.Sc. (Nursing)"]
+};
 
 function loadResourcesView() {
   const container = document.getElementById("resourcesViewContainer");
   if (!container) return;
-  renderResourcesPage();
+
+  renderPyqsPage();
+
+  // Load schools map from API
+  fetch("/api/pyqs/schools-map")
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && data.schools_map) {
+        dynamicSchoolsCoursesMap = data.schools_map;
+      } else {
+        dynamicSchoolsCoursesMap = JNU_DEFAULT_SCHOOLS_MAP;
+      }
+      populatePyqSchoolsDropdown();
+    })
+    .catch(() => {
+      dynamicSchoolsCoursesMap = JNU_DEFAULT_SCHOOLS_MAP;
+      populatePyqSchoolsDropdown();
+    });
+
+  // Load initial PYQ papers
+  fetchPyqsFromApi();
 }
 
-function renderResourcesPage() {
+function renderPyqsPage() {
   const container = document.getElementById("resourcesViewContainer");
   if (!container) return;
 
-  const html = `
-    <div class="academic-resources-shell">
+  container.innerHTML = `
+    <div class="jnu-pyqs-page-shell">
       
-      <!-- Top Header -->
-      <header class="academic-res-header">
-        <div class="academic-res-header-left">
-          <h1 class="academic-res-title">Academic Resources</h1>
-          <p class="academic-res-subtitle">Find previous year papers, notes, syllabus, placement resources and more.</p>
+      <!-- Top Emblem: — 📖 — (Exact match to media_1790162010641.png) -->
+      <div class="pyq-hero-emblem-wrap">
+        <span class="pyq-emblem-line"></span>
+        <div class="pyq-emblem-circle">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+          </svg>
         </div>
-      </header>
+        <span class="pyq-emblem-line"></span>
+      </div>
 
-      <!-- 2-Column Desktop, 1-Column Mobile Pastel Cards Grid -->
-      <div class="academic-res-grid">
+      <!-- Main Heading & Subtitle -->
+      <h1 class="pyq-hero-title">JNU PYQs</h1>
+      <p class="pyq-hero-subtitle">
+        JNU's largest, community-driven database for previous year question papers. Find mid-terms and end-terms across all schools &mdash; totally free.
+      </p>
+
+      <!-- Centered Floating Filter Card (Exact match to media_1790162010641.png) -->
+      <div class="pyq-filter-card">
         
-        <!-- Card 1: JNU PYQs -->
-        <div class="academic-res-card mint" onclick="openResourceDetailModal('res-pyqs')">
-          <div class="res-card-blob mint"></div>
-          <div class="res-card-inner">
-            <h2 class="res-card-title">JNU PYQs</h2>
-            <p class="res-card-desc">Previous year question papers for all courses and semesters.</p>
-            <div class="res-card-footer">
-              <span class="res-card-explore mint">Explore &rarr;</span>
-              <div class="res-card-circle-btn mint">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-              </div>
-            </div>
-          </div>
+        <!-- Search Input with Magnifier & Filter Slider Icon -->
+        <div class="pyq-search-box">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#64748B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="pyqSearchInput" class="pyq-search-input" placeholder="Search subject name..." value="${escapeAttr(currentPyqFilters.query)}" oninput="handlePyqSearchInput(this.value)">
+          <button type="button" class="pyq-filter-icon-btn" onclick="resetPyqFilters()" title="Reset Filters" aria-label="Reset Filters">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="21" x2="4" y2="14"></line>
+              <line x1="4" y1="10" x2="4" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12" y2="3"></line>
+              <line x1="20" y1="21" x2="20" y2="16"></line>
+              <line x1="20" y1="12" x2="20" y2="3"></line>
+              <line x1="1" y1="14" x2="7" y2="14"></line>
+              <line x1="9" y1="8" x2="15" y2="8"></line>
+              <line x1="17" y1="16" x2="23" y2="16"></line>
+            </svg>
+          </button>
         </div>
 
-        <!-- Card 2: Syllabus -->
-        <div class="academic-res-card blue" onclick="openResourceDetailModal('res-syllabus')">
-          <div class="res-card-blob blue"></div>
-          <div class="res-card-inner">
-            <h2 class="res-card-title">Syllabus</h2>
-            <p class="res-card-desc">Latest syllabus for all programs and subjects.</p>
-            <div class="res-card-footer">
-              <span class="res-card-explore blue">Explore &rarr;</span>
-              <div class="res-card-circle-btn blue">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-              </div>
-            </div>
-          </div>
+        <!-- Row 1: All Schools & All Branches -->
+        <div class="pyq-dropdowns-row">
+          <select id="pyqSchoolSelect" class="pyq-select-styled" onchange="handlePyqSchoolChange(this.value)" aria-label="Select School">
+            <option value="All Schools">All Schools</option>
+          </select>
+
+          <select id="pyqBranchSelect" class="pyq-select-styled" onchange="handlePyqBranchChange(this.value)" aria-label="Select Branch">
+            <option value="All Branches">All Branches</option>
+          </select>
         </div>
 
-        <!-- Card 3: Academic Calendar -->
-        <div class="academic-res-card rose" onclick="openResourceDetailModal('res-calendar')">
-          <div class="res-card-blob rose"></div>
-          <div class="res-card-inner">
-            <h2 class="res-card-title">Academic Calendar</h2>
-            <p class="res-card-desc">Important academic dates, exam schedules and notifications.</p>
-            <div class="res-card-footer">
-              <span class="res-card-explore rose">Explore &rarr;</span>
-              <div class="res-card-circle-btn rose">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-              </div>
-            </div>
-          </div>
+        <!-- Row 2: Any Sem & Any Type -->
+        <div class="pyq-dropdowns-row">
+          <select id="pyqSemSelect" class="pyq-select-styled" onchange="handlePyqSemChange(this.value)" aria-label="Select Semester">
+            <option value="Any Sem">Any Sem</option>
+            <option value="1">Sem 1</option>
+            <option value="2">Sem 2</option>
+            <option value="3">Sem 3</option>
+            <option value="4">Sem 4</option>
+            <option value="5">Sem 5</option>
+            <option value="6">Sem 6</option>
+            <option value="7">Sem 7</option>
+            <option value="8">Sem 8</option>
+          </select>
+
+          <select id="pyqTypeSelect" class="pyq-select-styled" onchange="handlePyqTypeChange(this.value)" aria-label="Select Exam Type">
+            <option value="Any Type">Any Type</option>
+            <option value="Mid Term">Mid Term</option>
+            <option value="End Term">End Term</option>
+          </select>
         </div>
 
-        <!-- Card 4: University Holiday List -->
-        <div class="academic-res-card amber" onclick="openResourceDetailModal('res-holidays')">
-          <div class="res-card-blob amber"></div>
-          <div class="res-card-inner">
-            <h2 class="res-card-title">University Holiday List</h2>
-            <p class="res-card-desc">Official list of university holidays and observances.</p>
-            <div class="res-card-footer">
-              <span class="res-card-explore amber">Explore &rarr;</span>
-              <div class="res-card-circle-btn amber">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-              </div>
-            </div>
-          </div>
+        <!-- Row 3: Any Year (Full Width) -->
+        <div>
+          <select id="pyqYearSelect" class="pyq-select-styled" onchange="handlePyqYearChange(this.value)" aria-label="Select Year">
+            <option value="Any Year">Any Year</option>
+            <option value="2026">2026</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+            <option value="2022">2022</option>
+            <option value="2021">2021</option>
+            <option value="2020">2020</option>
+          </select>
         </div>
 
-        <!-- Card 5: Useful Links -->
-        <div class="academic-res-card slate" onclick="openResourceDetailModal('res-links')">
-          <div class="res-card-blob slate"></div>
-          <div class="res-card-inner">
-            <h2 class="res-card-title">Useful Links</h2>
-            <p class="res-card-desc">Important university links and external resources.</p>
-            <div class="res-card-footer">
-              <span class="res-card-explore slate">Explore &rarr;</span>
-              <div class="res-card-circle-btn slate">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-              </div>
-            </div>
-          </div>
-        </div>
+      </div>
 
+      <!-- Results Section -->
+      <section class="pyq-results-section" id="pyqResultsSection">
+        <div class="pyq-results-header">
+          <span class="pyq-results-count" id="pyqResultsCount">Loading papers...</span>
+        </div>
+        <div class="pyq-results-grid" id="pyqResultsGrid"></div>
+      </section>
+
+      <!-- Desktop Tagline: — Learn Grow Belong Together — -->
+      <div class="pyq-desktop-tagline">
+        <span class="pyq-tagline-dash"></span>
+        <span>Learn &bull; Grow &bull; Belong &bull; Together</span>
+        <span class="pyq-tagline-dash"></span>
       </div>
 
     </div>
   `;
 
-  container.innerHTML = html;
+  populatePyqSchoolsDropdown();
 }
+
+function populatePyqSchoolsDropdown() {
+  const schoolSelect = document.getElementById("pyqSchoolSelect");
+  if (!schoolSelect) return;
+
+  const map = dynamicSchoolsCoursesMap || JNU_DEFAULT_SCHOOLS_MAP;
+  const currentVal = currentPyqFilters.school;
+
+  schoolSelect.innerHTML = `<option value="All Schools" ${currentVal === "All Schools" ? "selected" : ""}>All Schools</option>`;
+
+  Object.keys(map).sort().forEach(school => {
+    const opt = document.createElement("option");
+    opt.value = school;
+    opt.textContent = school;
+    if (school === currentVal) opt.selected = true;
+    schoolSelect.appendChild(opt);
+  });
+
+  updatePyqBranchDropdown(currentVal);
+}
+
+function updatePyqBranchDropdown(selectedSchool) {
+  const branchSelect = document.getElementById("pyqBranchSelect");
+  if (!branchSelect) return;
+
+  const map = dynamicSchoolsCoursesMap || JNU_DEFAULT_SCHOOLS_MAP;
+  branchSelect.innerHTML = `<option value="All Branches">All Branches</option>`;
+
+  let courses = [];
+  if (selectedSchool && selectedSchool !== "All Schools" && map[selectedSchool]) {
+    courses = map[selectedSchool];
+  } else {
+    // Flatten all unique courses across schools
+    const allCourses = new Set();
+    Object.values(map).forEach(list => list.forEach(c => allCourses.add(c)));
+    courses = Array.from(allCourses).sort();
+  }
+
+  courses.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    if (c === currentPyqFilters.branch) opt.selected = true;
+    branchSelect.appendChild(opt);
+  });
+}
+
+function handlePyqSchoolChange(schoolVal) {
+  currentPyqFilters.school = schoolVal;
+  currentPyqFilters.branch = "All Branches";
+  updatePyqBranchDropdown(schoolVal);
+  fetchPyqsFromApi();
+}
+
+function handlePyqBranchChange(branchVal) {
+  currentPyqFilters.branch = branchVal;
+  fetchPyqsFromApi();
+}
+
+function handlePyqSemChange(semVal) {
+  currentPyqFilters.sem = semVal;
+  fetchPyqsFromApi();
+}
+
+function handlePyqTypeChange(typeVal) {
+  currentPyqFilters.type = typeVal;
+  fetchPyqsFromApi();
+}
+
+function handlePyqYearChange(yearVal) {
+  currentPyqFilters.year = yearVal;
+  fetchPyqsFromApi();
+}
+
+function handlePyqSearchInput(query) {
+  clearTimeout(pyqSearchDebounceTimer);
+  pyqSearchDebounceTimer = setTimeout(() => {
+    currentPyqFilters.query = query.trim();
+    fetchPyqsFromApi();
+  }, 250);
+}
+
+function resetPyqFilters() {
+  currentPyqFilters = {
+    school: "All Schools",
+    branch: "All Branches",
+    sem: "Any Sem",
+    type: "Any Type",
+    year: "Any Year",
+    query: ""
+  };
+  renderPyqsPage();
+  fetchPyqsFromApi();
+}
+
+function fetchPyqsFromApi() {
+  const countEl = document.getElementById("pyqResultsCount");
+  const grid = document.getElementById("pyqResultsGrid");
+  if (!grid) return;
+
+  const params = new URLSearchParams();
+  if (currentPyqFilters.query) params.set("q", currentPyqFilters.query);
+  if (currentPyqFilters.school && currentPyqFilters.school !== "All Schools") params.set("school", currentPyqFilters.school);
+  if (currentPyqFilters.branch && currentPyqFilters.branch !== "All Branches") params.set("branch", currentPyqFilters.branch);
+  if (currentPyqFilters.sem && currentPyqFilters.sem !== "Any Sem") params.set("sem", currentPyqFilters.sem);
+  if (currentPyqFilters.type && currentPyqFilters.type !== "Any Type") params.set("type", currentPyqFilters.type);
+  if (currentPyqFilters.year && currentPyqFilters.year !== "Any Year") params.set("year", currentPyqFilters.year);
+
+  fetch(`/api/pyqs?${params.toString()}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success && Array.isArray(data.pyqs)) {
+        dynamicPyqList = data.pyqs;
+        renderPyqsList(dynamicPyqList);
+        if (countEl) countEl.textContent = `Showing ${dynamicPyqList.length} of ${data.total_available || dynamicPyqList.length} question papers`;
+      } else {
+        renderPyqsList([]);
+        if (countEl) countEl.textContent = "No papers found";
+      }
+    })
+    .catch(() => {
+      renderPyqsList([]);
+      if (countEl) countEl.textContent = "Error loading papers";
+    });
+}
+
+function renderPyqsList(papers) {
+  const grid = document.getElementById("pyqResultsGrid");
+  if (!grid) return;
+
+  if (papers.length === 0) {
+    grid.innerHTML = `
+      <div class="pyq-empty-state" style="grid-column: 1 / -1;">
+        <div style="font-size:2.5rem; margin-bottom:12px;">📑</div>
+        <h3 style="font-family:var(--font-serif); font-size:1.25rem; color:#0F172A; margin:0 0 6px 0;">No question papers match your filters</h3>
+        <p style="font-size:0.88rem; color:#64748B; margin:0 0 16px 0;">Try adjusting your school, branch, semester, or search terms.</p>
+        <button type="button" class="btn-create-team-primary" onclick="resetPyqFilters()">Reset All Filters</button>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = papers.map(item => {
+    const semText = `Sem ${item.semester || 1}`;
+    const typeClass = (item.type || "").toLowerCase().includes("mid") ? "mid" : "end";
+    const courses = Array.isArray(item.courses) ? item.courses : (item.courses ? [item.courses] : []);
+    const dlUrl = item.download_url || "#";
+
+    return `
+      <div class="pyq-paper-card">
+        <div>
+          <div class="pyq-paper-top-row">
+            <h3 class="pyq-paper-title">${escapeHtml(item.subject_name)}</h3>
+            ${item.subject_code ? `<span class="pyq-code-badge">${escapeHtml(item.subject_code)}</span>` : ''}
+          </div>
+
+          <div class="pyq-school-indicator" style="margin-top:6px;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            <span>${escapeHtml(item.school)}</span>
+          </div>
+
+          ${courses.length > 0 ? `
+            <div class="pyq-course-tags" style="margin-top:8px;">
+              ${courses.slice(0, 2).map(c => `<span class="pyq-course-pill">${escapeHtml(c)}</span>`).join("")}
+              ${courses.length > 2 ? `<span class="pyq-course-pill">+${courses.length - 2} more</span>` : ''}
+            </div>
+          ` : ''}
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:6px;">
+          <div class="pyq-badges-bar">
+            <span class="pyq-badge sem">${escapeHtml(semText)}</span>
+            <span class="pyq-badge ${typeClass}">${escapeHtml(item.type || 'End Term')}</span>
+            <span class="pyq-badge year">${escapeHtml(String(item.year || '2024'))}</span>
+          </div>
+
+          <button type="button" class="btn-pyq-download" onclick="downloadPyqPaper('${escapeAttr(dlUrl)}', '${escapeAttr(item.file_name || '')}', '${escapeAttr(item.subject_name || 'paper')}')">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Download PDF</span>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function downloadPyqPaper(url, fileName, subjectName) {
+  showToast(`Downloading ${subjectName}...`, "info");
+  const safeName = fileName || `${subjectName.replace(/[^a-zA-Z0-9_-]/g, "_")}.pdf`;
+  const downloadApi = `/api/pyqs/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(safeName)}`;
+  
+  const a = document.createElement("a");
+  a.href = downloadApi;
+  a.download = safeName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 
 
 let resourcesSearchTimeout = null;

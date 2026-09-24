@@ -18644,5 +18644,375 @@ body.is-profile-route .mobile-menu-btn .mobile-menu-pfp {
   background: #04382A;
 }
 
+/* ==========================================================================
+   JNU PYQS PAGE REDESIGN (media_1790162010641.png)
+   ========================================================================== */
 
+.jnu-pyqs-page-shell {
+  position: relative;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 20px 60px 20px;
+  background-image: 
+    radial-gradient(circle at 8% 8%, rgba(220, 252, 231, 0.55) 0%, transparent 40%),
+    radial-gradient(circle at 92% 12%, rgba(220, 252, 231, 0.45) 0%, transparent 38%),
+    radial-gradient(circle at 10% 88%, rgba(220, 252, 231, 0.5) 0%, transparent 42%),
+    radial-gradient(circle at 90% 82%, rgba(220, 252, 231, 0.45) 0%, transparent 40%);
+  background-repeat: no-repeat;
+  min-height: calc(100vh - 80px);
+}
 
+.pyq-hero-emblem-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.pyq-emblem-line {
+  width: 36px;
+  height: 1.5px;
+  background: #64748B;
+  opacity: 0.55;
+}
+
+.pyq-emblem-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #DCFCE7;
+  color: #064E3B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(6, 78, 59, 0.08);
+}
+
+.pyq-hero-title {
+  font-family: var(--font-serif, 'Fraunces', Georgia, serif);
+  font-size: 2.85rem;
+  font-weight: 800;
+  color: #0A2618;
+  text-align: center;
+  margin: 10px 0 8px 0;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.pyq-hero-subtitle {
+  font-size: 0.95rem;
+  color: #475569;
+  max-width: 520px;
+  margin: 0 auto 32px auto;
+  text-align: center;
+  line-height: 1.55;
+}
+
+/* Floating Filter Card */
+.pyq-filter-card {
+  max-width: 620px;
+  margin: 0 auto 36px auto;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 20px;
+  padding: 22px 24px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04), 0 4px 10px -2px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  z-index: 10;
+}
+
+.pyq-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #FFFFFF;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.pyq-search-box:focus-within {
+  border-color: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.12);
+}
+
+.pyq-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.92rem;
+  color: #0F172A;
+  font-family: inherit;
+  background: transparent;
+}
+
+.pyq-filter-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #DCFCE7;
+  color: #065F46;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.pyq-filter-icon-btn:hover {
+  background: #BBF7D0;
+}
+
+.pyq-dropdowns-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pyq-select-styled {
+  width: 100%;
+  padding: 11px 16px;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 550;
+  color: #334155;
+  background: #FFFFFF;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%2364748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.pyq-select-styled:focus {
+  border-color: #10B981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.12);
+}
+
+/* PYQ Results Cards Grid */
+.pyq-results-section {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.pyq-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.pyq-results-count {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.pyq-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.pyq-paper-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 22px 24px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.pyq-paper-card:hover {
+  transform: translateY(-2px);
+  border-color: #CBD5E1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.pyq-paper-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pyq-paper-title {
+  font-family: var(--font-serif, 'Fraunces', Georgia, serif);
+  font-size: 1.15rem;
+  font-weight: 750;
+  color: #0F172A;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.pyq-code-badge {
+  font-family: monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #F1F5F9;
+  color: #475569;
+  padding: 2px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.pyq-school-indicator {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #065F46;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pyq-course-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.pyq-course-pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #F8FAFC;
+  color: #334155;
+  border: 1px solid #E2E8F0;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.pyq-badges-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pyq-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.pyq-badge.sem {
+  background: #DCFCE7;
+  color: #065F46;
+}
+
+.pyq-badge.mid {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.pyq-badge.end {
+  background: #EDE9FE;
+  color: #5B21B6;
+}
+
+.pyq-badge.year {
+  background: #F1F5F9;
+  color: #475569;
+  border: 1px solid #E2E8F0;
+}
+
+.btn-pyq-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: #064E3B;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btn-pyq-download:hover {
+  background: #04382A;
+}
+
+.btn-pyq-download:active {
+  transform: scale(0.98);
+}
+
+.pyq-desktop-tagline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94A3B8;
+  text-align: center;
+  margin: 44px 0 24px 0;
+}
+
+.pyq-tagline-dash {
+  width: 28px;
+  height: 1px;
+  background: #CBD5E1;
+}
+
+/* Empty State */
+.pyq-empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  background: #FFFFFF;
+  border: 1px dashed #CBD5E1;
+  border-radius: 16px;
+}
+
+/* Mobile Responsive (< 768px) */
+@media (max-width: 768px) {
+  .jnu-pyqs-page-shell {
+    padding: 20px 14px 40px 14px;
+    background-image: 
+      radial-gradient(circle at 10% 8%, rgba(220, 252, 231, 0.45) 0%, transparent 45%),
+      radial-gradient(circle at 90% 85%, rgba(220, 252, 231, 0.4) 0%, transparent 45%);
+  }
+  .pyq-hero-title {
+    font-size: 2.15rem;
+  }
+  .pyq-hero-subtitle {
+    font-size: 0.88rem;
+    margin-bottom: 24px;
+  }
+  .pyq-filter-card {
+    padding: 16px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    gap: 10px;
+  }
+  .pyq-results-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .pyq-desktop-tagline {
+    display: none;
+  }
+}

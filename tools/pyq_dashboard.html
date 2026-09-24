@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JnuMate — PYQ Metadata Dashboard Tool</title>
+  <link rel="icon" type="image/png" href="/static/img/jnu_logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #064E3B;
+      --primary-light: #F0FDF4;
+      --primary-border: #DCFCE7;
+      --accent: #10B981;
+      --text-dark: #0F172A;
+      --text-muted: #64748B;
+      --border-color: #E2E8F0;
+      --bg-page: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-serif: 'Fraunces', Georgia, serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-page);
+      color: var(--text-dark);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header.tool-header {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+    }
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-tool {
+      font-size: 0.68rem;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: #ECFDF5;
+      color: #065F46;
+      border: 1px solid #A7F3D0;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #FFFFFF;
+      border-color: var(--primary);
+    }
+    .btn-primary:hover {
+      background: #043628;
+    }
+    .btn-secondary {
+      background: #FFFFFF;
+      color: var(--text-dark);
+      border-color: var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: #F1F5F9;
+    }
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 0.78rem;
+    }
+
+    /* Main Grid Layout */
+    .dashboard-container {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      flex: 1;
+      height: calc(100vh - 69px);
+      overflow: hidden;
+    }
+
+    /* Left Sidebar: GitHub Connection & PDF List */
+    .sidebar-pane {
+      background: #FFFFFF;
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar-section {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .sidebar-section-title {
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .form-group {
+      margin-bottom: 10px;
+    }
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 0.86rem;
+      font-family: inherit;
+      border: 1px solid var(--border-color);
+      border-radius: 7px;
+      background: #FFFFFF;
+      color: var(--text-dark);
+      outline: none;
+      transition: border 0.15s ease;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+    }
+    .pdf-list-header {
+      padding: 12px 20px;
+      background: #F8FAFC;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .pdf-search-input {
+      flex: 1;
+      padding: 6px 12px;
+      font-size: 0.82rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      outline: none;
+    }
+    .pdf-list-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 12px;
+    }
+    .pdf-item-card {
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .pdf-item-card:hover {
+      border-color: #94A3B8;
+      background: #F8FAFC;
+    }
+    .pdf-item-card.active {
+      border-color: var(--accent);
+      background: #ECFDF5;
+    }
+    .pdf-item-icon {
+      font-size: 1.25rem;
+      line-height: 1;
+      margin-top: 2px;
+    }
+    .pdf-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .pdf-item-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0F172A;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pdf-item-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .status-pill {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 750;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 4px;
+    }
+    .status-configured {
+      background: #DCFCE7;
+      color: #166534;
+    }
+    .status-pending {
+      background: #F1F5F9;
+      color: #64748B;
+    }
+
+    /* Right Main Panel: Editor Form */
+    .editor-pane {
+      background: #F8FAFC;
+      overflow-y: auto;
+      padding: 28px 36px;
+    }
+    .editor-card {
+      max-width: 840px;
+      margin: 0 auto;
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      overflow: hidden;
+    }
+    .editor-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-color);
+      background: #F8FAFC;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .editor-header-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      font-family: var(--font-serif);
+    }
+    .editor-body {
+      padding: 24px;
+    }
+
+    /* Multi-select Course Chips Container */
+    .multi-select-wrap {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: #FFFFFF;
+      overflow: hidden;
+    }
+    .multi-select-toolbar {
+      padding: 8px 12px;
+      background: #F8FAFC;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .multi-select-search {
+      flex: 1;
+      padding: 5px 10px;
+      font-size: 0.78rem;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      outline: none;
+    }
+    .multi-select-chips {
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-height: 90px;
+      overflow-y: auto;
+      background: #FCFDFD;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .course-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #ECFDF5;
+      color: #065F46;
+      border: 1px solid #A7F3D0;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    .course-chip-remove {
+      cursor: pointer;
+      font-weight: 800;
+      color: #047857;
+    }
+    .course-chip-remove:hover {
+      color: #DC2626;
+    }
+    .multi-select-options-list {
+      max-height: 180px;
+      overflow-y: auto;
+      padding: 6px 0;
+    }
+    .multi-select-item {
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: #334155;
+      cursor: pointer;
+      user-select: none;
+    }
+    .multi-select-item:hover {
+      background: #F1F5F9;
+    }
+    .multi-select-item input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* URL Banner */
+    .url-banner {
+      background: #F0FDF4;
+      border: 1px solid #DCFCE7;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      color: #166534;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 18px;
+      word-break: break-all;
+    }
+
+    /* Toast Notification */
+    #toolToast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #064E3B;
+      color: #FFFFFF;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      display: none;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="tool-header">
+    <div class="brand-wrap">
+      <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="brand-logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23064E3B\'><path d=\'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5\'/></svg>'">
+      <div class="brand-title">
+        <span>JnuMate PYQ Portal</span>
+        <span class="badge-tool">Metadata Generator</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" onclick="loadExistingMetadataFile()" class="btn btn-secondary btn-sm" title="Upload an existing pdf_metadata.json file to continue editing">
+        📂 Load Existing JSON
+      </button>
+      <input type="file" id="fileInputJson" accept=".json" style="display:none;" onchange="handleJsonFileChosen(event)">
+      
+      <button type="button" onclick="exportMetadataJson()" class="btn btn-secondary btn-sm" title="Download updated pdf_metadata.json file">
+        ⬇️ Export / Download JSON
+      </button>
+
+      <button type="button" onclick="saveDirectlyToServer()" class="btn btn-primary btn-sm" id="btnServerSave" title="Save directly to repo's pdf_metadata.json">
+        💾 Save to Local Server
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Container -->
+  <main class="dashboard-container">
+    
+    <!-- LEFT SIDEBAR: GitHub Connection & Discovered PDFs -->
+    <aside class="sidebar-pane">
+      
+      <!-- GitHub Repo Connect Box -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">
+          <span>1. GitHub Repository</span>
+          <span id="repoStatusIndicator" style="font-size:0.65rem; color:#10B981; font-weight:700;">Ready</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">GitHub Owner / Repository *</label>
+          <input type="text" id="ghRepoInput" class="form-input" placeholder="e.g. afrozthalam/jnu-pyqs" value="afrozthalam/jnu-pyqs">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;" class="form-group">
+          <div>
+            <label class="form-label">Branch</label>
+            <input type="text" id="ghBranchInput" class="form-input" placeholder="main" value="main">
+          </div>
+          <div>
+            <label class="form-label">Subfolder (Optional)</label>
+            <input type="text" id="ghFolderInput" class="form-input" placeholder="e.g. pyqs" value="">
+          </div>
+        </div>
+
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button type="button" onclick="fetchGithubPdfs()" class="btn btn-primary btn-sm" style="flex:1;" id="btnFetchGh">
+            🔍 Fetch PDFs from GitHub
+          </button>
+          <button type="button" onclick="addManualPdfPrompt()" class="btn btn-secondary btn-sm" title="Add single PDF manually">
+            + Manual
+          </button>
+        </div>
+      </div>
+
+      <!-- Discovered PDFs List Header -->
+      <div class="pdf-list-header">
+        <input type="text" id="pdfSearchInput" class="pdf-search-input" placeholder="Filter discovered PDFs..." oninput="renderPdfList()">
+        <span id="pdfCountBadge" style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">0 PDFs</span>
+      </div>
+
+      <!-- PDF Items List -->
+      <div class="pdf-list-body" id="pdfItemsContainer">
+        <!-- Rendered dynamically -->
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN PANE: PDF Metadata Form -->
+    <section class="editor-pane">
+      <div class="editor-card">
+        
+        <div class="editor-header">
+          <div>
+            <span style="font-size:0.75rem; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent);">2. METADATA EDITOR</span>
+            <h2 class="editor-header-title" id="selectedPdfHeading">Select a PDF to Configure</h2>
+          </div>
+          <div id="activeStatusPillWrap"></div>
+        </div>
+
+        <div class="editor-body">
+          
+          <!-- Computed Raw Public URL Banner -->
+          <div class="url-banner" id="urlBanner" style="display:none;">
+            <div>
+              <strong style="display:block; margin-bottom:2px;">Public GitHub Raw URL:</strong>
+              <span id="computedRawUrl" style="font-family:monospace; font-size:0.75rem;"></span>
+            </div>
+            <button type="button" onclick="copyRawUrl()" class="btn btn-secondary btn-sm" style="white-space:nowrap;">
+              Copy URL
+            </button>
+          </div>
+
+          <form id="pyqMetadataForm" onsubmit="event.preventDefault(); saveCurrentPdfMetadata();" style="display:flex; flex-direction:column; gap:16px;">
+            
+            <!-- Subject Name & Code -->
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:12px;">
+              <div>
+                <label class="form-label">Subject Name / Paper Title *</label>
+                <input type="text" id="metaSubjectName" class="form-input" placeholder="e.g. Computer Organization & Architecture" required>
+              </div>
+              <div>
+                <label class="form-label">Subject Code (Optional)</label>
+                <input type="text" id="metaSubjectCode" class="form-input" placeholder="e.g. BTCS 401">
+              </div>
+            </div>
+
+            <!-- School (Department) Dropdown -->
+            <div>
+              <label class="form-label">School / Department *</label>
+              <select id="metaSchoolSelect" class="form-select" onchange="onSchoolChanged()" required>
+                <option value="">-- Choose School (Department) --</option>
+              </select>
+            </div>
+
+            <!-- Multi-Select Courses / Branches (SUPER IMPORTANT) -->
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <label class="form-label" style="margin-bottom:0;">Applicable Courses / Branches * <span style="font-weight:400; color:var(--text-muted);">(Select multiple if common)</span></label>
+                <div style="display:flex; gap:6px;">
+                  <button type="button" onclick="selectAllCourses(true)" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.7rem;">Select All</button>
+                  <button type="button" onclick="selectAllCourses(false)" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.7rem;">Clear</button>
+                </div>
+              </div>
+
+              <div class="multi-select-wrap">
+                <!-- Filter Search -->
+                <div class="multi-select-toolbar">
+                  <input type="text" id="courseFilterSearch" class="multi-select-search" placeholder="Search courses in this school..." oninput="filterCourseCheckboxes(this.value)">
+                  <span id="selectedCoursesCount" style="font-size:0.72rem; font-weight:700; color:var(--accent);">0 selected</span>
+                </div>
+
+                <!-- Chips of Selected Courses -->
+                <div class="multi-select-chips" id="selectedCoursesChips">
+                  <span style="font-size:0.72rem; color:var(--text-muted); font-style:italic;">No courses selected yet</span>
+                </div>
+
+                <!-- Checkbox List -->
+                <div class="multi-select-options-list" id="coursesCheckboxList">
+                  <div style="padding:12px; font-size:0.78rem; color:var(--text-muted); text-align:center;">Select a School first to view available courses.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Semester, Type, Year -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+              <div>
+                <label class="form-label">Semester *</label>
+                <select id="metaSemesterSelect" class="form-select" required>
+                  <option value="1">Semester 1</option>
+                  <option value="2">Semester 2</option>
+                  <option value="3">Semester 3</option>
+                  <option value="4">Semester 4</option>
+                  <option value="5">Semester 5</option>
+                  <option value="6">Semester 6</option>
+                  <option value="7">Semester 7</option>
+                  <option value="8">Semester 8</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label">Exam Type *</label>
+                <select id="metaTypeSelect" class="form-select" required>
+                  <option value="Mid Term">Mid Term</option>
+                  <option value="End Term">End Term</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label">Year *</label>
+                <select id="metaYearSelect" class="form-select" required>
+                  <option value="2026">2026</option>
+                  <option value="2025">2025</option>
+                  <option value="2024" selected>2024</option>
+                  <option value="2023">2023</option>
+                  <option value="2022">2022</option>
+                  <option value="2021">2021</option>
+                  <option value="2020">2020</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Action Save Button -->
+            <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:12px;">
+              <button type="submit" class="btn btn-primary" style="padding:10px 24px; font-size:0.92rem;" id="btnSavePdfMeta">
+                💾 Save Metadata for this PDF
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="toolToast"></div>
+
+  <!-- EMBEDDED SCHOOLS AND COURSES MAPPING (FROM EDUCATION_DETAILS.DB) -->
+  <script>
+    const SCHOOLS_DATA = {
+      "Collaborative Course": [
+        "B.Des (Gaming & Animation)(In Coll.)",
+        "B.Tech AI & DS -Coding Pro",
+        "B.Tech AI & ML -Coding Pro",
+        "B.Tech CSE (AI & ML) Hons.-Samatrix",
+        "B.Tech CSE (AI) Hons.-Coding Pro",
+        "B.Tech Computer Science (RPA)(In Coll.)",
+        "BBA (Digital Marketing)(In Coll.)",
+        "BBA-Fintech & Digital Banking(In Coll.)",
+        "BCA Full Stack Development (In Coll.)"
+      ],
+      "School of Agriculture Sciences": [
+        "B.Sc. (Hons.) - Agriculture",
+        "M.Sc. - (Ag.) Agronomy",
+        "M.Sc. - (Ag.) Genetics and Plant Breeding",
+        "M.Sc. - (Ag.) Horticulture"
+      ],
+      "School of Allied Health Sciences": [
+        "Advanced Certificate Course in Diabetology-1Y",
+        "Advanced Certificate Course in Diabetology-2Y",
+        "B.Sc. (Cardio Vascular Technology)",
+        "B.Sc. (Clinical Dietetics)",
+        "B.Sc. (Forensic Science)",
+        "B.Sc. (MLT) (Y)",
+        "B.Sc. (Medical Imaging Technology)(Y)",
+        "B.Sc. (Operation Theater Technology)",
+        "B.Sc. (Optometry)(Y)",
+        "Bachelor of Physiotherapy",
+        "Bachelor of Physiotherapy(Y)",
+        "Diploma in ECG Technician",
+        "Diploma in Operation Theatre Technology",
+        "Diploma in Radiation Technology",
+        "M.Sc. (Forensic Science)",
+        "M.Sc. - Clinical Nutrition",
+        "M.Sc. - Medical Microbiology",
+        "Master of Physiotherapy(Y)",
+        "Ph.D. (Food & Nutrition)",
+        "Ph.D. (Physiotherapy)",
+        "Ph.D. Forensic Science"
+      ],
+      "School of Business & Management": [
+        "B.Com. (Honours)",
+        "BBA (Aviation Management)",
+        "Bachelor of Business Administration (BBA)",
+        "Bachelor of Commerce (B.Com.)",
+        "MBA (Digital Marketing)",
+        "MBA (Dual Specialization)",
+        "MBA (Hospital & Healthcare Management)",
+        "MBA in Business Intelligence & Data Analytics",
+        "Master of Business Administration (MBA)",
+        "Ph.D. (Management)"
+      ],
+      "School of Computer & Systems Sciences": [
+        "BCA Specialization in Cyber Security",
+        "BCA Specilization in Artificial Intelligence and Machine Learning",
+        "Bachelor of Computer Application",
+        "MCA Specialization in Artificial Intelligence and Machine Learning",
+        "MCA Specialization in Cyber Security",
+        "Master of Computer Applications (MCA)-2 Years",
+        "PGDCA",
+        "Ph.D. (Computer Science)"
+      ],
+      "School of Education": [
+        "B.A. (Hons.) Psychology",
+        "B.A. (Pass Course)",
+        "B.Sc. (Hons.) Psychology",
+        "Diploma in Yoga",
+        "M.Ed (PMET)",
+        "Ph.D. (Education)",
+        "Ph.D.(History)"
+      ],
+      "School of Engineering & Technology": [
+        "B.Tech. (Biomedical Engineering)",
+        "B.Tech. (Biotechnology)",
+        "B.Tech. (Civil Engineering)",
+        "B.Tech. (Computer Science)",
+        "B.Tech. (Electrical Engineering)",
+        "B.Tech. (Electronics & Communication)",
+        "B.Tech. (Food Technology)",
+        "B.Tech. (Mechanical Engineering)",
+        "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning",
+        "B.Tech. CSE(Hons.) in Cyber Security",
+        "B.Tech. CSE(Hons.) in Data Science",
+        "M. Tech. (CSE) Specialization in Data Science",
+        "M.Tech in Electronics & Instrumentation with specialization in Biomedical Engineering",
+        "M.Tech. - Computer Science",
+        "Ph.D. (Computer Science & Engineering)"
+      ],
+      "School of Fashion Design": [
+        "B. Sc. Fashion Design",
+        "Diploma in Fashion Design",
+        "MBA (Fashion Design)"
+      ],
+      "School of Hotel Management & Catering Technology": [
+        "B.Sc. (Hospitality & Hotel Administration)",
+        "BHMCT",
+        "Diploma In Bakery and Confectionery"
+      ],
+      "School of Languages, Literature and Society": [
+        "B.A. (Hons.) - English 4 Yr",
+        "M.A. English (Literature & Language)",
+        "Ph.D. (English)"
+      ],
+      "School of Life & Basic Sciences": [
+        "B.Sc. (Hons.) - Biotechnology",
+        "B.Sc. (Hons.) - Biotechnology-4Y",
+        "B.Sc. (Hons.) - Mathematics",
+        "B.Sc. (Hons.) - Microbiology",
+        "B.Sc. (Hons.) - Microbiology-4Y",
+        "B.Sc. Pass Course (CBZ)",
+        "B.Sc. Pass Course (PCM)",
+        "M. Sc. Bioinformatics and Data Science",
+        "M.Sc. - Biotechnology",
+        "M.Sc. - Botany",
+        "M.Sc. - Chemistry",
+        "M.Sc. - Microbiology",
+        "Ph.D. (Biotechnology)",
+        "Ph.D. (Botany)",
+        "Ph.D. (Chemistry)",
+        "Ph.D. (Life Science)",
+        "Ph.D. (Mathematics)",
+        "Ph.D. (Microbiology)",
+        "Ph.D. (Physics)",
+        "Ph.D. Zoology"
+      ],
+      "School of Media Studies": [
+        "Bachelor of Arts (Journalism & Mass Communication)",
+        "Master of Arts (Journalism & Mass Communication)",
+        "Ph.D. (Journalism & Mass Communication)"
+      ],
+      "School of Medical Sciences": [
+        "Ph.D. (Biochemistry)"
+      ],
+      "School of Pharmaceutical Sciences": [
+        "Bachelor of Pharmacy",
+        "Diploma in Pharmacy",
+        "M. Pharm. (Pharmaceutical Chemistry)",
+        "M. Pharm. (Pharmaceutics)",
+        "M. Pharm. (Pharmacology)",
+        "M. Pharm. (Quality Assurance)",
+        "Ph.D. (Pharmaceutical Science)",
+        "Pharm. D (PB)",
+        "Pharm. D."
+      ],
+      "Seedling School of Law and Governance": [
+        "B.A.,LL.B.",
+        "BBA,LL.B. (Hons.)",
+        "LLB-3YR",
+        "LLM",
+        "Ph.D. (Law)"
+      ],
+      "Seedling School of Nursing": [
+        "B.Sc. (Nursing)",
+        "Diploma in General Nursing and Midwifery (GNM)",
+        "Ph.D. (Nursing)",
+        "Post Basic B.Sc. (Nursing)"
+      ]
+    };
+
+    // State
+    let discoveredPdfs = [];
+    let selectedPdf = null;
+    let metadataStore = {}; // keyed by file_name
+    let selectedCoursesSet = new Set();
+
+    // Initialize
+    window.addEventListener("DOMContentLoaded", () => {
+      populateSchoolsDropdown();
+      loadMetadataFromServer();
+    });
+
+    function populateSchoolsDropdown() {
+      const select = document.getElementById("metaSchoolSelect");
+      select.innerHTML = '<option value="">-- Choose School (Department) --</option>';
+      Object.keys(SCHOOLS_DATA).sort().forEach(school => {
+        const opt = document.createElement("option");
+        opt.value = school;
+        opt.textContent = school;
+        select.appendChild(opt);
+      });
+    }
+
+    function onSchoolChanged() {
+      const school = document.getElementById("metaSchoolSelect").value;
+      const container = document.getElementById("coursesCheckboxList");
+      container.innerHTML = "";
+      selectedCoursesSet.clear();
+      updateSelectedChips();
+
+      if (!school || !SCHOOLS_DATA[school]) {
+        container.innerHTML = '<div style="padding:12px; font-size:0.78rem; color:var(--text-muted); text-align:center;">Select a School first to view available courses.</div>';
+        return;
+      }
+
+      const courses = SCHOOLS_DATA[school];
+      courses.forEach((c, idx) => {
+        const item = document.createElement("label");
+        item.className = "multi-select-item";
+        item.innerHTML = `
+          <input type="checkbox" value="${escapeHtml(c)}" onchange="toggleCourseSelection('${escapeAttr(c)}', this.checked)">
+          <span>${escapeHtml(c)}</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function toggleCourseSelection(courseName, isChecked) {
+      if (isChecked) {
+        selectedCoursesSet.add(courseName);
+      } else {
+        selectedCoursesSet.delete(courseName);
+      }
+      updateSelectedChips();
+    }
+
+    function selectAllCourses(all) {
+      const checkboxes = document.querySelectorAll("#coursesCheckboxList input[type='checkbox']");
+      checkboxes.forEach(cb => {
+        cb.checked = all;
+        if (all) selectedCoursesSet.add(cb.value);
+        else selectedCoursesSet.delete(cb.value);
+      });
+      updateSelectedChips();
+    }
+
+    function filterCourseCheckboxes(query) {
+      const q = query.trim().toLowerCase();
+      const items = document.querySelectorAll("#coursesCheckboxList .multi-select-item");
+      items.forEach(el => {
+        const text = el.innerText.toLowerCase();
+        el.style.display = text.includes(q) ? "flex" : "none";
+      });
+    }
+
+    function updateSelectedChips() {
+      const container = document.getElementById("selectedCoursesChips");
+      const countEl = document.getElementById("selectedCoursesCount");
+      countEl.textContent = `${selectedCoursesSet.size} selected`;
+
+      if (selectedCoursesSet.size === 0) {
+        container.innerHTML = '<span style="font-size:0.72rem; color:var(--text-muted); font-style:italic;">No courses selected yet</span>';
+        return;
+      }
+
+      container.innerHTML = Array.from(selectedCoursesSet).map(c => `
+        <span class="course-chip">
+          <span>${escapeHtml(c)}</span>
+          <span class="course-chip-remove" onclick="removeCourseChip('${escapeAttr(c)}')">&times;</span>
+        </span>
+      `).join("");
+    }
+
+    function removeCourseChip(c) {
+      selectedCoursesSet.delete(c);
+      const cb = document.querySelector(`#coursesCheckboxList input[value="${c}"]`);
+      if (cb) cb.checked = false;
+      updateSelectedChips();
+    }
+
+    /* GitHub Fetching */
+    async function fetchGithubPdfs() {
+      const repo = document.getElementById("ghRepoInput").value.trim();
+      const branch = document.getElementById("ghBranchInput").value.trim() || "main";
+      const folder = document.getElementById("ghFolderInput").value.trim();
+      const btn = document.getElementById("btnFetchGh");
+
+      if (!repo) {
+        alert("Please enter GitHub repository (owner/repo)");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Fetching...";
+
+      try {
+        // Use GitHub Git Trees API with recursive=1 to get all files
+        const apiUrl = `https://api.github.com/repos/${repo}/git/trees/${branch}?recursive=1`;
+        const res = await fetch(apiUrl);
+        if (!res.ok) {
+          throw new Error(`GitHub API error (${res.status}): repo not found or rate limit reached.`);
+        }
+        const data = await res.json();
+        
+        let pdfs = (data.tree || []).filter(item => {
+          if (item.type !== "blob") return false;
+          if (!item.path.toLowerCase().endsWith(".pdf")) return false;
+          if (folder) return item.path.startsWith(folder);
+          return true;
+        });
+
+        discoveredPdfs = pdfs.map(p => {
+          const parts = p.path.split("/");
+          const filename = parts[parts.length - 1];
+          const rawUrl = `https://raw.githubusercontent.com/${repo}/${branch}/${p.path}`;
+          return {
+            path: p.path,
+            filename: filename,
+            rawUrl: rawUrl
+          };
+        });
+
+        renderPdfList();
+        showToast(`Discovered ${discoveredPdfs.length} PDFs from GitHub!`);
+      } catch (err) {
+        alert(err.message + "\nFalling back to sample PDFs list.");
+        useSamplePdfs(repo, branch);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "🔍 Fetch PDFs from GitHub";
+      }
+    }
+
+    function useSamplePdfs(repo = "afrozthalam/jnu-pyqs", branch = "main") {
+      discoveredPdfs = [
+        { path: "engineering/SOET_Sem4_COA_EndTerm_2024.pdf", filename: "SOET_Sem4_COA_EndTerm_2024.pdf", rawUrl: `https://raw.githubusercontent.com/${repo}/${branch}/engineering/SOET_Sem4_COA_EndTerm_2024.pdf` },
+        { path: "engineering/SOET_Sem3_DSA_MidTerm_2024.pdf", filename: "SOET_Sem3_DSA_MidTerm_2024.pdf", rawUrl: `https://raw.githubusercontent.com/${repo}/${branch}/engineering/SOET_Sem3_DSA_MidTerm_2024.pdf` },
+        { path: "engineering/SOET_Sem5_OS_EndTerm_2023.pdf", filename: "SOET_Sem5_OS_EndTerm_2023.pdf", rawUrl: `https://raw.githubusercontent.com/${repo}/${branch}/engineering/SOET_Sem5_OS_EndTerm_2023.pdf` },
+        { path: "computer_applications/SCSS_Sem3_DBMS_EndTerm_2024.pdf", filename: "SCSS_Sem3_DBMS_EndTerm_2024.pdf", rawUrl: `https://raw.githubusercontent.com/${repo}/${branch}/computer_applications/SCSS_Sem3_DBMS_EndTerm_2024.pdf` },
+        { path: "management/SBM_Sem1_Financial_Accounting_EndTerm_2024.pdf", filename: "SBM_Sem1_Financial_Accounting_EndTerm_2024.pdf", rawUrl: `https://raw.githubusercontent.com/${repo}/${branch}/management/SBM_Sem1_Financial_Accounting_EndTerm_2024.pdf` },
+        { path: "pharmacy/SPS_Sem1_HAP_EndTerm_2024.pdf", filename: "SPS_Sem1_HAP_EndTerm_2024.pdf", rawUrl: `https://raw.githubusercontent.com/${repo}/${branch}/pharmacy/SPS_Sem1_HAP_EndTerm_2024.pdf` }
+      ];
+      renderPdfList();
+    }
+
+    function addManualPdfPrompt() {
+      const fn = prompt("Enter PDF filename (e.g. Mathematics_MidTerm_2024.pdf):");
+      if (!fn) return;
+      const repo = document.getElementById("ghRepoInput").value.trim() || "afrozthalam/jnu-pyqs";
+      const branch = document.getElementById("ghBranchInput").value.trim() || "main";
+      discoveredPdfs.unshift({
+        path: fn,
+        filename: fn,
+        rawUrl: `https://raw.githubusercontent.com/${repo}/${branch}/${fn}`
+      });
+      renderPdfList();
+      selectPdf(discoveredPdfs[0]);
+    }
+
+    function renderPdfList() {
+      const container = document.getElementById("pdfItemsContainer");
+      const search = (document.getElementById("pdfSearchInput").value || "").trim().toLowerCase();
+      document.getElementById("pdfCountBadge").textContent = `${discoveredPdfs.length} PDFs`;
+
+      if (discoveredPdfs.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:40px 16px; color:var(--text-muted);">
+            <div style="font-size:2rem; margin-bottom:8px;">📄</div>
+            <p style="font-size:0.82rem;">No PDFs loaded yet.<br>Click "Fetch PDFs from GitHub" or "+ Manual" to start.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const filtered = discoveredPdfs.filter(p => p.filename.toLowerCase().includes(search) || p.path.toLowerCase().includes(search));
+
+      container.innerHTML = filtered.map(p => {
+        const isConfigured = Boolean(metadataStore[p.filename]);
+        const isActive = selectedPdf && selectedPdf.filename === p.filename;
+        const configItem = metadataStore[p.filename];
+        return `
+          <div class="pdf-item-card ${isActive ? 'active' : ''}" onclick="selectPdfByFilename('${escapeAttr(p.filename)}')">
+            <span class="pdf-item-icon">📑</span>
+            <div class="pdf-item-info">
+              <div class="pdf-item-name">${escapeHtml(p.filename)}</div>
+              <div class="pdf-item-sub">${escapeHtml(p.path)}</div>
+              ${isConfigured 
+                ? `<span class="status-pill status-configured">✓ Configured (${escapeHtml(configItem.subject_name || '')})</span>`
+                : `<span class="status-pill status-pending">Pending</span>`
+              }
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function selectPdfByFilename(fn) {
+      const p = discoveredPdfs.find(x => x.filename === fn);
+      if (p) selectPdf(p);
+    }
+
+    function selectPdf(p) {
+      selectedPdf = p;
+      document.getElementById("selectedPdfHeading").textContent = p.filename;
+      
+      const banner = document.getElementById("urlBanner");
+      banner.style.display = "flex";
+      document.getElementById("computedRawUrl").textContent = p.rawUrl;
+
+      // Check if previously configured
+      const existing = metadataStore[p.filename];
+      if (existing) {
+        document.getElementById("metaSubjectName").value = existing.subject_name || "";
+        document.getElementById("metaSubjectCode").value = existing.subject_code || "";
+        document.getElementById("metaSchoolSelect").value = existing.school || "";
+        onSchoolChanged();
+
+        if (Array.isArray(existing.courses)) {
+          existing.courses.forEach(c => {
+            selectedCoursesSet.add(c);
+            const cb = document.querySelector(`#coursesCheckboxList input[value="${c}"]`);
+            if (cb) cb.checked = true;
+          });
+          updateSelectedChips();
+        }
+
+        document.getElementById("metaSemesterSelect").value = String(existing.semester || "1");
+        document.getElementById("metaTypeSelect").value = existing.type || "Mid Term";
+        document.getElementById("metaYearSelect").value = String(existing.year || "2024");
+      } else {
+        // Infer intelligent defaults from filename
+        const fn = p.filename.toLowerCase();
+        let infSubject = "";
+        let infType = fn.includes("mid") ? "Mid Term" : "End Term";
+        let infSem = "1";
+        const semMatch = fn.match(/sem\s*([1-8])/i);
+        if (semMatch) infSem = semMatch[1];
+        let infYear = "2024";
+        const yrMatch = fn.match(/(202[0-6])/);
+        if (yrMatch) infYear = yrMatch[1];
+
+        // Format subject from filename
+        const cleanBase = p.filename.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+        infSubject = cleanBase.replace(/(sem\s*[1-8]|mid\s*term|end\s*term|202[0-6])/gi, "").trim();
+
+        document.getElementById("metaSubjectName").value = infSubject;
+        document.getElementById("metaSubjectCode").value = "";
+        document.getElementById("metaSemesterSelect").value = infSem;
+        document.getElementById("metaTypeSelect").value = infType;
+        document.getElementById("metaYearSelect").value = infYear;
+      }
+
+      renderPdfList();
+    }
+
+    function copyRawUrl() {
+      if (!selectedPdf) return;
+      navigator.clipboard.writeText(selectedPdf.rawUrl);
+      showToast("Copied GitHub Raw URL to clipboard!");
+    }
+
+    function saveCurrentPdfMetadata() {
+      if (!selectedPdf) {
+        alert("Please select a PDF file first from the left panel.");
+        return;
+      }
+
+      const subjectName = document.getElementById("metaSubjectName").value.trim();
+      const subjectCode = document.getElementById("metaSubjectCode").value.trim();
+      const school = document.getElementById("metaSchoolSelect").value;
+      const semester = parseInt(document.getElementById("metaSemesterSelect").value, 10);
+      const type = document.getElementById("metaTypeSelect").value;
+      const year = parseInt(document.getElementById("metaYearSelect").value, 10);
+
+      if (!subjectName) {
+        alert("Please enter subject name");
+        return;
+      }
+      if (!school) {
+        alert("Please select a School (Department)");
+        return;
+      }
+      if (selectedCoursesSet.size === 0) {
+        alert("Please select at least one applicable Course / Branch.");
+        return;
+      }
+
+      const item = {
+        id: `pyq-${Date.now()}`,
+        file_name: selectedPdf.filename,
+        subject_name: subjectName,
+        subject_code: subjectCode,
+        school: school,
+        courses: Array.from(selectedCoursesSet),
+        semester: semester,
+        type: type,
+        year: year,
+        download_url: selectedPdf.rawUrl
+      };
+
+      metadataStore[selectedPdf.filename] = item;
+      renderPdfList();
+      showToast(`Saved metadata for "${selectedPdf.filename}"!`);
+
+      // Also auto-sync with local backend if available
+      syncItemWithServer(item);
+    }
+
+    async function syncItemWithServer(item) {
+      try {
+        await fetch("/api/local/pyq-metadata/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item: item })
+        });
+      } catch (e) {
+        // silent fail if running purely standalone
+      }
+    }
+
+    async function loadMetadataFromServer() {
+      try {
+        const res = await fetch("/api/pyqs");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.pyqs)) {
+            data.pyqs.forEach(it => {
+              if (it.file_name) metadataStore[it.file_name] = it;
+            });
+            // If discovered PDFs empty, populate from server
+            if (discoveredPdfs.length === 0) {
+              discoveredPdfs = data.pyqs.map(it => ({
+                path: it.file_name,
+                filename: it.file_name,
+                rawUrl: it.download_url
+              }));
+              renderPdfList();
+            }
+          }
+        }
+      } catch (e) {
+        useSamplePdfs();
+      }
+    }
+
+    function exportMetadataJson() {
+      const items = Object.values(metadataStore);
+      if (items.length === 0) {
+        alert("No metadata records saved yet. Configure at least one PDF first.");
+        return;
+      }
+
+      const jsonStr = JSON.stringify(items, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "pdf_metadata.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Downloaded pdf_metadata.json!");
+    }
+
+    function loadExistingMetadataFile() {
+      document.getElementById("fileInputJson").click();
+    }
+
+    function handleJsonFileChosen(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const list = JSON.parse(e.target.result);
+          if (Array.isArray(list)) {
+            list.forEach(it => {
+              if (it.file_name) metadataStore[it.file_name] = it;
+              if (!discoveredPdfs.some(d => d.filename === it.file_name)) {
+                discoveredPdfs.push({
+                  path: it.file_name,
+                  filename: it.file_name,
+                  rawUrl: it.download_url || ""
+                });
+              }
+            });
+            renderPdfList();
+            showToast(`Loaded ${list.length} records from ${file.name}!`);
+          } else {
+            alert("Uploaded JSON must contain an array of PYQ items.");
+          }
+        } catch (err) {
+          alert("Error parsing JSON file: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    async function saveDirectlyToServer() {
+      const items = Object.values(metadataStore);
+      const btn = document.getElementById("btnServerSave");
+      btn.disabled = true;
+      btn.textContent = "Saving...";
+
+      try {
+        const res = await fetch("/api/local/pyq-metadata/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: items })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Saved ${data.count} items to repo pdf_metadata.json!`);
+        } else {
+          alert("Server responded: " + (data.message || "Failed to save"));
+        }
+      } catch (err) {
+        alert("Could not reach local server. You can use 'Export / Download JSON' instead.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "💾 Save to Local Server";
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toolToast");
+      toast.textContent = msg;
+      toast.style.display = "block";
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 3000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    function escapeAttr(str) {
+      return escapeHtml(str);
+    }
+  </script>
+</body>
+</html>

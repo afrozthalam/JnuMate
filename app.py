@@ -8,7 +8,7 @@ import threading
 import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, send_from_directory, redirect, send_file
 from database import get_db, init_db, is_postgres, get_system_setting, set_system_setting
 
 app = Flask(__name__)
@@ -52,13 +52,16 @@ SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER or "noreply@jnumate.edu")
 
 EDUCATION_DB_PATH = os.path.join(os.path.dirname(__file__), "education_details.db")
 EDUCATION_DETAILS_MAP = {}
+SCHOOLS_COURSES_MAP = {}
 
 def load_education_details():
-    global EDUCATION_DETAILS_MAP
+    global EDUCATION_DETAILS_MAP, SCHOOLS_COURSES_MAP
     if os.path.exists(EDUCATION_DB_PATH):
         try:
             import sqlite3
-            e_conn = sqlite3.connect(EDUCATION_DB_PATH)
+            # Open strictly in READ-ONLY mode
+            db_uri = f"file:{os.path.abspath(EDUCATION_DB_PATH)}?mode=ro"
+            e_conn = sqlite3.connect(db_uri, uri=True)
             e_cur = e_conn.cursor()
             e_cur.execute("SELECT r_id, program, semester_year FROM education_details")
             for row in e_cur.fetchall():
@@ -67,8 +70,18 @@ def load_education_details():
                     p_val = str(row[1]).strip() if row[1] else None
                     s_val = str(row[2]).strip() if row[2] else None
                     EDUCATION_DETAILS_MAP[key] = (p_val, s_val)
+
+            # Query all distinct schools (departments) and their courses (programs)
+            e_cur.execute("SELECT DISTINCT department, program FROM education_details WHERE department IS NOT NULL AND department != '' AND program IS NOT NULL AND program != '' ORDER BY department, program")
+            temp_map = {}
+            for dept, prog in e_cur.fetchall():
+                d = str(dept).strip()
+                p = str(prog).strip()
+                if d and p:
+                    temp_map.setdefault(d, []).append(p)
+            SCHOOLS_COURSES_MAP = {k: sorted(list(set(v))) for k, v in sorted(temp_map.items())}
             e_conn.close()
-            print(f"[EDUCATION DB LOADED] Cached {len(EDUCATION_DETAILS_MAP)} student education records.")
+            print(f"[EDUCATION DB LOADED] Cached {len(EDUCATION_DETAILS_MAP)} student education records & {len(SCHOOLS_COURSES_MAP)} schools.")
         except Exception as e:
             print(f"Notice loading education details: {e}")
 
@@ -469,6 +482,7 @@ def auto_import_student_from_json(r_id, conn, cursor):
 @app.route("/events/<event_id_or_slug>")
 @app.route("/event/<event_id_or_slug>")
 @app.route("/resources")
+@app.route("/pyqs")
 @app.route("/course-select")
 @app.route("/select-program")
 @app.route("/enter-details")
@@ -917,7 +931,195 @@ def admin_upload_event_cover():
     return jsonify({"success": True, "url": url, "filename": filename})
 
 
+# --- JNU PYQS PUBLIC & LOCAL TOOL ENDPOINTS ---
+
+PYQ_METADATA_PATH = os.path.join(os.path.dirname(__file__), "pdf_metadata.json")
+
+def load_pyq_metadata():
+    if os.path.exists(PYQ_METADATA_PATH):
+        try:
+            with open(PYQ_METADATA_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+        except Exception as e:
+            print(f"Error reading pdf_metadata.json: {e}")
+    return []
+
+def save_pyq_metadata(data):
+    try:
+        with open(PYQ_METADATA_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"Error writing pdf_metadata.json: {e}")
+        return False
+
+@app.route("/api/pyqs/schools-map", methods=["GET"])
+def api_pyqs_schools_map():
+    return jsonify({
+        "success": True,
+        "schools_map": SCHOOLS_COURSES_MAP,
+        "total_schools": len(SCHOOLS_COURSES_MAP)
+    })
+
+@app.route("/api/pyqs", methods=["GET"])
+def api_get_pyqs():
+    items = load_pyq_metadata()
+    q = request.args.get("q", "").strip().lower()
+    school = request.args.get("school", "").strip()
+    branch = request.args.get("branch", "").strip() or request.args.get("course", "").strip()
+    sem = request.args.get("sem", "").strip() or request.args.get("semester", "").strip()
+    p_type = request.args.get("type", "").strip().lower()
+    year = request.args.get("year", "").strip()
+
+    filtered = []
+    for item in items:
+        # 1. School filter
+        if school and school.lower() not in ["all schools", "all", ""]:
+            item_school = str(item.get("school") or "").strip().lower()
+            if school.lower() != item_school:
+                continue
+
+        # 2. Branch / Course filter
+        if branch and branch.lower() not in ["all branches", "all courses", "all", ""]:
+            courses = [str(c).strip().lower() for c in (item.get("courses") or [])]
+            if isinstance(item.get("courses"), str):
+                courses = [item.get("courses").strip().lower()]
+            if branch.lower() not in courses and not any(branch.lower() in c for c in courses):
+                continue
+
+        # 3. Semester filter
+        if sem and sem.lower() not in ["any sem", "any semester", "all", ""]:
+            item_sem = str(item.get("semester") or "").strip().lower()
+            # Clean "Sem 4" or "4" or "Semester 4"
+            clean_filter_sem = sem.lower().replace("semester", "").replace("sem", "").strip()
+            clean_item_sem = item_sem.replace("semester", "").replace("sem", "").strip()
+            if clean_filter_sem != clean_item_sem:
+                continue
+
+        # 4. Exam Type filter (Mid Term vs End Term)
+        if p_type and p_type not in ["any type", "all", ""]:
+            item_type = str(item.get("type") or "").strip().lower()
+            clean_f_type = p_type.replace(" ", "").replace("-", "")
+            clean_i_type = item_type.replace(" ", "").replace("-", "")
+            if clean_f_type != clean_i_type:
+                continue
+
+        # 5. Year filter
+        if year and year.lower() not in ["any year", "all", ""]:
+            item_year = str(item.get("year") or "").strip()
+            if str(year) != item_year:
+                continue
+
+        # 6. Text Query Search (subject name, subject code, or branch)
+        if q:
+            subj_name = str(item.get("subject_name") or "").lower()
+            subj_code = str(item.get("subject_code") or "").lower()
+            file_name = str(item.get("file_name") or "").lower()
+            courses_str = " ".join([str(c).lower() for c in (item.get("courses") or [])])
+            if q not in subj_name and q not in subj_code and q not in file_name and q not in courses_str:
+                continue
+
+        filtered.append(item)
+
+    return jsonify({
+        "success": True,
+        "pyqs": filtered,
+        "total": len(filtered),
+        "total_available": len(items)
+    })
+
+@app.route("/api/pyqs/download", methods=["GET"])
+def api_pyqs_download():
+    target_url = request.args.get("url", "").strip()
+    custom_name = request.args.get("name", "").strip()
+
+    if not target_url:
+        return jsonify({"success": False, "message": "Missing file URL"}), 400
+
+    safe_filename = custom_name or os.path.basename(target_url.split("?")[0]) or "pyq_paper.pdf"
+    if not safe_filename.lower().endswith(".pdf"):
+        safe_filename += ".pdf"
+
+    # Clean characters for header
+    from werkzeug.utils import secure_filename
+    clean_name = secure_filename(safe_filename) or "question_paper.pdf"
+
+    import urllib.request
+    try:
+        req = urllib.request.Request(
+            target_url,
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) JnuMate/2.0"}
+        )
+        response = urllib.request.urlopen(req, timeout=15)
+        pdf_bytes = response.read()
+
+        from flask import Response
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{clean_name}"',
+                "Content-Length": str(len(pdf_bytes)),
+                "Access-Control-Allow-Origin": "*"
+            }
+        )
+    except Exception as e:
+        # If remote fetch fails or is simulated, return sample response or redirect
+        return redirect(target_url)
+
+@app.route("/api/local/pyq-metadata/save", methods=["POST"])
+def api_local_pyq_metadata_save():
+    payload = request.json or {}
+    new_item = payload.get("item")
+    bulk_items = payload.get("items")
+
+    items = load_pyq_metadata()
+
+    if new_item and isinstance(new_item, dict):
+        file_name = new_item.get("file_name", "").strip()
+        item_id = new_item.get("id") or f"pyq-{int(time.time())}"
+        new_item["id"] = item_id
+
+        # Check if already exists by file_name or id, update if found
+        found_idx = -1
+        for idx, it in enumerate(items):
+            if (file_name and it.get("file_name") == file_name) or (it.get("id") == item_id):
+                found_idx = idx
+                break
+
+        if found_idx >= 0:
+            items[found_idx] = new_item
+        else:
+            items.append(new_item)
+
+    elif bulk_items and isinstance(bulk_items, list):
+        for bi in bulk_items:
+            fn = bi.get("file_name", "").strip()
+            iid = bi.get("id") or f"pyq-{int(time.time())}"
+            bi["id"] = iid
+            f_idx = next((i for i, x in enumerate(items) if x.get("file_name") == fn or x.get("id") == iid), -1)
+            if f_idx >= 0:
+                items[f_idx] = bi
+            else:
+                items.append(bi)
+
+    ok = save_pyq_metadata(items)
+    return jsonify({
+        "success": ok,
+        "count": len(items),
+        "message": "Metadata saved successfully to pdf_metadata.json"
+    })
+
+@app.route("/tools/pyq-dashboard")
+def local_pyq_dashboard_page():
+    tools_dir = os.path.join(app.root_path, "tools")
+    return send_from_directory(tools_dir, "pyq_dashboard.html")
+
+
 # --- AUTH ENDPOINTS ---
+
 
 @app.route("/api/auth/send-otp", methods=["POST"])
 @app.route("/api/auth/request-otp", methods=["POST"])
