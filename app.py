@@ -491,12 +491,16 @@ def auto_import_student_from_json(r_id, conn, cursor):
 @app.route("/login")
 @app.route("/students")
 @app.route("/about")
-@app.route("/admin")
 @app.route("/events")
 @app.route("/events/<event_id_or_slug>")
 @app.route("/event/<event_id_or_slug>")
 @app.route("/resources")
 @app.route("/pyqs")
+@app.route("/academic-calendar")
+@app.route("/holidays")
+@app.route("/syllabus")
+@app.route("/notes")
+@app.route("/threads")
 @app.route("/course-select")
 @app.route("/select-program")
 @app.route("/enter-details")
@@ -504,6 +508,12 @@ def auto_import_student_from_json(r_id, conn, cursor):
 @app.route("/otp")
 @app.route("/verify-otp")
 def index(team_id=None, event_id_or_slug=None):
+    return render_template("index.html")
+
+@app.route("/admin")
+def admin_route_entry():
+    if not session.get("is_admin"):
+        return redirect("/login")
     return render_template("index.html")
 
 # --- ADMIN CREDENTIALS & CONTROL ENDPOINTS ---

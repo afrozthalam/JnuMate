@@ -56,7 +56,7 @@ def seed_initial_events(cursor, p):
                     "Hackathons",
                     "Hackathon",
                     "green",
-                    "/static/img/redesign/events/event_sih.png",
+                    "/static/img/sih_logo.jpg",
                     "15 November 2025",
                     "15",
                     "NOV",
@@ -170,7 +170,7 @@ def seed_initial_events(cursor, p):
                     "Competitions",
                     "Competition",
                     "red",
-                    "/static/img/redesign/events/event_ctf.png",
+                    "/static/img/ctf_logo.jpg",
                     "12 December 2025",
                     "12",
                     "DEC",
@@ -409,8 +409,12 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_category ON events(category);")
         seed_initial_events(cursor, "%s")
+        try:
+            cursor.execute("UPDATE events SET cover_image = '/static/img/sih_logo.jpg' WHERE slug LIKE '%sih%' OR slug LIKE '%smart-india%' OR title LIKE '%Smart India%';")
+            cursor.execute("UPDATE events SET cover_image = '/static/img/ctf_logo.jpg' WHERE slug LIKE '%ctf%' OR slug LIKE '%capture-the-flag%' OR title LIKE '%Capture The Flag%';")
+        except Exception:
+            pass
 
         conn.commit()
         conn.close()
@@ -609,8 +613,12 @@ def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_events_category ON events(category);")
         seed_initial_events(cursor, "?")
+        try:
+            cursor.execute("UPDATE events SET cover_image = '/static/img/sih_logo.jpg' WHERE slug LIKE '%sih%' OR slug LIKE '%smart-india%' OR title LIKE '%Smart India%';")
+            cursor.execute("UPDATE events SET cover_image = '/static/img/ctf_logo.jpg' WHERE slug LIKE '%ctf%' OR slug LIKE '%capture-the-flag%' OR title LIKE '%Capture The Flag%';")
+        except Exception:
+            pass
 
         conn.commit()
         conn.close()

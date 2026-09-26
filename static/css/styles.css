@@ -17591,18 +17591,25 @@ body.is-profile-route .mobile-menu-btn .mobile-menu-pfp {
 .academic-res-subtitle {
   font-size: 0.92rem;
   color: #64748B;
-  max-width: 520px;
+  max-width: 600px;
   margin: 0 auto;
   line-height: 1.45;
 }
 
 .academic-res-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
+  .academic-res-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 640px) {
   .academic-resources-shell {
     padding: 6px 12px 24px 12px;
   }
@@ -18656,15 +18663,11 @@ body.is-profile-route .mobile-menu-btn .mobile-menu-pfp {
 
 .jnu-pyqs-page-shell {
   position: relative;
-  max-width: 1040px;
+  max-width: 1180px;
+  width: 100%;
   margin: 0 auto;
-  padding: 16px 16px 36px 16px;
-  background-image: 
-    radial-gradient(circle at 8% 8%, rgba(220, 252, 231, 0.55) 0%, transparent 40%),
-    radial-gradient(circle at 92% 12%, rgba(220, 252, 231, 0.45) 0%, transparent 38%),
-    radial-gradient(circle at 10% 88%, rgba(220, 252, 231, 0.5) 0%, transparent 42%),
-    radial-gradient(circle at 90% 82%, rgba(220, 252, 231, 0.45) 0%, transparent 40%);
-  background-repeat: no-repeat;
+  padding: 12px 20px 48px 20px;
+  box-sizing: border-box;
   min-height: calc(100vh - 80px);
 }
 
@@ -19754,4 +19757,588 @@ body.is-profile-route .mobile-menu-btn .mobile-menu-pfp {
 .admin-tab-pane .admin-user-row td div[style*="color:#FFFFFF"],
 .admin-tab-pane .admin-team-row td div[style*="color:#FFFFFF"] {
   color: #0F172A !important;
+}
+
+/* ==========================================================================
+   CREATE TEAM EVENT DROPDOWN & PREVIEW
+   ========================================================================== */
+.create-event-select-box {
+  position: relative;
+  width: 100%;
+}
+
+.create-select-input {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 12px;
+  padding: 12px 40px 12px 14px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: #0F172A;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.create-select-input:focus {
+  border-color: #16A34A;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+
+.create-select-chevron {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #64748B;
+}
+
+.create-event-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-top: 10px;
+}
+
+.create-event-preview-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #CBD5E1;
+  flex-shrink: 0;
+}
+
+.create-event-preview-title {
+  font-size: 0.88rem;
+  font-weight: 750;
+  color: #0F172A;
+}
+
+.create-event-preview-sub {
+  font-size: 0.75rem;
+  color: #64748B;
+  line-height: 1.35;
+}
+
+/* ==========================================================================
+   TEAM DETAIL BOTTOM 3-CARD ROW LAYOUT
+   ========================================================================== */
+.team-bottom-three-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .team-bottom-three-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.team-bottom-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.team-bottom-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.team-bottom-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.team-bottom-card-icon.about {
+  background: #EFF6FF;
+  color: #2563EB;
+}
+
+.team-bottom-card-icon.checklist {
+  background: #ECFDF5;
+  color: #059669;
+}
+
+.team-bottom-card-icon.whatsapp {
+  background: #DCFCE7;
+  color: #16A34A;
+}
+
+.team-bottom-card-title {
+  font-size: 0.95rem;
+  font-weight: 750;
+  color: #0F172A;
+  margin: 0;
+}
+
+.team-bottom-card-sub {
+  font-size: 0.75rem;
+  color: #64748B;
+  display: block;
+}
+
+.about-event-text {
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.45;
+  margin: 0 0 10px 0;
+}
+
+.about-event-track-badge {
+  background: #F1F5F9;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: #1E293B;
+}
+
+.whatsapp-card-desc {
+  font-size: 0.82rem;
+  color: #475569;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ==========================================================================
+   ACADEMIC CALENDAR & JNU HOLIDAY LIST STYLES
+   ========================================================================== */
+.calendar-page-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 16px 48px 16px;
+}
+
+.calendar-sub-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.calendar-header-badge {
+  background: #DCFCE7;
+  color: #166534;
+  font-size: 0.78rem;
+  font-weight: 750;
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+.calendar-clean-header {
+  margin-bottom: 20px;
+}
+
+.calendar-page-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.calendar-page-subtitle {
+  font-size: 0.92rem;
+  color: #64748B;
+  max-width: 680px;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.calendar-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.calendar-tabs-pill {
+  display: inline-flex;
+  background: #F1F5F9;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.cal-tab-btn {
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748B;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cal-tab-btn.active {
+  background: #FFFFFF;
+  color: #0A2618;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.cal-sem-sub {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #94A3B8;
+}
+
+.cal-tab-btn.active .cal-sem-sub {
+  color: #16A34A;
+}
+
+.calendar-actions-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.calendar-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 8px 12px;
+  width: 240px;
+}
+
+.calendar-search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.btn-calendar-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #0A2618;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-calendar-print:hover {
+  opacity: 0.9;
+}
+
+.calendar-table-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.calendar-table-responsive {
+  overflow-x: auto;
+}
+
+.calendar-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.calendar-data-table thead th {
+  background: #F8FAFC;
+  color: #475569;
+  font-weight: 750;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 16px;
+  border-bottom: 1.5px solid #E2E8F0;
+}
+
+.calendar-data-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #F1F5F9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.calendar-data-table tbody tr:hover {
+  background: #F8FAFC;
+}
+
+.cal-sno {
+  font-weight: 700;
+  color: #94A3B8;
+}
+
+.cal-date-highlight {
+  font-weight: 750;
+  color: #0F172A;
+  white-space: nowrap;
+}
+
+.cal-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cal-badge.badge-mint { background: #DCFCE7; color: #166534; }
+.cal-badge.badge-blue { background: #EFF6FF; color: #1D4ED8; }
+.cal-badge.badge-rose { background: #FFE4E6; color: #BE123C; }
+.cal-badge.badge-amber { background: #FEF3C7; color: #B45309; }
+.cal-badge.badge-slate { background: #F1F5F9; color: #475569; }
+
+.calendar-table-footer-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F8FAFC;
+  padding: 12px 16px;
+  font-size: 0.78rem;
+  color: #64748B;
+  border-top: 1px solid #E2E8F0;
+}
+
+.holiday-filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hol-filter-btn {
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hol-filter-btn.active {
+  background: #0A2618;
+  color: #FFFFFF;
+  border-color: #0A2618;
+}
+
+.holidays-footnotes-box {
+  background: #F8FAFC;
+  padding: 14px 18px;
+  border-top: 1px solid #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hol-footnote-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #64748B;
+}
+
+.hol-footnote-symbol {
+  color: #059669;
+  font-size: 0.95rem;
+}
+
+.hol-nat-badge {
+  display: inline-block;
+  background: #FEF2F2;
+  color: #DC2626;
+  font-size: 0.65rem;
+  font-weight: 750;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.cal-days-pill {
+  font-weight: 700;
+  color: #059669;
+  white-space: nowrap;
+}
+
+/* Syllabus & Threads */
+.syllabus-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .syllabus-grid { grid-template-columns: 1fr; }
+}
+
+.syllabus-school-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.syllabus-school-title {
+  font-size: 1rem;
+  font-weight: 750;
+  color: #0F172A;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.syllabus-courses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.syllabus-course-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #F8FAFC;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+  transition: background 0.15s;
+}
+
+.syllabus-course-item:hover {
+  background: #ECFDF5;
+  color: #166534;
+}
+
+.threads-feed-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.threads-composer-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.threads-textarea {
+  width: 100%;
+  border: 1px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 10px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+}
+
+.threads-composer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.thread-item-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 12px;
+}
+
+.thread-author-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.thread-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.thread-meta {
+  font-size: 0.75rem;
+  color: #64748B;
+  display: block;
+}
+
+.thread-title {
+  font-size: 1rem;
+  font-weight: 750;
+  color: #0F172A;
+  margin: 0 0 6px 0;
+}
+
+.thread-body {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0 0 10px 0;
+}
+
+.thread-footer-row {
+  display: flex;
+  gap: 8px;
+}
+
+.thread-tag {
+  background: #F1F5F9;
+  color: #059669;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
 }

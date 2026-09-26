@@ -363,6 +363,36 @@ function handleCurrentRoute() {
       p.classList.add("active");
       loadPyqsView();
     }
+  } else if (path === "/academic-calendar") {
+    const p = document.getElementById("viewAcademicCalendar");
+    if (p) {
+      p.classList.add("active");
+      loadAcademicCalendarView();
+    }
+  } else if (path === "/holidays") {
+    const p = document.getElementById("viewHolidays");
+    if (p) {
+      p.classList.add("active");
+      loadHolidaysView();
+    }
+  } else if (path === "/syllabus") {
+    const p = document.getElementById("viewSyllabus");
+    if (p) {
+      p.classList.add("active");
+      loadSyllabusView();
+    }
+  } else if (path === "/notes") {
+    const p = document.getElementById("viewNotes");
+    if (p) {
+      p.classList.add("active");
+      loadNotesView();
+    }
+  } else if (path === "/threads") {
+    const p = document.getElementById("viewThreads");
+    if (p) {
+      p.classList.add("active");
+      loadThreadsView();
+    }
   } else if (path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp") {
     const p = document.getElementById("viewLogin");
     if (p) {
@@ -401,9 +431,25 @@ function highlightActiveNavLinks() {
   const path = window.location.pathname;
 
   // Modern Desktop Top Navbar Links (Home, Events, Resources)
+  const isResourcePath = (
+    path === "/resources" ||
+    path === "/pyqs" ||
+    path === "/academic-calendar" ||
+    path === "/holidays" ||
+    path === "/syllabus" ||
+    path === "/notes" ||
+    path === "/threads"
+  );
+
   document.querySelectorAll(".desktop-nav-link").forEach(link => {
     const linkPath = link.getAttribute("data-path") || link.getAttribute("href");
-    if (linkPath === path || (linkPath !== "/" && path.startsWith(linkPath)) || (path.startsWith("/event") && linkPath === "/events") || (path === "/profile" && linkPath === "/") || (path === "/pyqs" && linkPath === "/resources")) {
+    if (
+      linkPath === path ||
+      (linkPath !== "/" && path.startsWith(linkPath)) ||
+      (path.startsWith("/event") && linkPath === "/events") ||
+      (path === "/profile" && linkPath === "/") ||
+      (isResourcePath && linkPath === "/resources")
+    ) {
       link.classList.add("active");
     } else {
       link.classList.remove("active");
@@ -416,7 +462,7 @@ function highlightActiveNavLinks() {
     let isMatch = false;
     if (navKey === "home" && (path === "/" || path.startsWith("/team/"))) isMatch = true;
     else if (navKey === "events" && (path === "/events" || path.startsWith("/events/") || path.startsWith("/event/"))) isMatch = true;
-    else if (navKey === "resources" && (path === "/resources" || path === "/pyqs")) isMatch = true;
+    else if (navKey === "resources" && isResourcePath) isMatch = true;
     else if (navKey === "profile" && (path === "/profile" || path === "/my-profile-tab")) isMatch = true;
 
     if (isMatch) {
@@ -2355,7 +2401,7 @@ function renderFullTeamDetail(team) {
             </div>
           </div>
 
-          <!-- MAIN ROW: 2-COLUMN GRID (Left: Roster 6-seats, Right: Embedded Chat & WhatsApp) -->
+          <!-- MAIN ROW: 2-COLUMN GRID (Left: Roster 6-seats, Right: Full Height Squad Chat) -->
           <div class="team-two-col-grid" style="margin-top: 24px;">
             
             <!-- Left Column: Team Roster -->
@@ -2369,11 +2415,9 @@ function renderFullTeamDetail(team) {
               </div>
             </div>
 
-            <!-- Right Column: Embedded Small Chat Window + WhatsApp + Checklist -->
+            <!-- Right Column: Embedded Squad Live Chat (Right side of members, top of bottom 3 cards) -->
             <div class="team-sidebar-chat-column">
-              
-              <!-- Embedded Modern Squad Chat Window (Discord/Slack Grade) -->
-              <div class="team-discussion-container small-chat-window modern-squad-chat-box">
+              <div class="team-discussion-container modern-squad-chat-box">
                 <div class="team-discussion-header modern-chat-header">
                   <div class="team-discussion-title-box">
                     <div class="chat-header-icon-badge">
@@ -2410,145 +2454,121 @@ function renderFullTeamDetail(team) {
                   </div>
                 </form>
               </div>
-
-              <!-- Prominent WhatsApp Squad Card (Desktop) -->
-              ${(team.whatsapp_link && isSquadMember) ? `
-                <div class="team-side-card team-side-wa-card" style="margin-top:16px;">
-                  <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="team-wa-badge-icon">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
-                    </div>
-                    <div style="flex:1;">
-                      <div style="font-weight:750; font-size:0.9rem; color:#065F46;">Squad WhatsApp Group</div>
-                      <div style="font-size:0.78rem; color:#047857; margin-top:2px;">Instant team coordination & calls</div>
-                    </div>
-                  </div>
-                  <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-whatsapp-pill" style="margin-top:12px; width:100%; justify-content:center; text-decoration:none; display:flex;">
-                    <span>Open WhatsApp</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  </a>
-                </div>
-              ` : (isLeader ? `
-                <div class="team-side-card team-side-wa-card add" style="margin-top:16px;">
-                  <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="team-wa-badge-icon add">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
-                    </div>
-                    <div style="flex:1;">
-                      <div style="font-weight:750; font-size:0.9rem; color:#0F172A;">WhatsApp Squad Group</div>
-                      <div style="font-size:0.78rem; color:#64748B; margin-top:2px;">Add group link for seamless coordination</div>
-                    </div>
-                  </div>
-                  <button type="button" onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-paper-outline" style="margin-top:12px; width:100%; justify-content:center; font-size:0.8rem;">
-                    + Link WhatsApp Group
-                  </button>
-                </div>
-              ` : '')}
-
-              <!-- Readiness Checklist -->
-              <div class="team-side-card" style="margin-top:16px;">
-                <div class="team-side-card-title-row">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                  <h3 class="team-side-card-title">Readiness Checklist</h3>
-                </div>
-                <div class="team-checklist-stack" style="margin-top:12px;">
-                  <div class="team-checklist-row">
-                    <div class="team-checklist-left">
-                      <div class="team-check-status-circle ${count >= 2 ? 'done' : 'pending'}">${count >= 2 ? '✓' : '●'}</div>
-                      <div class="team-check-info">
-                        <span class="team-check-label">Roster Minimums</span>
-                        <span class="team-check-sub">${count >= 6 ? 'Full squad (6/6)' : `${count}/6 confirmed members`}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  ${isSih ? `
-                    <div class="team-checklist-row">
-                      <div class="team-checklist-left">
-                        <div class="team-check-status-circle ${hasFemale ? 'done' : 'pending'}">${hasFemale ? '✓' : '!'}</div>
-                        <div class="team-check-info">
-                          <span class="team-check-label">Gender Diversity</span>
-                          <span class="team-check-sub">${hasFemale ? 'At least 1 female teammate confirmed' : 'Required: 1 female teammate'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ` : ''}
-
-                  <div class="team-checklist-row">
-                    <div class="team-checklist-left">
-                      <div class="team-check-status-circle ${team.whatsapp_link ? 'done' : 'pending'}">${team.whatsapp_link ? '✓' : '●'}</div>
-                      <div class="team-check-info">
-                        <span class="team-check-label">Team Group Chat</span>
-                        <span class="team-check-sub">${team.whatsapp_link ? 'WhatsApp group linked' : 'Link not added yet'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="team-checklist-row">
-                    <div class="team-checklist-left">
-                      <div class="team-check-status-circle done">✓</div>
-                      <div class="team-check-info">
-                        <span class="team-check-label">Campus Verification</span>
-                        <span class="team-check-sub">All teammates verified via JNU R-ID</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
 
-          <!-- BOTTOM ROW: ABOUT INFO BANNER -->
-          <div class="team-about-banner" style="margin-top: 32px;">
-            <div class="team-about-grid">
-              <div class="team-about-card">
-                <h3 style="font-size:1.1rem; font-weight:750; color:#0F172A; margin:0 0 10px 0;">About ${escapeHtml(team.name)}</h3>
-                <p style="font-size:0.9rem; color:#334155; line-height:1.5; margin-bottom:18px;">${escapeHtml(team.description || 'Looking for teammates for the upcoming university hackathon.')}</p>
-
-                <h4 style="font-size:0.92rem; font-weight:700; color:#0F172A; margin:0 0 8px 0;">Hackathon Track Details</h4>
-                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:12px 14px; margin-bottom:16px;">
-                  <div style="font-weight:700; font-size:0.88rem; color:#166534; margin-bottom:3px;">${isSih ? 'Smart India Hackathon 2026' : 'Capture The Flag (CTF) Cyber Challenge 2026'}</div>
-                  <div style="font-size:0.82rem; color:#475569; line-height:1.4;">${isSih ? 'A national challenge focused on innovative software solutions to real-world societal problems.' : 'A university-wide cybersecurity defense & exploitation challenge to learn and compete in team-based CTF rounds.'}</div>
+          <!-- BOTTOM ROW: 3 CARDS SIDE BY SIDE (About Event, Readiness Checklist, WhatsApp Squad) -->
+          <div class="team-bottom-three-cards-grid" style="margin-top: 24px;">
+            
+            <!-- CARD 1: About Event Card (Short Concise Explanation) -->
+            <div class="team-bottom-card about-event-card">
+              <div class="team-bottom-card-header">
+                <div class="team-bottom-card-icon about">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                 </div>
-
-                <h4 style="font-size:0.92rem; font-weight:700; color:#0F172A; margin:0 0 8px 0;">Squad Guidelines & Rules</h4>
-                <ul style="font-size:0.82rem; color:#475569; line-height:1.5; padding-left:18px; margin:0;">
-                  <li>All squad members must be officially enrolled students of Jaipur National University.</li>
-                  <li>Each student can only belong to one confirmed squad per competition track.</li>
-                  ${isSih ? '<li>SIH regulations require at least 1 female teammate in the 6-member squad roster.</li>' : ''}
-                  <li>Official announcements and live match coordination happen in the Squad Discussion & WhatsApp group.</li>
-                </ul>
+                <div>
+                  <h3 class="team-bottom-card-title">About Event</h3>
+                  <span class="team-bottom-card-sub">${isSih ? 'Smart India Hackathon (SIH)' : 'Capture The Flag (CTF)'}</span>
+                </div>
               </div>
-
-              <div style="display:flex; flex-direction:column; gap:16px;">
-                <div class="team-about-card">
-                  <h3 style="font-size:0.95rem; font-weight:750; color:#0F172A; margin:0 0 12px 0;">Squad Leadership</h3>
-                  <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
-                    <img src="${escapeHtml(leaderAvatar)}" alt="Captain" style="width:44px; height:44px; border-radius:50%; object-fit:cover; border:1.5px solid #16A34A;" onerror="this.onerror=null; this.src='${DEFAULT_STUDENT_AVATAR}';">
-                    <div>
-                      <div style="font-weight:750; font-size:0.92rem; color:#0F172A;">${escapeHtml(leaderCleanName)}</div>
-                      <div style="font-size:0.75rem; color:#166534; font-weight:600;">Team Captain &bull; @${escapeHtml(team.leader_r_id || '')}</div>
-                    </div>
-                  </div>
-                  ${leaderMember.email ? `
-                    <div style="font-size:0.78rem; color:#64748B; margin-top:6px;">
-                      Email: <a href="mailto:${escapeHtml(leaderMember.email)}" style="color:#166534; font-weight:600;">${escapeHtml(leaderMember.email)}</a>
-                    </div>
-                  ` : ''}
+              <div class="team-bottom-card-body">
+                <p class="about-event-text">
+                  ${isSih ? 'A nationwide innovation competition challenging multidisciplinary squads to develop software and hardware prototypes for real-world national problems.' : 'A university-wide cybersecurity defense & exploitation challenge testing vulnerability assessment, cryptography, and network defense.'}
+                </p>
+                <div class="about-event-track-badge">
+                  <span>Track: ${isSih ? 'Software & Hardware Edition' : 'Cybersecurity & Defense'}</span>
                 </div>
-
-                ${team.whatsapp_link ? `
-                  <div class="team-about-card" style="background: linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 100%); border-color: #A7F3D0;">
-                    <h3 style="font-size:0.95rem; font-weight:750; color:#065F46; margin:0 0 6px 0;">Official Group Chat</h3>
-                    <p style="font-size:0.78rem; color:#047857; margin-bottom:10px;">Connect with the squad on WhatsApp for quick audio calls and real-time coordination.</p>
-                    <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-paper-wa" style="width:100%; box-sizing:border-box; justify-content:center; padding:8px 12px; font-size:0.8rem;">
-                      <span>Open WhatsApp Group</span>
-                    </a>
-                  </div>
-                ` : ''}
               </div>
             </div>
+
+            <!-- CARD 2: Readiness Checklist Card -->
+            <div class="team-bottom-card readiness-checklist-card">
+              <div class="team-bottom-card-header">
+                <div class="team-bottom-card-icon checklist">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                </div>
+                <div>
+                  <h3 class="team-bottom-card-title">Readiness Checklist</h3>
+                  <span class="team-bottom-card-sub">Squad compliance criteria</span>
+                </div>
+              </div>
+              <div class="team-checklist-stack" style="margin-top:10px;">
+                <div class="team-checklist-row">
+                  <div class="team-checklist-left">
+                    <div class="team-check-status-circle ${count >= 2 ? 'done' : 'pending'}">${count >= 2 ? '✓' : '●'}</div>
+                    <div class="team-check-info">
+                      <span class="team-check-label">Roster Minimums</span>
+                      <span class="team-check-sub">${count >= 6 ? 'Full squad (6/6)' : `${count}/6 confirmed`}</span>
+                    </div>
+                  </div>
+                </div>
+
+                ${isSih ? `
+                  <div class="team-checklist-row">
+                    <div class="team-checklist-left">
+                      <div class="team-check-status-circle ${hasFemale ? 'done' : 'pending'}">${hasFemale ? '✓' : '!'}</div>
+                      <div class="team-check-info">
+                        <span class="team-check-label">Gender Diversity</span>
+                        <span class="team-check-sub">${hasFemale ? '1+ female teammate' : 'Requires female member'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ` : ''}
+
+                <div class="team-checklist-row">
+                  <div class="team-checklist-left">
+                    <div class="team-check-status-circle ${team.whatsapp_link ? 'done' : 'pending'}">${team.whatsapp_link ? '✓' : '●'}</div>
+                    <div class="team-check-info">
+                      <span class="team-check-label">WhatsApp Squad</span>
+                      <span class="team-check-sub">${team.whatsapp_link ? 'Group linked' : 'Link not added'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="team-checklist-row">
+                  <div class="team-checklist-left">
+                    <div class="team-check-status-circle done">✓</div>
+                    <div class="team-check-info">
+                      <span class="team-check-label">Campus Verified</span>
+                      <span class="team-check-sub">R-ID verified students</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD 3: WhatsApp Squad Card -->
+            <div class="team-bottom-card whatsapp-squad-card ${team.whatsapp_link ? 'linked' : ''}">
+              <div class="team-bottom-card-header">
+                <div class="team-bottom-card-icon whatsapp">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.177.182-.076.355.101.173.449.741.964 1.201.662.591 1.221.774 1.394.861.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.144.39-.086s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+                </div>
+                <div>
+                  <h3 class="team-bottom-card-title">WhatsApp Squad</h3>
+                  <span class="team-bottom-card-sub">${team.whatsapp_link ? 'Active coordination' : (isLeader ? 'Action required' : 'Pending captain action')}</span>
+                </div>
+              </div>
+              <div class="team-bottom-card-body">
+                ${team.whatsapp_link ? `
+                  <p class="whatsapp-card-desc">Connect with your teammates directly for fast audio calls and live match strategy.</p>
+                  <a href="${escapeHtml(team.whatsapp_link)}" target="_blank" rel="noopener noreferrer" class="btn-whatsapp-pill" style="margin-top:12px; width:100%; justify-content:center; text-decoration:none; display:flex;">
+                    <span>Join WhatsApp Group</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </a>
+                ` : (isLeader ? `
+                  <p class="whatsapp-card-desc">Add your official WhatsApp group link so accepted members can join instantly.</p>
+                  <button type="button" onclick="openEditTeamModal('${team.id}', '${escapeAttr(team.name)}', '${escapeAttr(team.description || '')}', '${escapeAttr(team.whatsapp_link || '')}')" class="btn-paper-outline" style="margin-top:12px; width:100%; justify-content:center; font-size:0.82rem; font-weight:700;">
+                    + Link WhatsApp Group
+                  </button>
+                ` : `
+                  <p class="whatsapp-card-desc">The team captain has not attached the WhatsApp link yet.</p>
+                  <div class="whatsapp-pending-badge" style="margin-top:12px; text-align:center; padding:9px 12px; background:#F8FAFC; border:1px dashed #CBD5E1; border-radius:10px; color:#64748B; font-size:0.82rem; font-weight:650;">
+                    WhatsApp link pending
+                  </div>
+                `)}
+              </div>
+            </div>
+
           </div>
 
         </main>
@@ -4192,44 +4212,71 @@ function loadCreateTeamView() {
     </div>
   `;
 
-  fetch(`/api/user/profile?r_id=${encodeURIComponent(currentUser.id || "")}`)
-    .then(r => r.json())
-    .then(data => {
-      const teams = data.teams || [];
-      if (teams.length > 0) {
-        const t = teams[0];
-        const teamName = t.name || "another team";
-        container.innerHTML = `
-          <div class="create-team-page-shell" style="max-width:600px; margin:40px auto; padding:0 16px;">
-            <div style="background:#FFFFFF; border:1.5px solid #FCA5A5; border-radius:20px; padding:36px 28px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.05);">
-              <div style="width:52px; height:52px; border-radius:50%; background:#FEE2E2; color:#EF4444; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto; font-size:1.4rem; font-weight:bold;">
-                ✕
-              </div>
-              <h2 class="font-serif" style="font-size:1.6rem; color:#0A2618; margin-bottom:10px;">Already in a Squad</h2>
-              <p style="color:#64748B; font-size:0.95rem; line-height:1.5; margin-bottom:24px;">
-                You cannot create a team until you leave team '<strong>${escapeHtml(teamName)}</strong>'. Each student can only be in one team at a time.
-              </p>
-              <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-                <button onclick="openTeamDetailModal('${t.id}')" class="btn-create-submit" style="padding:10px 22px;">
-                  View My Team (${escapeHtml(teamName)}) ➔
-                </button>
-                <a href="/" onclick="event.preventDefault(); navigateTo('/');" class="btn-create-cancel" style="padding:10px 20px;">
-                  Back to Discover
-                </a>
-              </div>
+  // Fetch both profile (to check team membership) and active events (for dropdown)
+  Promise.all([
+    fetch(`/api/user/profile?r_id=${encodeURIComponent(currentUser.id || "")}`).then(r => r.json()).catch(() => ({})),
+    fetch("/api/events").then(r => r.json()).catch(() => ({}))
+  ]).then(([profData, eventsData]) => {
+    const teams = profData.teams || [];
+    if (teams.length > 0) {
+      const t = teams[0];
+      const teamName = t.name || "another team";
+      container.innerHTML = `
+        <div class="create-team-page-shell" style="max-width:600px; margin:40px auto; padding:0 16px;">
+          <div style="background:#FFFFFF; border:1.5px solid #FCA5A5; border-radius:20px; padding:36px 28px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.05);">
+            <div style="width:52px; height:52px; border-radius:50%; background:#FEE2E2; color:#EF4444; display:flex; align-items:center; justify-content:center; margin:0 auto 16px auto; font-size:1.4rem; font-weight:bold;">
+              ✕
+            </div>
+            <h2 class="font-serif" style="font-size:1.6rem; color:#0A2618; margin-bottom:10px;">Already in a Squad</h2>
+            <p style="color:#64748B; font-size:0.95rem; line-height:1.5; margin-bottom:24px;">
+              You cannot create a team until you leave team '<strong>${escapeHtml(teamName)}</strong>'. Each student can only be in one team at a time.
+            </p>
+            <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+              <button onclick="openTeamDetailModal('${t.id}')" class="btn-create-submit" style="padding:10px 22px;">
+                View My Team (${escapeHtml(teamName)}) ➔
+              </button>
+              <a href="/" onclick="event.preventDefault(); navigateTo('/');" class="btn-create-cancel" style="padding:10px 20px;">
+                Back to Discover
+              </a>
             </div>
           </div>
-        `;
-        return;
-      }
-      renderCreateTeamForm();
-    })
-    .catch(() => renderCreateTeamForm());
+        </div>
+      `;
+      return;
+    }
+
+    const eventsList = (eventsData && eventsData.events) ? eventsData.events : (dynamicCampusEvents || []);
+    renderCreateTeamForm(eventsList);
+  }).catch(() => {
+    renderCreateTeamForm(dynamicCampusEvents || []);
+  });
 }
 
-function renderCreateTeamForm() {
+function renderCreateTeamForm(eventsList = []) {
   const container = document.getElementById("createTeamViewContainer");
   if (!container) return;
+
+  // Build events options from active events
+  let optionsHtml = `
+    <option value="sih" ${selectedHackathonType === 'sih' ? 'selected' : ''}>Smart India Hackathon (SIH) 2026</option>
+    <option value="ctf" ${selectedHackathonType === 'ctf' ? 'selected' : ''}>Capture The Flag (CTF) Championship 2026</option>
+  `;
+
+  if (Array.isArray(eventsList)) {
+    eventsList.forEach(ev => {
+      const slug = (ev.slug || '').toLowerCase();
+      if (!slug.includes('sih') && !slug.includes('smart-india') && !slug.includes('ctf') && !slug.includes('capture-the-flag')) {
+        const val = slug || String(ev.id);
+        optionsHtml += `<option value="${escapeAttr(val)}" ${selectedHackathonType === val ? 'selected' : ''}>${escapeHtml(ev.title)}</option>`;
+      }
+    });
+  }
+
+  const isSih = selectedHackathonType === 'sih';
+  const isCtf = selectedHackathonType === 'ctf';
+  const previewLogo = isSih ? '/static/img/sih_logo.jpg' : (isCtf ? '/static/img/ctf_logo.jpg' : '/static/img/jnu_logo.png');
+  const previewTitle = isSih ? 'Smart India Hackathon (SIH)' : (isCtf ? 'Capture The Flag (CTF)' : 'Campus Hackathon / Competition');
+  const previewSubtitle = isSih ? 'Hardware & Software editions &bull; Build innovative solutions for Viksit Bharat' : (isCtf ? 'Cybersecurity & Defense &bull; Test your exploitation and defense skills' : 'Official Jaipur National University Event Track');
 
   container.innerHTML = `
     <div class="create-team-page-shell">
@@ -4256,41 +4303,27 @@ function renderCreateTeamForm() {
           <div class="create-eyebrow">6-Seat Team Builder</div>
           <h1 class="create-title">Create New Team</h1>
           <p class="create-subtitle">
-            Form your squad, choose a hackathon track, and assign teammates or leave slots open for join requests.
+            Form your squad, choose an event track, and assign teammates or leave slots open for join requests.
           </p>
 
-          <!-- 1. Hackathon Category -->
+          <!-- 1. Event Type Dropdown -->
           <div style="margin-bottom: 22px;">
-            <label class="create-field-label">1. Choose Hackathon Category <span class="req-star">*</span></label>
-            <div class="hackathon-cat-grid">
-              <!-- SIH Card -->
-              <div class="hackathon-cat-card ${selectedHackathonType === 'sih' ? 'selected' : ''}" id="catCardSih" onclick="selectHackathonType('sih')">
-                <div class="cat-check-badge" style="${selectedHackathonType === 'sih' ? '' : 'display:none;'}">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                </div>
-                <img src="/static/img/sih_logo.jpg" alt="Smart India Hackathon" class="cat-icon-img">
-                <div class="cat-card-text-col">
-                  <div class="cat-card-title">Smart India Hackathon (SIH)</div>
-                  <div class="cat-card-sub">Hardware & Software editions</div>
-                  <div class="cat-card-tagline">Build innovative solutions for a Viksit Bharat</div>
-                </div>
+            <label class="create-field-label" for="teamEventSelect">1. Choose Event Type <span class="req-star">*</span></label>
+            <div class="create-event-select-box">
+              <select id="teamEventSelect" class="create-select-input" onchange="selectHackathonType(this.value)">
+                ${optionsHtml}
+              </select>
+              <div class="create-select-chevron">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
               </div>
+            </div>
 
-              <!-- CTF Card -->
-              <div class="hackathon-cat-card ${selectedHackathonType === 'ctf' ? 'selected' : ''}" id="catCardCtf" onclick="selectHackathonType('ctf')">
-                <div class="cat-check-badge" style="${selectedHackathonType === 'ctf' ? '' : 'display:none;'}">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                </div>
-                <img src="/static/img/ctf_logo.jpg" alt="Capture The Flag" class="cat-icon-img">
-                <div class="cat-card-text-col">
-                  <div class="cat-card-title">Capture The Flag (CTF)</div>
-                  <div class="cat-card-sub">Cybersecurity & Defense</div>
-                  <div class="cat-card-tagline">Test your skills. Secure the future.</div>
-                </div>
+            <!-- Active Event Mini Preview Card -->
+            <div class="create-event-preview-card" id="createEventPreviewBox">
+              <img src="${previewLogo}" alt="Event Logo" class="create-event-preview-logo" id="createEventPreviewImg">
+              <div class="create-event-preview-text">
+                <div class="create-event-preview-title" id="createEventPreviewTitle">${escapeHtml(previewTitle)}</div>
+                <div class="create-event-preview-sub" id="createEventPreviewSub">${escapeHtml(previewSubtitle)}</div>
               </div>
             </div>
           </div>
@@ -4897,18 +4930,27 @@ function removeFriendFromTeam(rId) {
 let selectedHackathonType = "sih";
 
 function selectHackathonType(type) {
-  selectedHackathonType = type;
-  const sihCard = document.getElementById("catCardSih");
-  const ctfCard = document.getElementById("catCardCtf");
-  if (sihCard) {
-    sihCard.classList.toggle("selected", type === "sih");
-    const badge = sihCard.querySelector(".cat-check-badge");
-    if (badge) badge.style.display = type === "sih" ? "" : "none";
-  }
-  if (ctfCard) {
-    ctfCard.classList.toggle("selected", type === "ctf");
-    const badge = ctfCard.querySelector(".cat-check-badge");
-    if (badge) badge.style.display = type === "ctf" ? "" : "none";
+  selectedHackathonType = (type || "sih").toLowerCase();
+  
+  const isSih = selectedHackathonType === 'sih' || selectedHackathonType.includes('sih') || selectedHackathonType.includes('smart-india');
+  const isCtf = selectedHackathonType === 'ctf' || selectedHackathonType.includes('ctf') || selectedHackathonType.includes('capture-the-flag');
+  
+  const imgEl = document.getElementById("createEventPreviewImg");
+  const titleEl = document.getElementById("createEventPreviewTitle");
+  const subEl = document.getElementById("createEventPreviewSub");
+
+  if (isSih) {
+    if (imgEl) imgEl.src = "/static/img/sih_logo.jpg";
+    if (titleEl) titleEl.innerText = "Smart India Hackathon (SIH)";
+    if (subEl) subEl.innerText = "Hardware & Software editions • Build innovative solutions for Viksit Bharat";
+  } else if (isCtf) {
+    if (imgEl) imgEl.src = "/static/img/ctf_logo.jpg";
+    if (titleEl) titleEl.innerText = "Capture The Flag (CTF)";
+    if (subEl) subEl.innerText = "Cybersecurity & Defense • Test your exploitation and defense skills";
+  } else {
+    if (imgEl) imgEl.src = "/static/img/jnu_logo.png";
+    if (titleEl) titleEl.innerText = "University Hackathon / Competition";
+    if (subEl) subEl.innerText = "Official Jaipur National University Event Track";
   }
 }
 
@@ -9051,13 +9093,23 @@ function updateEventsDisplay() {
     const badgeText = evt.badge_text || evt.category;
     const day = evt.event_day || "15";
     const month = evt.event_month || "NOV";
-    const cover = evt.cover_image || "/static/img/redesign/events/event_sih.png";
+    
+    let cover = evt.cover_image;
+    const lowTitle = (evt.title || "").toLowerCase();
+    const lowSlug = (evt.slug || "").toLowerCase();
+    if (lowTitle.includes("smart india") || lowSlug.includes("sih")) {
+      cover = "/static/img/sih_logo.jpg";
+    } else if (lowTitle.includes("capture the flag") || lowSlug.includes("ctf")) {
+      cover = "/static/img/ctf_logo.jpg";
+    }
+    if (!cover) cover = "/static/img/redesign/events/event_sih.png";
+    
     const targetUrl = "/events/" + (evt.slug || evt.id);
 
     return `
       <div class="event-card-redesign" onclick="navigateTo('${targetUrl}')">
         <div class="event-card-cover-wrap">
-          <img src="${escapeAttr(cover)}" alt="${escapeAttr(evt.title)}" class="event-card-cover-img" loading="lazy" onerror="this.src='/static/img/redesign/events/event_sih.png'">
+          <img src="${escapeAttr(cover)}" alt="${escapeAttr(evt.title)}" class="event-card-cover-img" loading="lazy" onerror="this.src='/static/img/sih_logo.jpg'">
           <div class="event-card-cover-badge">
             <span class="event-cat-badge badge-${escapeAttr(badgeColor)}">${escapeHtml(badgeText)}</span>
           </div>
@@ -9101,12 +9153,22 @@ function updateEventsDisplay() {
     const badgeText = evt.badge_text || evt.category;
     const day = evt.event_day || "15";
     const month = evt.event_month || "NOV";
-    const cover = evt.cover_image || "/static/img/redesign/events/event_sih.png";
+    
+    let cover = evt.cover_image;
+    const lowTitle = (evt.title || "").toLowerCase();
+    const lowSlug = (evt.slug || "").toLowerCase();
+    if (lowTitle.includes("smart india") || lowSlug.includes("sih")) {
+      cover = "/static/img/sih_logo.jpg";
+    } else if (lowTitle.includes("capture the flag") || lowSlug.includes("ctf")) {
+      cover = "/static/img/ctf_logo.jpg";
+    }
+    if (!cover) cover = "/static/img/redesign/events/event_sih.png";
+    
     const targetUrl = "/events/" + (evt.slug || evt.id);
 
     return `
       <div class="mobile-event-row-redesign" onclick="navigateTo('${targetUrl}')">
-        <img src="${escapeAttr(cover)}" alt="${escapeAttr(evt.title)}" class="mobile-event-row-thumb" loading="lazy" onerror="this.src='/static/img/redesign/events/event_sih.png'">
+        <img src="${escapeAttr(cover)}" alt="${escapeAttr(evt.title)}" class="mobile-event-row-thumb" loading="lazy" onerror="this.src='/static/img/sih_logo.jpg'">
         
         <div class="mobile-event-row-center">
           <span class="event-cat-badge badge-${escapeAttr(badgeColor)}" style="font-size:0.65rem; padding:2px 8px; margin-bottom:2px;">${escapeHtml(badgeText)}</span>
@@ -9571,7 +9633,7 @@ function closeEventDetailModal() {
 }
 
 /* ==========================================================================
-   17. ACADEMIC & CAMPUS RESOURCES ENGINE & DATASETS
+   17. ACADEMIC & CAMPUS RESOURCES ENGINE & DATASETS (6 CORE CARDS)
    ========================================================================== */
 const CAMPUS_RESOURCES_DATA = [
   {
@@ -9584,7 +9646,7 @@ const CAMPUS_RESOURCES_DATA = [
     iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
     description: "Previous year question papers for all courses and semesters.",
     metric: "📄 2.4K+ Papers",
-    fullDescription: "Comprehensive database of past 6 years end-semester and mid-term examination question papers across B.Tech (Computer Science, AI, IT, EE, ME, Civil), MCA, BCA, and Allied Sciences. Searchable by subject code, year, and faculty.",
+    fullDescription: "Comprehensive database of past 6 years end-semester and mid-term examination question papers across B.Tech, MCA, BCA, and Allied Sciences. Searchable by subject code, year, and faculty.",
     tags: ["Question Papers", "Mid-Term", "End-Semester", "All Programs"],
     links: [
       { name: "B.Tech CSE & AI End-Semester Archive (2019-2024)", type: "Cloud Archive", size: "840+ PDFs" },
@@ -9637,155 +9699,720 @@ const CAMPUS_RESOURCES_DATA = [
     mobileThumb: "/static/img/redesign/resources/mob_thumb_calendar.png",
     iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`,
     description: "Important academic dates, exam schedules and notifications.",
-    metric: "📅 Latest Updates",
+    metric: "📅 Session 2026-2027",
     fullDescription: "Official university academic calendar featuring class commencement dates, mid-term evaluation periods, preparatory leaves, gazetted holidays, and university festival weeks.",
     tags: ["Academic Calendar", "Exam Schedules", "University Holidays", "Timetable"],
     links: [
-      { name: "Official JNU Academic Calendar 2025-2026", type: "PDF Notice", size: "Verified" },
+      { name: "Official JNU Academic Calendar 2026-2027", type: "Interactive View", size: "Verified" },
       { name: "Semester End Exam Datesheet & Guidelines", type: "Notice Board", size: "Live Update" }
     ]
   },
   {
     id: "res-holidays",
-    title: "University Holiday List",
+    title: "JNU Holiday List",
     category: "Campus Life",
     categoryGroup: ["all", "campus life"],
     image: "/static/img/redesign/resources/res_calendar.png",
     mobileThumb: "/static/img/redesign/resources/mob_thumb_calendar.png",
     iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`,
     description: "Official list of university holidays and observances.",
-    metric: "🌴 2026 Holidays",
+    metric: "🌴 2026-2027 Holidays",
     fullDescription: "Official schedule of declared university holidays, gazetted festival leaves, national holidays, winter recess, and summer vacation for Jaipur National University.",
     tags: ["University Holidays", "Gazetted Leaves", "Festival Recess", "Official List"],
     links: [
-      { name: "Jaipur National University Holiday List 2026", type: "Official PDF", size: "Gazetted" },
+      { name: "Jaipur National University Holiday List 2026-2027", type: "Interactive Schedule", size: "Gazetted" },
       { name: "University Festival & Academic Break Schedule", type: "Academic Notice", size: "Approved" }
     ]
   },
   {
-    id: "res-placements",
-    title: "Placements",
-    category: "Placements",
-    categoryGroup: ["all", "placements", "career"],
-    image: "/static/img/redesign/resources/res_placements.png",
-    mobileThumb: "/static/img/redesign/resources/mob_thumb_placements.png",
-    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`,
-    description: "Placement drives, interview experiences and preparation resources.",
-    metric: "💼 300+ Resources",
-    fullDescription: "Training and placement cell preparation repository. Includes company-specific test question patterns, real interview transcripts, coding rounds practice sheets, and ATS-friendly resume templates.",
-    tags: ["Placement Drives", "Interview Experiences", "Coding Tests", "Resumes"],
-    links: [
-      { name: "Top 150 Technical Interview Questions & Solutions", type: "Interview Guide", size: "Comprehensive" },
-      { name: "Verified Student Placement Debriefs & Patterns", type: "Alumni Archive", size: "120+ Stories" },
-      { name: "Engineers ATS Resume Templates (LaTeX & DOCX)", type: "Template Pack", size: "8 Styles" }
-    ]
-  },
-  {
-    id: "res-career",
-    title: "Career Guidance",
-    category: "Career",
-    categoryGroup: ["all", "career"],
-    image: "/static/img/redesign/resources/res_career.png",
-    mobileThumb: "/static/img/redesign/resources/mob_thumb_career.png",
-    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>`,
-    description: "Guides, roadmaps and resources to help you plan your future.",
-    metric: "👥 200+ Guides",
-    fullDescription: "Step-by-step developer roadmaps for Full-Stack, AI Engineering, Cloud & DevOps, and Higher Education pathways (GATE, GRE, CAT, civil services).",
-    tags: ["Roadmaps", "GATE Prep", "Certifications", "Career Tracks"],
-    links: [
-      { name: "Software Engineer Interactive Roadmap 2025", type: "Visual Guide", size: "All Tracks" },
-      { name: "GATE CS & IT Comprehensive Subject Tracker", type: "Study Plan", size: "Full Syllabus" },
-      { name: "Cloud Architecture & Certification Free Paths", type: "Curated Kit", size: "AWS & GCP" }
-    ]
-  },
-  {
-    id: "res-ideas",
-    title: "Project Ideas",
-    category: "Academic",
-    categoryGroup: ["all", "academic", "career"],
-    image: "/static/img/redesign/resources/res_ideas.png",
-    mobileThumb: "/static/img/redesign/resources/mob_thumb_ideas.png",
-    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="18" x2="15" y2="18"></line><line x1="10" y1="22" x2="14" y2="22"></line><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path></svg>`,
-    description: "Mini projects, major projects and research ideas.",
-    metric: "💡 150+ Ideas",
-    fullDescription: "High-impact major and minor capstone project prompts. Complete with technical architecture diagrams, recommended tech stack, datasets, API documentation, and presentation decks.",
-    tags: ["Capstone Projects", "Mini Projects", "AI & Web3", "IoT & Hardware"],
-    links: [
-      { name: "AI/ML Real-World Problem Statements & Datasets", type: "Project Kit", size: "45 Blueprints" },
-      { name: "Full-Stack Web & Distributed Systems Projects", type: "Architecture Specs", size: "35 Blueprints" },
-      { name: "Smart Campus & Internet of Things Prototypes", type: "Hardware Schematics", size: "25 Blueprints" }
-    ]
-  },
-  {
-    id: "res-community",
-    title: "Student Community",
-    category: "Campus Life",
-    categoryGroup: ["all", "campus life"],
+    id: "res-threads",
+    title: "JNU Thread",
+    category: "Community",
+    categoryGroup: ["all", "community"],
     image: "/static/img/redesign/resources/res_community.png",
     mobileThumb: "/static/img/redesign/resources/mob_thumb_community.png",
-    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
-    description: "Useful links, study groups and student initiatives.",
-    metric: "👥 100+ Links",
-    fullDescription: "Direct access channels to student-led societies, coding circles, hackathon squads, open-source cohorts, peer mentor lounges, and cultural interest circles.",
-    tags: ["Discord Server", "WhatsApp Guilds", "Coding Circles", "Student Clubs"],
+    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>`,
+    description: "Student discussions, peer help, and campus updates.",
+    metric: "💬 Active Community",
+    fullDescription: "Jaipur National University student community discussion hub, peer mentorship channels, technical society chats, and campus life threads.",
+    tags: ["Discussions", "Peer Help", "Campus Buzz", "Student Guilds"],
     links: [
-      { name: "JNU Hackathon Squad & Coders Discord Hub", type: "Discord Community", size: "1,400+ Members" },
-      { name: "Open Source Engineers WhatsApp Guild", type: "Community Group", size: "480+ Students" },
-      { name: "Competitive Programming & Problem Solving Circle", type: "Weekly Meetups", size: "Active" }
-    ]
-  },
-  {
-    id: "res-links",
-    title: "Useful Links",
-    category: "Others",
-    categoryGroup: ["all", "others"],
-    image: "/static/img/redesign/resources/res_links.png",
-    mobileThumb: "/static/img/redesign/resources/mob_thumb_links.png",
-    iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`,
-    description: "Important university links and external resources.",
-    metric: "🔗 250+ Links",
-    fullDescription: "Curated portal directory with fast links to the JNU Student ERP, Central Digital Library, Fee Payment Portal, Result Inquiries, Bus Timings, and Hostel Administration.",
-    tags: ["ERP Portal", "Library Access", "Examination Portal", "Campus Helpline"],
-    links: [
-      { name: "Jaipur National University Student ERP Portal", type: "Official Gateway", size: "Direct Portal" },
-      { name: "JNU Digital Library & Research Gateways", type: "Academic Portal", size: "Direct Portal" },
-      { name: "University Examinations & Grade Card Portal", type: "Results Gateway", size: "Direct Portal" }
+      { name: "JNU Hackathon Squad & Coders Guild", type: "Discussion Forum", size: "1,400+ Members" },
+      { name: "Open Source Engineers Lounge", type: "Community Channel", size: "Active" }
     ]
   }
 ];
 
-let currentPyqFilters = {
-  school: "All Schools",
-  branch: "All Branches",
-  sem: "Any Sem",
-  type: "Any Type",
-  year: "Any Year",
-  query: ""
+/* ==========================================================================
+   ACADEMIC CALENDAR & JNU HOLIDAY LIST DATASETS (TRANSCRIBED EXACTLY)
+   ========================================================================== */
+const ACADEMIC_CALENDAR_DATA = {
+  odd: [
+    {
+      sNo: 1,
+      event: "Commencement of Classes",
+      semesters: "I Sem: 04 Aug 2026 | III Sem: 06 Jul 2026 | V & VII Sem: 15 Jul 2026 | IX Sem: 15 Jul 2026",
+      date: "06 Jul 2026 - 04 Aug 2026",
+      badge: "Classes",
+      badgeColor: "mint",
+      notes: "Mandatory attendance policy in effect from Day 1"
+    },
+    {
+      sNo: 2,
+      event: "Orientation Programme (I Sem)",
+      semesters: "Semester I (New Admissions)",
+      date: "04 Aug 2026 - 06 Aug 2026",
+      badge: "Orientation",
+      badgeColor: "blue",
+      notes: "Induction, Campus Walk, LMS & Academic Orientation"
+    },
+    {
+      sNo: 3,
+      event: "Mid Term Theory Examinations (IX Sem Test I)",
+      semesters: "Semester IX",
+      date: "22 Aug 2026 - 27 Aug 2026",
+      badge: "Exam",
+      badgeColor: "rose",
+      notes: "First internal test for integrated degree programs"
+    },
+    {
+      sNo: 4,
+      event: "Technorazz 2026*",
+      semesters: "All Odd Semesters (University-wide)",
+      date: "29 Sept, 30 Sept & 01 Oct 2026",
+      badge: "Festival",
+      badgeColor: "amber",
+      notes: "*Annual National Technical & Cultural Fest"
+    },
+    {
+      sNo: 5,
+      event: "Mid Term Theory Exam (I, III, V, VII Sem & IX Sem Test II)",
+      semesters: "Sem I, III, V, VII & IX (Test II)",
+      date: "12 Oct 2026 - 17 Oct 2026",
+      badge: "Exam",
+      badgeColor: "rose",
+      notes: "Central mid-term examinations for all academic programs"
+    },
+    {
+      sNo: 6,
+      event: "Deepawali Break",
+      semesters: "All Semesters",
+      date: "07 Nov 2026 - 10 Nov 2026",
+      badge: "Holiday",
+      badgeColor: "slate",
+      notes: "University closed for Deepawali festive recess"
+    },
+    {
+      sNo: 7,
+      event: "Mid Term Practical Exam (Continuous Evaluation)",
+      semesters: "All Laboratory Courses",
+      date: "03-05 Nov & 13-16 Nov 2026",
+      badge: "Practical",
+      badgeColor: "blue",
+      notes: "Continuous laboratory evaluation & viva assessments"
+    },
+    {
+      sNo: 8,
+      event: "Marks Submission (Where no practicals held)",
+      semesters: "Theoretical Departments",
+      date: "16 Nov 2026 - 21 Nov 2026",
+      badge: "Faculty",
+      badgeColor: "slate",
+      notes: "Submission of internal theory assessment marks"
+    },
+    {
+      sNo: 9,
+      event: "Marks Submission (Where practicals held)",
+      semesters: "Departments with Practical Labs",
+      date: "21 Nov 2026 - 28 Nov 2026",
+      badge: "Faculty",
+      badgeColor: "slate",
+      notes: "Consolidated practical & internal score locking"
+    },
+    {
+      sNo: 10,
+      event: "Preparation Leave",
+      semesters: "All Odd Semesters",
+      date: "24 Nov 2026 - 30 Nov 2026",
+      badge: "Prep Leave",
+      badgeColor: "mint",
+      notes: "Pre-examination study leave for students"
+    },
+    {
+      sNo: 11,
+      event: "End Term Theory Examinations",
+      semesters: "All Odd Semesters (I, III, V, VII, IX)",
+      date: "01 Dec 2026 - 19 Dec 2026",
+      badge: "Final Exam",
+      badgeColor: "rose",
+      notes: "Main End-Semester Theory Written Examinations"
+    },
+    {
+      sNo: 12,
+      event: "End Term Practical Examinations",
+      semesters: "All Practical/Studio Courses",
+      date: "21-24 Dec 2026 & 04-05 Jan 2027",
+      badge: "Practical",
+      badgeColor: "blue",
+      notes: "External practical evaluations and project juries"
+    },
+    {
+      sNo: 13,
+      event: "Winter Break",
+      semesters: "All Students & Academic Staff",
+      date: "25 Dec 2026 - 01 Jan 2027",
+      badge: "Holiday",
+      badgeColor: "slate",
+      notes: "Declared university winter vacation period"
+    },
+    {
+      sNo: 14,
+      event: "Declaration of Results",
+      semesters: "All Odd Semesters",
+      date: "Latest by 13 Jan 2027",
+      badge: "Results",
+      badgeColor: "amber",
+      notes: "Official end-term grade reports published on ERP"
+    }
+  ],
+  even: [
+    {
+      sNo: 1,
+      event: "Commencement of Classes",
+      semesters: "All Even Semesters (II, IV, VI, VIII, X)",
+      date: "02 Jan 2027",
+      badge: "Classes",
+      badgeColor: "mint",
+      notes: "Semester reopening & timetable commencement"
+    },
+    {
+      sNo: 2,
+      event: "Convocation 2027",
+      semesters: "Graduating Batches",
+      date: "20 Feb 2027",
+      badge: "Convocation",
+      badgeColor: "amber",
+      notes: "Annual University Convocation & Degree conferral ceremony"
+    },
+    {
+      sNo: 3,
+      event: "Mid Term Theory Exam (II, IV, VI, VIII & X Sem Test I)",
+      semesters: "Sem II, IV, VI, VIII & X (Test I)",
+      date: "08 Mar 2027 - 15 Mar 2027",
+      badge: "Exam",
+      badgeColor: "rose",
+      notes: "Mid-Term written assessments across all departments"
+    },
+    {
+      sNo: 4,
+      event: "Mid Term Practical Exam (Continuous Evaluation)",
+      semesters: "All Laboratory Subjects",
+      date: "18-19 Mar & 24-27 Mar 2027",
+      badge: "Practical",
+      badgeColor: "blue",
+      notes: "Mid-semester continuous lab assessment"
+    },
+    {
+      sNo: 5,
+      event: "Mid Term Theory Test II (X Sem)",
+      semesters: "Semester X (Final Year Integrated)",
+      date: "01 Apr 2027 - 06 Apr 2027",
+      badge: "Exam",
+      badgeColor: "rose",
+      notes: "Second phase evaluation for terminal semester"
+    },
+    {
+      sNo: 6,
+      event: "Marks Submission (Where no practicals held)",
+      semesters: "Theoretical Departments",
+      date: "15 Apr 2027 - 22 Apr 2027",
+      badge: "Faculty",
+      badgeColor: "slate",
+      notes: "Internal assessment score locking in university portal"
+    },
+    {
+      sNo: 7,
+      event: "End Semester Practical Examinations",
+      semesters: "All Laboratory Courses",
+      date: "16 Apr 2027 - 23 Apr 2027",
+      badge: "Practical",
+      badgeColor: "blue",
+      notes: "External practical evaluations & final viva voce"
+    },
+    {
+      sNo: 8,
+      event: "Marks Submission (Where practicals held)",
+      semesters: "Engineering & Applied Sciences",
+      date: "22 Apr 2027 - 28 Apr 2027",
+      badge: "Faculty",
+      badgeColor: "slate",
+      notes: "Consolidated practical score uploads"
+    },
+    {
+      sNo: 9,
+      event: "Preparation Leave",
+      semesters: "All Even Semesters",
+      date: "24 Apr 2027 - 30 Apr 2027",
+      badge: "Prep Leave",
+      badgeColor: "mint",
+      notes: "Pre-examination study break"
+    },
+    {
+      sNo: 10,
+      event: "End Semester Theory Examinations",
+      semesters: "All Even Semesters (II, IV, VI, VIII, X)",
+      date: "01 May 2027 - 31 May 2027",
+      badge: "Final Exam",
+      badgeColor: "rose",
+      notes: "University End-Semester Main Theory Examinations"
+    },
+    {
+      sNo: 11,
+      event: "Project / Dissertation / Training Report Submission",
+      semesters: "Final Year Students (UG & PG)",
+      date: "Latest by 15 Jun 2027",
+      badge: "Thesis",
+      badgeColor: "blue",
+      notes: "Major capstone project reports & internship certificates"
+    },
+    {
+      sNo: 12,
+      event: "Declaration of Results",
+      semesters: "All Even Semesters",
+      date: "Latest by 19 Jun 2027",
+      badge: "Results",
+      badgeColor: "amber",
+      notes: "Official end-term grade reports released on ERP"
+    }
+  ]
 };
 
-let dynamicPyqList = [];
-let dynamicSchoolsCoursesMap = null;
-let pyqSearchDebounceTimer = null;
+const JNU_HOLIDAYS_DATA = [
+  { sNo: 1, month: "August 2026", date: "15.08.2026", days: 1, day: "Saturday", festival: "Independence Day #", type: "both", typeLabel: "Academic & Non-Teaching", national: true },
+  { sNo: 2, month: "August 2026", date: "28.08.2026", days: 1, day: "Friday", festival: "Raksha Bandhan", type: "both", typeLabel: "Academic & Non-Teaching", national: false },
+  { sNo: 3, month: "September 2026", date: "04.09.2026", days: 1, day: "Friday", festival: "Janmashtami", type: "both", typeLabel: "Academic & Non-Teaching", national: false },
+  { sNo: 4, month: "October 2026", date: "02.10.2026", days: 1, day: "Friday", festival: "Mahatma Gandhi Jayanti", type: "both", typeLabel: "Academic & Non-Teaching", national: true },
+  { sNo: 5, month: "October 2026", date: "20.10.2026", days: 1, day: "Tuesday", festival: "Dusshera", type: "both", typeLabel: "Academic & Non-Teaching", national: false },
+  { sNo: 6, month: "November 2026", date: "07.11.2026 - 10.11.2026", days: 4, day: "Sat - Tue", festival: "Deepawali", type: "both", typeLabel: "Academic & Non-Teaching", national: false },
+  { sNo: 7, month: "November 2026", date: "24.11.2026", days: 1, day: "Tuesday", festival: "Guru Nanak Jayanti", type: "academic", typeLabel: "Academic Only", national: false },
+  { sNo: 8, month: "December 2026", date: "25.12.2026", days: 1, day: "Friday", festival: "Christmas", type: "academic", typeLabel: "Academic Only", national: false },
+  { sNo: 9, month: "Dec 2026 - Jan 2027", date: "30.12.2026 - 01.01.2027", days: 3, day: "Wed - Fri", festival: "Winter Break", type: "academic", typeLabel: "Academic Only", national: false },
+  { sNo: 10, month: "January 2027", date: "14.01.2027", days: 1, day: "Thursday", festival: "Makar Sankranti", type: "both", typeLabel: "Academic & Non-Teaching", national: false },
+  { sNo: 11, month: "January 2027", date: "26.01.2027", days: 1, day: "Tuesday", festival: "Republic Day #", type: "both", typeLabel: "Academic & Non-Teaching", national: true },
+  { sNo: 12, month: "March 2027", date: "06.03.2027", days: 1, day: "Saturday", festival: "Mahashivratri", type: "both", typeLabel: "Academic & Non-Teaching", national: false },
+  { sNo: 13, month: "March 2027", date: "10.03.2027", days: 1, day: "Wednesday", festival: "Idul-Fitr *", type: "academic", typeLabel: "Academic Only", moonDependent: true },
+  { sNo: 14, month: "March 2027", date: "22.03.2027", days: 1, day: "Monday", festival: "Holi (Dhulandi) Rang Wali", type: "both", typeLabel: "Academic & Non-Teaching", national: false },
+  { sNo: 15, month: "April 2027", date: "14.04.2027", days: 1, day: "Wednesday", festival: "Dr. B.R. Ambedkar Jayanti", type: "academic", typeLabel: "Academic Only", national: false },
+  { sNo: 16, month: "April 2027", date: "19.04.2027", days: 1, day: "Monday", festival: "Mahavir Jayanti", type: "academic", typeLabel: "Academic Only", national: false },
+  { sNo: 17, month: "May 2027", date: "17.05.2027", days: 1, day: "Monday", festival: "Idul-Zuha * (Restricted Holiday)", type: "restricted", typeLabel: "Restricted Holiday", moonDependent: true }
+];
 
-// Fallback precomputed map in case offline
-const JNU_DEFAULT_SCHOOLS_MAP = {
-  "Collaborative Course": ["B.Des (Gaming & Animation)(In Coll.)", "B.Tech AI & DS -Coding Pro", "B.Tech AI & ML -Coding Pro", "B.Tech CSE (AI & ML) Hons.-Samatrix", "B.Tech CSE (AI) Hons.-Coding Pro", "B.Tech Computer Science (RPA)(In Coll.)", "BBA (Digital Marketing)(In Coll.)", "BBA-Fintech & Digital Banking(In Coll.)", "BCA Full Stack Development (In Coll.)"],
-  "School of Agriculture Sciences": ["B.Sc. (Hons.) - Agriculture", "M.Sc. - (Ag.) Agronomy", "M.Sc. - (Ag.) Genetics and Plant Breeding", "M.Sc. - (Ag.) Horticulture"],
-  "School of Allied Health Sciences": ["Advanced Certificate Course in Diabetology-1Y", "Advanced Certificate Course in Diabetology-2Y", "B.Sc. (Cardio Vascular Technology)", "B.Sc. (Clinical Dietetics)", "B.Sc. (Forensic Science)", "B.Sc. (MLT) (Y)", "B.Sc. (Medical Imaging Technology)(Y)", "B.Sc. (Operation Theater Technology)", "B.Sc. (Optometry)(Y)", "Bachelor of Physiotherapy", "Bachelor of Physiotherapy(Y)", "Diploma in ECG Technician", "Diploma in Operation Theatre Technology", "Diploma in Radiation Technology", "M.Sc. (Forensic Science)", "M.Sc. - Clinical Nutrition", "M.Sc. - Medical Microbiology", "Master of Physiotherapy(Y)", "Ph.D. (Food & Nutrition)", "Ph.D. (Physiotherapy)", "Ph.D. Forensic Science"],
-  "School of Business & Management": ["B.Com. (Honours)", "BBA (Aviation Management)", "Bachelor of Business Administration (BBA)", "Bachelor of Commerce (B.Com.)", "MBA (Digital Marketing)", "MBA (Dual Specialization)", "MBA (Hospital & Healthcare Management)", "MBA in Business Intelligence & Data Analytics", "Master of Business Administration (MBA)", "Ph.D. (Management)"],
-  "School of Computer & Systems Sciences": ["BCA Specialization in Cyber Security", "BCA Specilization in Artificial Intelligence and Machine Learning", "Bachelor of Computer Application", "MCA Specialization in Artificial Intelligence and Machine Learning", "MCA Specialization in Cyber Security", "Master of Computer Applications (MCA)-2 Years", "PGDCA", "Ph.D. (Computer Science)"],
-  "School of Education": ["B.A. (Hons.) Psychology", "B.A. (Pass Course)", "B.Sc. (Hons.) Psychology", "Diploma in Yoga", "M.Ed (PMET)", "Ph.D. (Education)", "Ph.D.(History)"],
-  "School of Engineering & Technology": ["B.Tech. (Biomedical Engineering)", "B.Tech. (Biotechnology)", "B.Tech. (Civil Engineering)", "B.Tech. (Computer Science)", "B.Tech. (Electrical Engineering)", "B.Tech. (Electronics & Communication)", "B.Tech. (Food Technology)", "B.Tech. (Mechanical Engineering)", "B.Tech. CSE(Hons.) in Artificial Intelligence and Machine Learning", "B.Tech. CSE(Hons.) in Cyber Security", "B.Tech. CSE(Hons.) in Data Science", "M. Tech. (CSE) Specialization in Data Science", "M.Tech in Electronics & Instrumentation with specialization in Biomedical Engineering", "M.Tech. - Computer Science", "Ph.D. (Computer Science & Engineering)"],
-  "School of Fashion Design": ["B. Sc. Fashion Design", "Diploma in Fashion Design", "MBA (Fashion Design)"],
-  "School of Hotel Management & Catering Technology": ["B.Sc. (Hospitality & Hotel Administration)", "BHMCT", "Diploma In Bakery and Confectionery"],
-  "School of Languages, Literature and Society": ["B.A. (Hons.) - English 4 Yr", "M.A. English (Literature & Language)", "Ph.D. (English)"],
-  "School of Life & Basic Sciences": ["B.Sc. (Hons.) - Biotechnology", "B.Sc. (Hons.) - Biotechnology-4Y", "B.Sc. (Hons.) - Mathematics", "B.Sc. (Hons.) - Microbiology", "B.Sc. (Hons.) - Microbiology-4Y", "B.Sc. Pass Course (CBZ)", "B.Sc. Pass Course (PCM)", "M. Sc. Bioinformatics and Data Science", "M.Sc. - Biotechnology", "M.Sc. - Botany", "M.Sc. - Chemistry", "M.Sc. - Microbiology", "Ph.D. (Biotechnology)", "Ph.D. (Botany)", "Ph.D. (Chemistry)", "Ph.D. (Life Science)", "Ph.D. (Mathematics)", "Ph.D. (Microbiology)", "Ph.D. (Physics)", "Ph.D. Zoology"],
-  "School of Media Studies": ["Bachelor of Arts (Journalism & Mass Communication)", "Master of Arts (Journalism & Mass Communication)", "Ph.D. (Journalism & Mass Communication)"],
-  "School of Medical Sciences": ["Ph.D. (Biochemistry)"],
-  "School of Pharmaceutical Sciences": ["Bachelor of Pharmacy", "Diploma in Pharmacy", "M. Pharm. (Pharmaceutical Chemistry)", "M. Pharm. (Pharmaceutics)", "M. Pharm. (Pharmacology)", "M. Pharm. (Quality Assurance)", "Ph.D. (Pharmaceutical Science)", "Pharm. D (PB)", "Pharm. D."],
-  "Seedling School of Law and Governance": ["B.A.,LL.B.", "BBA,LL.B. (Hons.)", "LLB-3YR", "LLM", "Ph.D. (Law)"],
-  "Seedling School of Nursing": ["B.Sc. (Nursing)", "Diploma in General Nursing and Midwifery (GNM)", "Ph.D. (Nursing)", "Post Basic B.Sc. (Nursing)"]
-};
+let currentCalendarTab = 'odd';
+let currentCalendarSearch = '';
+let currentHolidayFilter = 'all';
+let currentHolidaySearch = '';
+
+function loadAcademicCalendarView() {
+  const container = document.getElementById("academicCalendarViewContainer");
+  if (!container) return;
+  renderAcademicCalendarPage();
+  showFooterAfterLoad();
+}
+
+function switchAcademicCalendarTab(tab) {
+  currentCalendarTab = tab;
+  renderAcademicCalendarPage();
+}
+
+function handleCalendarSearch(query) {
+  currentCalendarSearch = query.trim().toLowerCase();
+  renderAcademicCalendarRows();
+}
+
+function renderAcademicCalendarPage() {
+  const container = document.getElementById("academicCalendarViewContainer");
+  if (!container) return;
+
+  const isOdd = currentCalendarTab === 'odd';
+
+  container.innerHTML = `
+    <div class="calendar-page-shell">
+      
+      <!-- Top Navigation & Breadcrumb -->
+      <div class="calendar-sub-bar">
+        <a href="/resources" onclick="event.preventDefault(); navigateTo('/resources');" class="btn-create-back">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Back to Resources</span>
+        </a>
+        <div class="calendar-header-badge">Session 2026-2027</div>
+      </div>
+
+      <!-- Header Section -->
+      <header class="calendar-clean-header">
+        <h1 class="calendar-page-title">Academic Calendar</h1>
+        <p class="calendar-page-subtitle">Official schedule of teaching days, examination windows, preparatory leaves, and university breaks for Jaipur National University.</p>
+      </header>
+
+      <!-- Semester Tabs & Filter Bar -->
+      <div class="calendar-controls-row">
+        <div class="calendar-tabs-pill">
+          <button type="button" class="cal-tab-btn ${isOdd ? 'active' : ''}" onclick="switchAcademicCalendarTab('odd')">
+            <span>Odd Semesters</span>
+            <span class="cal-sem-sub">(I, III, V, VII, IX)</span>
+          </button>
+          <button type="button" class="cal-tab-btn ${!isOdd ? 'active' : ''}" onclick="switchAcademicCalendarTab('even')">
+            <span>Even Semesters</span>
+            <span class="cal-sem-sub">(II, IV, VI, VIII, X)</span>
+          </button>
+        </div>
+
+        <div class="calendar-actions-cluster">
+          <div class="calendar-search-box">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Search event or exam..." value="${escapeAttr(currentCalendarSearch)}" oninput="handleCalendarSearch(this.value)" class="calendar-search-input">
+          </div>
+          <button type="button" onclick="window.print()" class="btn-calendar-print" title="Print or Save as PDF">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span>Print PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Responsive Data Table Card -->
+      <div class="calendar-table-card">
+        <div class="calendar-table-responsive">
+          <table class="calendar-data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">S.No.</th>
+                <th>Activity / Event</th>
+                <th>Applicable Semesters</th>
+                <th>Scheduled Date(s)</th>
+                <th>Category</th>
+                <th>Remarks / Notice</th>
+              </tr>
+            </thead>
+            <tbody id="academicCalendarTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="calendar-table-footer-notice">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <span>* Technorazz is the annual university technical and cultural festival. End-semester examination schedules are subject to university guidelines.</span>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  renderAcademicCalendarRows();
+}
+
+function renderAcademicCalendarRows() {
+  const tbody = document.getElementById("academicCalendarTableBody");
+  if (!tbody) return;
+
+  const list = ACADEMIC_CALENDAR_DATA[currentCalendarTab] || [];
+  const q = currentCalendarSearch;
+
+  const filtered = list.filter(item => {
+    if (!q) return true;
+    return (
+      item.event.toLowerCase().includes(q) ||
+      item.semesters.toLowerCase().includes(q) ||
+      item.date.toLowerCase().includes(q) ||
+      item.notes.toLowerCase().includes(q) ||
+      item.badge.toLowerCase().includes(q)
+    );
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; padding:40px 20px; color:#64748B;">
+          No academic events matched your query "${escapeHtml(q)}".
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(item => `
+    <tr class="cal-data-row">
+      <td class="cal-sno">${item.sNo}</td>
+      <td class="cal-event-name">
+        <strong>${escapeHtml(item.event)}</strong>
+      </td>
+      <td class="cal-semesters">${escapeHtml(item.semesters).replace(/\n/g, '<br>')}</td>
+      <td class="cal-date-highlight">${escapeHtml(item.date)}</td>
+      <td>
+        <span class="cal-badge badge-${escapeAttr(item.badgeColor)}">${escapeHtml(item.badge)}</span>
+      </td>
+      <td class="cal-notes">${escapeHtml(item.notes)}</td>
+    </tr>
+  `).join("");
+}
+
+/* ==========================================================================
+   JNU HOLIDAY LIST ENGINE (JULY 2026 - JUNE 2027)
+   ========================================================================== */
+function loadHolidaysView() {
+  const container = document.getElementById("holidaysViewContainer");
+  if (!container) return;
+  renderHolidaysPage();
+  showFooterAfterLoad();
+}
+
+function setHolidayFilter(filter) {
+  currentHolidayFilter = filter;
+  renderHolidaysPage();
+}
+
+function handleHolidaySearch(query) {
+  currentHolidaySearch = query.trim().toLowerCase();
+  renderHolidayRows();
+}
+
+function renderHolidaysPage() {
+  const container = document.getElementById("holidaysViewContainer");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="calendar-page-shell">
+      
+      <!-- Top Navigation & Breadcrumb -->
+      <div class="calendar-sub-bar">
+        <a href="/resources" onclick="event.preventDefault(); navigateTo('/resources');" class="btn-create-back">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Back to Resources</span>
+        </a>
+        <div class="calendar-header-badge">July 2026 – June 2027</div>
+      </div>
+
+      <!-- Header Section -->
+      <header class="calendar-clean-header">
+        <h1 class="calendar-page-title">JNU Holiday List</h1>
+        <p class="calendar-page-subtitle">Official gazetted holidays, festival vacations, and declared university recesses for Jaipur National University.</p>
+      </header>
+
+      <!-- Filter Pills & Search -->
+      <div class="calendar-controls-row">
+        <div class="holiday-filter-pills">
+          <button type="button" class="hol-filter-btn ${currentHolidayFilter === 'all' ? 'active' : ''}" onclick="setHolidayFilter('all')">All Holidays (17)</button>
+          <button type="button" class="hol-filter-btn ${currentHolidayFilter === 'both' ? 'active' : ''}" onclick="setHolidayFilter('both')">Academic & Non-Teaching (10)</button>
+          <button type="button" class="hol-filter-btn ${currentHolidayFilter === 'academic' ? 'active' : ''}" onclick="setHolidayFilter('academic')">Academic Only (6)</button>
+          <button type="button" class="hol-filter-btn ${currentHolidayFilter === 'restricted' ? 'active' : ''}" onclick="setHolidayFilter('restricted')">Restricted (1)</button>
+        </div>
+
+        <div class="calendar-actions-cluster">
+          <div class="calendar-search-box">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" placeholder="Search festival or month..." value="${escapeAttr(currentHolidaySearch)}" oninput="handleHolidaySearch(this.value)" class="calendar-search-input">
+          </div>
+          <button type="button" onclick="window.print()" class="btn-calendar-print" title="Print or Save as PDF">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span>Print PDF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Holidays Table Card -->
+      <div class="calendar-table-card">
+        <div class="calendar-table-responsive">
+          <table class="calendar-data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">S.No.</th>
+                <th>Month</th>
+                <th>Date</th>
+                <th>Days</th>
+                <th>Day</th>
+                <th>Festival / Occasion</th>
+                <th>Applicability</th>
+              </tr>
+            </thead>
+            <tbody id="jnuHolidaysTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Footnotes -->
+        <div class="holidays-footnotes-box">
+          <div class="hol-footnote-item">
+            <strong class="hol-footnote-symbol">*</strong>
+            <span>Subject to the appearance of the Moon.</span>
+          </div>
+          <div class="hol-footnote-item">
+            <strong class="hol-footnote-symbol">#</strong>
+            <span>Flag hoisting is mandatory for all teaching and non-teaching staff.</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  renderHolidayRows();
+}
+
+function renderHolidayRows() {
+  const tbody = document.getElementById("jnuHolidaysTableBody");
+  if (!tbody) return;
+
+  const q = currentHolidaySearch;
+  const f = currentHolidayFilter;
+
+  const filtered = JNU_HOLIDAYS_DATA.filter(item => {
+    let matchesFilter = true;
+    if (f !== 'all') {
+      matchesFilter = item.type === f;
+    }
+    if (!matchesFilter) return false;
+
+    if (q) {
+      return (
+        item.festival.toLowerCase().includes(q) ||
+        item.month.toLowerCase().includes(q) ||
+        item.date.toLowerCase().includes(q) ||
+        item.day.toLowerCase().includes(q) ||
+        item.typeLabel.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center; padding:40px 20px; color:#64748B;">
+          No university holidays matched your criteria.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(h => {
+    const isBoth = h.type === 'both';
+    const isAcademic = h.type === 'academic';
+    const badgeClass = isBoth ? 'badge-mint' : (isAcademic ? 'badge-blue' : 'badge-slate');
+
+    return `
+      <tr class="cal-data-row">
+        <td class="cal-sno">${h.sNo}</td>
+        <td class="cal-month"><strong>${escapeHtml(h.month)}</strong></td>
+        <td class="cal-date-highlight">${escapeHtml(h.date)}</td>
+        <td class="cal-days-pill">${h.days} ${h.days === 1 ? 'day' : 'days'}</td>
+        <td class="cal-day">${escapeHtml(h.day)}</td>
+        <td class="cal-event-name">
+          <strong>${escapeHtml(h.festival)}</strong>
+          ${h.national ? `<span class="hol-nat-badge">National</span>` : ''}
+        </td>
+        <td>
+          <span class="cal-badge ${badgeClass}">${escapeHtml(h.typeLabel)}</span>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+/* ==========================================================================
+   SYLLABUS, NOTES, AND THREADS VIEWS
+   ========================================================================== */
+function loadSyllabusView() {
+  const container = document.getElementById("syllabusViewContainer");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="calendar-page-shell">
+      <div class="calendar-sub-bar">
+        <a href="/resources" onclick="event.preventDefault(); navigateTo('/resources');" class="btn-create-back">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Back to Resources</span>
+        </a>
+      </div>
+
+      <header class="calendar-clean-header">
+        <h1 class="calendar-page-title">University Syllabus</h1>
+        <p class="calendar-page-subtitle">Explore curriculum blueprints, course outlines, credit schemes, and electives across all schools.</p>
+      </header>
+
+      <div class="syllabus-grid">
+        ${Object.entries(JNU_DEFAULT_SCHOOLS_MAP).map(([school, courses]) => `
+          <div class="syllabus-school-card">
+            <h3 class="syllabus-school-title">${escapeHtml(school)}</h3>
+            <div class="syllabus-courses-list">
+              ${courses.map(c => `
+                <div class="syllabus-course-item" onclick="openResourceDetailModal('res-syllabus')">
+                  <span class="syllabus-course-name">${escapeHtml(c)}</span>
+                  <span class="syllabus-course-arrow">&rarr;</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+  showFooterAfterLoad();
+}
+
+function loadNotesView() {
+  const container = document.getElementById("notesViewContainer");
+  if (!container) return;
+  openResourceDetailModal("res-notes");
+  showFooterAfterLoad();
+}
+
+function loadThreadsView() {
+  const container = document.getElementById("threadsViewContainer");
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="calendar-page-shell">
+      <div class="calendar-sub-bar">
+        <a href="/resources" onclick="event.preventDefault(); navigateTo('/resources');" class="btn-create-back">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          <span>Back to Resources</span>
+        </a>
+      </div>
+
+      <header class="calendar-clean-header">
+        <h1 class="calendar-page-title">JNU Thread</h1>
+        <p class="calendar-page-subtitle">Student discussions, project collaboration, coding queries, and campus buzz.</p>
+      </header>
+
+      <div class="threads-feed-container">
+        <div class="threads-composer-card">
+          <textarea placeholder="Start a discussion or ask a question across JNU campus..." rows="3" class="threads-textarea"></textarea>
+          <div class="threads-composer-actions">
+            <span style="font-size:0.8rem; color:#64748B;">Posting as ${currentUser ? escapeHtml(currentUser.name || currentUser.id) : 'Student'}</span>
+            <button type="button" class="btn-primary-forest-pill" onclick="showToast('Discussion posted to JNU Thread!', 'success')">Post Thread</button>
+          </div>
+        </div>
+
+        <div class="threads-list-stack">
+          <div class="thread-item-card">
+            <div class="thread-author-row">
+              <img src="/static/img/blank_pfp.jpg" class="thread-avatar" alt="Avatar">
+              <div>
+                <strong>Afroz Alam</strong>
+                <span class="thread-meta">B.Tech CSE &bull; 2 hours ago</span>
+              </div>
+            </div>
+            <h3 class="thread-title">Smart India Hackathon 2026 Hardware Track sensors discussion</h3>
+            <p class="thread-body">If any teams need help interfacing ESP32 with MQTT brokers or Raspberry Pi for the energy meter problem statement, drop your queries here!</p>
+            <div class="thread-footer-row">
+              <span class="thread-tag">#SIH2026</span>
+              <span class="thread-tag">#Hardware</span>
+              <span class="thread-tag">#IoT</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  showFooterAfterLoad();
+}
 
 function loadResourcesView() {
   const container = document.getElementById("resourcesViewContainer");
@@ -9806,14 +10433,14 @@ function renderResourcesPage() {
       <header class="academic-res-header">
         <div class="academic-res-header-left">
           <h1 class="academic-res-title">Academic Resources</h1>
-          <p class="academic-res-subtitle">Find previous year papers, notes, syllabus, placement resources and more.</p>
+          <p class="academic-res-subtitle">Previous year question papers, syllabus, notes, academic calendar, holiday list, and student threads.</p>
         </div>
       </header>
 
-      <!-- 2-Column Desktop, 1-Column Mobile Pastel Cards Grid -->
+      <!-- 3-Column Desktop Grid (6 Core Cards) -->
       <div class="academic-res-grid">
         
-        <!-- Card 1: JNU PYQs (Directly Navigates to /pyqs dedicated page) -->
+        <!-- Card 1: JNU PYQs -->
         <div class="academic-res-card mint" onclick="navigateTo('/pyqs')">
           <div class="res-card-blob mint"></div>
           <div class="res-card-inner">
@@ -9829,13 +10456,13 @@ function renderResourcesPage() {
         </div>
 
         <!-- Card 2: Syllabus -->
-        <div class="academic-res-card blue" onclick="openResourceDetailModal('res-syllabus')">
+        <div class="academic-res-card blue" onclick="navigateTo('/syllabus')">
           <div class="res-card-blob blue"></div>
           <div class="res-card-inner">
             <h2 class="res-card-title">Syllabus</h2>
             <p class="res-card-desc">Latest syllabus for all programs and subjects.</p>
             <div class="res-card-footer">
-              <span class="res-card-explore blue">Explore &rarr;</span>
+              <span class="res-card-explore blue">Explore Syllabus &rarr;</span>
               <div class="res-card-circle-btn blue">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </div>
@@ -9850,7 +10477,7 @@ function renderResourcesPage() {
             <h2 class="res-card-title">Notes & Study Material</h2>
             <p class="res-card-desc">Class notes, study resources and shared materials.</p>
             <div class="res-card-footer">
-              <span class="res-card-explore rose">Explore &rarr;</span>
+              <span class="res-card-explore rose">View Notes &rarr;</span>
               <div class="res-card-circle-btn rose">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </div>
@@ -9859,13 +10486,13 @@ function renderResourcesPage() {
         </div>
 
         <!-- Card 4: Academic Calendar -->
-        <div class="academic-res-card amber" onclick="openResourceDetailModal('res-calendar')">
+        <div class="academic-res-card amber" onclick="navigateTo('/academic-calendar')">
           <div class="res-card-blob amber"></div>
           <div class="res-card-inner">
             <h2 class="res-card-title">Academic Calendar</h2>
-            <p class="res-card-desc">Important academic dates, exam schedules and notifications.</p>
+            <p class="res-card-desc">Odd & Even semester schedules, exam dates, and breaks.</p>
             <div class="res-card-footer">
-              <span class="res-card-explore amber">Explore &rarr;</span>
+              <span class="res-card-explore amber">View Calendar &rarr;</span>
               <div class="res-card-circle-btn amber">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </div>
@@ -9873,14 +10500,14 @@ function renderResourcesPage() {
           </div>
         </div>
 
-        <!-- Card 5: University Holiday List -->
-        <div class="academic-res-card slate" onclick="openResourceDetailModal('res-holidays')">
+        <!-- Card 5: JNU Holiday List -->
+        <div class="academic-res-card slate" onclick="navigateTo('/holidays')">
           <div class="res-card-blob slate"></div>
           <div class="res-card-inner">
-            <h2 class="res-card-title">University Holiday List</h2>
-            <p class="res-card-desc">Official list of university holidays and observances.</p>
+            <h2 class="res-card-title">JNU Holiday List</h2>
+            <p class="res-card-desc">Official list of university holidays and observances (2026-2027).</p>
             <div class="res-card-footer">
-              <span class="res-card-explore slate">Explore &rarr;</span>
+              <span class="res-card-explore slate">View Holidays &rarr;</span>
               <div class="res-card-circle-btn slate">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </div>
@@ -9888,75 +10515,15 @@ function renderResourcesPage() {
           </div>
         </div>
 
-        <!-- Card 6: Placements -->
-        <div class="academic-res-card mint" onclick="openResourceDetailModal('res-placements')">
+        <!-- Card 6: JNU Thread -->
+        <div class="academic-res-card mint" onclick="navigateTo('/threads')">
           <div class="res-card-blob mint"></div>
           <div class="res-card-inner">
-            <h2 class="res-card-title">Placements</h2>
-            <p class="res-card-desc">Placement drives, interview experiences and preparation resources.</p>
+            <h2 class="res-card-title">JNU Thread</h2>
+            <p class="res-card-desc">Student discussions, peer help, and campus announcements.</p>
             <div class="res-card-footer">
-              <span class="res-card-explore mint">Explore &rarr;</span>
+              <span class="res-card-explore mint">Open Threads &rarr;</span>
               <div class="res-card-circle-btn mint">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 7: Career Guidance -->
-        <div class="academic-res-card blue" onclick="openResourceDetailModal('res-career')">
-          <div class="res-card-blob blue"></div>
-          <div class="res-card-inner">
-            <h2 class="res-card-title">Career Guidance</h2>
-            <p class="res-card-desc">Guides, roadmaps and resources to help you plan your future.</p>
-            <div class="res-card-footer">
-              <span class="res-card-explore blue">Explore &rarr;</span>
-              <div class="res-card-circle-btn blue">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 8: Project Ideas -->
-        <div class="academic-res-card rose" onclick="openResourceDetailModal('res-ideas')">
-          <div class="res-card-blob rose"></div>
-          <div class="res-card-inner">
-            <h2 class="res-card-title">Project Ideas</h2>
-            <p class="res-card-desc">Mini projects, major projects and research ideas.</p>
-            <div class="res-card-footer">
-              <span class="res-card-explore rose">Explore &rarr;</span>
-              <div class="res-card-circle-btn rose">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 9: Student Community -->
-        <div class="academic-res-card amber" onclick="openResourceDetailModal('res-community')">
-          <div class="res-card-blob amber"></div>
-          <div class="res-card-inner">
-            <h2 class="res-card-title">Student Community</h2>
-            <p class="res-card-desc">Useful links, study groups and student initiatives.</p>
-            <div class="res-card-footer">
-              <span class="res-card-explore amber">Explore &rarr;</span>
-              <div class="res-card-circle-btn amber">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Card 10: Useful Links -->
-        <div class="academic-res-card slate" onclick="openResourceDetailModal('res-links')">
-          <div class="res-card-blob slate"></div>
-          <div class="res-card-inner">
-            <h2 class="res-card-title">Useful Links</h2>
-            <p class="res-card-desc">Important university links and external resources.</p>
-            <div class="res-card-footer">
-              <span class="res-card-explore slate">Explore &rarr;</span>
-              <div class="res-card-circle-btn slate">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </div>
             </div>
@@ -9970,6 +10537,58 @@ function renderResourcesPage() {
 
   container.innerHTML = html;
 }
+
+let currentPyqFilters = {
+  school: "All Schools",
+  branch: "All Branches",
+  sem: "Any Sem",
+  type: "Any Type",
+  year: "Any Year",
+  query: ""
+};
+let dynamicSchoolsCoursesMap = null;
+let dynamicPyqList = [];
+let pyqSearchDebounceTimer = null;
+const JNU_DEFAULT_SCHOOLS_MAP = {
+  "School of Engineering & Technology": [
+    "B.Tech (Computer Science Engineering)",
+    "B.Tech CSE (AI & ML) Hons.-Samatrix",
+    "B.Tech AI & ML -Coding Pro",
+    "B.Tech AI & DS -Coding Pro",
+    "B.Tech. CSE(Hons.) in Cyber Security",
+    "B.Tech. CSE(Hons.) in Data Science",
+    "B.Tech. (Electronics & Communication)",
+    "B.Tech. (Electrical Engineering)",
+    "B.Tech. (Mechanical Engineering)",
+    "B.Tech. (Civil Engineering)",
+    "B.Tech. (Biotechnology)",
+    "BCA",
+    "BCA Full Stack Development (In Coll.)",
+    "BCA Specilization in Artificial Intelligence and Machine Learning",
+    "MCA",
+    "M.Tech (Computer Science Engineering)"
+  ],
+  "School of Business & Management": [
+    "BBA",
+    "BBA (Digital Marketing)(In Coll.)",
+    "BBA-Fintech & Digital Banking(In Coll.)",
+    "MBA",
+    "B.Com (Hons.)"
+  ],
+  "School of Computer & Systems Sciences": [
+    "BCA",
+    "MCA",
+    "B.Sc (Information Technology)",
+    "M.Sc (Computer Science)"
+  ],
+  "School of Life & Allied Sciences": [
+    "B.Sc (Biotechnology)",
+    "B.Sc (Microbiology)",
+    "M.Sc (Biotechnology)",
+    "B.Pharm",
+    "D.Pharm"
+  ]
+};
 
 function loadPyqsView() {
   const container = document.getElementById("pyqsViewContainer") || document.getElementById("resourcesViewContainer");

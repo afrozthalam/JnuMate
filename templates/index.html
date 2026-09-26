@@ -28,6 +28,11 @@
       else if (p.startsWith("/events/") || p.startsWith("/event/")) activeId = "viewEventDetail";
       else if (p === "/resources") activeId = "viewResources";
       else if (p === "/pyqs") activeId = "viewPyqs";
+      else if (p === "/academic-calendar") activeId = "viewAcademicCalendar";
+      else if (p === "/holidays") activeId = "viewHolidays";
+      else if (p === "/syllabus") activeId = "viewSyllabus";
+      else if (p === "/notes") activeId = "viewNotes";
+      else if (p === "/threads") activeId = "viewThreads";
       else if (p === "/course-select" || p === "/select-program" || p === "/enter-details" || p === "/sync-details" || p === "/otp" || p === "/verify-otp") activeId = "viewLogin";
       window.__initialActiveViewId = activeId;
     })();
@@ -356,6 +361,31 @@
         <!-- VIEW 10: JNU PYQS DEDICATED PORTAL -->
         <section id="viewPyqs" class="view-page-panel">
           <div id="pyqsViewContainer"></div>
+        </section>
+
+        <!-- VIEW 11: ACADEMIC CALENDAR -->
+        <section id="viewAcademicCalendar" class="view-page-panel">
+          <div id="academicCalendarViewContainer"></div>
+        </section>
+
+        <!-- VIEW 12: JNU HOLIDAY LIST -->
+        <section id="viewHolidays" class="view-page-panel">
+          <div id="holidaysViewContainer"></div>
+        </section>
+
+        <!-- VIEW 13: SYLLABUS -->
+        <section id="viewSyllabus" class="view-page-panel">
+          <div id="syllabusViewContainer"></div>
+        </section>
+
+        <!-- VIEW 14: NOTES & STUDY MATERIAL -->
+        <section id="viewNotes" class="view-page-panel">
+          <div id="notesViewContainer"></div>
+        </section>
+
+        <!-- VIEW 15: JNU THREAD -->
+        <section id="viewThreads" class="view-page-panel">
+          <div id="threadsViewContainer"></div>
         </section>
 
         <!-- Global Sleek Minimalist Floating Bar Footer (Exact match to mockup) -->
