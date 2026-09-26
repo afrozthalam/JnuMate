@@ -2585,11 +2585,20 @@ function renderFullTeamDetail(team) {
           <div class="team-footer-right">
             <span>&copy; 2026 JnuMate</span>
             <span>&bull;</span>
-            <a href="javascript:void(0)" class="team-footer-link">Privacy</a>
+            <a href="mailto:inbox.afrozalam@gmail.com" class="footer-contact-item" title="Email Afroz Alam">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <span>inbox.afrozalam@gmail.com</span>
+            </a>
             <span>&bull;</span>
-            <a href="javascript:void(0)" class="team-footer-link">Help</a>
-            <span>&bull;</span>
-            <a href="mailto:inbox.afrozalam@gmail.com" class="team-footer-link">Contact</a>
+            <a href="https://github.com/afrozthalam" target="_blank" rel="noopener noreferrer" class="footer-contact-item" title="GitHub Profile">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              <span>github.com/afrozthalam</span>
+            </a>
           </div>
         </footer>
 
@@ -5536,11 +5545,9 @@ function loadLoginView() {
           <footer class="login-footer-row">
             <span class="login-footer-copy">&copy; 2026 Jaipur National University. All rights reserved.</span>
             <div class="login-footer-links">
-              <a href="javascript:void(0)" onclick="showToast('Help portal available on main campus site', 'info')" class="login-footer-link">Help</a>
+              <a href="mailto:inbox.afrozalam@gmail.com" class="login-footer-link" title="Email Afroz Alam">inbox.afrozalam@gmail.com</a>
               <span>|</span>
-              <a href="javascript:void(0)" onclick="showToast('Privacy policy: Student data strictly protected under JNU regulations', 'info')" class="login-footer-link">Privacy</a>
-              <span>|</span>
-              <a href="mailto:inbox.afrozalam@gmail.com" class="login-footer-link">Contact</a>
+              <a href="https://github.com/afrozthalam" target="_blank" rel="noopener noreferrer" class="login-footer-link" title="GitHub Profile">github.com/afrozthalam</a>
             </div>
           </footer>
 
@@ -8948,14 +8955,11 @@ function renderEventsPage() {
   container.innerHTML = `
     <div class="events-page-shell">
       
-      <!-- Clean Minimal Header (No Clutter) -->
-      <div class="events-clean-header" style="margin-bottom: 22px; padding: 6px 0 2px 0;">
-        <h1 style="font-family: var(--font-serif); font-size: 2.15rem; font-weight: 750; color: #0F172A; margin: 0 0 6px 0; letter-spacing: -0.02em;">
+      <!-- Clean Minimal Header (No Clutter, No Description) -->
+      <div class="events-clean-header" style="margin-bottom: 20px; padding: 4px 0 0 0;">
+        <h1 style="font-family: var(--font-serif); font-size: 2.15rem; font-weight: 750; color: #0F172A; margin: 0; letter-spacing: -0.02em;">
           Campus Events
         </h1>
-        <p style="font-size: 0.94rem; color: #64748B; margin: 0; line-height: 1.5;">
-          Hackathons, workshops, seminars, cultural fests and competitions across Jaipur National University.
-        </p>
       </div>
 
       <!-- FILTER & SEARCH BAR -->
@@ -9005,16 +9009,9 @@ function renderEventsPage() {
         <button type="button" class="events-filter-pill-mob ${currentEventsCategory === 'other' ? 'active' : ''}" onclick="setEventsFilter('other')">Other</button>
       </div>
 
-      <!-- SECTION TITLE ROW -->
+      <!-- SECTION TITLE ROW (No See All Button) -->
       <div class="events-section-header">
         <h2 class="events-section-title">Upcoming Events</h2>
-        <button type="button" class="events-see-all-btn" onclick="setEventsFilter('all')">
-          <span>See All</span>
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
       </div>
 
       <!-- EVENTS DESKTOP GRID (3-Columns) -->
@@ -10038,22 +10035,22 @@ function renderAcademicCalendarPage() {
   container.innerHTML = `
     <div class="calendar-page-shell">
       
-      <!-- Top Navigation & Breadcrumb -->
+      <!-- Clean Back Arrow Button -->
       <div class="calendar-sub-bar">
-        <a href="/resources" onclick="event.preventDefault(); navigateTo('/resources');" class="btn-create-back">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          <span>Back to Resources</span>
-        </a>
-        <div class="calendar-header-badge">Session 2026-2027</div>
+        <button type="button" onclick="navigateTo('/resources')" class="btn-clean-back-arrow" aria-label="Back to Resources" title="Back to Resources">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
       </div>
 
-      <!-- Header Section -->
+      <!-- Header Section (Clean, No Description, No Session) -->
       <header class="calendar-clean-header">
         <h1 class="calendar-page-title">Academic Calendar</h1>
-        <p class="calendar-page-subtitle">Official schedule of teaching days, examination windows, preparatory leaves, and university breaks for Jaipur National University.</p>
       </header>
 
-      <!-- Semester Tabs & Filter Bar -->
+      <!-- Semester Tabs -->
       <div class="calendar-controls-row">
         <div class="calendar-tabs-pill">
           <button type="button" class="cal-tab-btn ${isOdd ? 'active' : ''}" onclick="switchAcademicCalendarTab('odd')">
@@ -10065,20 +10062,9 @@ function renderAcademicCalendarPage() {
             <span class="cal-sem-sub">(II, IV, VI, VIII, X)</span>
           </button>
         </div>
-
-        <div class="calendar-actions-cluster">
-          <div class="calendar-search-box">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" placeholder="Search event or exam..." value="${escapeAttr(currentCalendarSearch)}" oninput="handleCalendarSearch(this.value)" class="calendar-search-input">
-          </div>
-          <button type="button" onclick="window.print()" class="btn-calendar-print" title="Print or Save as PDF">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-            <span>Print PDF</span>
-          </button>
-        </div>
       </div>
 
-      <!-- Responsive Data Table Card -->
+      <!-- Responsive Data Table Card (No Remarks, No Technorazz footnote) -->
       <div class="calendar-table-card">
         <div class="calendar-table-responsive">
           <table class="calendar-data-table">
@@ -10089,16 +10075,10 @@ function renderAcademicCalendarPage() {
                 <th>Applicable Semesters</th>
                 <th>Scheduled Date(s)</th>
                 <th>Category</th>
-                <th>Remarks / Notice</th>
               </tr>
             </thead>
             <tbody id="academicCalendarTableBody"></tbody>
           </table>
-        </div>
-
-        <div class="calendar-table-footer-notice">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-          <span>* Technorazz is the annual university technical and cultural festival. End-semester examination schedules are subject to university guidelines.</span>
         </div>
       </div>
 
@@ -10113,42 +10093,29 @@ function renderAcademicCalendarRows() {
   if (!tbody) return;
 
   const list = ACADEMIC_CALENDAR_DATA[currentCalendarTab] || [];
-  const q = currentCalendarSearch;
 
-  const filtered = list.filter(item => {
-    if (!q) return true;
-    return (
-      item.event.toLowerCase().includes(q) ||
-      item.semesters.toLowerCase().includes(q) ||
-      item.date.toLowerCase().includes(q) ||
-      item.notes.toLowerCase().includes(q) ||
-      item.badge.toLowerCase().includes(q)
-    );
-  });
-
-  if (filtered.length === 0) {
+  if (list.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" style="text-align:center; padding:40px 20px; color:#64748B;">
-          No academic events matched your query "${escapeHtml(q)}".
+        <td colspan="5" style="text-align:center; padding:40px 20px; color:#64748B;">
+          No academic events found.
         </td>
       </tr>
     `;
     return;
   }
 
-  tbody.innerHTML = filtered.map(item => `
+  tbody.innerHTML = list.map(item => `
     <tr class="cal-data-row">
       <td class="cal-sno">${item.sNo}</td>
       <td class="cal-event-name">
         <strong>${escapeHtml(item.event)}</strong>
       </td>
-      <td class="cal-semesters">${escapeHtml(item.semesters).replace(/\n/g, '<br>')}</td>
+      <td class="cal-semesters">${escapeHtml(item.semesters).replace(/ \| /g, '<br>')}</td>
       <td class="cal-date-highlight">${escapeHtml(item.date)}</td>
       <td>
         <span class="cal-badge badge-${escapeAttr(item.badgeColor)}">${escapeHtml(item.badge)}</span>
       </td>
-      <td class="cal-notes">${escapeHtml(item.notes)}</td>
     </tr>
   `).join("");
 }
@@ -10180,43 +10147,22 @@ function renderHolidaysPage() {
   container.innerHTML = `
     <div class="calendar-page-shell">
       
-      <!-- Top Navigation & Breadcrumb -->
+      <!-- Clean Back Arrow Button -->
       <div class="calendar-sub-bar">
-        <a href="/resources" onclick="event.preventDefault(); navigateTo('/resources');" class="btn-create-back">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          <span>Back to Resources</span>
-        </a>
-        <div class="calendar-header-badge">July 2026 – June 2027</div>
+        <button type="button" onclick="navigateTo('/resources')" class="btn-clean-back-arrow" aria-label="Back to Resources" title="Back to Resources">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
       </div>
 
-      <!-- Header Section -->
+      <!-- Header Section (Clean, No Description, No Session) -->
       <header class="calendar-clean-header">
         <h1 class="calendar-page-title">JNU Holiday List</h1>
-        <p class="calendar-page-subtitle">Official gazetted holidays, festival vacations, and declared university recesses for Jaipur National University.</p>
       </header>
 
-      <!-- Filter Pills & Search -->
-      <div class="calendar-controls-row">
-        <div class="holiday-filter-pills">
-          <button type="button" class="hol-filter-btn ${currentHolidayFilter === 'all' ? 'active' : ''}" onclick="setHolidayFilter('all')">All Holidays (17)</button>
-          <button type="button" class="hol-filter-btn ${currentHolidayFilter === 'both' ? 'active' : ''}" onclick="setHolidayFilter('both')">Academic & Non-Teaching (10)</button>
-          <button type="button" class="hol-filter-btn ${currentHolidayFilter === 'academic' ? 'active' : ''}" onclick="setHolidayFilter('academic')">Academic Only (6)</button>
-          <button type="button" class="hol-filter-btn ${currentHolidayFilter === 'restricted' ? 'active' : ''}" onclick="setHolidayFilter('restricted')">Restricted (1)</button>
-        </div>
-
-        <div class="calendar-actions-cluster">
-          <div class="calendar-search-box">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" placeholder="Search festival or month..." value="${escapeAttr(currentHolidaySearch)}" oninput="handleHolidaySearch(this.value)" class="calendar-search-input">
-          </div>
-          <button type="button" onclick="window.print()" class="btn-calendar-print" title="Print or Save as PDF">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-            <span>Print PDF</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Holidays Table Card -->
+      <!-- Holidays Table Card (No Filter Pills, No Search, No Print) -->
       <div class="calendar-table-card">
         <div class="calendar-table-responsive">
           <table class="calendar-data-table">
@@ -10258,40 +10204,7 @@ function renderHolidayRows() {
   const tbody = document.getElementById("jnuHolidaysTableBody");
   if (!tbody) return;
 
-  const q = currentHolidaySearch;
-  const f = currentHolidayFilter;
-
-  const filtered = JNU_HOLIDAYS_DATA.filter(item => {
-    let matchesFilter = true;
-    if (f !== 'all') {
-      matchesFilter = item.type === f;
-    }
-    if (!matchesFilter) return false;
-
-    if (q) {
-      return (
-        item.festival.toLowerCase().includes(q) ||
-        item.month.toLowerCase().includes(q) ||
-        item.date.toLowerCase().includes(q) ||
-        item.day.toLowerCase().includes(q) ||
-        item.typeLabel.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
-
-  if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align:center; padding:40px 20px; color:#64748B;">
-          No university holidays matched your criteria.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(h => {
+  tbody.innerHTML = JNU_HOLIDAYS_DATA.map(h => {
     const isBoth = h.type === 'both';
     const isAcademic = h.type === 'academic';
     const badgeClass = isBoth ? 'badge-mint' : (isAcademic ? 'badge-blue' : 'badge-slate');
@@ -10316,102 +10229,64 @@ function renderHolidayRows() {
 }
 
 /* ==========================================================================
-   SYLLABUS, NOTES, AND THREADS VIEWS
+   COMING SOON ENGINE FOR SYLLABUS, NOTES, AND THREADS
    ========================================================================== */
-function loadSyllabusView() {
-  const container = document.getElementById("syllabusViewContainer");
+function renderComingSoonView(containerId, title, subtitle, iconHtml) {
+  const container = document.getElementById(containerId);
   if (!container) return;
 
   container.innerHTML = `
-    <div class="calendar-page-shell">
-      <div class="calendar-sub-bar">
-        <a href="/resources" onclick="event.preventDefault(); navigateTo('/resources');" class="btn-create-back">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          <span>Back to Resources</span>
-        </a>
+    <div class="coming-soon-page-shell">
+      <div class="coming-soon-top-bar">
+        <button type="button" onclick="navigateTo('/resources')" class="btn-clean-back-arrow" aria-label="Back to Resources" title="Back to Resources">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
       </div>
 
-      <header class="calendar-clean-header">
-        <h1 class="calendar-page-title">University Syllabus</h1>
-        <p class="calendar-page-subtitle">Explore curriculum blueprints, course outlines, credit schemes, and electives across all schools.</p>
-      </header>
-
-      <div class="syllabus-grid">
-        ${Object.entries(JNU_DEFAULT_SCHOOLS_MAP).map(([school, courses]) => `
-          <div class="syllabus-school-card">
-            <h3 class="syllabus-school-title">${escapeHtml(school)}</h3>
-            <div class="syllabus-courses-list">
-              ${courses.map(c => `
-                <div class="syllabus-course-item" onclick="openResourceDetailModal('res-syllabus')">
-                  <span class="syllabus-course-name">${escapeHtml(c)}</span>
-                  <span class="syllabus-course-arrow">&rarr;</span>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        `).join("")}
+      <div class="coming-soon-content-card">
+        <div class="coming-soon-icon-badge">
+          ${iconHtml || `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`}
+        </div>
+        <span class="coming-soon-pill">In Active Development</span>
+        <h1 class="coming-soon-title">${escapeHtml(title)}</h1>
+        <p class="coming-soon-sub">${escapeHtml(subtitle || 'This module is being curated by university leads and will go live shortly.')}</p>
+        <button type="button" class="btn-create-team-primary" onclick="navigateTo('/resources')" style="margin-top:14px;">
+          &larr; Return to Resources
+        </button>
       </div>
     </div>
   `;
   showFooterAfterLoad();
+}
+
+function loadSyllabusView() {
+  renderComingSoonView(
+    "syllabusViewContainer",
+    "Syllabus Portal",
+    "Comprehensive semester syllabus, course structures, and credit distribution blueprints are being verified and will be available soon.",
+    `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`
+  );
 }
 
 function loadNotesView() {
-  const container = document.getElementById("notesViewContainer");
-  if (!container) return;
-  openResourceDetailModal("res-notes");
-  showFooterAfterLoad();
+  renderComingSoonView(
+    "notesViewContainer",
+    "Notes & Study Materials",
+    "Curated lecture slides, unit notes, and subject reference materials from top university batches are coming soon.",
+    `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`
+  );
 }
 
 function loadThreadsView() {
-  const container = document.getElementById("threadsViewContainer");
-  if (!container) return;
-
-  container.innerHTML = `
-    <div class="calendar-page-shell">
-      <div class="calendar-sub-bar">
-        <a href="/resources" onclick="event.preventDefault(); navigateTo('/resources');" class="btn-create-back">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          <span>Back to Resources</span>
-        </a>
-      </div>
-
-      <header class="calendar-clean-header">
-        <h1 class="calendar-page-title">JNU Thread</h1>
-        <p class="calendar-page-subtitle">Student discussions, project collaboration, coding queries, and campus buzz.</p>
-      </header>
-
-      <div class="threads-feed-container">
-        <div class="threads-composer-card">
-          <textarea placeholder="Start a discussion or ask a question across JNU campus..." rows="3" class="threads-textarea"></textarea>
-          <div class="threads-composer-actions">
-            <span style="font-size:0.8rem; color:#64748B;">Posting as ${currentUser ? escapeHtml(currentUser.name || currentUser.id) : 'Student'}</span>
-            <button type="button" class="btn-primary-forest-pill" onclick="showToast('Discussion posted to JNU Thread!', 'success')">Post Thread</button>
-          </div>
-        </div>
-
-        <div class="threads-list-stack">
-          <div class="thread-item-card">
-            <div class="thread-author-row">
-              <img src="/static/img/blank_pfp.jpg" class="thread-avatar" alt="Avatar">
-              <div>
-                <strong>Afroz Alam</strong>
-                <span class="thread-meta">B.Tech CSE &bull; 2 hours ago</span>
-              </div>
-            </div>
-            <h3 class="thread-title">Smart India Hackathon 2026 Hardware Track sensors discussion</h3>
-            <p class="thread-body">If any teams need help interfacing ESP32 with MQTT brokers or Raspberry Pi for the energy meter problem statement, drop your queries here!</p>
-            <div class="thread-footer-row">
-              <span class="thread-tag">#SIH2026</span>
-              <span class="thread-tag">#Hardware</span>
-              <span class="thread-tag">#IoT</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  showFooterAfterLoad();
+  renderComingSoonView(
+    "threadsViewContainer",
+    "JNU Student Threads",
+    "Peer discussions, project collaboration, coding queries, and community channels are currently being built.",
+    `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`
+  );
 }
 
 function loadResourcesView() {
@@ -10471,7 +10346,7 @@ function renderResourcesPage() {
         </div>
 
         <!-- Card 3: Notes & Study Material -->
-        <div class="academic-res-card rose" onclick="openResourceDetailModal('res-notes')">
+        <div class="academic-res-card rose" onclick="navigateTo('/notes')">
           <div class="res-card-blob rose"></div>
           <div class="res-card-inner">
             <h2 class="res-card-title">Notes & Study Material</h2>
