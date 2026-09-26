@@ -20373,72 +20373,32 @@ body.is-profile-route .mobile-menu-btn .mobile-menu-pfp {
 }
 
 .coming-soon-page-shell {
-  max-width: 760px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 10px 16px 40px 16px;
+  padding: 12px 16px 40px 16px;
 }
 
 .coming-soon-top-bar {
   display: flex;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
-.coming-soon-content-card {
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  border-radius: 20px;
-  padding: 56px 28px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.04);
-}
-
-.coming-soon-icon-badge {
-  width: 68px;
-  height: 68px;
-  border-radius: 18px;
-  background: #F0FDF4;
-  color: #059669;
+.coming-soon-minimal-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 18px;
-  border: 1px solid #DCFCE7;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.08);
+  min-height: 40vh;
+  text-align: center;
 }
 
-.coming-soon-pill {
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.72rem;
-  font-weight: 750;
-  color: #065F46;
-  background: #D1FAE5;
-  padding: 4px 12px;
-  border-radius: 20px;
-  margin-bottom: 14px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.coming-soon-title {
+.coming-soon-pure-title {
   font-family: var(--font-serif);
-  font-size: 1.95rem;
+  font-size: 2.8rem;
   font-weight: 750;
   color: #0F172A;
-  margin: 0 0 10px 0;
-  line-height: 1.25;
-}
-
-.coming-soon-sub {
-  font-size: 0.94rem;
-  color: #64748B;
-  max-width: 520px;
-  margin: 0 0 24px 0;
-  line-height: 1.55;
+  margin: 0;
+  letter-spacing: -0.02em;
 }
 
 /* Reducer for Mobile Spacing & Padding */
@@ -20475,12 +20435,8 @@ body.is-profile-route .mobile-menu-btn .mobile-menu-pfp {
   .coming-soon-page-shell {
     padding: 6px 6px 32px 6px !important;
   }
-  .coming-soon-content-card {
-    padding: 36px 16px !important;
-    border-radius: 16px !important;
-  }
-  .coming-soon-title {
-    font-size: 1.5rem !important;
+  .coming-soon-pure-title {
+    font-size: 2rem !important;
   }
 }
 

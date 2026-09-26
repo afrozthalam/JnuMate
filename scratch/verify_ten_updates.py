@@ -130,19 +130,19 @@ def run_tests():
         # Syllabus
         page.goto(f"{BASE_URL}/syllabus", wait_until="networkidle")
         page.wait_for_timeout(400)
-        assert page.locator(".coming-soon-title:has-text('Syllabus Portal')").count() >= 1
+        assert page.locator(".coming-soon-pure-title:has-text('Coming Soon')").count() >= 1
         page.screenshot(path=os.path.join(ARTIFACTS_DIR, "verify_syllabus_coming_soon.png"))
 
         # Notes
         page.goto(f"{BASE_URL}/notes", wait_until="networkidle")
         page.wait_for_timeout(400)
-        assert page.locator(".coming-soon-title:has-text('Notes & Study Materials')").count() >= 1
+        assert page.locator(".coming-soon-pure-title:has-text('Coming Soon')").count() >= 1
         page.screenshot(path=os.path.join(ARTIFACTS_DIR, "verify_notes_coming_soon.png"))
 
         # Threads
         page.goto(f"{BASE_URL}/threads", wait_until="networkidle")
         page.wait_for_timeout(400)
-        assert page.locator(".coming-soon-title:has-text('JNU Student Threads')").count() >= 1
+        assert page.locator(".coming-soon-pure-title:has-text('Coming Soon')").count() >= 1
         page.screenshot(path=os.path.join(ARTIFACTS_DIR, "verify_threads_coming_soon.png"))
 
         print("\n--- 5. Testing Campus Events Page (/events) ---")

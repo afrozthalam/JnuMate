@@ -10229,9 +10229,9 @@ function renderHolidayRows() {
 }
 
 /* ==========================================================================
-   COMING SOON ENGINE FOR SYLLABUS, NOTES, AND THREADS
+   COMING SOON ENGINE FOR SYLLABUS, NOTES, AND THREADS (CLEAN & ZERO CLUTTER)
    ========================================================================== */
-function renderComingSoonView(containerId, title, subtitle, iconHtml) {
+function renderComingSoonView(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -10246,16 +10246,8 @@ function renderComingSoonView(containerId, title, subtitle, iconHtml) {
         </button>
       </div>
 
-      <div class="coming-soon-content-card">
-        <div class="coming-soon-icon-badge">
-          ${iconHtml || `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`}
-        </div>
-        <span class="coming-soon-pill">In Active Development</span>
-        <h1 class="coming-soon-title">${escapeHtml(title)}</h1>
-        <p class="coming-soon-sub">${escapeHtml(subtitle || 'This module is being curated by university leads and will go live shortly.')}</p>
-        <button type="button" class="btn-create-team-primary" onclick="navigateTo('/resources')" style="margin-top:14px;">
-          &larr; Return to Resources
-        </button>
+      <div class="coming-soon-minimal-wrap">
+        <h1 class="coming-soon-pure-title">Coming Soon</h1>
       </div>
     </div>
   `;
@@ -10263,30 +10255,15 @@ function renderComingSoonView(containerId, title, subtitle, iconHtml) {
 }
 
 function loadSyllabusView() {
-  renderComingSoonView(
-    "syllabusViewContainer",
-    "Syllabus Portal",
-    "Comprehensive semester syllabus, course structures, and credit distribution blueprints are being verified and will be available soon.",
-    `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`
-  );
+  renderComingSoonView("syllabusViewContainer");
 }
 
 function loadNotesView() {
-  renderComingSoonView(
-    "notesViewContainer",
-    "Notes & Study Materials",
-    "Curated lecture slides, unit notes, and subject reference materials from top university batches are coming soon.",
-    `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`
-  );
+  renderComingSoonView("notesViewContainer");
 }
 
 function loadThreadsView() {
-  renderComingSoonView(
-    "threadsViewContainer",
-    "JNU Student Threads",
-    "Peer discussions, project collaboration, coding queries, and community channels are currently being built.",
-    `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>`
-  );
+  renderComingSoonView("threadsViewContainer");
 }
 
 function loadResourcesView() {
