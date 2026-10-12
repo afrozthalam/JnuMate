@@ -322,6 +322,17 @@ def send_real_email_otp(target_email, r_id, otp_code):
         print(f"[BREVO EMAIL BLOCKED] OTP email dispatch is toggled OFF by Admin. No email sent to {target_email}.")
         return False, "Email dispatch disabled by administrator"
 
+    # Always fetch current environment variables dynamically (critical for Vercel serverless containers)
+    smtp_server = os.environ.get("SMTP_SERVER", "smtp-relay.brevo.com").strip()
+    smtp_port_raw = os.environ.get("SMTP_PORT", "587").strip()
+    try:
+        smtp_port = int(smtp_port_raw)
+    except ValueError:
+        smtp_port = 587
+    smtp_user = os.environ.get("SMTP_USER", "").strip()
+    smtp_pass = os.environ.get("SMTP_PASS", "").strip()
+    smtp_from = (os.environ.get("SMTP_FROM") or os.environ.get("BREVO_SENDER_EMAIL") or smtp_user or "anonymous.rozzz@gmail.com").strip()
+
     subject = f"{otp_code} is your JnuMate Verification Code"
     
     html_body = f"""<!DOCTYPE html>
@@ -339,27 +350,62 @@ def send_real_email_otp(target_email, r_id, otp_code):
 </body>
 </html>"""
 
-    if SMTP_USER and SMTP_PASS:
+    # If Brevo API key is available or SMTP_PASS starts with xkeysib, we can also use Brevo's direct HTTPS API (never blocked by cloud firewalls!)
+    brevo_api_key = os.environ.get("BREVO_API_KEY") or (smtp_pass if smtp_pass.startswith("xkeysib-") else "")
+    if brevo_api_key:
+        try:
+            import urllib.request
+            req_data = json.dumps({
+                "sender": {"name": "JnuMate", "email": smtp_from},
+                "to": [{"email": target_email, "name": str(r_id or "Student")}],
+                "subject": subject,
+                "htmlContent": html_body
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                "https://api.brevo.com/v3/smtp/email",
+                data=req_data,
+                headers={
+                    "api-key": brevo_api_key,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=12) as response:
+                resp_text = response.read().decode("utf-8")
+                print(f"[BREVO REST API SENT] Successfully dispatched OTP {otp_code} to {target_email}: {resp_text[:80]}")
+                return True, "Email dispatched via Brevo REST API"
+        except Exception as e:
+            print(f"[BREVO REST API NOTICE] Fallback to SMTP relay due to: {e}")
+
+    # Standard SMTP Dispatch with robust timeout and SSL/STARTTLS fallback
+    if smtp_user and smtp_pass:
         try:
             msg = MIMEMultipart("alternative")
             msg["Subject"] = subject
-            msg["From"] = f"JnuMate <{SMTP_FROM}>"
+            msg["From"] = f"JnuMate <{smtp_from}>"
             msg["To"] = target_email
             msg.attach(MIMEText(html_body, "html"))
 
-            with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=10) as server:
-                server.starttls()
-                server.login(SMTP_USER, SMTP_PASS)
-                server.sendmail(SMTP_FROM, [target_email], msg.as_string())
+            if smtp_port == 465:
+                with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=12) as server:
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(smtp_from, [target_email], msg.as_string())
+            else:
+                with smtplib.SMTP(smtp_server, smtp_port, timeout=12) as server:
+                    server.ehlo()
+                    server.starttls()
+                    server.ehlo()
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(smtp_from, [target_email], msg.as_string())
             
-            print(f"[BREVO EMAIL SENT] Successfully dispatched OTP {otp_code} to {target_email}")
+            print(f"[BREVO EMAIL SENT] Successfully dispatched OTP {otp_code} to {target_email} via {smtp_server}:{smtp_port}")
             return True, "Email dispatched via Brevo SMTP"
         except Exception as e:
-            print(f"[SMTP ERROR] Failed to send email via {SMTP_SERVER}: {e}")
+            print(f"[SMTP ERROR] Failed to send email to {target_email} via {smtp_server}:{smtp_port} - {e}")
             return False, f"SMTP Error: {str(e)}"
     else:
-        print(f"[BREVO CONFIG NOTICE] SMTP_USER & SMTP_PASS not set. Simulated OTP Code: {otp_code} for {target_email}")
-        return True, "OTP generated"
+        print(f"[BREVO CONFIG NOTICE] SMTP_USER ({repr(smtp_user)}) or SMTP_PASS not set on this server. Target: {target_email}, Code: {otp_code}")
+        return False, "SMTP credentials not configured"
 
 def mask_email(email):
     if not email or "@" not in email:
@@ -1503,21 +1549,35 @@ def auth_register():
     }
 
     # Dispatch OTP strictly to Email
+    # In serverless environments (Vercel, AWS Lambda), background threads get frozen immediately after response.
+    # We execute directly so delivery completes before returning.
     is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
+    email_sent = True
+    email_err_msg = ""
     if is_email_on:
-        threading.Thread(target=send_real_email_otp, args=(email, name, otp_code), daemon=True).start()
+        try:
+            ok, msg = send_real_email_otp(email, name, otp_code)
+            email_sent = ok
+            if not ok:
+                email_err_msg = msg
+        except Exception as e:
+            print(f"[DISPATCH ERROR] Failed sending OTP: {e}")
+            email_sent = False
+            email_err_msg = str(e)
 
     print(f"\n==========================================")
     print(f" [REGISTRATION EMAIL OTP ISSUED]")
     print(f" Student: {name}")
     print(f" Email:   {email}")
     print(f" OTP:     {otp_code}")
+    print(f" Sent:    {email_sent}")
     print(f"==========================================\n")
 
     return jsonify({
         "success": True,
-        "message": f"Verification code sent to {email}",
-        "email": email
+        "message": f"Verification code sent to {email}" if email_sent else f"Code generated, but email delivery reported: {email_err_msg}",
+        "email": email,
+        "email_delivered": email_sent
     })
 
 @app.route("/api/auth/resend-otp", methods=["POST"])
@@ -1545,13 +1605,23 @@ def auth_resend_otp():
     conn.close()
 
     is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
+    email_sent = True
+    email_err_msg = ""
     if is_email_on:
-        threading.Thread(target=send_real_email_otp, args=(email, name, otp_code), daemon=True).start()
+        try:
+            ok, msg = send_real_email_otp(email, name, otp_code)
+            email_sent = ok
+            if not ok:
+                email_err_msg = msg
+        except Exception as e:
+            print(f"[RESEND DISPATCH ERROR] {e}")
+            email_sent = False
+            email_err_msg = str(e)
 
-    print(f"\n[RESEND EMAIL OTP] Dispatched new code {otp_code} to {email}\n")
+    print(f"\n[RESEND EMAIL OTP] Dispatched new code {otp_code} to {email} (Sent={email_sent})\n")
     return jsonify({
         "success": True,
-        "message": f"New verification code sent to {email}"
+        "message": f"New verification code sent to {email}" if email_sent else f"Code generated, but email delivery reported: {email_err_msg}"
     })
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
