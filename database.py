@@ -268,27 +268,23 @@ def init_db():
         """)
 
         # Migration checks for existing Postgres DB
-        try:
-            for col_def in [
-                "ALTER TABLE students ADD COLUMN IF NOT EXISTS age INT;",
-                "ALTER TABLE students ADD COLUMN IF NOT EXISTS reg_no VARCHAR(100);",
-                "ALTER TABLE students ADD COLUMN IF NOT EXISTS state VARCHAR(100);",
-                "ALTER TABLE students ADD COLUMN IF NOT EXISTS city VARCHAR(100);",
-                "ALTER TABLE students ADD COLUMN IF NOT EXISTS pincode VARCHAR(20);",
-                "ALTER TABLE students ADD COLUMN IF NOT EXISTS password TEXT;",
-                "ALTER TABLE students ADD COLUMN IF NOT EXISTS dob VARCHAR(50);",
-                "ALTER TABLE students ADD COLUMN IF NOT EXISTS program VARCHAR(150);",
-                "ALTER TABLE students ADD COLUMN IF NOT EXISTS semester_year VARCHAR(50);"
-            ]:
+        for col_def in [
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS age INT;",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS reg_no VARCHAR(100);",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS state VARCHAR(100);",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS city VARCHAR(100);",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS pincode VARCHAR(20);",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS password TEXT;",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS dob VARCHAR(50);",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS program VARCHAR(150);",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS semester_year VARCHAR(50);",
+            "ALTER TABLE students ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;"
+        ]:
+            try:
                 cursor.execute(col_def)
-            # Wipe teams and join requests as requested by user
-            cursor.execute("DELETE FROM team_messages;")
-            cursor.execute("DELETE FROM join_requests;")
-            cursor.execute("DELETE FROM team_members;")
-            cursor.execute("DELETE FROM teams;")
-            conn.commit()
-        except Exception as e:
-            print(f"Postgres students migration note: {e}")
+                conn.commit()
+            except Exception:
+                conn.rollback()
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS email_otps (
