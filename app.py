@@ -589,7 +589,7 @@ def admin_activity():
             SELECT r_id, name, age, gender, reg_no, email, phone, state, city, pincode, program, semester_year, is_registered, created_at
             FROM students
             WHERE is_registered = 1
-            ORDER BY rowid DESC
+            ORDER BY created_at DESC, r_id DESC
             LIMIT 100
         """)
         registered_students = [dict(r) for r in cursor.fetchall()]
@@ -751,7 +751,7 @@ def admin_get_users():
                    avatar_url, is_registered, dob, program, semester_year, created_at
             FROM students
             WHERE is_registered = 1
-            ORDER BY rowid DESC
+            ORDER BY created_at DESC, r_id DESC
         """)
         users = [dict(r) for r in cursor.fetchall()]
         for u in users:
