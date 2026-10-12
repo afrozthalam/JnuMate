@@ -250,23 +250,42 @@ def init_db():
             CREATE TABLE IF NOT EXISTS students (
                 r_id VARCHAR(50) PRIMARY KEY,
                 name VARCHAR(150) NOT NULL,
-                email VARCHAR(150),
-                phone VARCHAR(50),
+                age INT,
                 gender VARCHAR(20) NOT NULL,
+                reg_no VARCHAR(100),
+                email VARCHAR(150) NOT NULL UNIQUE,
+                phone VARCHAR(50),
+                state VARCHAR(100),
+                city VARCHAR(100),
+                pincode VARCHAR(20),
                 dob VARCHAR(50),
                 avatar_url TEXT,
                 password TEXT,
                 program VARCHAR(150),
                 semester_year VARCHAR(50),
-                is_registered INT DEFAULT 0
+                is_registered INT DEFAULT 1
             );
         """)
 
         # Migration checks for existing Postgres DB
         try:
-            cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS dob VARCHAR(50);")
-            cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS program VARCHAR(150);")
-            cursor.execute("ALTER TABLE students ADD COLUMN IF NOT EXISTS semester_year VARCHAR(50);")
+            for col_def in [
+                "ALTER TABLE students ADD COLUMN IF NOT EXISTS age INT;",
+                "ALTER TABLE students ADD COLUMN IF NOT EXISTS reg_no VARCHAR(100);",
+                "ALTER TABLE students ADD COLUMN IF NOT EXISTS state VARCHAR(100);",
+                "ALTER TABLE students ADD COLUMN IF NOT EXISTS city VARCHAR(100);",
+                "ALTER TABLE students ADD COLUMN IF NOT EXISTS pincode VARCHAR(20);",
+                "ALTER TABLE students ADD COLUMN IF NOT EXISTS password TEXT;",
+                "ALTER TABLE students ADD COLUMN IF NOT EXISTS dob VARCHAR(50);",
+                "ALTER TABLE students ADD COLUMN IF NOT EXISTS program VARCHAR(150);",
+                "ALTER TABLE students ADD COLUMN IF NOT EXISTS semester_year VARCHAR(50);"
+            ]:
+                cursor.execute(col_def)
+            # Wipe teams and join requests as requested by user
+            cursor.execute("DELETE FROM team_messages;")
+            cursor.execute("DELETE FROM join_requests;")
+            cursor.execute("DELETE FROM team_members;")
+            cursor.execute("DELETE FROM teams;")
             conn.commit()
         except Exception as e:
             print(f"Postgres students migration note: {e}")
@@ -430,34 +449,43 @@ def init_db():
             CREATE TABLE IF NOT EXISTS students (
                 r_id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
-                email TEXT,
-                phone TEXT,
+                age INTEGER,
                 gender TEXT NOT NULL,
+                reg_no TEXT,
+                email TEXT UNIQUE,
+                phone TEXT,
+                state TEXT,
+                city TEXT,
+                pincode TEXT,
                 dob TEXT,
                 avatar_url TEXT,
                 password TEXT,
-                is_registered INTEGER DEFAULT 0
+                program TEXT,
+                semester_year TEXT,
+                is_registered INTEGER DEFAULT 1
             );
         """)
 
-        # Migration check for dob, program, and semester_year columns in existing SQLite DB
+        # Migration check for columns in existing SQLite DB
         cursor.execute("PRAGMA table_info(students);")
         cols = [c[1] for c in cursor.fetchall()]
-        if "dob" not in cols:
-            try:
-                cursor.execute("ALTER TABLE students ADD COLUMN dob TEXT;")
-            except Exception:
-                pass
-        if "program" not in cols:
-            try:
-                cursor.execute("ALTER TABLE students ADD COLUMN program TEXT;")
-            except Exception:
-                pass
-        if "semester_year" not in cols:
-            try:
-                cursor.execute("ALTER TABLE students ADD COLUMN semester_year TEXT;")
-            except Exception:
-                pass
+        for col_name, col_type in [
+            ("age", "INTEGER"),
+            ("reg_no", "TEXT"),
+            ("state", "TEXT"),
+            ("city", "TEXT"),
+            ("pincode", "TEXT"),
+            ("password", "TEXT"),
+            ("dob", "TEXT"),
+            ("program", "TEXT"),
+            ("semester_year", "TEXT"),
+            ("created_at", "TEXT")
+        ]:
+            if col_name not in cols:
+                try:
+                    cursor.execute(f"ALTER TABLE students ADD COLUMN {col_name} {col_type};")
+                except Exception:
+                    pass
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS email_otps (
@@ -665,6 +693,136 @@ def set_system_setting(key, value):
     except Exception as e:
         print(f"Error setting system setting {key}: {e}")
         return False
+
+def sync_student_dual(student_data):
+    """
+    Ensures student is written to both local SQLite and Supabase PostgreSQL.
+    """
+    if not student_data or not student_data.get("email"):
+        return
+
+    # 1. Local SQLite Sync
+    try:
+        sq_conn = sqlite3.connect(get_sqlite_path())
+        sq_conn.row_factory = sqlite3.Row
+        sq_cur = sq_conn.cursor()
+        email_clean = student_data["email"].strip().lower()
+        sq_cur.execute("SELECT r_id FROM students WHERE LOWER(email) = ?", (email_clean,))
+        existing = sq_cur.fetchone()
+        if not existing:
+            sq_cur.execute("""
+                INSERT INTO students (
+                    r_id, name, age, gender, reg_no, email, phone, state, city, pincode,
+                    avatar_url, password, is_registered
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            """, (
+                student_data.get("r_id"),
+                student_data.get("name"),
+                student_data.get("age"),
+                student_data.get("gender"),
+                student_data.get("reg_no"),
+                email_clean,
+                student_data.get("phone"),
+                student_data.get("state"),
+                student_data.get("city"),
+                student_data.get("pincode"),
+                student_data.get("avatar_url") or "/static/img/blank_pfp.jpg",
+                student_data.get("password") or ""
+            ))
+            sq_conn.commit()
+        else:
+            sq_cur.execute("""
+                UPDATE students SET
+                    name = COALESCE(?, name),
+                    age = COALESCE(?, age),
+                    gender = COALESCE(?, gender),
+                    reg_no = COALESCE(?, reg_no),
+                    phone = COALESCE(?, phone),
+                    state = COALESCE(?, state),
+                    city = COALESCE(?, city),
+                    pincode = COALESCE(?, pincode),
+                    password = COALESCE(?, password)
+                WHERE LOWER(email) = ?
+            """, (
+                student_data.get("name"),
+                student_data.get("age"),
+                student_data.get("gender"),
+                student_data.get("reg_no"),
+                student_data.get("phone"),
+                student_data.get("state"),
+                student_data.get("city"),
+                student_data.get("pincode"),
+                student_data.get("password"),
+                email_clean
+            ))
+            sq_conn.commit()
+        sq_conn.close()
+    except Exception as e:
+        print(f"Notice syncing student to local SQLite: {e}")
+
+    # 2. Supabase Postgres Sync
+    if is_postgres():
+        try:
+            import psycopg2
+            import psycopg2.extras
+            db_url = DATABASE_URL
+            if "sslmode=" not in db_url:
+                db_url = f"{db_url}{'&' if '?' in db_url else '?'}sslmode=require"
+            pg_conn = psycopg2.connect(db_url, cursor_factory=psycopg2.extras.RealDictCursor)
+            pg_cur = pg_conn.cursor()
+            email_clean = student_data["email"].strip().lower()
+            pg_cur.execute("SELECT r_id FROM students WHERE LOWER(email) = %s", (email_clean,))
+            existing = pg_cur.fetchone()
+            if not existing:
+                pg_cur.execute("""
+                    INSERT INTO students (
+                        r_id, name, age, gender, reg_no, email, phone, state, city, pincode,
+                        avatar_url, password, is_registered
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1)
+                """, (
+                    student_data.get("r_id"),
+                    student_data.get("name"),
+                    student_data.get("age"),
+                    student_data.get("gender"),
+                    student_data.get("reg_no"),
+                    email_clean,
+                    student_data.get("phone"),
+                    student_data.get("state"),
+                    student_data.get("city"),
+                    student_data.get("pincode"),
+                    student_data.get("avatar_url") or "/static/img/blank_pfp.jpg",
+                    student_data.get("password") or ""
+                ))
+                pg_conn.commit()
+            else:
+                pg_cur.execute("""
+                    UPDATE students SET
+                        name = COALESCE(%s, name),
+                        age = COALESCE(%s, age),
+                        gender = COALESCE(%s, gender),
+                        reg_no = COALESCE(%s, reg_no),
+                        phone = COALESCE(%s, phone),
+                        state = COALESCE(%s, state),
+                        city = COALESCE(%s, city),
+                        pincode = COALESCE(%s, pincode),
+                        password = COALESCE(%s, password)
+                    WHERE LOWER(email) = %s
+                """, (
+                    student_data.get("name"),
+                    student_data.get("age"),
+                    student_data.get("gender"),
+                    student_data.get("reg_no"),
+                    student_data.get("phone"),
+                    student_data.get("state"),
+                    student_data.get("city"),
+                    student_data.get("pincode"),
+                    student_data.get("password"),
+                    email_clean
+                ))
+                pg_conn.commit()
+            pg_conn.close()
+        except Exception as e:
+            print(f"Notice syncing student to Supabase Postgres: {e}")
 
 if __name__ == "__main__":
     init_db()

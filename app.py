@@ -9,7 +9,16 @@ import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, jsonify, session, send_from_directory, redirect, send_file
-from database import get_db, init_db, is_postgres, get_system_setting, set_system_setting
+
+# Automatically load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+    print("[ENV] Loaded environment configuration from .env")
+except ImportError:
+    pass
+
+from database import get_db, init_db, is_postgres, get_system_setting, set_system_setting, sync_student_dual
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or os.environ.get("FLASK_SECRET_KEY") or "jnumate_liquid_permanent_secret_key_2026_prod"
@@ -23,26 +32,6 @@ try:
 except Exception as e:
     print(f"Database init notice: {e}")
 
-# Load all_profiles_public.json into memory for instant lookup
-PROFILES_JSON_PATH = os.path.join(os.path.dirname(__file__), "all_profiles_public.json")
-STUDENT_PROFILES_MAP = {}
-
-def load_json_profiles():
-    global STUDENT_PROFILES_MAP
-    if os.path.exists(PROFILES_JSON_PATH):
-        try:
-            with open(PROFILES_JSON_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                for item in data:
-                    r_id = item.get("id")
-                    if r_id:
-                        STUDENT_PROFILES_MAP[r_id.strip().upper()] = item
-            print(f"[JSON PROFILES LOADED] Successfully cached {len(STUDENT_PROFILES_MAP)} profiles into memory.")
-        except Exception as e:
-            print(f"[JSON LOAD ERROR] {e}")
-
-load_json_profiles()
-
 # BREVO & SMTP CONFIGURATION
 SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp-relay.brevo.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
@@ -50,42 +39,12 @@ SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASS = os.environ.get("SMTP_PASS", "")
 SMTP_FROM = os.environ.get("SMTP_FROM", SMTP_USER or "noreply@jnumate.edu")
 
-EDUCATION_DB_PATH = os.path.join(os.path.dirname(__file__), "education_details.db")
-EDUCATION_DETAILS_MAP = {}
-SCHOOLS_COURSES_MAP = {}
-
-def load_education_details():
-    global EDUCATION_DETAILS_MAP, SCHOOLS_COURSES_MAP
-    if os.path.exists(EDUCATION_DB_PATH):
-        try:
-            import sqlite3
-            # Open strictly in READ-ONLY mode
-            db_uri = f"file:{os.path.abspath(EDUCATION_DB_PATH)}?mode=ro"
-            e_conn = sqlite3.connect(db_uri, uri=True)
-            e_cur = e_conn.cursor()
-            e_cur.execute("SELECT r_id, program, semester_year FROM education_details")
-            for row in e_cur.fetchall():
-                if row[0]:
-                    key = str(row[0]).strip().upper()
-                    p_val = str(row[1]).strip() if row[1] else None
-                    s_val = str(row[2]).strip() if row[2] else None
-                    EDUCATION_DETAILS_MAP[key] = (p_val, s_val)
-
-            # Query all distinct schools (departments) and their courses (programs)
-            e_cur.execute("SELECT DISTINCT department, program FROM education_details WHERE department IS NOT NULL AND department != '' AND program IS NOT NULL AND program != '' ORDER BY department, program")
-            temp_map = {}
-            for dept, prog in e_cur.fetchall():
-                d = str(dept).strip()
-                p = str(prog).strip()
-                if d and p:
-                    temp_map.setdefault(d, []).append(p)
-            SCHOOLS_COURSES_MAP = {k: sorted(list(set(v))) for k, v in sorted(temp_map.items())}
-            e_conn.close()
-            print(f"[EDUCATION DB LOADED] Cached {len(EDUCATION_DETAILS_MAP)} student education records & {len(SCHOOLS_COURSES_MAP)} schools.")
-        except Exception as e:
-            print(f"Notice loading education details: {e}")
-
-load_education_details()
+# BSNL / SMS GATEWAY CONFIGURATION
+BSNL_SMS_API_URL = os.environ.get("BSNL_SMS_API_URL", "")
+BSNL_SMS_USERNAME = os.environ.get("BSNL_SMS_USERNAME", "")
+BSNL_SMS_PASSWORD = os.environ.get("BSNL_SMS_PASSWORD", "")
+BSNL_SMS_SENDER_ID = os.environ.get("BSNL_SMS_SENDER_ID", "JNUMAT")
+BSNL_SMS_TEMPLATE_ID = os.environ.get("BSNL_SMS_TEMPLATE_ID", "")
 
 # DETERMINISTIC ACADEMIC YEAR INFERENCE FROM R-ID
 def get_academic_year_by_rid(student_id):
@@ -134,53 +93,11 @@ def build_student_search_index():
     SEARCHABLE_STUDENTS_LIST = []
     STUDENT_CACHE_BY_RID = {}
     
-    for r_id_key, item in STUDENT_PROFILES_MAP.items():
-        name = (item.get("name") or "Unknown Student").strip()
-        personal = item.get("personal_details", {}) or {}
-        email = (personal.get("EmailID") or f"{r_id_key}@student.edu").strip()
-        phone = (personal.get("Mobile No") or "").strip()
-        gender = personal.get("Gender") or "Other"
-        dob = (personal.get("Date of Birth") or "N/A").strip()
-        gender_clean = "Female" if "Female" in gender or "F" == gender else ("Male" if "Male" in gender or "M" == gender else "Other")
-        image_urls = item.get("image_urls") or []
-        first_img = image_urls[0] if image_urls else ""
-        if is_valid_student_image(first_img, r_id_key):
-            avatar_url = first_img
-        else:
-            avatar_url = DEFAULT_AVATAR_PATH
-        
-        prog, sem = EDUCATION_DETAILS_MAP.get(r_id_key, (None, None))
-        acad_yr, adm_yr = get_academic_year_by_rid(r_id_key)
-        
-        name_upper = name.upper()
-        clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', name_upper).strip()
-        name_words = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
-
-        student_obj = {
-            "r_id": r_id_key,
-            "name": name,
-            "name_upper": name_upper,
-            "clean_name": clean_name,
-            "name_words": name_words,
-            "email": email,
-            "email_upper": email.upper(),
-            "phone": phone,
-            "gender": gender_clean,
-            "dob": dob,
-            "avatar_url": avatar_url,
-            "program": prog or "Student",
-            "semester_year": sem or "",
-            "academic_year": acad_yr,
-            "admission_year": adm_yr
-        }
-        SEARCHABLE_STUDENTS_LIST.append(student_obj)
-        STUDENT_CACHE_BY_RID[r_id_key] = student_obj
-
-    # Also synchronize any students from database (e.g. manual registrations or updated profiles)
+    # Synchronize registered students strictly from database (local SQLite and Supabase Postgres)
     try:
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT r_id, name, email, phone, gender, dob, avatar_url, program, semester_year FROM students")
+        cursor.execute("SELECT r_id, name, email, phone, gender, dob, avatar_url, program, semester_year, age, reg_no, state, city, pincode FROM students")
         db_students = cursor.fetchall()
         for row in db_students:
             r = dict(row)
@@ -192,60 +109,44 @@ def build_student_search_index():
             phone = (r.get("phone") or "").strip()
             gender = r.get("gender") or "Other"
             dob = (r.get("dob") or "N/A").strip()
-            gender_clean = "Female" if "Female" in gender or "F" == gender else ("Male" if "Male" in gender or "M" == gender else "Other")
+            gender_clean = "Female" if "Female" in str(gender) or "F" == str(gender) else ("Male" if "Male" in str(gender) or "M" == str(gender) else "Other")
             avatar_url = r.get("avatar_url")
-            prog = r.get("program")
-            sem = r.get("semester_year")
+            prog = r.get("program") or "Jaipur National University"
+            sem = r.get("semester_year") or ""
             acad_yr, adm_yr = get_academic_year_by_rid(rid)
 
-            if rid in STUDENT_CACHE_BY_RID:
-                cached = STUDENT_CACHE_BY_RID[rid]
-                if name and (not cached.get("name") or cached.get("name") == "Unknown Student" or cached.get("name") == "Student"):
-                    cached["name"] = name
-                    cached["name_upper"] = name.upper()
-                    clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', cached["name_upper"]).strip()
-                    cached["clean_name"] = clean_name
-                    cached["name_words"] = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
-                if prog and (not cached.get("program") or cached.get("program") == "Student"):
-                    cached["program"] = prog
-                if sem and not cached.get("semester_year"):
-                    cached["semester_year"] = sem
-                if email and not cached.get("email"):
-                    cached["email"] = email
-                    cached["email_upper"] = email.upper()
-                if phone and not cached.get("phone"):
-                    cached["phone"] = phone
-                if avatar_url and (not cached.get("avatar_url") or cached.get("avatar_url") == DEFAULT_AVATAR_PATH):
-                    if is_valid_student_image(avatar_url, rid):
-                        cached["avatar_url"] = avatar_url
-            else:
-                name_upper = name.upper()
-                clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', name_upper).strip()
-                name_words = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
-                student_obj = {
-                    "r_id": rid,
-                    "name": name,
-                    "name_upper": name_upper,
-                    "clean_name": clean_name,
-                    "name_words": name_words,
-                    "email": email,
-                    "email_upper": email.upper(),
-                    "phone": phone,
-                    "gender": gender_clean,
-                    "dob": dob,
-                    "avatar_url": avatar_url if is_valid_student_image(avatar_url, rid) else DEFAULT_AVATAR_PATH,
-                    "program": prog or "Student",
-                    "semester_year": sem or "",
-                    "academic_year": acad_yr,
-                    "admission_year": adm_yr
-                }
-                SEARCHABLE_STUDENTS_LIST.append(student_obj)
-                STUDENT_CACHE_BY_RID[rid] = student_obj
+            name_upper = name.upper()
+            clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', name_upper).strip()
+            name_words = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
+            student_obj = {
+                "r_id": rid,
+                "name": name,
+                "name_upper": name_upper,
+                "clean_name": clean_name,
+                "name_words": name_words,
+                "email": email,
+                "email_upper": email.upper(),
+                "phone": phone,
+                "gender": gender_clean,
+                "dob": dob,
+                "avatar_url": avatar_url if is_valid_student_image(avatar_url, rid) else DEFAULT_AVATAR_PATH,
+                "program": prog,
+                "semester_year": sem,
+                "academic_year": acad_yr,
+                "admission_year": adm_yr,
+                "age": r.get("age"),
+                "reg_no": r.get("reg_no"),
+                "state": r.get("state"),
+                "city": r.get("city"),
+                "pincode": r.get("pincode")
+            }
+            SEARCHABLE_STUDENTS_LIST.append(student_obj)
+            STUDENT_CACHE_BY_RID[rid] = student_obj
         conn.close()
     except Exception as e:
         print(f"Notice syncing DB students into search index: {e}")
 
-    print(f"[SEARCH INDEX BUILT] Pre-indexed {len(SEARCHABLE_STUDENTS_LIST)} students for instant sub-millisecond search.")
+    print(f"[SEARCH INDEX BUILT] Active students cached: {len(SEARCHABLE_STUDENTS_LIST)}.")
 
 build_student_search_index()
 
@@ -274,7 +175,7 @@ def add_or_update_student_in_search_index(rid, name, email, program=None, avatar
         clean_name = re.sub(r'^(MR\.|MS\.|MRS\.|DR\.)\s*', '', name_upper).strip()
         name_words = [w for w in re.split(r'[\s\-_,.]+', clean_name) if w]
         email_val = email or f"{clean_rid}@student.edu"
-        gender_clean = "Female" if gender and ("Female" in gender or "F" == gender) else "Male"
+        gender_clean = "Female" if gender and ("Female" in str(gender) or "F" == str(gender)) else "Male"
         s = {
             "r_id": clean_rid,
             "name": name_val,
@@ -294,6 +195,55 @@ def add_or_update_student_in_search_index(rid, name, email, program=None, avatar
         }
         SEARCHABLE_STUDENTS_LIST.append(s)
         STUDENT_CACHE_BY_RID[clean_rid] = s
+
+def send_bsnl_phone_otp(phone_number, otp_code):
+    """
+    Dispatches OTP via BSNL SMS Gateway API.
+    Falls back gracefully to logged output if BSNL API credentials are not set.
+    """
+    clean_phone = re.sub(r"[^0-9]", "", str(phone_number or ""))
+    if clean_phone.startswith("91") and len(clean_phone) == 12:
+        clean_phone = clean_phone[2:]
+    if len(clean_phone) != 10:
+        print(f"[BSNL SMS NOTICE] Invalid 10-digit Indian phone number: {phone_number}")
+        return False, "Invalid phone number"
+
+    sms_text = f"{otp_code} is your JnuMate verification code. Valid for 15 minutes. - Jaipur National University"
+
+    if BSNL_SMS_API_URL and (BSNL_SMS_USERNAME or os.environ.get("BSNL_SMS_API_KEY")):
+        import urllib.request
+        import urllib.parse
+        try:
+            params = {
+                "username": BSNL_SMS_USERNAME,
+                "password": BSNL_SMS_PASSWORD,
+                "senderid": BSNL_SMS_SENDER_ID,
+                "templateid": BSNL_SMS_TEMPLATE_ID,
+                "phone": clean_phone,
+                "message": sms_text,
+                "otp": otp_code
+            }
+            # Remove empty values
+            query_str = urllib.parse.urlencode({k: v for k, v in params.items() if v})
+            req_url = f"{BSNL_SMS_API_URL}?{query_str}"
+            req = urllib.request.Request(req_url, headers={"User-Agent": "JnuMate-OTP-Engine/1.0"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                status_code = resp.getcode()
+                response_text = resp.read().decode("utf-8", errors="ignore")
+                print(f"[BSNL SMS DISPATCH] Success (HTTP {status_code}): Phone={clean_phone} | Code={otp_code} | Resp={response_text[:80]}")
+                return True, "SMS sent via BSNL Gateway"
+        except Exception as e:
+            print(f"[BSNL SMS ERROR] Exception sending to {clean_phone}: {e}")
+            return False, str(e)
+    else:
+        print(f"\n==========================================")
+        print(f" [BSNL SMS GATEWAY SIMULATION]")
+        print(f" Target Mobile: +91 {clean_phone}")
+        print(f" OTP Code:      {otp_code}")
+        print(f" Message:       {sms_text}")
+        print(f" Status:        DELIVERED (BSNL Service)")
+        print(f"==========================================\n")
+        return True, "SMS simulated"
 
 # ZERO-LATENCY IN-MEMORY TEAM MEMBERSHIP CACHE
 TEAM_MEMBERSHIP_MAP = {}
@@ -421,68 +371,7 @@ def mask_email(email):
     return f"{masked}@{domain}"
 
 def auto_import_student_from_json(r_id, conn, cursor):
-    p = get_placeholder()
-    item = STUDENT_PROFILES_MAP.get(r_id.upper())
-    if not item:
-        return None
-
-    name = (item.get("name") or "Unknown Student").strip()
-    personal = item.get("personal_details", {}) or {}
-    
-    email = (personal.get("EmailID") or f"{r_id}@student.edu").strip()
-    phone = (personal.get("Mobile No") or "").strip()
-    gender = personal.get("Gender") or "Not Specified"
-    dob = (personal.get("Date of Birth") or "N/A").strip()
-    
-    gender_clean = gender.strip().capitalize() if gender else "Unspecified"
-    if "Female" in gender_clean or "F" == gender_clean:
-        gender_clean = "Female"
-    elif "Male" in gender_clean or "M" == gender_clean:
-        gender_clean = "Male"
-    else:
-        gender_clean = "Other"
-
-    image_urls = item.get("image_urls") or []
-    first_img = image_urls[0] if image_urls else ""
-    if is_valid_student_image(first_img, r_id):
-        avatar_url = first_img
-    else:
-        avatar_url = DEFAULT_AVATAR_PATH
-
-    prog, sem = EDUCATION_DETAILS_MAP.get(r_id.upper(), (None, None))
-
-    try:
-        cursor.execute(f"""
-            INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, program, semester_year, is_registered)
-            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, 0)
-        """, (r_id.upper(), name, email, phone, gender_clean, dob, avatar_url, prog or "Student", sem or ""))
-        conn.commit()
-    except Exception as e:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-        try:
-            cursor.execute(f"""
-                INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, is_registered)
-                VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, 0)
-            """, (r_id.upper(), name, email, phone, gender_clean, dob, avatar_url))
-            conn.commit()
-        except Exception:
-            try:
-                conn.rollback()
-            except Exception:
-                pass
-
-    try:
-        cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id.upper(),))
-        return cursor.fetchone()
-    except Exception:
-        try:
-            conn.rollback()
-        except Exception:
-            pass
-        return None
+    return None
 
 @app.route("/")
 @app.route("/team/<int:team_id>")
@@ -651,10 +540,10 @@ def admin_activity():
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT r_id, name, email, phone, gender, program, semester_year, is_registered
+            SELECT r_id, name, age, gender, reg_no, email, phone, state, city, pincode, program, semester_year, is_registered, created_at
             FROM students
             WHERE is_registered = 1
-            ORDER BY r_id DESC
+            ORDER BY rowid DESC
             LIMIT 100
         """)
         registered_students = [dict(r) for r in cursor.fetchall()]
@@ -812,9 +701,11 @@ def admin_get_users():
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT r_id, name, email, phone, gender, avatar_url, is_registered, dob, program, semester_year
+            SELECT r_id, name, age, gender, reg_no, email, phone, state, city, pincode, 
+                   avatar_url, is_registered, dob, program, semester_year, created_at
             FROM students
             WHERE is_registered = 1
+            ORDER BY rowid DESC
         """)
         users = [dict(r) for r in cursor.fetchall()]
         for u in users:
@@ -1458,416 +1349,334 @@ def auth_send_otp():
             "message": "Due to server load we couldn't fetch your data. Enter your details manually to continue."
         }), 200
 
-    student_dict = dict(student)
-    email = student_dict.get("email") or f"{r_id}@student.edu"
-    name = student_dict.get("name") or "Student"
-    dob = student_dict.get("dob") or "N/A"
-    gender = student_dict.get("gender") or "Student"
-    avatar_url = student_dict.get("avatar_url") or student_dict.get("image_url")
+# --- AUTH ENDPOINTS ---
 
-    # Enrich from memory cache if available
-    cached = STUDENT_CACHE_BY_RID.get(r_id)
-    prog = None
-    sem = None
-    if cached:
-        avatar_url = cached.get("avatar_url") or avatar_url
-        prog = cached.get("program")
-        sem = cached.get("semester_year")
-        if not dob or dob == "N/A":
-            dob = cached.get("dob") or dob
-        if not name or name == "Student":
-            name = cached.get("name") or name
+@app.route("/api/auth/login", methods=["POST"])
+def auth_login():
+    data = request.json or {}
+    email = str(data.get("email") or "").strip().lower()
+    password = str(data.get("password") or "").strip()
+    p = get_placeholder()
 
-    if not prog:
-        p_val, s_val = EDUCATION_DETAILS_MAP.get(r_id, (None, None))
-        prog = p_val or student_dict.get("program") or "Student"
-        sem = s_val or student_dict.get("semester") or ""
+    if not email or not password:
+        return jsonify({"success": False, "message": "Email/User ID and password are required"}), 400
 
-    otp_code = f"{random.randint(100000, 999999)}"
-    expires_at = datetime.datetime.now() + datetime.timedelta(hours=24)
+    # Allow Administrator to authenticate directly via the main Sign In portal
+    if email.lower() in [ADMIN_USERNAME.lower(), "admin", "admin@jnumate.edu"] and password == ADMIN_PASSWORD:
+        session["is_admin"] = True
+        session["user_rid"] = "admin"
+        session.permanent = True
+        return jsonify({
+            "success": True,
+            "message": "Administrator authenticated successfully",
+            "is_admin": True,
+            "user": {
+                "id": "admin",
+                "r_id": "admin",
+                "name": "Administrator",
+                "email": "admin@jnumate.edu",
+                "role": "admin",
+                "is_admin": True,
+                "avatar_url": "/static/img/blank_pfp.jpg"
+            }
+        })
 
-    print(f"\n==========================================")
-    print(f" [OTP GENERATED] R-ID: {r_id} | Email: {email} | CODE: {otp_code}")
-    print(f"==========================================\n")
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT * FROM students WHERE LOWER(email) = {p}", (email,))
+    student = cursor.fetchone()
 
-    # Store OTP with generous 24h validity window
+    if not student:
+        conn.close()
+        return jsonify({"success": False, "message": "Invalid email or password"}), 401
+
+    s_dict = dict(student)
+    stored_pw = str(s_dict.get("password") or "")
+
+    # Compare password (supports exact match or fallback)
+    if stored_pw and stored_pw != password:
+        conn.close()
+        return jsonify({"success": False, "message": "Invalid email or password"}), 401
+
+    user_rid = s_dict["r_id"]
+    try:
+        sync_student_dual(s_dict)
+    except Exception as e:
+        print(f"Notice syncing student on login: {e}")
     cursor.execute(f"""
-        INSERT INTO email_otps (r_id, email, otp, expires_at, used)
-        VALUES ({p}, {p}, {p}, {p}, 0)
-    """, (r_id, email, str(otp_code), str(expires_at)))
-    conn.commit()
+        SELECT tm.team_id, t.name as team_name 
+        FROM team_members tm 
+        LEFT JOIN teams t ON tm.team_id = t.id 
+        WHERE UPPER(tm.student_r_id) = {p}
+    """, (user_rid.upper(),))
+    tm_row = cursor.fetchone()
+    team_id = tm_row["team_id"] if tm_row else None
+    team_name = tm_row["team_name"] if tm_row else None
     conn.close()
 
-    acad_yr, adm_yr = get_academic_year_by_rid(r_id)
-    json_item = STUDENT_PROFILES_MAP.get(r_id) or {}
-    personal_data = json_item.get("personal_details", {}) or {}
-    addr_data = json_item.get("address_details", {}) or {}
-    
-    state_val = addr_data.get("Correspondence State") or addr_data.get("Permanent State") or "Not Provided"
-    if not state_val or str(state_val).strip() in ["", "None", "-1", "null"]:
-        state_val = "Not Provided"
-    else:
-        state_val = str(state_val).strip()
+    session["user_rid"] = user_rid
+    session.permanent = True
 
-    dob_val = personal_data.get("Date of Birth") or dob or "Not Provided"
-    if not dob_val or str(dob_val).strip() in ["", "None", "-1", "null"]:
-        dob_val = "Not Provided"
-    else:
-        dob_val = str(dob_val).strip()
+    clean_av = s_dict.get("avatar_url") or DEFAULT_AVATAR_PATH
 
-    gender_val = personal_data.get("Gender") or gender or "Not Specified"
-    if not gender_val or str(gender_val).strip() in ["", "None", "-1", "null"]:
-        gender_val = "Not Specified"
-    else:
-        gender_val = str(gender_val).strip()
-
-    # Check if admin has enabled real email dispatch
-    is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
-    if is_email_on:
-        # Dispatch email asynchronously in background thread so HTTP response is instant (<10ms)
-        threading.Thread(target=send_real_email_otp, args=(email, r_id, otp_code), daemon=True).start()
-    else:
-        print(f"[BREVO EMAIL DISPATCH BYPASSED] OTP emails toggled OFF in Admin. No email sent to {email}.")
+    user_payload = {
+        "id": user_rid,
+        "name": s_dict.get("name") or "Student",
+        "email": s_dict.get("email") or email,
+        "phone": s_dict.get("phone") or "",
+        "gender": s_dict.get("gender") or "Other",
+        "age": s_dict.get("age"),
+        "reg_no": s_dict.get("reg_no") or "",
+        "state": s_dict.get("state") or "",
+        "city": s_dict.get("city") or "",
+        "pincode": s_dict.get("pincode") or "",
+        "avatar_url": clean_av,
+        "team_id": team_id,
+        "team_name": team_name
+    }
 
     return jsonify({
         "success": True,
-        "exists": True,
-        "message": f"Verification code sent to {email}",
-        "email": email,
-        "masked_email": email,  # User explicitly requested DO NOT CENSOR
-        "student": {
-            "r_id": r_id,
-            "name": name,
-            "dob": dob_val,
-            "gender": gender_val,
-            "email": email,
-            "jnu_email": email,
-            "state": state_val,
-            "avatar_url": avatar_url,
-            "program": prog or "Student",
-            "semester": sem or "",
-            "current_year": acad_yr,
-            "academic_year": acad_yr,
-            "admission_year": adm_yr
-        }
+        "message": "Signed in successfully",
+        "user": user_payload
     })
 
-@app.route("/api/auth/send-registration-otp", methods=["POST"])
-def auth_send_registration_otp():
+@app.route("/api/auth/register", methods=["POST"])
+def auth_register():
     data = request.json or {}
-    r_id = (data.get("rid") or data.get("r_id") or "").strip().upper()
-    name = data.get("name", "").strip()
-    email = data.get("email", "").strip()
-    program = data.get("program", "").strip()
-    gender = (data.get("gender") or "Other").strip().capitalize()
+    name = str(data.get("name") or "").strip()
+    age_raw = data.get("age")
+    try:
+        age = int(age_raw) if age_raw is not None and str(age_raw).strip() != "" else None
+    except ValueError:
+        age = None
+    gender = str(data.get("gender") or "Other").strip().capitalize()
     if gender not in ["Male", "Female", "Other"]:
         gender = "Other"
+    reg_no = str(data.get("reg_no") or data.get("registration_number") or "").strip()
+    email = str(data.get("email") or "").strip().lower()
+    phone = str(data.get("phone") or data.get("phone_number") or "").strip()
+    state = str(data.get("state") or "").strip()
+    city = str(data.get("city") or "").strip()
+    pincode = str(data.get("pincode") or "").strip()
+    password = str(data.get("password") or "").strip()
     p = get_placeholder()
 
-    if not r_id or not name or not email or not program:
-        return jsonify({"success": False, "message": "R-ID, Name, Email, and Course are required"}), 400
+    if not name or not email or not phone:
+        return jsonify({"success": False, "message": "Name, email and phone number are required"}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(f"SELECT r_id FROM students WHERE LOWER(email) = {p}", (email,))
+    existing = cursor.fetchone()
+    if existing:
+        conn.close()
+        return jsonify({"success": False, "message": "An account with this email already exists. Please sign in."}), 400
+
+    # Generate internal unique r_id for database relationships
+    import uuid
+    clean_rid = f"U{uuid.uuid4().hex[:8].upper()}"
 
     otp_code = f"{random.randint(100000, 999999)}"
     expires_at = datetime.datetime.now() + datetime.timedelta(hours=24)
 
+    cursor.execute(f"""
+        INSERT INTO email_otps (r_id, email, otp, expires_at, used)
+        VALUES ({p}, {p}, {p}, {p}, 0)
+    """, (clean_rid, email, str(otp_code), str(expires_at)))
+    conn.commit()
+    conn.close()
+
+    # Store registration details temporarily in session until OTP verification completes
+    session["pending_reg"] = {
+        "r_id": clean_rid,
+        "name": name,
+        "age": age,
+        "gender": gender,
+        "reg_no": reg_no,
+        "email": email,
+        "phone": phone,
+        "state": state,
+        "city": city,
+        "pincode": pincode,
+        "password": password
+    }
+
+    # Dispatch OTP strictly to Email
+    is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
+    if is_email_on:
+        threading.Thread(target=send_real_email_otp, args=(email, name, otp_code), daemon=True).start()
+
     print(f"\n==========================================")
-    print(f" [REGISTRATION OTP] R-ID: {r_id} | Email: {email} | CODE: {otp_code} | Program: {program}")
+    print(f" [REGISTRATION EMAIL OTP ISSUED]")
+    print(f" Student: {name}")
+    print(f" Email:   {email}")
+    print(f" OTP:     {otp_code}")
     print(f"==========================================\n")
+
+    return jsonify({
+        "success": True,
+        "message": f"Verification code sent to {email}",
+        "email": email
+    })
+
+@app.route("/api/auth/resend-otp", methods=["POST"])
+def auth_resend_otp():
+    pending = session.get("pending_reg")
+    data = request.json or {}
+    email = (data.get("email") or (pending.get("email") if pending else "") or "").strip().lower()
+    clean_rid = (pending.get("r_id") if pending else "") or f"U{random.randint(10000, 99999)}"
+    name = (pending.get("name") if pending else "Student") or "Student"
+    p = get_placeholder()
+
+    if not email:
+        return jsonify({"success": False, "message": "Email is required to resend OTP"}), 400
+
+    otp_code = f"{random.randint(100000, 999999)}"
+    expires_at = datetime.datetime.now() + datetime.timedelta(hours=24)
 
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(f"""
         INSERT INTO email_otps (r_id, email, otp, expires_at, used)
         VALUES ({p}, {p}, {p}, {p}, 0)
-    """, (r_id, email, str(otp_code), str(expires_at)))
+    """, (clean_rid, email, str(otp_code), str(expires_at)))
     conn.commit()
     conn.close()
 
     is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
     if is_email_on:
-        threading.Thread(target=send_real_email_otp, args=(email, r_id, otp_code), daemon=True).start()
-    else:
-        print(f"[BREVO EMAIL DISPATCH BYPASSED] Registration OTP emails toggled OFF in Admin. No email sent to {email}.")
+        threading.Thread(target=send_real_email_otp, args=(email, name, otp_code), daemon=True).start()
 
+    print(f"\n[RESEND EMAIL OTP] Dispatched new code {otp_code} to {email}\n")
     return jsonify({
         "success": True,
-        "message": f"Verification code sent to {email}",
-        "email": email,
-        "masked_email": email
+        "message": f"New verification code sent to {email}"
     })
 
 @app.route("/api/auth/verify-otp", methods=["POST"])
 def auth_verify_otp():
     data = request.json or {}
-    r_id = (data.get("rid") or data.get("r_id") or "").strip().upper()
+    email = str(data.get("email") or "").strip().lower()
     raw_otp = str(data.get("otp", "")).strip()
     otp_code = "".join(ch for ch in raw_otp if ch.isdigit())
     p = get_placeholder()
 
-    if not r_id or not otp_code:
-        return jsonify({"success": False, "message": "R-ID and 6-digit verification code are required"}), 400
+    if not otp_code:
+        return jsonify({"success": False, "message": "6-digit verification code is required"}), 400
+
+    pending = session.get("pending_reg") or {}
+    if not email and pending.get("email"):
+        email = pending["email"].strip().lower()
 
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
-    student = cursor.fetchone()
 
-    if not student:
-        student = auto_import_student_from_json(r_id, conn, cursor)
-
-    # If student is still not in DB, establish student record with provided or default data
-    if not student:
-        name = (data.get("name") or f"Student {r_id}").strip()
-        email = (data.get("email") or f"{r_id.lower()}@student.edu").strip()
-        program = (data.get("program") or "").strip()
-        gender = (data.get("gender") or "Other").strip().capitalize()
-        if gender not in ["Male", "Female", "Other"]:
-            gender = "Other"
-        avatar_url = DEFAULT_AVATAR_PATH
-        try:
-            cursor.execute(f"""
-                INSERT INTO students (r_id, name, email, program, gender, dob, is_registered, avatar_url)
-                VALUES ({p}, {p}, {p}, {p}, {p}, 'N/A', 1, {p})
-            """, (r_id, name, email, program, gender, avatar_url))
-            conn.commit()
-            cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
-            student = cursor.fetchone()
-        except Exception as e:
-            print(f"Notice student auto-create: {e}")
-    elif data.get("gender"):
-        clean_g = str(data.get("gender")).strip().capitalize()
-        if clean_g in ["Male", "Female", "Other"]:
-            try:
-                cursor.execute(f"UPDATE students SET gender = {p} WHERE UPPER(r_id) = {p}", (clean_g, r_id))
-                conn.commit()
-                cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
-                student = cursor.fetchone()
-            except Exception:
-                pass
-
-    # Robust matching:
-    # 1. Match against any OTP issued for this R-ID
     cursor.execute(f"""
         SELECT * FROM email_otps
-        WHERE UPPER(r_id) = {p} AND TRIM(otp) = {p}
+        WHERE (LOWER(email) = {p} OR UPPER(r_id) = {p}) AND TRIM(otp) = {p}
         ORDER BY id DESC LIMIT 1
-    """, (r_id, otp_code))
+    """, (email, (pending.get("r_id") or "").upper(), otp_code))
     matching_otp = cursor.fetchone()
 
-    # 2. Get the latest OTP generated for this R-ID
     cursor.execute(f"""
         SELECT * FROM email_otps
-        WHERE UPPER(r_id) = {p}
+        WHERE (LOWER(email) = {p} OR UPPER(r_id) = {p})
         ORDER BY id DESC LIMIT 1
-    """, (r_id,))
+    """, (email, (pending.get("r_id") or "").upper()))
     latest_otp = cursor.fetchone()
-
-    is_email_on = str(get_system_setting("otp_email_enabled", "true")).lower() == "true"
-    bypass_otp = str(get_system_setting("default_bypass_otp", "123456")).strip()
 
     is_valid = False
     matched_id = None
-
     if matching_otp:
         is_valid = True
         matched_id = matching_otp["id"]
     elif latest_otp and str(latest_otp["otp"]).strip() == otp_code:
         is_valid = True
         matched_id = latest_otp["id"]
-    elif not is_email_on and (otp_code == bypass_otp or otp_code == "123456"):
-        is_valid = True
-        if latest_otp:
-            matched_id = latest_otp["id"]
 
     if not is_valid:
         conn.close()
-        return jsonify({"success": False, "message": "Incorrect verification code. Please check and try again."}), 200
+        return jsonify({"success": False, "message": "Incorrect verification code. Please check your email and try again."}), 200
 
-    # Mark OTP used and mark student as registered
+    # Mark OTP used
     if matched_id:
         cursor.execute(f"UPDATE email_otps SET used = 1 WHERE id = {p}", (matched_id,))
-    else:
-        cursor.execute(f"UPDATE email_otps SET used = 1 WHERE UPPER(r_id) = {p}", (r_id,))
-
-    cursor.execute(f"UPDATE students SET is_registered = 1 WHERE UPPER(r_id) = {p}", (r_id,))
     conn.commit()
 
-    cursor.execute(f"SELECT r_id, name, email, phone, gender, dob, avatar_url, is_registered, program, semester_year FROM students WHERE UPPER(r_id) = {p}", (r_id,))
-    db_row = cursor.fetchone()
-    updated_student = dict(db_row) if db_row else {}
-    prog, sem = get_student_course_details(r_id, cursor)
-    if not prog and updated_student.get("program"):
-        p_cand = updated_student.get("program")
-        if p_cand and str(p_cand).strip().lower() != "student":
-            prog = str(p_cand).strip()
-    if not sem and updated_student.get("semester_year"):
-        sem = updated_student.get("semester_year")
-
-    is_needs_prog = (not bool(prog)) or (str(prog).strip().lower() == "student")
-
-    cursor.execute(f"""
-        SELECT tm.team_id, t.name as team_name 
-        FROM team_members tm 
-        LEFT JOIN teams t ON tm.team_id = t.id 
-        WHERE UPPER(tm.student_r_id) = {p}
-    """, (r_id,))
-    tm_row = cursor.fetchone()
-    team_id = tm_row["team_id"] if tm_row else None
-    team_name = tm_row["team_name"] if tm_row else None
-    conn.close()
-
-    session["user_rid"] = r_id
-    session.permanent = True
-
-    student_name = (updated_student.get("name") or f"Student {r_id}").strip()
-    raw_av = updated_student.get("avatar_url")
-    clean_av = raw_av if is_valid_student_image(raw_av, r_id) else DEFAULT_AVATAR_PATH
-
-    user_payload = {
-        "id": r_id,
-        "name": student_name,
-        "email": updated_student.get("email") or f"{r_id.lower()}@student.edu",
-        "gender": updated_student.get("gender") or "Student",
-        "dob": updated_student.get("dob") or "N/A",
-        "avatar_url": clean_av,
-        "program": prog,
-        "semester_year": sem,
-        "needs_program": is_needs_prog,
-        "team_id": team_id,
-        "team_name": team_name
-    }
-
-    try:
-        add_or_update_student_in_search_index(
-            r_id,
-            student_name,
-            user_payload["email"],
-            program=prog,
-            avatar_url=user_payload["avatar_url"],
-            gender=user_payload["gender"],
-            dob=user_payload["dob"]
-        )
-    except Exception as e:
-        print(f"Notice updating search index on verify: {e}")
-
-    return jsonify({
-        "success": True,
-        "message": "Signed in successfully",
-        "user": user_payload,
-        "needs_program": is_needs_prog,
-        "student": updated_student
-    })
-
-@app.route("/api/user/update-program", methods=["POST"])
-def update_user_program():
-    data = request.json or {}
-    r_id = (data.get("r_id") or session.get("user_rid") or "").strip().upper()
-    program = data.get("program", "").strip()
-    semester_year = data.get("semester_year", "").strip()
-    p = get_placeholder()
-
+    # Commit registered student to database
+    reg_data = pending or data
+    r_id = reg_data.get("r_id")
     if not r_id:
-        return jsonify({"success": False, "message": "Authentication required"}), 401
-    if not program:
-        return jsonify({"success": False, "message": "Please select your program"}), 400
+        import uuid
+        r_id = f"U{uuid.uuid4().hex[:8].upper()}"
 
-    conn = get_db()
-    cursor = conn.cursor()
-    if semester_year:
-        cursor.execute(f"UPDATE students SET program = {p}, semester_year = {p} WHERE UPPER(r_id) = {p}", (program, semester_year, r_id))
-    else:
-        cursor.execute(f"UPDATE students SET program = {p} WHERE UPPER(r_id) = {p}", (program, r_id))
-    conn.commit()
-    conn.close()
-
-    EDUCATION_DETAILS_MAP[r_id] = (program, semester_year or "")
-    if r_id in STUDENT_CACHE_BY_RID:
-        STUDENT_CACHE_BY_RID[r_id]["program"] = program
-        if semester_year:
-            STUDENT_CACHE_BY_RID[r_id]["semester_year"] = semester_year
-
-    return jsonify({
-        "success": True,
-        "message": "Program updated successfully",
-        "program": program,
-        "semester_year": semester_year
-    })
-
-@app.route("/api/auth/register", methods=["POST"])
-@app.route("/api/auth/register-unlisted", methods=["POST"])
-def auth_register():
-    data = request.json or {}
-    r_id = (data.get("id") or data.get("r_id") or "").strip().upper()
-    name = data.get("name", "").strip()
-    email = data.get("email", "").strip()
-    phone = data.get("phone", "").strip()
-    gender = data.get("gender", "").strip().capitalize()
-    dob = data.get("dob", "").strip() or "N/A"
-    program = (data.get("program") or "").strip()
-    p = get_placeholder()
-
-    if not r_id or not name or not gender or not email:
-        return jsonify({"success": False, "message": "R-ID, Name, Email, and Gender are required"}), 400
-
-    if gender not in ["Male", "Female", "Other"]:
-        gender = "Other"
-
+    name = reg_data.get("name") or "Student"
+    age = reg_data.get("age")
+    gender = reg_data.get("gender") or "Other"
+    reg_no = reg_data.get("reg_no") or reg_data.get("registration_number") or ""
+    phone = reg_data.get("phone") or ""
+    state = reg_data.get("state") or ""
+    city = reg_data.get("city") or ""
+    pincode = reg_data.get("pincode") or ""
+    password = reg_data.get("password") or ""
     avatar_url = DEFAULT_AVATAR_PATH
 
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(f"""
-            INSERT INTO students (r_id, name, email, phone, gender, dob, avatar_url, program, is_registered)
-            VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, 1)
-        """, (r_id, name, email, phone, gender, dob, avatar_url, program))
-        conn.commit()
-        conn.close()
-    except Exception:
-        conn.close()
-        return jsonify({"success": False, "message": "R-ID already registered"}), 400
+    cursor.execute(f"SELECT r_id FROM students WHERE LOWER(email) = {p}", (email,))
+    existing_user = cursor.fetchone()
 
-    session["user_rid"] = r_id
-    session.permanent = True
+    if not existing_user:
+        student_dict = {
+            "r_id": r_id,
+            "name": name,
+            "age": age,
+            "gender": gender,
+            "reg_no": reg_no,
+            "email": email,
+            "phone": phone,
+            "state": state,
+            "city": city,
+            "pincode": pincode,
+            "avatar_url": avatar_url,
+            "password": password
+        }
+        try:
+            now_iso = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cursor.execute(f"""
+                INSERT INTO students (
+                    r_id, name, age, gender, reg_no, email, phone, state, city, pincode,
+                    avatar_url, password, is_registered, created_at
+                ) VALUES ({p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, {p}, 1, {p})
+            """, (
+                r_id, name, age, gender, reg_no, email, phone, state, city, pincode,
+                avatar_url, password, now_iso
+            ))
+            conn.commit()
+            student_dict["created_at"] = now_iso
+        except Exception as e:
+            print(f"Error persisting student: {e}")
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+
+        try:
+            sync_student_dual(student_dict)
+        except Exception as e:
+            print(f"Dual sync error: {e}")
+
+    conn.close()
+    session.pop("pending_reg", None)
 
     try:
-        add_or_update_student_in_search_index(
-            r_id,
-            name,
-            email,
-            program=program,
-            avatar_url=avatar_url,
-            gender=gender,
-            dob=dob
-        )
+        build_student_search_index()
     except Exception as e:
-        print(f"Notice updating search index on register: {e}")
-
-    user_payload = {
-        "id": r_id,
-        "name": name,
-        "email": email,
-        "gender": gender,
-        "dob": dob,
-        "avatar_url": avatar_url,
-        "team_id": None,
-        "team_name": None
-    }
+        print(f"Notice rebuilding search index on registration: {e}")
 
     return jsonify({
         "success": True,
-        "message": "Account created",
-        "user": user_payload,
-        "student": {
-            "r_id": r_id,
-            "name": name,
-            "email": email,
-            "phone": phone,
-            "gender": gender,
-            "dob": dob,
-            "avatar_url": avatar_url,
-            "is_registered": 1
-        }
+        "message": "Account verified and registered successfully. Please sign in.",
+        "requires_login": True
     })
 
 @app.route("/api/auth/me", methods=["GET"])
@@ -1879,49 +1688,42 @@ def auth_me():
     p = get_placeholder()
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (user_rid,))
+    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (user_rid.upper(),))
     student = cursor.fetchone()
 
     if not student:
-        student = auto_import_student_from_json(user_rid, conn, cursor)
+        conn.close()
+        return jsonify({"authenticated": False})
 
-    prog, sem = get_student_course_details(user_rid, cursor)
-    if not prog and student:
-        st_cand = dict(student).get("program")
-        if st_cand and str(st_cand).strip().lower() != "student":
-            prog = str(st_cand).strip()
-    is_needs_prog = (not bool(prog)) or (str(prog).strip().lower() == "student")
+    s_dict = dict(student)
 
     cursor.execute(f"""
         SELECT tm.team_id, t.name as team_name 
         FROM team_members tm 
         LEFT JOIN teams t ON tm.team_id = t.id 
         WHERE UPPER(tm.student_r_id) = {p}
-    """, (user_rid,))
+    """, (user_rid.upper(),))
     tm_row = cursor.fetchone()
     team_id = tm_row["team_id"] if tm_row else None
     team_name = tm_row["team_name"] if tm_row else None
     conn.close()
 
-    if not student:
-        return jsonify({"authenticated": False})
-
-    s_dict = dict(student)
-    raw_av = s_dict.get("avatar_url")
-    clean_av = raw_av if is_valid_student_image(raw_av, user_rid) else DEFAULT_AVATAR_PATH
+    clean_av = s_dict.get("avatar_url") or DEFAULT_AVATAR_PATH
 
     return jsonify({
         "authenticated": True,
         "user": {
             "id": s_dict["r_id"],
-            "name": s_dict["name"],
-            "email": s_dict["email"],
-            "gender": s_dict["gender"],
-            "dob": s_dict["dob"],
+            "name": s_dict.get("name") or "Student",
+            "email": s_dict.get("email") or "",
+            "phone": s_dict.get("phone") or "",
+            "gender": s_dict.get("gender") or "Other",
+            "age": s_dict.get("age"),
+            "reg_no": s_dict.get("reg_no") or "",
+            "state": s_dict.get("state") or "",
+            "city": s_dict.get("city") or "",
+            "pincode": s_dict.get("pincode") or "",
             "avatar_url": clean_av,
-            "program": prog,
-            "semester_year": sem,
-            "needs_program": is_needs_prog,
             "team_id": team_id,
             "team_name": team_name
         }
@@ -1936,45 +1738,59 @@ def auth_logout():
 def auth_restore_session():
     data = request.json or {}
     r_id = (data.get("r_id") or data.get("rid") or "").strip().upper()
-    if not r_id:
-        return jsonify({"success": False, "message": "R-ID required"}), 400
+    email = str(data.get("email") or "").strip().lower()
+
+    if not r_id and not email:
+        return jsonify({"success": False, "message": "Identifier required"}), 400
 
     p = get_placeholder()
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+    if r_id:
+        cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+    else:
+        cursor.execute(f"SELECT * FROM students WHERE LOWER(email) = {p}", (email,))
     student = cursor.fetchone()
-    if not student:
-        student = auto_import_student_from_json(r_id, conn, cursor)
-    prog, sem = get_student_course_details(r_id, cursor)
-    if not prog and student:
-        st_cand = dict(student).get("program")
-        if st_cand and str(st_cand).strip().lower() != "student":
-            prog = str(st_cand).strip()
-    is_needs_prog = (not bool(prog)) or (str(prog).strip().lower() == "student")
-    conn.close()
 
     if not student:
+        conn.close()
         return jsonify({"success": False, "message": "Student record not found"}), 404
 
-    session["user_rid"] = r_id
-    session.permanent = True
     s_dict = dict(student)
-    raw_av = s_dict.get("avatar_url")
-    clean_av = raw_av if is_valid_student_image(raw_av, r_id) else DEFAULT_AVATAR_PATH
+    user_rid = s_dict["r_id"]
+
+    cursor.execute(f"""
+        SELECT tm.team_id, t.name as team_name 
+        FROM team_members tm 
+        LEFT JOIN teams t ON tm.team_id = t.id 
+        WHERE UPPER(tm.student_r_id) = {p}
+    """, (user_rid.upper(),))
+    tm_row = cursor.fetchone()
+    team_id = tm_row["team_id"] if tm_row else None
+    team_name = tm_row["team_name"] if tm_row else None
+    conn.close()
+
+    session["user_rid"] = user_rid
+    session.permanent = True
+    clean_av = s_dict.get("avatar_url") or DEFAULT_AVATAR_PATH
+
     return jsonify({
         "success": True,
         "authenticated": True,
         "user": {
             "id": s_dict["r_id"],
-            "name": s_dict["name"],
-            "email": s_dict["email"],
-            "gender": s_dict["gender"],
-            "dob": s_dict["dob"],
+            "name": s_dict.get("name") or "Student",
+            "email": s_dict.get("email") or "",
+            "phone": s_dict.get("phone") or "",
+            "gender": s_dict.get("gender") or "Other",
+            "age": s_dict.get("age"),
+            "reg_no": s_dict.get("reg_no") or "",
+            "state": s_dict.get("state") or "",
+            "city": s_dict.get("city") or "",
+            "pincode": s_dict.get("pincode") or "",
             "avatar_url": clean_av,
-            "program": prog,
-            "semester_year": sem,
-            "needs_program": is_needs_prog
+            "team_id": team_id,
+            "team_name": team_name
         }
     })
 
@@ -2950,82 +2766,43 @@ def get_user_profile():
     p = get_placeholder()
 
     if not r_id:
-        return jsonify({"success": False, "message": "R-ID required"}), 400
+        return jsonify({"success": False, "message": "User identifier required"}), 400
 
     conn = get_db()
     cursor = conn.cursor()
 
-    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p}", (r_id,))
+    cursor.execute(f"SELECT * FROM students WHERE UPPER(r_id) = {p} OR LOWER(email) = {p}", (r_id, r_id.lower()))
     db_student = cursor.fetchone()
 
     if not db_student:
-        db_student = auto_import_student_from_json(r_id, conn, cursor)
+        conn.close()
+        return jsonify({"success": False, "message": "User not found"}), 404
 
-    student_dict = dict(db_student) if db_student else {}
+    s_dict = dict(db_student)
+    user_actual_rid = s_dict["r_id"]
 
-    json_item = STUDENT_PROFILES_MAP.get(r_id) or {}
-    personal = json_item.get("personal_details", {}) or {}
-    family = json_item.get("family_details", {}) or {}
-    address_data = json_item.get("address_details", {}) or {}
-
-    # Format correspondence address
-    c_parts = []
-    for k in ["Correspondence Address", "Correspondence City", "Correspondence State", "Correspondence Pincode", "Correspondence Country"]:
-        val = address_data.get(k)
-        if val and str(val).strip() not in ["", "None", "-1", "null"]:
-            c_parts.append(str(val).strip())
-    correspondence_addr = ", ".join(c_parts) if c_parts else "Not Provided"
-
-    # Format permanent address
-    p_parts = []
-    for k in ["Permanent Address", "Permanent City", "Permanent State", "Permanent Pincode", "Permanent Country"]:
-        val = address_data.get(k)
-        if val and str(val).strip() not in ["", "None", "-1", "null"]:
-            p_parts.append(str(val).strip())
-    permanent_addr = ", ".join(p_parts) if p_parts else "Not Provided"
-
-    full_address = correspondence_addr if correspondence_addr != "Not Provided" else permanent_addr
-
-    avatar_url = student_dict.get("avatar_url")
-    if not is_valid_student_image(avatar_url, r_id):
-        image_urls = json_item.get("image_urls") or []
-        first_img = image_urls[0] if image_urls else ""
-        if is_valid_student_image(first_img, r_id):
-            avatar_url = first_img
-        else:
-            avatar_url = DEFAULT_AVATAR_PATH
-
-    prog, sem = get_student_course_details(r_id, cursor)
+    clean_avatar = s_dict.get("avatar_url") or DEFAULT_AVATAR_PATH
+    city = s_dict.get("city") or ""
+    state = s_dict.get("state") or ""
+    pincode = s_dict.get("pincode") or ""
+    full_loc = ", ".join([x for x in [city, state, pincode] if x]) or "Jaipur, Rajasthan"
 
     profile_data = {
-        "r_id": r_id,
-        "name": student_dict.get("name") or json_item.get("name") or "Student",
-        "email": student_dict.get("email") or personal.get("EmailID") or f"{r_id}@student.edu",
-        "phone": student_dict.get("phone") or personal.get("Mobile No") or "Not Provided",
-        "alt_phone": personal.get("Alternate Mobile No") or "Not Provided",
-        "gender": student_dict.get("gender") or personal.get("Gender") or "Unspecified",
-        "dob": student_dict.get("dob") or personal.get("Date of Birth") or "Not Provided",
-        "blood_group": personal.get("Blood Group") or "Not Provided",
-        "category": personal.get("Category") or "General",
-        "caste": personal.get("Caste") or "Not Provided",
-        "religion": personal.get("Religion") or "Not Provided",
-        "marital_status": personal.get("Marital Status") or "Single",
-        "disabled": personal.get("Disabled") or "No",
-        "avatar_url": avatar_url,
-        "program": prog or "Not Specified",
-        "semester_year": sem or "",
-        "needs_program": not bool(prog),
-        "father_name": family.get("Father's Name") or "Not Provided",
-        "father_phone": family.get("Father's Mobile No") or "Not Provided",
-        "father_email": family.get("Father's Email") or "Not Provided",
-        "mother_name": family.get("Mother's Name") or "Not Provided",
-        "mother_phone": family.get("Mother's Mobile No") or "Not Provided",
-        "mother_email": family.get("Mother's Email") or "Not Provided",
-        "permanent_address": permanent_addr,
-        "correspondence_address": correspondence_addr,
-        "address": full_address,
-        "academic_year": get_academic_year_by_rid(r_id)[0],
-        "admission_year": get_academic_year_by_rid(r_id)[1]
+        "r_id": user_actual_rid,
+        "name": s_dict.get("name") or "Student",
+        "email": s_dict.get("email") or "",
+        "phone": s_dict.get("phone") or "Not Provided",
+        "gender": s_dict.get("gender") or "Not Specified",
+        "age": s_dict.get("age"),
+        "reg_no": s_dict.get("reg_no") or "N/A",
+        "state": state or "Not Provided",
+        "city": city or "Not Provided",
+        "pincode": pincode or "Not Provided",
+        "avatar_url": clean_avatar,
+        "program": s_dict.get("program") or "Jaipur National University",
+        "address": full_loc,
+        "academic_year": get_academic_year_by_rid(user_actual_rid)[0],
+        "admission_year": get_academic_year_by_rid(user_actual_rid)[1]
     }
 
     cursor.execute(f"""
@@ -3033,9 +2810,9 @@ def get_user_profile():
         JOIN team_members tm ON t.id = tm.team_id
         WHERE UPPER(tm.student_r_id) = {p}
         ORDER BY t.id DESC
-    """, (r_id,))
+    """, (user_actual_rid.upper(),))
     team_rows = cursor.fetchall()
-    teams_list = [format_team_data(t, r_id, conn=conn) for t in team_rows]
+    teams_list = [format_team_data(t, user_actual_rid, conn=conn) for t in team_rows]
     conn.close()
 
     return jsonify({

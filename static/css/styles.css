@@ -9138,42 +9138,43 @@ body.scroll-locked {
    VIEWPORT CENTERING ON /login & UNIFIED SINGLE-COLUMN AUTH CARD (POINT 1 & 2)
    ========================================================================== */
 body.is-login-route {
-  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  min-height: 100vh !important;
+  height: auto !important;
 }
 
 body.is-login-route .app-desktop-surround {
-  height: 100vh !important;
   min-height: 100vh !important;
-  overflow: hidden !important;
+  height: auto !important;
+  overflow: visible !important;
 }
 
 body.is-login-route .app-enclosure-shell {
-  height: 100vh !important;
   min-height: 100vh !important;
-  overflow: hidden !important;
+  height: auto !important;
+  overflow: visible !important;
 }
 
 body.is-login-route .app-main-workspace {
   padding: 0 !important;
   margin: 0 !important;
-  min-height: calc(100vh - 64px) !important;
-  height: calc(100vh - 64px) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow: hidden !important;
+  min-height: 100vh !important;
+  height: auto !important;
+  display: block !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
 }
 
 body.is-login-route #viewLogin {
   width: 100% !important;
-  height: 100% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  min-height: 100vh !important;
+  height: auto !important;
+  display: block !important;
   margin: 0 !important;
-  padding: 12px !important;
+  padding: 0 !important;
   box-sizing: border-box !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 /* ==========================================================================
@@ -9247,13 +9248,14 @@ body.is-login-route .view-page-panel#viewLogin {
 .login-form-pane {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
   min-height: 100vh;
-  padding: 28px 48px;
+  height: auto;
+  padding: 28px 48px 40px;
   box-sizing: border-box;
   position: relative;
   background: #F8FAF8;
-  overflow-y: auto;
+  overflow-y: visible;
   overflow-x: hidden;
 }
 
@@ -14142,12 +14144,13 @@ body.is-login-route .app-enclosure-shell {
   max-width: 100vw !important;
   margin: 0 !important;
   padding: 0 !important;
-  height: 100vh !important;
   min-height: 100vh !important;
+  height: auto !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   overflow-x: hidden !important;
+  overflow-y: auto !important;
 }
 
 body.is-login-route .app-main-workspace {
@@ -14156,7 +14159,7 @@ body.is-login-route .app-main-workspace {
   margin: 0 !important;
   padding: 0 !important;
   min-height: 100vh !important;
-  height: 100vh !important;
+  height: auto !important;
   background: transparent !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
@@ -14165,8 +14168,8 @@ body.is-login-route .app-main-workspace {
 body.is-login-route #viewLogin {
   width: 100% !important;
   max-width: 100% !important;
-  height: 100% !important;
   min-height: 100vh !important;
+  height: auto !important;
   margin: 0 !important;
   padding: 0 !important;
   display: block !important;
@@ -14176,6 +14179,7 @@ body.is-login-route #viewLogin {
   width: 100% !important;
   max-width: 100% !important;
   min-height: 100vh !important;
+  height: auto !important;
   margin: 0 !important;
   padding: 0 !important;
   display: flex !important;
@@ -20437,6 +20441,150 @@ body.is-profile-route .mobile-menu-btn .mobile-menu-pfp {
   }
   .coming-soon-pure-title {
     font-size: 2rem !important;
+  }
+}
+
+/* ==========================================================================
+   23. REDESIGNED AUTHENTICATION (SIGN IN & REGISTRATION SYSTEM)
+   ========================================================================== */
+.auth-segmented-switch {
+  display: flex;
+  background: #F1F5F9;
+  border-radius: 12px;
+  padding: 4px;
+  margin: 0 auto 20px auto;
+  max-width: 320px;
+  width: 100%;
+}
+
+.auth-switch-btn {
+  flex: 1;
+  padding: 9px 16px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #64748B;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.auth-switch-btn.active {
+  background: #13432C;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(19, 67, 44, 0.22);
+}
+
+.auth-switch-btn:hover:not(.active) {
+  color: #0F172A;
+}
+
+.login-editorial-card.register-mode {
+  max-width: 620px !important;
+  transition: max-width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reg-grid-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.reg-grid-row-3 {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 12px;
+}
+
+.login-select-field {
+  flex: 1;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  padding: 13px 0 !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: #0F172A !important;
+  cursor: pointer;
+}
+
+.otp-user-summary-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.otp-user-summary-name {
+  font-weight: 750;
+  font-size: 1rem;
+  color: #0F172A;
+  margin-bottom: 3px;
+}
+
+.otp-user-summary-sub {
+  font-size: 0.8125rem;
+  color: #64748B;
+  line-height: 1.45;
+}
+
+.auth-switch-footer-hint {
+  margin-top: 18px;
+  font-size: 0.84rem;
+  color: #64748B;
+  text-align: center;
+}
+
+.auth-switch-footer-hint a {
+  color: #13432C;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .login-split-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+  .login-form-pane {
+    padding: 20px 16px 60px !important;
+    min-height: 100vh !important;
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+  .login-center-stage {
+    padding: 12px 0 24px !important;
+  }
+  .login-editorial-card {
+    padding: 24px 18px !important;
+    margin: 0 auto !important;
+  }
+  .login-editorial-card.register-mode {
+    max-width: 100% !important;
+  }
+  .reg-grid-row-2,
+  .reg-grid-row-3 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .reg-grid-row-2,
+  .reg-grid-row-3 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .login-editorial-card.register-mode {
+    max-width: 100% !important;
   }
 }
 

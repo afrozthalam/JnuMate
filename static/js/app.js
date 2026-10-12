@@ -183,7 +183,7 @@ function renderCleanPageLoader(message = "Loading...") {
 
 function showFooterAfterLoad() {
   const path = window.location.pathname;
-  const isLoginRoute = path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp";
+  const isLoginRoute = path === "/login" || path === "/register" || path === "/otp" || path === "/verify-otp";
   const isCreateTeamRoute = path === "/create-team";
   const isEventDetailRoute = path.startsWith("/events/") || path.startsWith("/event/");
   const footerEl = document.getElementById("homescreenFooter");
@@ -289,7 +289,7 @@ function handleCurrentRoute() {
   }
 
   // Login & Create Team & Events & Resources & Profile Viewport Isolation & Footer Visibility Control
-  const isLoginRoute = path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp";
+  const isLoginRoute = path === "/login" || path === "/register" || path === "/otp" || path === "/verify-otp";
   const isCreateTeamRoute = path === "/create-team";
   const isEventsRoute = path === "/events" || path.startsWith("/events/") || path.startsWith("/event/");
   const isResourcesRoute = path === "/resources";
@@ -393,25 +393,22 @@ function handleCurrentRoute() {
       p.classList.add("active");
       loadThreadsView();
     }
-  } else if (path === "/login" || path === "/course-select" || path === "/select-program" || path === "/enter-details" || path === "/sync-details" || path === "/otp" || path === "/verify-otp") {
+  } else if (path === "/login" || path === "/register" || path === "/otp" || path === "/verify-otp") {
     const p = document.getElementById("viewLogin");
     if (p) {
       p.classList.add("active");
       loadLoginView();
-      if (path === "/course-select" || path === "/select-program") {
-        showAuthStep('course_select');
-      } else if (path === "/enter-details" || path === "/sync-details") {
-        showAuthStep('sync');
-      } else if (path === "/otp" || path === "/verify-otp") {
+      if (path === "/otp" || path === "/verify-otp") {
         showAuthStep(2);
+      } else if (path === "/register") {
+        switchAuthTab('register');
+      } else {
+        switchAuthTab('signin');
       }
     }
   } else if (path === "/students") {
-    const p = document.getElementById("viewStudents");
-    if (p) {
-      p.classList.add("active");
-      loadStudentsView();
-    }
+    history.replaceState(null, "", "/");
+    handleCurrentRoute();
   } else if (path === "/admin") {
     const p = document.getElementById("viewAdmin");
     if (p) {
@@ -827,7 +824,7 @@ function renderNavUserSlots() {
     }
     const loginDtHtml = `
       <a href="/login" class="btn-black-pill" style="width:100%; justify-content:center;">
-        Sign In with R-ID
+        Sign In
       </a>
     `;
     if (dtSlot) dtSlot.innerHTML = loginDtHtml;
@@ -947,9 +944,9 @@ function renderDrawerUserSlot() {
     slot.innerHTML = `
       <div style="background:rgba(0,0,0,0.25); border:1px solid var(--border-surface); border-radius:var(--radius-xl); padding:16px; text-align:center;">
         <div style="font-family:var(--font-serif); font-size:1.125rem; font-weight:700; margin-bottom:4px;">Join JnuMate</div>
-        <p style="font-size:0.8125rem; color:var(--text-sage); margin-bottom:14px;">Sign in with your College R-ID to create or join teams.</p>
+        <p style="font-size:0.8125rem; color:var(--text-sage); margin-bottom:14px;">Sign in to your account to create or join teams.</p>
         <a href="/login" class="btn-black-pill" style="width:100%; justify-content:center;" onclick="closeMobileDrawer()">
-          Sign In with R-ID
+          Sign In / Register
         </a>
       </div>
     `;
@@ -961,7 +958,7 @@ function handleMyTeamClick() {
   closeMobileDrawer();
   closeDesktopDropdowns();
   if (!currentUser) {
-    showToast("Please sign in with your College R-ID first.", "info");
+    showToast("Please sign in to view your team.", "info");
     navigateTo("/login");
     return;
   }
@@ -1911,13 +1908,7 @@ function renderFullTeamDetail(team) {
             </div>
           </div>
           <div class="team-member-actions">
-            ${isLeader ? `
-              <button onclick="openSlotStudentSearchModalForTeam('${team.id}', ${seatNum})" class="btn-paper-assign" style="font-size:0.75rem; padding:5px 12px;">
-                + Add Teammate
-              </button>
-            ` : `
-              <span class="team-slot-open-badge">Open</span>
-            `}
+            <span class="team-slot-open-badge">Open</span>
           </div>
         </div>
       `;
@@ -1965,8 +1956,8 @@ function renderFullTeamDetail(team) {
 
   if (openSlots > 0) {
     mobileMemberCardsHtml += `
-      <div class="team-mob-invite-slot-card" ${isSquadMember ? `onclick="openSlotStudentSearchModalForTeam('${team.id}', 6)" style="cursor:pointer;"` : 'style="cursor:default;"'}>
-        <div class="team-mob-invite-plus">${isSquadMember ? '+ Invite Member' : `${openSlots} Open ${openSlots === 1 ? 'Slot' : 'Slots'}`}</div>
+      <div class="team-mob-invite-slot-card" style="cursor:default;">
+        <div class="team-mob-invite-plus">${openSlots} Open ${openSlots === 1 ? 'Slot' : 'Slots'}</div>
         <div class="team-mob-invite-sub">${openSlots} spot${openSlots > 1 ? 's' : ''} remaining in this squad</div>
       </div>
     `;
@@ -1984,12 +1975,6 @@ function renderFullTeamDetail(team) {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
           </div>
           <span class="team-mob-action-label">Edit</span>
-        </button>
-        <button type="button" onclick="openSlotStudentSearchModalForTeam('${team.id}', 6)" class="team-mob-action-card" ${openSlots <= 0 ? 'disabled style="opacity:0.5;"' : ''}>
-          <div class="team-mob-action-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-          </div>
-          <span class="team-mob-action-label">Invite</span>
         </button>
         <button type="button" onclick="handleShareTeam('${team.id}')" class="team-mob-action-card">
           <div class="team-mob-action-icon">
@@ -2014,15 +1999,12 @@ function renderFullTeamDetail(team) {
           </div>
           <span class="team-mob-action-label leave">Leave</span>
         </button>
-        <button type="button" onclick="openSlotStudentSearchModalForTeam('${team.id}', 6)" class="team-mob-action-card" ${openSlots <= 0 ? 'disabled style="opacity:0.5;"' : ''}>
-          <div class="team-mob-action-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
-          </div>
-          <span class="team-mob-action-label">Invite</span>
-        </button>
         <button type="button" onclick="handleShareTeam('${team.id}')" class="team-mob-action-card">
           <div class="team-mob-action-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+          </div>
+          <span class="team-mob-action-label">Share</span>
+        </button>
           </div>
           <span class="team-mob-action-label">Share</span>
         </button>
@@ -2290,7 +2272,7 @@ function renderFullTeamDetail(team) {
               <div class="team-mob-members-header" style="${window.__currentMobileSubTab === 'members' ? '' : 'display:none;'}">
                 <h2 class="team-mob-members-title">Team Members (${count}/6)</h2>
                 ${openSlots > 0 && isSquadMember ? `
-                  <button type="button" onclick="openSlotStudentSearchModalForTeam('${team.id}', 6)" class="team-mob-add-member-btn">+ Add Member</button>
+                  <button type="button" onclick="handleShareTeam('${team.id}')" class="team-mob-add-member-btn">Share Team</button>
                 ` : ''}
               </div>
 
@@ -3720,23 +3702,15 @@ function loadProfileView() {
     } catch (e) {}
   }
 
-  // Graceful fallback to reference student MD HASAN RAZA if no session is stored
   if (!currentUser) {
-    currentUser = {
-      id: "R44456",
-      r_id: "R44456",
-      name: "MD HASAN RAZA",
-      email: "ritcrouter@gmail.com",
-      phone: "6299318587",
-      gender: "Male",
-      program: "B.Tech (Computer Science Engineering)",
-      avatar_url: "/static/img/redesign/hasan_raza.jpg"
-    };
+    postLoginRedirect = "/profile";
+    navigateTo("/login");
+    return;
   }
 
   renderNavUserSlots();
 
-  const cacheKey = (currentUser.id || "R44456").toUpperCase();
+  const cacheKey = (currentUser.id || currentUser.email || "USER").toUpperCase();
   if (userProfileCache[cacheKey]) {
     const cached = userProfileCache[cacheKey];
     renderFullProfile(cached.profile, cached.teams);
@@ -3748,7 +3722,8 @@ function loadProfileView() {
     `;
   }
 
-  fetch(`/api/user/profile?r_id=${encodeURIComponent(currentUser.id || "R44456")}`)
+  const fetchId = currentUser.id || currentUser.r_id || currentUser.reg_no || currentUser.email;
+  fetch(`/api/user/profile?r_id=${encodeURIComponent(fetchId)}`)
     .then(res => res.json())
     .then(data => {
       const prof = data.profile || currentUser;
@@ -3767,44 +3742,20 @@ function renderFullProfile(prof, userTeams) {
   const container = document.getElementById("profileViewContainer");
   if (!container) return;
 
-  prof = prof || {};
-  const rId = (prof.r_id || prof.id || "R44456").toUpperCase();
-  let rawName = prof.name || (rId === "R44456" ? "MD HASAN RAZA" : rId);
-  let cleanName = rawName.replace(/^(Mr\.|Ms\.|Mrs\.|Dr\.)\s*/i, '').trim().toUpperCase() || "MD HASAN RAZA";
-  if (rId === "R44456") cleanName = "MD HASAN RAZA";
+  prof = prof || currentUser || {};
+  const studentName = prof.name || "Student";
+  const regNo = prof.reg_no || prof.r_id || prof.id || "N/A";
+  const email = prof.email || "Not Provided";
+  const phone = prof.phone || "Not Provided";
+  const age = prof.age || "N/A";
+  const gender = prof.gender || "Not Specified";
+  const state = prof.state || "Rajasthan";
+  const city = prof.city || "Jaipur";
+  const pincode = prof.pincode || "";
+  const locationText = [city, state, pincode].filter(Boolean).join(", ");
+  const avatarSrc = getStudentAvatarSrc(prof.avatar_url, prof.r_id || prof.id);
 
-  const academicYear = prof.academic_year || "4th Year Student";
-  const admissionYear = prof.admission_year || "2023";
-  const program = (prof.program && prof.program !== "Not Specified" && prof.program !== "Student") ? prof.program : "B.Tech (Computer Science Engineering)";
-  const email = (prof.email && !prof.email.includes("@student.edu")) ? prof.email : "ritcrouter@gmail.com";
-  const phone = (prof.phone && prof.phone !== "Not Provided") ? prof.phone : "6299318587";
-  const altPhone = (prof.alt_phone && prof.alt_phone !== "Not Provided") ? prof.alt_phone : "Not Provided";
-  const location = "Jaipur, Rajasthan";
-  const category = prof.category || "General";
-  const religion = prof.religion || "MUSLIM";
-  const maritalStatus = prof.marital_status || "Single";
-  let fatherName = prof.father_name || "Md Shafuddin Khan";
-  if (fatherName === "Md Shadrudin Khan") fatherName = "Md Shafuddin Khan";
-  const fatherPhone = (prof.father_phone && prof.father_phone !== "Not Provided" && prof.father_phone !== "1") ? prof.father_phone : "6299318587";
-  const motherName = (prof.mother_name || "Anjum Saba").replace(/\s+/g, ' ');
-  const corrAddr = prof.correspondence_address || "Gram Amri Post Karwandiya Thana Sasaram Karwandiya Rhotas, Sasaram, Sasaram, Bihar, 821115, INDIA";
-  const permAddr = prof.permanent_address || "Sasaram, Bihar";
-
-  const avatarSrc = (rId === "R44456") ? "/static/img/redesign/hasan_raza.jpg" : getStudentAvatarSrc(prof.avatar_url, rId);
-
-  // If userTeams is empty for R44456, fallback to reference squad CapsLock
   let teams = (userTeams && userTeams.length > 0) ? userTeams : [];
-  if (teams.length === 0 && rId === "R44456") {
-    teams = [{
-      id: 28,
-      name: "CapsLock",
-      hackathon_type: "ctf",
-      description: "In this team we will be working on a smart electric meter and which will solve the problem of inefficient electricity usage in households.",
-      member_count: 5,
-      max_size: 6,
-      user_status: "member"
-    }];
-  }
 
   // Generate Enrolled Squads HTML
   let squadsHtml = '';
@@ -3819,38 +3770,20 @@ function renderFullProfile(prof, userTeams) {
     squadsHtml = teams.map(t => {
       const isLeader = (currentUser && currentUser.id) && (t.leader_r_id === currentUser.id || t.user_status === 'leader' || t.role === 'leader');
       const hType = (t.hackathon_type || 'ctf').toUpperCase();
-      const memberCount = t.member_count || (t.members ? t.members.length : 5);
+      const memberCount = t.member_count || (t.members ? t.members.length : 1);
       const maxSize = t.max_size || 6;
-      const desc = t.description || "In this team we will be working on a smart electric meter and which will solve the problem of inefficient electricity usage in households.";
+      const desc = t.description || "Hackathon team registered for campus innovation challenges.";
 
       return `
         <div class="profile-squad-item-card">
           <div class="profile-squad-item-top">
-            <!-- Split SIH / CTF Circle Emblem -->
-            <div class="sih-ctf-badge-emblem" title="Smart India Hackathon track">
-              <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Left Half Gear (Orange) -->
-                <path d="M 48 10 A 38 38 0 0 0 48 86 L 48 78 A 30 30 0 0 1 48 18 Z" fill="#F97316"/>
-                <rect x="7" y="45" width="8" height="6" rx="1.5" fill="#F97316"/>
-                <rect x="13" y="24" width="8" height="6" rx="1.5" transform="rotate(-40 17 27)" fill="#F97316"/>
-                <rect x="13" y="66" width="8" height="6" rx="1.5" transform="rotate(40 17 69)" fill="#F97316"/>
-                <circle cx="34" cy="48" r="4.5" fill="#F97316"/>
-                <path d="M 48 48 H 34" stroke="#F97316" stroke-width="3"/>
-                <!-- Right Half Circuit (Green) -->
-                <path d="M 52 10 A 38 38 0 0 1 52 86 L 52 78 A 30 30 0 0 0 52 18 Z" fill="#10B981"/>
-                <path d="M 52 28 H 68 L 74 22" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
-                <circle cx="76" cy="20" r="3.5" fill="#10B981"/>
-                <path d="M 52 48 H 82" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
-                <circle cx="84" cy="48" r="3.5" fill="#10B981"/>
-                <path d="M 52 68 H 68 L 74 74" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
-                <circle cx="76" cy="76" r="3.5" fill="#10B981"/>
-                <line x1="50" y1="8" x2="50" y2="88" stroke="#FFFFFF" stroke-width="2"/>
-                <!-- SIH text -->
-                <text x="50" y="99" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="11" fill="#0D2E1F" letter-spacing="1">SIH</text>
+            <div class="sih-ctf-badge-emblem" title="${escapeHtml(hType)} Track">
+              <svg width="44" height="44" viewBox="0 0 100 100" fill="none">
+                <circle cx="50" cy="50" r="42" stroke="#10B981" stroke-width="4" fill="#0D2E1F"/>
+                <text x="50" y="58" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="16" fill="#A7F3D0">${escapeHtml(hType)}</text>
               </svg>
             </div>
 
-            <!-- Squad Details Block -->
             <div class="profile-squad-info-block">
               <div class="profile-squad-title-row">
                 <div class="profile-squad-title-left">
@@ -3863,15 +3796,8 @@ function renderFullProfile(prof, userTeams) {
             </div>
           </div>
 
-          <!-- Squad Footer: Member Avatars & Actions -->
           <div class="profile-squad-item-bottom">
             <div class="profile-squad-members-row">
-              <div class="profile-squad-avatar-stack">
-                <img src="/static/img/redesign/events/attendee_1.png" alt="Member" class="stack-pfp" onerror="this.src='/static/img/blank_pfp.jpg'">
-                <img src="/static/img/redesign/events/attendee_2.png" alt="Member" class="stack-pfp" onerror="this.src='/static/img/blank_pfp.jpg'">
-                <img src="/static/img/redesign/events/attendee_3.png" alt="Member" class="stack-pfp" onerror="this.src='/static/img/blank_pfp.jpg'">
-                <span class="stack-count-bubble">+3</span>
-              </div>
               <span class="profile-squad-member-count-label">${memberCount} / ${maxSize} Members</span>
             </div>
             <div class="profile-squad-actions-row">
@@ -3884,29 +3810,24 @@ function renderFullProfile(prof, userTeams) {
     }).join('');
   }
 
-  // Assemble the Full Page DOM matching media_1789825922886.jpg
   container.innerHTML = `
     <div class="profile-page-shell">
       <!-- 1. Full-Width Profile Hero Card -->
       <section class="profile-hero-card">
         <div class="profile-hero-left">
           <div class="profile-avatar-wrapper">
-            <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(cleanName)}" class="profile-hero-avatar" onerror="this.onerror=null; this.src='/static/img/redesign/hasan_raza.jpg';">
+            <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(studentName)}" class="profile-hero-avatar" onerror="this.onerror=null; this.src=DEFAULT_STUDENT_AVATAR;">
           </div>
           <div class="profile-hero-info">
-            <h1 class="profile-hero-name">${escapeHtml(cleanName)}</h1>
+            <h1 class="profile-hero-name">${escapeHtml(studentName)}</h1>
             <div class="profile-hero-sub-row">
-              <span class="profile-hero-year">${escapeHtml(academicYear)}</span>
+              <span class="profile-hero-year">Verified Student</span>
               <span class="profile-hero-dot">•</span>
-              <button type="button" onclick="copyRidToClipboard('${escapeHtml(rId)}')" class="profile-hero-rid-btn" title="Click to copy R-ID">
-                @${escapeHtml(rId)}
+              <button type="button" onclick="copyRidToClipboard('${escapeHtml(regNo)}')" class="profile-hero-rid-btn" title="Click to copy Reg Number">
+                Reg No: ${escapeHtml(regNo)}
               </button>
             </div>
             <div class="profile-hero-meta-list">
-              <div class="profile-meta-item">
-                <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5"/></svg>
-                <span>${escapeHtml(program)}</span>
-              </div>
               <div class="profile-meta-item">
                 <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                 <span>${escapeHtml(email)}</span>
@@ -3917,7 +3838,7 @@ function renderFullProfile(prof, userTeams) {
               </div>
               <div class="profile-meta-item">
                 <svg class="meta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                <span>${escapeHtml(location)}</span>
+                <span>${escapeHtml(locationText)}</span>
               </div>
             </div>
           </div>
@@ -3958,7 +3879,7 @@ function renderFullProfile(prof, userTeams) {
           </div>
         </div>
 
-        <!-- Right Column: Squads & Academic Credentials -->
+        <!-- Right Column: Squads & Student Details -->
         <div class="profile-right-col">
           <!-- Enrolled Hackathon Squads Card -->
           <div class="profile-card profile-squads-card">
@@ -3975,115 +3896,68 @@ function renderFullProfile(prof, userTeams) {
             ${squadsHtml}
           </div>
 
-          <!-- Academic Credentials Card -->
+          <!-- Student Profile & Account Details Card -->
           <div class="profile-card profile-credentials-card">
             <div class="profile-card-header">
               <div class="profile-card-header-left">
-                <svg class="card-header-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5"/></svg>
-                <h3 class="profile-card-title">Academic Credentials</h3>
-              </div>
-            </div>
-
-            <div class="profile-cred-top-row">
-              <div class="profile-cred-top-item">
-                <div class="profile-cred-label">College R-ID</div>
-                <div class="profile-cred-rid-row">
-                  <span class="profile-cred-rid-val">@${escapeHtml(rId)}</span>
-                  <button type="button" onclick="copyRidToClipboard('${escapeHtml(rId)}')" class="btn-cred-copy-rid" title="Copy R-ID" aria-label="Copy R-ID">
-                    <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                  </button>
-                </div>
-              </div>
-              <div class="profile-cred-top-item">
-                <div class="profile-cred-label">Student Name</div>
-                <div class="profile-cred-val-bold">${escapeHtml(cleanName)}</div>
-              </div>
-              <div class="profile-cred-top-item">
-                <div class="profile-cred-label">Academic Year</div>
-                <div class="profile-cred-val">${escapeHtml(academicYear)}</div>
+                <svg class="card-header-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <h3 class="profile-card-title">Student Profile Details</h3>
               </div>
             </div>
 
             <div class="profile-cred-boxes-grid">
               <div class="profile-info-pill-box">
-                <span class="info-pill-label">Admission Batch</span>
-                <span class="info-pill-val">${escapeHtml(admissionYear)}</span>
+                <span class="info-pill-label">Full Name</span>
+                <span class="info-pill-val">${escapeHtml(studentName)}</span>
               </div>
               <div class="profile-info-pill-box">
-                <span class="info-pill-label">Degree Program</span>
-                <span class="info-pill-val">${escapeHtml(program)}</span>
+                <span class="info-pill-label">Registration Number</span>
+                <span class="info-pill-val">${escapeHtml(regNo)}</span>
               </div>
               <div class="profile-info-pill-box">
-                <span class="info-pill-label">Reservation Category</span>
-                <span class="info-pill-val">${escapeHtml(category)}</span>
+                <span class="info-pill-label">Email Address</span>
+                <span class="info-pill-val">${escapeHtml(email)}</span>
               </div>
               <div class="profile-info-pill-box">
-                <span class="info-pill-label">Community / Religion</span>
-                <span class="info-pill-val">${escapeHtml(religion)}</span>
+                <span class="info-pill-label">Mobile Phone</span>
+                <span class="info-pill-val">${escapeHtml(phone)}</span>
               </div>
               <div class="profile-info-pill-box">
-                <span class="info-pill-label">Marital Status</span>
-                <span class="info-pill-val">${escapeHtml(maritalStatus)}</span>
+                <span class="info-pill-label">Age</span>
+                <span class="info-pill-val">${escapeHtml(String(age))} Years</span>
+              </div>
+              <div class="profile-info-pill-box">
+                <span class="info-pill-label">Gender</span>
+                <span class="info-pill-val">${escapeHtml(gender)}</span>
+              </div>
+              <div class="profile-info-pill-box">
+                <span class="info-pill-label">City</span>
+                <span class="info-pill-val">${escapeHtml(city)}</span>
+              </div>
+              <div class="profile-info-pill-box">
+                <span class="info-pill-label">State</span>
+                <span class="info-pill-val">${escapeHtml(state)}</span>
+              </div>
+              <div class="profile-info-pill-box">
+                <span class="info-pill-label">Pincode</span>
+                <span class="info-pill-val">${escapeHtml(pincode || 'N/A')}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 3. Bottom Row: 2 Split Cards -->
-      <div class="profile-bottom-split-grid">
-        <!-- Family & Contact Information -->
-        <div class="profile-card profile-family-card">
-          <div class="profile-card-header">
-            <div class="profile-card-header-left">
-              <svg class="card-header-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-              <h3 class="profile-card-title">Family & Contact Information</h3>
-            </div>
+      <!-- 3. Bottom Card: Campus Verification Status -->
+      <div class="profile-card" style="margin-top:20px; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:16px; padding:20px 24px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="font-weight:750; font-size:1rem; color:#0F172A; margin-bottom:4px;">Jaipur National University Student Account</div>
+            <div style="font-size:0.8125rem; color:#64748B;">Registered and verified student member &bull; Dual-storage database sync enabled</div>
           </div>
-          <div class="profile-family-boxes-top">
-            <div class="profile-info-pill-box">
-              <span class="info-pill-label">Primary Mobile</span>
-              <span class="info-pill-val">${escapeHtml(phone)}</span>
-            </div>
-            <div class="profile-info-pill-box">
-              <span class="info-pill-label">Alternate Mobile</span>
-              <span class="info-pill-val">${escapeHtml(altPhone)}</span>
-            </div>
-            <div class="profile-info-pill-box">
-              <span class="info-pill-label">Father's Name</span>
-              <span class="info-pill-val">${escapeHtml(fatherName)}</span>
-            </div>
-          </div>
-          <div class="profile-family-boxes-bottom">
-            <div class="profile-info-pill-box">
-              <span class="info-pill-label">Father's Contact</span>
-              <span class="info-pill-val">${escapeHtml(fatherPhone)}</span>
-            </div>
-            <div class="profile-info-pill-box">
-              <span class="info-pill-label">Mother's Name</span>
-              <span class="info-pill-val">${escapeHtml(motherName)}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Residential Address -->
-        <div class="profile-card profile-address-card">
-          <div class="profile-card-header">
-            <div class="profile-card-header-left">
-              <svg class="card-header-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-              <h3 class="profile-card-title">Residential Address</h3>
-            </div>
-          </div>
-          <div class="profile-address-boxes-stack">
-            <div class="profile-info-pill-box full-addr-box">
-              <span class="info-pill-label">Correspondence Address</span>
-              <span class="info-pill-val addr-text">${escapeHtml(corrAddr)}</span>
-            </div>
-            <div class="profile-info-pill-box full-addr-box">
-              <span class="info-pill-label">Permanent Address</span>
-              <span class="info-pill-val addr-text">${escapeHtml(permAddr)}</span>
-            </div>
-          </div>
+          <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 12px; background:#DCFCE7; color:#166534; font-size:0.75rem; font-weight:750; border-radius:999px;">
+            <span style="width:6px; height:6px; border-radius:50%; background:#16A34A;"></span>
+            Verified & Active
+          </span>
         </div>
       </div>
 
@@ -4505,10 +4379,10 @@ function renderCreateTeamSeats() {
         `;
       } else {
         desktopHtml += `
-          <div class="roster-seat-card empty" onclick="openSlotStudentSearchModal(${i})" title="Click to assign teammate, or leave open">
-            <div class="roster-plus-circle">+</div>
+          <div class="roster-seat-card empty" title="Open slot available for student join requests">
+            <div class="roster-plus-circle" style="color:var(--text-sage); font-size:1.1rem; border-color:var(--border-subtle);">●</div>
             <div class="seat-empty-title">Seat ${i + 2}<br>Open Slot</div>
-            <div class="seat-empty-sub">Click to add teammate, or leave open for join requests</div>
+            <div class="seat-empty-sub">Available for student join requests</div>
           </div>
         `;
       }
@@ -4543,9 +4417,9 @@ function renderCreateTeamSeats() {
         `;
       } else {
         mobileHtml += `
-          <div class="mobile-roster-slot empty" onclick="openSlotStudentSearchModal(${i})" title="Click to assign teammate">
+          <div class="mobile-roster-slot empty" title="Open slot for join requests">
             <div class="mobile-slot-num">${i + 2}</div>
-            <div class="mobile-slot-plus">+</div>
+            <div class="mobile-slot-plus" style="font-size:0.75rem; color:#64748B;">Open</div>
           </div>
         `;
       }
@@ -5356,12 +5230,13 @@ function setupOtpDigitInputs() {
   });
 }
 
+let currentAuthTab = 'signin';
+
 function loadLoginView() {
   const container = document.getElementById("loginViewContainer");
   if (!container) return;
 
-  const curPath = window.location.pathname;
-  if (currentUser && !currentUser.needs_program && curPath !== "/course-select" && curPath !== "/select-program" && curPath !== "/enter-details" && curPath !== "/sync-details" && curPath !== "/otp" && curPath !== "/verify-otp") {
+  if (currentUser && !currentUser.needs_program) {
     const dest = postLoginRedirect || "/";
     postLoginRedirect = null;
     navigateTo(dest);
@@ -5372,12 +5247,8 @@ function loadLoginView() {
   pendingStudentProfile = null;
   clearInterval(resendTimerInterval);
 
-  const courseOptionsHtml = ACADEMIC_PROGRAMS.map(p => `
-    <option value="${escapeAttr(p)}">${escapeHtml(p)}</option>
-  `).join("");
-
   container.innerHTML = `
-    <!-- Step 1 Container: Sign In (Desktop 2-Column Split & Mobile Lockup) -->
+    <!-- Step 1 Container: Sign In & Registration (Desktop Split & Mobile Lockup) -->
     <div id="loginStep1Wrap" class="login-step-view-wrap" style="width:100%; min-height:100vh;">
       <div class="login-split-layout">
         <!-- Left Visual Pane (Desktop Only) -->
@@ -5390,11 +5261,11 @@ function loadLoginView() {
           <div class="login-ambient-curve-top"></div>
           <div class="login-ambient-curve-bottom"></div>
 
-          <!-- Top Bar with "New here? Learn more →" -->
+          <!-- Top Bar with Brand Link -->
           <header class="login-top-bar">
-            <a href="javascript:void(0)" onclick="navigateTo('/about')" class="login-learn-more-link">
-              <span>New here?</span>
-              <span class="accent-text">Learn more &rarr;</span>
+            <a href="javascript:void(0)" onclick="navigateTo('/')" class="login-learn-more-link">
+              <span>Back to</span>
+              <span class="accent-text">Discover &rarr;</span>
             </a>
           </header>
 
@@ -5405,137 +5276,170 @@ function loadLoginView() {
             <div class="login-mobile-brand-sub">JAIPUR NATIONAL UNIVERSITY</div>
           </div>
 
-          <!-- Center Floating White Sign In Card -->
+          <!-- Center Floating Editorial Card -->
           <div class="login-center-stage">
             <div class="login-editorial-card" id="loginCardFrame">
               
-              <!-- Desktop JNU Crest Logo (Centered on Desktop Card, Hidden on Mobile) -->
+              <!-- Desktop JNU Crest Logo -->
               <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="login-card-crest" id="loginCardCrest" onerror="this.src='/static/img/jnu_logo.jpg';">
 
-              <h1 class="login-card-title" id="loginPortalTitle">Student Sign In</h1>
-              <p class="login-card-sub" id="loginPortalSubtitle">Enter your College R-ID to continue</p>
+              <!-- Sign In / Register Segmented Tab Toggle -->
+              <div class="auth-segmented-switch">
+                <button type="button" id="authTabSignIn" class="auth-switch-btn active" onclick="switchAuthTab('signin')">Sign In</button>
+                <button type="button" id="authTabRegister" class="auth-switch-btn" onclick="switchAuthTab('register')">Register</button>
+              </div>
 
-              <!-- Step 1: Input R-ID & QR Option -->
-              <div id="authStep1" class="auth-step-panel">
+              <h1 class="login-card-title" id="loginPortalTitle">Student Sign In</h1>
+              <p class="login-card-sub" id="loginPortalSubtitle">Enter your registered email and password to continue</p>
+
+              <!-- PANEL 1: SIGN IN -->
+              <div id="authPanelSignIn" class="auth-step-panel">
                 <div class="login-field-group">
-                  <label class="login-field-label">COLLEGE R-ID</label>
+                  <label class="login-field-label">EMAIL ADDRESS</label>
+                  <div class="login-input-wrap">
+                    <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                      <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                    <input type="email" id="loginEmailInput" placeholder="e.g. your.email@example.com" class="login-input-field" autocomplete="email" autofocus onkeyup="if(event.key==='Enter') submitUserLogin()">
+                  </div>
+                </div>
+
+                <div class="login-field-group">
+                  <label class="login-field-label">PASSWORD</label>
+                  <div class="login-input-wrap">
+                    <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <input type="password" id="loginPasswordInput" placeholder="Enter your password" class="login-input-field" autocomplete="current-password" onkeyup="if(event.key==='Enter') submitUserLogin()">
+                  </div>
+                </div>
+
+                <button type="button" onclick="submitUserLogin()" id="btnLoginSubmit" class="btn-login-submit">
+                  <span>Sign In &rarr;</span>
+                </button>
+
+                <div class="auth-switch-footer-hint">
+                  New to JnuMate? <a onclick="switchAuthTab('register')">Create an account</a>
+                </div>
+
+                <div style="margin-top:16px; text-align:center;">
+                  <a href="javascript:void(0)" onclick="showAdminPasswordStep()" style="font-size:0.75rem; color:#94A3B8; text-decoration:none;">Administrator Portal</a>
+                </div>
+              </div>
+
+              <!-- PANEL 2: REGISTRATION -->
+              <div id="authPanelRegister" class="auth-step-panel" style="display:none; text-align:left;">
+                
+                <!-- Full Name -->
+                <div class="login-field-group">
+                  <label class="login-field-label">FULL NAME *</label>
                   <div class="login-input-wrap">
                     <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                       <circle cx="12" cy="7" r="4"></circle>
                     </svg>
-                    <input type="text" id="authRidInput" placeholder="E.g. R15006" class="login-input-field" autocomplete="username" autofocus onkeyup="if(event.key==='Enter') submitInitialRid()">
+                    <input type="text" id="regNameInput" placeholder="Full name as per university ID" class="login-input-field" autocomplete="name">
                   </div>
                 </div>
 
-                <button type="button" onclick="submitInitialRid()" id="btnSendOtp" class="btn-login-submit">
-                  <span>Sign In &rarr;</span>
-                </button>
-
-                <div class="login-or-divider">
-                  <span>or</span>
+                <!-- Age & Gender -->
+                <div class="reg-grid-row-2">
+                  <div class="login-field-group">
+                    <label class="login-field-label">AGE *</label>
+                    <div class="login-input-wrap">
+                      <input type="number" id="regAgeInput" min="15" max="99" placeholder="e.g. 20" class="login-input-field">
+                    </div>
+                  </div>
+                  <div class="login-field-group">
+                    <label class="login-field-label">GENDER *</label>
+                    <div class="login-input-wrap">
+                      <select id="regGenderSelect" class="login-select-field">
+                        <option value="Male" selected>Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
-                <div class="login-qr-tile" onclick="openUniversityQrScanner()" title="Scan University ID Card">
-                  <div class="login-qr-icon-box">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="3" width="7" height="7"></rect>
-                      <rect x="14" y="3" width="7" height="7"></rect>
-                      <rect x="14" y="14" width="7" height="7"></rect>
-                      <rect x="3" y="14" width="7" height="7"></rect>
+                <!-- Registration Number -->
+                <div class="login-field-group">
+                  <label class="login-field-label">REGISTRATION NUMBER *</label>
+                  <div class="login-input-wrap">
+                    <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
                     </svg>
-                  </div>
-                  <div class="login-qr-text-box">
-                    <div class="login-qr-title">Use QR from University ID Card</div>
-                    <div class="login-qr-sub">Faster and more secure</div>
-                  </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="login-qr-chevron">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                  </svg>
-                </div>
-              </div>
-
-              <!-- Step 1B: Legacy fallback panel (replaced by loginStepSyncWrap) -->
-              <div id="authStepSyncNotice" class="auth-step-panel" style="display:none; text-align:left;">
-                <div style="text-align:center; margin-bottom:16px;">
-                  <div class="auth-instagram-avatar-box">
-                    <img id="legacySyncAvatarImg" src="${INSTAGRAM_EMPTY_AVATAR}" alt="No profile photo" style="width:72px; height:72px; border-radius:50%; border:2px solid #16A34A; box-shadow:0 4px 12px rgba(22,163,74,0.15);">
-                  </div>
-                  <div style="margin-top:8px;">
-                    <span class="student-rid-badge" style="font-size:0.875rem; padding:4px 14px; background:#DCFCE7; color:#166534;">
-                      R-ID: <strong id="legacySyncRidBanner"></strong>
-                    </span>
+                    <input type="text" id="regNoInput" placeholder="University Registration Number" class="login-input-field">
                   </div>
                 </div>
 
-                <div class="auth-sync-text" style="background:#FEF3C7; border:1px solid #FCD34D; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:0.8rem; color:#92400E; line-height:1.45; text-align:center;">
-                  Due to server load we couldn't fetch your profile automatically. Please enter your details manually.
-                </div>
-
-                <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:16px;">
-                  <div>
-                    <label class="login-field-label">Full Name *</label>
-                    <input type="text" id="legacySyncNameInput" placeholder="Your full name as per college ID" class="input-forest" style="background:#FFFFFF; color:#0F172A; border:1.5px solid #E2E8F0;">
+                <!-- Email & Phone -->
+                <div class="reg-grid-row-2">
+                  <div class="login-field-group">
+                    <label class="login-field-label">EMAIL ADDRESS *</label>
+                    <div class="login-input-wrap">
+                      <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                      </svg>
+                      <input type="email" id="regEmailInput" placeholder="e.g. name@gmail.com" class="login-input-field" autocomplete="email">
+                    </div>
                   </div>
-
-                  <div>
-                    <label class="login-field-label">Course / Degree Program *</label>
-                    <select id="legacySyncCourseSelect" class="input-forest" style="background:#FFFFFF; color:#0F172A; border:1.5px solid #E2E8F0;">
-                      ${courseOptionsHtml}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label class="login-field-label">Gender *</label>
-                    <select id="legacySyncGenderSelect" class="input-forest" style="background:#FFFFFF; color:#0F172A; border:1.5px solid #E2E8F0;">
-                      <option value="Male" selected>Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label class="login-field-label">Email *</label>
-                    <input type="email" id="legacySyncEmailInput" placeholder="e.g. name@gmail.com" class="input-forest" style="background:#FFFFFF; color:#0F172A; border:1.5px solid #E2E8F0;">
+                  <div class="login-field-group">
+                    <label class="login-field-label">PHONE NUMBER *</label>
+                    <div class="login-input-wrap">
+                      <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                      </svg>
+                      <input type="tel" id="regPhoneInput" placeholder="10-digit mobile" maxlength="10" class="login-input-field" autocomplete="tel">
+                    </div>
                   </div>
                 </div>
 
-                <button onclick="submitSyncDetailsAndSendOtp()" id="legacyBtnSendSyncOtp" class="btn-login-submit" style="width:100%;">
-                  <span>Send Verification Code &rarr;</span>
+                <!-- State, City & Pincode -->
+                <div class="reg-grid-row-3">
+                  <div class="login-field-group">
+                    <label class="login-field-label">STATE *</label>
+                    <div class="login-input-wrap">
+                      <input type="text" id="regStateInput" placeholder="State" class="login-input-field">
+                    </div>
+                  </div>
+                  <div class="login-field-group">
+                    <label class="login-field-label">CITY *</label>
+                    <div class="login-input-wrap">
+                      <input type="text" id="regCityInput" placeholder="City" class="login-input-field">
+                    </div>
+                  </div>
+                  <div class="login-field-group">
+                    <label class="login-field-label">PINCODE *</label>
+                    <div class="login-input-wrap">
+                      <input type="text" id="regPincodeInput" placeholder="Pincode" maxlength="6" class="login-input-field">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Password -->
+                <div class="login-field-group">
+                  <label class="login-field-label">PASSWORD *</label>
+                  <div class="login-input-wrap">
+                    <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <input type="password" id="regPasswordInput" placeholder="Create a password (min. 4 characters)" class="login-input-field" autocomplete="new-password">
+                  </div>
+                </div>
+
+                <button type="button" onclick="submitUserRegistration()" id="btnRegisterSubmit" class="btn-login-submit">
+                  <span>Register &amp; Verify &rarr;</span>
                 </button>
 
-                <button onclick="showAuthStep(1)" class="auth-link-btn" style="width:100%; text-align:center; margin-top:10px; display:block;">
-                  &larr; Change R-ID
-                </button>
-              </div>
-
-              <!-- Step 2B: Course Selection Prompt -->
-              <div id="authStepCourseSelect" class="auth-step-panel" style="display:none; text-align:left;">
-                <div style="text-align:center; margin-bottom:16px;">
-                  <div class="auth-student-big-avatar-box" style="margin-bottom:8px;">
-                    <img id="courseSelectAvatar" src="${DEFAULT_STUDENT_AVATAR}" alt="Student" class="auth-student-big-avatar" style="width:72px; height:72px; border-radius:50%; border:2px solid #16A34A;">
-                  </div>
-                  <h2 id="courseSelectStudentName" class="font-serif" style="font-size:1.35rem; color:#0F172A; margin-bottom:4px;"></h2>
-                  <span class="student-rid-badge" style="font-size:0.8125rem; padding:3px 12px; background:#DCFCE7; color:#166534;">
-                    R-ID: <strong id="courseSelectRid"></strong>
-                  </span>
+                <div class="auth-switch-footer-hint">
+                  Already have an account? <a onclick="switchAuthTab('signin')">Sign In</a>
                 </div>
-
-                <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:12px 14px; margin-bottom:16px; text-align:center;">
-                  <div style="font-weight:700; color:#166534; font-size:0.875rem; margin-bottom:2px;">Select Your Academic Program</div>
-                  <div style="font-size:0.75rem; color:#64748B;">Please choose your course to finish setting up your student profile.</div>
-                </div>
-
-                <div class="login-field-group" style="margin-bottom:18px;">
-                  <label class="login-field-label">Degree / Academic Program *</label>
-                  <select id="authCourseSelectInput" class="input-forest" style="background:#FFFFFF; color:#0F172A; border:1.5px solid #E2E8F0; font-size:0.9375rem; padding:12px 14px;">
-                    ${courseOptionsHtml}
-                  </select>
-                </div>
-
-                <button onclick="submitUserCourseSelection()" id="btnSubmitCourseSelect" class="btn-login-submit">
-                  <span>Save & Continue &rarr;</span>
-                </button>
               </div>
 
             </div>
@@ -5555,11 +5459,11 @@ function loadLoginView() {
       </div>
     </div>
 
-    <!-- Step 2 Container: OTP Verification (Matches media_1789820266688.jpg) -->
+    <!-- Step 2 Container: OTP Verification -->
     <div id="loginStep2Wrap" class="login-step-view-wrap" style="display:none; width:100%; min-height:100vh;">
       <div class="otp-page-layout">
         
-        <!-- Desktop Top Bar (Hidden on mobile < 768px) -->
+        <!-- Desktop Top Bar -->
         <header class="otp-desktop-top-bar">
           <div class="otp-top-brand" onclick="navigateTo('/')">
             <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="otp-top-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
@@ -5569,9 +5473,8 @@ function loadLoginView() {
             </div>
           </div>
 
-          <!-- Right Actions Cluster: Only Back to Sign In -->
           <div class="otp-top-actions">
-            <button type="button" onclick="showAuthStep(1)" class="btn-auth-back-nav" title="Back to Login">
+            <button type="button" onclick="showAuthStep(1)" class="btn-auth-back-nav" title="Back to Sign In">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -5581,7 +5484,7 @@ function loadLoginView() {
           </div>
         </header>
 
-        <!-- Mobile Top Bar (Shown only on mobile < 768px) -->
+        <!-- Mobile Top Bar -->
         <header class="otp-mobile-top-bar">
           <div class="otp-mobile-brand" onclick="navigateTo('/')">
             <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="otp-mobile-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
@@ -5592,7 +5495,7 @@ function loadLoginView() {
           </div>
 
           <div class="otp-mobile-actions">
-            <button type="button" onclick="showAuthStep(1)" class="btn-auth-back-nav-mob" title="Back to Login">
+            <button type="button" onclick="showAuthStep(1)" class="btn-auth-back-nav-mob" title="Back to Sign In">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
@@ -5620,7 +5523,7 @@ function loadLoginView() {
             </div>
           </div>
 
-          <!-- Left-Bottom Architectural Building Sketch (Desktop Only >= 768px) -->
+          <!-- Left-Bottom Architectural Building Sketch -->
           <div class="otp-left-building-watermark">
             <img src="/static/img/redesign/otp_desktop_building.png" alt="Jaipur National University" class="otp-left-building-img">
           </div>
@@ -5634,7 +5537,6 @@ function loadLoginView() {
                 <div class="otp-lock-badge">
                   <svg viewBox="0 0 44 48" width="26" height="30" fill="none">
                     <path d="M22 2L6 8V21C6 31.5 12.8 41.2 22 44.5C31.2 41.2 38 31.5 38 21V8L22 2Z" fill="#0D5C3A"/>
-                    <!-- White Padlock -->
                     <path d="M16.5 21V18C16.5 14.96 18.96 12.5 22 12.5C25.04 12.5 27.5 14.96 27.5 18V21H28.5C29.33 21 30 21.67 30 22.5V31.5C30 32.33 29.33 33 28.5 33H15.5C14.67 33 14 32.33 14 31.5V22.5C14 21.67 14.67 21 15.5 21H16.5ZM18.5 18V21H25.5V18C25.5 16.07 23.93 14.5 22 14.5C20.07 14.5 18.5 16.07 18.5 18ZM22 25C21.17 25 20.5 25.67 20.5 26.5C20.5 27.08 20.84 27.58 21.33 27.82L20.8 30H23.2L22.67 27.82C23.16 27.58 23.5 27.08 23.5 26.5C23.5 25.67 22.83 25 22 25Z" fill="#FFFFFF"/>
                   </svg>
                 </div>
@@ -5642,24 +5544,25 @@ function loadLoginView() {
 
               <!-- Title & Subtitle -->
               <h1 class="otp-card-title">OTP Verification</h1>
-              <p class="otp-card-sub otp-prompt-text">Enter the 6-digit code sent to your registered email</p>
+              <p class="otp-card-sub otp-prompt-text">Enter the 6-digit verification code sent to your email</p>
 
-              <!-- Student Profile Spotlight -->
-              <div id="otpProfileSpotlight">
-                <!-- Rendered dynamically by renderAuthProfileSpotlight -->
-              </div>
-
-              <!-- Verification Code Sent Notice Box -->
+              <!-- Target Recipient Notice Box -->
               <div class="otp-email-notice-box" id="otpEmailNoticeBox">
                 <span class="otp-email-notice-icon">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                     <polyline points="22,6 12,13 2,6"></polyline>
                   </svg>
                 </span>
                 <span class="otp-email-notice-text">
-                  Verification code sent to <span class="otp-email-bold-link" id="otpTargetEmailText">manjarigulpadiya@gmail.com</span>
+                  Verification code sent to <span class="otp-email-bold-link" id="otpTargetEmailText">your email</span>
                 </span>
+              </div>
+
+              <!-- Registered User Summary Pill -->
+              <div class="otp-user-summary-card" id="otpUserSummaryBox">
+                <div class="otp-user-summary-name" id="otpSummaryName">New Student</div>
+                <div class="otp-user-summary-sub">Registration Number: <strong id="otpSummaryRegNo">--</strong></div>
               </div>
 
               <!-- Prompt Label -->
@@ -5675,21 +5578,20 @@ function loadLoginView() {
                 <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="otp-digit-box" data-idx="5">
               </div>
 
-              <!-- Hidden input for backwards compatibility & sync -->
               <input type="hidden" id="otpCodeInput" value="">
 
-              <!-- Verify & Sign In Button -->
+              <!-- Verify Button -->
               <button type="button" id="btnVerifyOtp" onclick="verifyEmailOtpCode()" class="btn-otp-verify-submit">
-                <span>Verify &amp; Sign In &rarr;</span>
+                <span>Verify &amp; Complete Registration &rarr;</span>
               </button>
 
-              <!-- Bottom Actions Row: Resend Code | Change R-ID -->
+              <!-- Bottom Actions Row -->
               <div class="otp-card-footer-row">
                 <button type="button" id="btnResendOtp" onclick="handleResendOtp()" class="otp-resend-btn" disabled>
                   Resend Code (<span id="resendCountdown">25</span>s)
                 </button>
                 <button type="button" onclick="showAuthStep(1)" class="otp-change-rid-btn">
-                  &larr; Change R-ID
+                  &larr; Back to Sign In
                 </button>
               </div>
 
@@ -5698,7 +5600,7 @@ function loadLoginView() {
 
         </main>
 
-        <!-- Mobile Bottom Illustration & Slogan (< 768px Only) -->
+        <!-- Mobile Bottom Illustration & Slogan -->
         <div class="otp-mobile-bottom-section">
           <div class="otp-mobile-sketch-wrap">
             <img src="/static/img/redesign/otp_dome_mobile.png" alt="Jaipur National University" class="otp-mobile-sketch-img">
@@ -5709,386 +5611,45 @@ function loadLoginView() {
 
       </div>
     </div>
-
-    <!-- Step 3 Container: Course Selection (Matches media_1789792275560.jpg) -->
-    <div id="loginStep3Wrap" class="login-step-view-wrap" style="display:none; width:100%; min-height:100vh;">
-      <div class="course-select-page-layout">
-        
-        <!-- Desktop Top Bar (Hidden on mobile < 768px) -->
-        <header class="course-desktop-top-bar">
-          <div class="course-top-brand">
-            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="course-top-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
-            <div class="course-top-title-wrap">
-              <div class="course-top-title">JnuMate<span class="brand-dot">.</span></div>
-              <div class="course-top-subtitle">JAIPUR NATIONAL UNIVERSITY</div>
-            </div>
-          </div>
-
-          <div class="course-top-actions">
-            <div class="course-top-bell-btn" onclick="showToast('No new notifications', 'info')">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-            </div>
-            
-            <div class="course-top-user-pill">
-              <div class="course-top-avatar-circle" id="courseTopAvatarCircle">
-                <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
-                  <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
-                  <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
-                  <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
-                </svg>
-              </div>
-              <span class="course-top-user-name" id="courseTopUserName">Nishita Gumber</span>
-              <svg class="course-top-chevron" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#0F172A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
-          </div>
-        </header>
-
-        <!-- Mobile Top Bar (Shown only on mobile < 768px) -->
-        <header class="course-mobile-top-bar">
-          <div class="course-mobile-brand">
-            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="course-mobile-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
-            <div class="course-mobile-title-wrap">
-              <div class="course-mobile-title">JnuMate<span class="brand-dot">.</span></div>
-              <div class="course-mobile-subtitle">JAIPUR NATIONAL UNIVERSITY</div>
-            </div>
-          </div>
-
-          <div class="course-mobile-actions">
-            <div class="course-mobile-bell-btn" onclick="showToast('No new notifications', 'info')">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-              </svg>
-            </div>
-            
-            <div class="course-mobile-avatar-circle" id="courseMobileAvatarCircle">
-              <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
-                <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
-                <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
-                <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
-              </svg>
-            </div>
-          </div>
-        </header>
-
-        <!-- Main Workspace Stage -->
-        <main class="course-main-workspace">
-          
-          <!-- Left Editorial Typography Column (Desktop Only >= 768px) -->
-          <div class="course-left-editorial-col">
-            <div class="course-editorial-title">
-              Learn<br>
-              Grow<br>
-              Belong<br>
-              Together.
-            </div>
-            <div class="course-editorial-bar"></div>
-            <div class="course-editorial-subtext">
-              A brighter<br>
-              tomorrow,<br>
-              together.
-            </div>
-          </div>
-
-          <!-- Center Column: Floating Course Selection Card -->
-          <div class="course-center-card-col">
-            <div class="course-card-frame">
-
-              <!-- Circular Student Avatar with Rich Emerald Ring -->
-              <div class="course-card-avatar-box">
-                <div class="course-card-avatar-ring">
-                  <div id="courseCardAvatarInner" class="course-card-avatar-inner">
-                    <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
-                      <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
-                      <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
-                      <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Student Name -->
-              <h2 id="courseCardStudentName" class="course-card-student-name">Nishita Gumber</h2>
-
-              <!-- Amber R-ID Badge -->
-              <div class="course-card-rid-wrap">
-                <span class="course-card-rid-badge" id="courseCardRidBadge">
-                  R-ID: <strong id="courseCardRidVal">R44500</strong>
-                </span>
-              </div>
-
-              <!-- Mint Instruction Box -->
-              <div class="course-card-instruction-box">
-                <div class="course-instruction-heading">Select Your Academic Program</div>
-                <div class="course-instruction-sub">Please choose your course to finish setting up your student profile.</div>
-              </div>
-
-              <!-- Academic Program Form -->
-              <div class="course-form-field-group">
-                <label class="course-field-label" for="courseSelectDropdown">DEGREE / ACADEMIC PROGRAM *</label>
-                <div class="course-select-custom-wrap">
-                  <select id="courseSelectDropdown" class="course-select-input">
-                    ${courseOptionsHtml}
-                  </select>
-                  <div class="course-select-custom-arrow">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#0F172A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Action Button -->
-              <button type="button" id="btnCourseSaveContinue" onclick="submitUserCourseSelection()" class="btn-course-save-action">
-                <span>Save &amp; Continue &rarr;</span>
-              </button>
-
-            </div>
-          </div>
-
-          <!-- Right Decorative Watermark Column (Desktop Only >= 768px) -->
-          <div class="course-right-watermark-col">
-            <div class="course-watermark-dome-wrap">
-              <img src="/static/img/redesign/otp_desktop_building.png" alt="Jaipur National University" class="course-watermark-dome-img">
-            </div>
-          </div>
-
-        </main>
-
-        <!-- Mobile Bottom Illustration (< 768px Only) -->
-        <div class="course-mobile-bottom-section">
-          <img src="/static/img/redesign/otp_dome_mobile.png" alt="Jaipur National University" class="course-mobile-dome-img">
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Step 1B Container: Enter Your Details (Matches media_1789795025736.jpg) -->
-    <div id="loginStepSyncWrap" class="login-step-view-wrap" style="display:none; width:100%; min-height:100vh;">
-      <div class="sync-details-page-layout">
-        
-        <!-- Desktop Top Bar (Hidden on mobile < 768px) -->
-        <header class="sync-desktop-top-bar">
-          <div class="sync-top-brand" onclick="navigateTo('/')">
-            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="sync-top-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
-            <div class="sync-top-title-wrap">
-              <div class="sync-top-title">JnuMate<span class="brand-dot">.</span></div>
-              <div class="sync-top-subtitle">JAIPUR NATIONAL UNIVERSITY</div>
-            </div>
-          </div>
-
-          <!-- Right Actions Cluster: Only Back to Sign In -->
-          <div class="sync-top-actions">
-            <button type="button" onclick="showAuthStep(1)" class="btn-auth-back-nav" title="Back to Login">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"></line>
-                <polyline points="12 19 5 12 12 5"></polyline>
-              </svg>
-              <span>Back to Sign In</span>
-            </button>
-          </div>
-        </header>
-
-        <!-- Mobile Top Bar (Shown only on mobile < 768px) -->
-        <header class="sync-mobile-top-bar">
-          <div class="sync-mobile-brand" onclick="navigateTo('/')">
-            <img src="/static/img/jnu_logo.png" alt="JNU Crest" class="sync-mobile-crest" onerror="this.src='/static/img/jnu_logo.jpg';">
-            <div class="sync-mobile-title-wrap">
-              <div class="sync-mobile-title">JnuMate<span class="brand-dot">.</span></div>
-              <div class="sync-mobile-subtitle">JAIPUR NATIONAL UNIVERSITY</div>
-            </div>
-          </div>
-
-          <div class="sync-mobile-actions">
-            <button type="button" onclick="showAuthStep(1)" class="btn-auth-back-nav-mob" title="Back to Login">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-              <span>Sign In</span>
-            </button>
-          </div>
-        </header>
-
-        <!-- Main Workspace Stage -->
-        <main class="sync-main-workspace">
-          
-          <!-- Left Editorial Typography Column (Desktop Only >= 768px) -->
-          <div class="sync-left-editorial-col">
-            <div class="sync-editorial-title">
-              Learn<br>
-              Grow<br>
-              Belong<br>
-              Together.
-            </div>
-            <div class="sync-editorial-bar"></div>
-            <div class="sync-editorial-subtext">
-              A brighter<br>
-              tomorrow,<br>
-              together.
-            </div>
-          </div>
-
-          <!-- Center Column: Floating Enter Details Card -->
-          <div class="sync-center-card-col">
-            <div class="sync-card-frame">
-
-              <!-- Circular Student Avatar with Rich Emerald Ring -->
-              <div class="sync-card-avatar-box">
-                <div class="sync-card-avatar-ring">
-                  <div id="syncCardAvatarInner" class="sync-card-avatar-inner">
-                    <svg viewBox="0 0 80 80" width="100%" height="100%" fill="none">
-                      <circle cx="40" cy="40" r="40" fill="#CBD5E1"/>
-                      <circle cx="40" cy="30" r="14" fill="#FFFFFF"/>
-                      <path d="M16 68 C16 52, 26 48, 40 48 C54 48, 64 52, 64 68 Z" fill="#FFFFFF"/>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Amber R-ID Pill Badge -->
-              <div class="sync-card-rid-wrap">
-                <span class="sync-card-rid-badge" id="syncCardRidBadge">
-                  R-ID: <strong id="syncCardRidVal">R42695</strong>
-                </span>
-              </div>
-
-              <!-- Amber Alert Box with Circular Exclamation Badge -->
-              <div class="sync-alert-box">
-                <div class="sync-alert-icon">
-                  <span>!</span>
-                </div>
-                <div class="sync-alert-text">
-                  <div class="sync-alert-line1">Due to server load we couldn't fetch your data.</div>
-                  <div class="sync-alert-line2">Enter your details manually to continue.</div>
-                </div>
-              </div>
-
-              <!-- Details Form Fields -->
-              <div class="sync-form-fields-container">
-                <!-- 1. Full Name -->
-                <div class="sync-field-group">
-                  <label class="sync-field-label" for="syncNameInput">FULL NAME *</label>
-                  <div class="sync-field-input-wrap">
-                    <span class="sync-field-left-icon">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
-                    </span>
-                    <input type="text" id="syncNameInput" placeholder="Your full name as per college ID" class="sync-text-input" autocomplete="name">
-                  </div>
-                </div>
-
-                <!-- 2. Course / Degree Program -->
-                <div class="sync-field-group">
-                  <label class="sync-field-label" for="syncCourseSelect">COURSE / DEGREE PROGRAM *</label>
-                  <div class="sync-field-input-wrap">
-                    <span class="sync-field-left-icon">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                        <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-                      </svg>
-                    </span>
-                    <select id="syncCourseSelect" class="sync-select-input">
-                      ${courseOptionsHtml}
-                    </select>
-                    <span class="sync-field-right-chevron">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                    </span>
-                  </div>
-                </div>
-
-                <!-- 3. Gender -->
-                <div class="sync-field-group">
-                  <label class="sync-field-label" for="syncGenderSelect">GENDER *</label>
-                  <div class="sync-field-input-wrap">
-                    <span class="sync-field-left-icon">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                      </svg>
-                    </span>
-                    <select id="syncGenderSelect" class="sync-select-input">
-                      <option value="Male" selected>Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                    <span class="sync-field-right-chevron">
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                    </span>
-                  </div>
-                </div>
-
-                <!-- 4. Email -->
-                <div class="sync-field-group">
-                  <label class="sync-field-label" for="syncEmailInput">EMAIL *</label>
-                  <div class="sync-field-input-wrap">
-                    <span class="sync-field-left-icon">
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                      </svg>
-                    </span>
-                    <input type="email" id="syncEmailInput" placeholder="e.g. name@gmail.com" class="sync-text-input" autocomplete="email">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Action Button -->
-              <button type="button" id="btnSendSyncOtp" onclick="submitSyncDetailsAndSendOtp()" class="btn-sync-action">
-                <span>Send Verification Code &rarr;</span>
-              </button>
-
-              <!-- Footer Subtext Note -->
-              <div class="sync-footer-note">
-                We'll send a verification code to your email.
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Right Decorative Watermark Column (Desktop Only >= 768px) -->
-          <div class="sync-right-watermark-col">
-            <div class="sync-watermark-dome-wrap">
-              <img src="/static/img/redesign/otp_desktop_building.png" alt="Jaipur National University" class="sync-watermark-dome-img">
-            </div>
-          </div>
-
-        </main>
-
-        <!-- Mobile Bottom Illustration & Slogan (< 768px Only) -->
-        <div class="sync-mobile-bottom-section">
-          <div class="sync-mobile-bottom-lockup">
-            <div class="sync-mobile-bottom-text">
-              <div class="sync-mobile-motto">Learn &bull; Grow &bull; Belong</div>
-              <div class="sync-mobile-submotto">A brighter tomorrow,<br>together.</div>
-              <div class="sync-mobile-sub-bar"></div>
-            </div>
-            <div class="sync-mobile-sketch-wrap">
-              <img src="/static/img/redesign/otp_dome_mobile.png" alt="Jaipur National University" class="sync-mobile-sketch-img">
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
   `;
 
-  if (window.location.pathname === "/course-select" || window.location.pathname === "/select-program" || (currentUser && currentUser.needs_program)) {
-    showAuthStep('course_select');
-  } else if (window.location.pathname === "/enter-details" || window.location.pathname === "/sync-details") {
-    showAuthStep('sync');
+  if (window.location.pathname === "/register") {
+    switchAuthTab('register');
+  } else {
+    switchAuthTab('signin');
+  }
+}
+
+function switchAuthTab(tab) {
+  currentAuthTab = tab;
+  const btnSignIn = document.getElementById("authTabSignIn");
+  const btnRegister = document.getElementById("authTabRegister");
+  const panelSignIn = document.getElementById("authPanelSignIn");
+  const panelRegister = document.getElementById("authPanelRegister");
+  const cardFrame = document.getElementById("loginCardFrame");
+  const title = document.getElementById("loginPortalTitle");
+  const subtitle = document.getElementById("loginPortalSubtitle");
+
+  if (tab === 'register') {
+    if (btnSignIn) btnSignIn.classList.remove("active");
+    if (btnRegister) btnRegister.classList.add("active");
+    if (panelSignIn) panelSignIn.style.display = "none";
+    if (panelRegister) panelRegister.style.display = "block";
+    if (cardFrame) cardFrame.classList.add("register-mode");
+    if (title) title.innerText = "Create Account";
+    if (subtitle) subtitle.innerText = "Fill in your details to register for JnuMate";
+    const nameInput = document.getElementById("regNameInput");
+    if (nameInput) setTimeout(() => nameInput.focus(), 100);
+  } else {
+    if (btnRegister) btnRegister.classList.remove("active");
+    if (btnSignIn) btnSignIn.classList.add("active");
+    if (panelRegister) panelRegister.style.display = "none";
+    if (panelSignIn) panelSignIn.style.display = "block";
+    if (cardFrame) cardFrame.classList.remove("register-mode");
+    if (title) title.innerText = "Student Sign In";
+    if (subtitle) subtitle.innerText = "Enter your registered email and password to continue";
+    const emailInput = document.getElementById("loginEmailInput");
+    if (emailInput) setTimeout(() => emailInput.focus(), 100);
   }
 }
 
@@ -6096,32 +5657,12 @@ function showAuthStep(step) {
   window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
-  const appMain = document.querySelector(".app-main-workspace");
-  if (appMain) appMain.scrollTop = 0;
-  const loginView = document.getElementById("viewLogin");
-  if (loginView) loginView.scrollTop = 0;
-  const syncWorkspace = document.querySelector(".sync-main-workspace");
-  if (syncWorkspace) syncWorkspace.scrollTop = 0;
-  const otpWorkspace = document.querySelector(".otp-main-workspace");
-  if (otpWorkspace) otpWorkspace.scrollTop = 0;
 
   const step1Wrap = document.getElementById("loginStep1Wrap");
-  const stepSyncWrap = document.getElementById("loginStepSyncWrap");
   const step2Wrap = document.getElementById("loginStep2Wrap");
-  const step3Wrap = document.getElementById("loginStep3Wrap");
-  const s1 = document.getElementById("authStep1");
-  const sSync = document.getElementById("authStepSyncNotice");
-  const sCourse = document.getElementById("authStepCourseSelect");
 
-  const isStep1 = step === 1;
-  const isOtpStep = step === 2;
-  const isSyncStep = step === 'sync' || step === 'details' || step === 'enter-details';
-  const isCourseStep = step === 'course_select' || step === 3;
-
-  if (isOtpStep) {
+  if (step === 2) {
     if (step1Wrap) step1Wrap.style.display = "none";
-    if (stepSyncWrap) stepSyncWrap.style.display = "none";
-    if (step3Wrap) step3Wrap.style.display = "none";
     if (step2Wrap) {
       step2Wrap.style.display = "block";
       step2Wrap.style.opacity = "0";
@@ -6130,119 +5671,26 @@ function showAuthStep(step) {
         step2Wrap.style.opacity = "1";
       });
     }
-    const prof = pendingStudentProfile || {
-      name: "manjari",
-      r_id: "R42695",
-      rid: "R42695",
-      program: "B.Tech CSE (AI & ML) Hons.-Samatrix",
-      current_year: "4th Year Student",
-      gender: "Female",
-      email: "manjarigulpadiya@gmail.com"
-    };
-    renderAuthProfileSpotlight(prof, prof.email);
+
+    if (pendingRegistrationData) {
+      const emailNotice = document.getElementById("otpTargetEmailText");
+      const summaryName = document.getElementById("otpSummaryName");
+      const summaryRegNo = document.getElementById("otpSummaryRegNo");
+
+      if (emailNotice) emailNotice.innerText = pendingRegistrationData.email || "email";
+      if (summaryName) summaryName.innerText = pendingRegistrationData.name || "Student";
+      if (summaryRegNo) summaryRegNo.innerText = pendingRegistrationData.reg_no || "--";
+    }
+
     setupOtpDigitInputs();
     startResendTimer();
     const firstBox = document.querySelector(".otp-digit-box[data-idx='0']");
-    if (firstBox) {
-      setTimeout(() => firstBox.focus(), 150);
-    }
+    if (firstBox) setTimeout(() => firstBox.focus(), 150);
     return;
   }
 
-  if (isCourseStep) {
-    try {
-      if (window.location.pathname !== "/course-select" && window.location.pathname !== "/select-program") {
-        history.pushState(null, "", "/course-select");
-      }
-    } catch (e) {}
-    if (step1Wrap) step1Wrap.style.display = "none";
-    if (stepSyncWrap) stepSyncWrap.style.display = "none";
-    if (step2Wrap) step2Wrap.style.display = "none";
-    if (step3Wrap) {
-      step3Wrap.style.display = "block";
-      step3Wrap.style.opacity = "0";
-      requestAnimationFrame(() => {
-        step3Wrap.style.transition = "opacity 0.2s ease";
-        step3Wrap.style.opacity = "1";
-      });
-    }
-
-    const name = (currentUser && currentUser.name) ? currentUser.name : "Nishita Gumber";
-    const rid = (currentUser && (currentUser.rid || currentUser.id)) ? (currentUser.rid || currentUser.id) : "R44500";
-    const avatarUrl = (currentUser && currentUser.avatar_url) ? currentUser.avatar_url : "";
-
-    const nameEl = document.getElementById("courseCardStudentName");
-    const topNameEl = document.getElementById("courseTopUserName");
-    const ridValEl = document.getElementById("courseCardRidVal");
-    const avatarInnerEl = document.getElementById("courseCardAvatarInner");
-    const topAvatarEl = document.getElementById("courseTopAvatarCircle");
-    const mobileAvatarEl = document.getElementById("courseMobileAvatarCircle");
-
-    if (nameEl) nameEl.innerText = name;
-    if (topNameEl) topNameEl.innerText = name;
-    if (ridValEl) ridValEl.innerText = rid;
-
-    if (avatarUrl) {
-      const imgTag = `<img src="${escapeAttr(avatarUrl)}" alt="${escapeAttr(name)}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" onerror="this.onerror=null; this.src='/static/img/blank_pfp.jpg';">`;
-      if (avatarInnerEl) avatarInnerEl.innerHTML = imgTag;
-      if (topAvatarEl) topAvatarEl.innerHTML = imgTag;
-      if (mobileAvatarEl) mobileAvatarEl.innerHTML = imgTag;
-    }
-
-    // Default select to "B.Tech CSE (AI & ML) Hons.-Samatrix" if no program chosen
-    const dropdown = document.getElementById("courseSelectDropdown");
-    if (dropdown) {
-      if (currentUser && currentUser.program && currentUser.program !== "Student") {
-        dropdown.value = currentUser.program;
-      } else {
-        dropdown.value = "B.Tech CSE (AI & ML) Hons.-Samatrix";
-      }
-    }
-    return;
-  }
-
-  if (isSyncStep) {
-    if (step1Wrap) step1Wrap.style.display = "none";
-    if (step2Wrap) step2Wrap.style.display = "none";
-    if (step3Wrap) step3Wrap.style.display = "none";
-    if (stepSyncWrap) {
-      stepSyncWrap.style.display = "block";
-      stepSyncWrap.style.opacity = "0";
-      requestAnimationFrame(() => {
-        stepSyncWrap.style.transition = "opacity 0.2s ease";
-        stepSyncWrap.style.opacity = "1";
-      });
-    }
-
-    const rid = (pendingRegistrationData && pendingRegistrationData.rid)
-      ? pendingRegistrationData.rid
-      : (currentUser && (currentUser.rid || currentUser.id) ? (currentUser.rid || currentUser.id) : "R42695");
-    
-    const ridValEl = document.getElementById("syncCardRidVal");
-    if (ridValEl) ridValEl.innerText = rid;
-    const banner = document.getElementById("syncRidBanner");
-    if (banner) banner.innerText = rid;
-
-    const courseSelect = document.getElementById("syncCourseSelect");
-    if (courseSelect && (!courseSelect.value || courseSelect.value === "")) {
-      courseSelect.value = "B.Tech CSE (AI & ML) Hons.-Samatrix";
-    }
-    const genderSelect = document.getElementById("syncGenderSelect");
-    if (genderSelect && (!genderSelect.value || genderSelect.value === "")) {
-      genderSelect.value = "Male";
-    }
-
-    const nameInput = document.getElementById("syncNameInput");
-    if (nameInput) {
-      setTimeout(() => nameInput.focus(), 150);
-    }
-    return;
-  }
-
-  // Non-OTP steps: show Step 1 wrap, hide Step 2, Step 3, and Step Sync wraps
-  if (stepSyncWrap) stepSyncWrap.style.display = "none";
+  // Step 1
   if (step2Wrap) step2Wrap.style.display = "none";
-  if (step3Wrap) step3Wrap.style.display = "none";
   if (step1Wrap) {
     step1Wrap.style.display = "block";
     step1Wrap.style.opacity = "0";
@@ -6251,170 +5699,354 @@ function showAuthStep(step) {
       step1Wrap.style.opacity = "1";
     });
   }
-
-  if (isStep1) {
-    if (s1) s1.style.display = "block";
-    if (sSync) sSync.style.display = "none";
-    if (sCourse) sCourse.style.display = "none";
-    const ridInput = document.getElementById("authRidInput");
-    if (ridInput) {
-      if (pendingRegistrationData && pendingRegistrationData.rid) {
-        ridInput.value = pendingRegistrationData.rid;
-      }
-      setTimeout(() => ridInput.focus(), 150);
-    }
-  }
 }
 
-/* ==========================================================================
-   UNIVERSITY ID CARD QR SCANNER IMPLEMENTATION
-   ========================================================================== */
-let qrScannerStream = null;
-let qrScanAnimationId = null;
+function submitUserLogin() {
+  const emailInput = document.getElementById("loginEmailInput");
+  const pwdInput = document.getElementById("loginPasswordInput");
+  const btn = document.getElementById("btnLoginSubmit");
 
-function openUniversityQrScanner() {
-  const modal = document.getElementById("qrScannerModal");
-  const notice = document.getElementById("qrScannerNotice");
-  const video = document.getElementById("qrScannerVideo");
-  if (!modal) return;
+  const email = emailInput ? emailInput.value.trim() : "";
+  const password = pwdInput ? pwdInput.value.trim() : "";
 
-  modal.style.display = "flex";
-  document.body.classList.add("scroll-locked");
-
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    if (notice) notice.innerText = "Camera not supported. Please upload ID photo.";
+  if (!email) {
+    showToast("Please enter your email address", "error");
+    if (emailInput) emailInput.focus();
     return;
   }
 
-  if (notice) notice.innerText = "Starting camera...";
+  if (!password) {
+    showToast("Please enter your password", "error");
+    if (pwdInput) pwdInput.focus();
+    return;
+  }
 
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: "environment" } }
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;"><span class="inline-btn-spinner"></span> <span>Signing in...</span></span>`;
+  }
+
+  fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email, password: password })
   })
-    .then(stream => {
-      qrScannerStream = stream;
-      if (video) {
-        video.srcObject = stream;
-        video.setAttribute("playsinline", true);
-        video.play();
+    .then(async res => {
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (err) {
+        throw new Error("Server communication error (status " + res.status + ")");
       }
-      if (notice) notice.innerText = "Align QR code inside box";
-      startQrFrameScanLoop();
+      return data;
+    })
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Sign In &rarr;</span>`;
+      }
+
+      if (data && data.success) {
+        currentUser = data.user;
+        currentUser.id = data.user.id || data.user.r_id || data.user.email;
+        currentUser.rid = currentUser.id;
+        try { 
+          localStorage.setItem("jnumate_user", JSON.stringify(currentUser)); 
+          if (data.is_admin) {
+            sessionStorage.setItem("jnumate_admin", "true");
+          }
+        } catch (e) {}
+
+        renderNavUserSlots();
+        renderDrawerUserSlot();
+        loadNotifications();
+
+        if (data.is_admin) {
+          showToast("Welcome Administrator! Opening executive console...", "success");
+          navigateTo("/admin");
+          return;
+        }
+
+        showToast(`Welcome back, ${currentUser.name || 'Student'}!`, "success");
+
+        const redirectDest = postLoginRedirect || "/";
+        postLoginRedirect = null;
+        navigateTo(redirectDest);
+      } else {
+        showToast((data && data.message) || "Invalid email or password", "error");
+      }
     })
     .catch(err => {
-      console.warn("Camera access notice:", err);
-      if (notice) notice.innerText = "Camera permission needed. You can also upload a photo.";
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Sign In &rarr;</span>`;
+      }
+      showToast(err && err.message ? err.message : "Network error signing in", "error");
     });
 }
 
-function closeUniversityQrScanner() {
-  const modal = document.getElementById("qrScannerModal");
-  if (modal) modal.style.display = "none";
-  document.body.classList.remove("scroll-locked");
+function submitUserRegistration() {
+  const nameInput = document.getElementById("regNameInput");
+  const ageInput = document.getElementById("regAgeInput");
+  const genderSelect = document.getElementById("regGenderSelect");
+  const regNoInput = document.getElementById("regNoInput");
+  const emailInput = document.getElementById("regEmailInput");
+  const phoneInput = document.getElementById("regPhoneInput");
+  const stateInput = document.getElementById("regStateInput");
+  const cityInput = document.getElementById("regCityInput");
+  const pincodeInput = document.getElementById("regPincodeInput");
+  const passwordInput = document.getElementById("regPasswordInput");
+  const btn = document.getElementById("btnRegisterSubmit");
 
-  if (qrScanAnimationId) {
-    cancelAnimationFrame(qrScanAnimationId);
-    qrScanAnimationId = null;
+  const name = nameInput ? nameInput.value.trim() : "";
+  const age = ageInput ? parseInt(ageInput.value.trim(), 10) : 0;
+  const gender = genderSelect ? genderSelect.value : "Male";
+  const reg_no = regNoInput ? regNoInput.value.trim() : "";
+  const email = emailInput ? emailInput.value.trim() : "";
+  const phone = phoneInput ? phoneInput.value.trim().replace(/\D/g, "") : "";
+  const state = stateInput ? stateInput.value.trim() : "";
+  const city = cityInput ? cityInput.value.trim() : "";
+  const pincode = pincodeInput ? pincodeInput.value.trim() : "";
+  const password = passwordInput ? passwordInput.value : "";
+
+  if (!name || name.length < 2) {
+    showToast("Please enter your full name", "error");
+    if (nameInput) nameInput.focus();
+    return;
   }
-  if (qrScannerStream) {
-    qrScannerStream.getTracks().forEach(track => track.stop());
-    qrScannerStream = null;
+  if (!age || isNaN(age) || age < 15 || age > 99) {
+    showToast("Please enter a valid age (15 - 99)", "error");
+    if (ageInput) ageInput.focus();
+    return;
   }
-  const video = document.getElementById("qrScannerVideo");
-  if (video) video.srcObject = null;
-}
-
-function handleQrCodeDetected(detectedText) {
-  if (!detectedText) return;
-  const match = detectedText.match(/R?\d{4,6}/i);
-  if (match) {
-    const raw = match[0].toUpperCase();
-    const formattedRid = raw.startsWith("R") ? raw : ("R" + raw);
-    showToast(`Detected College R-ID: ${formattedRid}`, "success");
-    closeUniversityQrScanner();
-    const input = document.getElementById("authRidInput");
-    if (input) {
-      input.value = formattedRid;
-      setTimeout(() => submitInitialRid(), 300);
-    }
-  } else {
-    showToast("QR code detected, but no R-ID found. Enter your R-ID manually.", "info");
+  if (!reg_no || reg_no.length < 2) {
+    showToast("Please enter your university registration number", "error");
+    if (regNoInput) regNoInput.focus();
+    return;
   }
-}
-
-function startQrFrameScanLoop() {
-  const video = document.getElementById("qrScannerVideo");
-  const canvas = document.getElementById("qrScannerCanvas");
-  if (!video || !canvas) return;
-
-  if ('BarcodeDetector' in window) {
-    try {
-      const detector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13'] });
-      const detectFrame = () => {
-        if (!qrScannerStream) return;
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-          detector.detect(video)
-            .then(barcodes => {
-              if (barcodes.length > 0 && barcodes[0].rawValue) {
-                handleQrCodeDetected(barcodes[0].rawValue);
-                return;
-              }
-              qrScanAnimationId = requestAnimationFrame(detectFrame);
-            })
-            .catch(() => {
-              qrScanAnimationId = requestAnimationFrame(detectFrame);
-            });
-        } else {
-          qrScanAnimationId = requestAnimationFrame(detectFrame);
-        }
-      };
-      qrScanAnimationId = requestAnimationFrame(detectFrame);
-    } catch (e) {
-      console.warn("BarcodeDetector init notice:", e);
-    }
+  if (!email || !email.includes("@") || !email.includes(".")) {
+    showToast("Please enter a valid email address", "error");
+    if (emailInput) emailInput.focus();
+    return;
   }
-}
+  if (!phone || phone.length !== 10) {
+    showToast("Please enter a valid 10-digit mobile number", "error");
+    if (phoneInput) phoneInput.focus();
+    return;
+  }
+  if (!state) {
+    showToast("Please enter your state", "error");
+    if (stateInput) stateInput.focus();
+    return;
+  }
+  if (!city) {
+    showToast("Please enter your city", "error");
+    if (cityInput) cityInput.focus();
+    return;
+  }
+  if (!pincode || pincode.length < 4) {
+    showToast("Please enter a valid postal pincode", "error");
+    if (pincodeInput) pincodeInput.focus();
+    return;
+  }
+  if (!password || password.length < 4) {
+    showToast("Password must be at least 4 characters long", "error");
+    if (passwordInput) passwordInput.focus();
+    return;
+  }
 
-function handleQrFileUpload(event) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;"><span class="inline-btn-spinner"></span> <span>Registering &amp; Sending OTP...</span></span>`;
+  }
 
-  const notice = document.getElementById("qrScannerNotice");
-  if (notice) notice.innerText = "Processing ID photo...";
+  const payload = {
+    name: name,
+    age: age,
+    gender: gender,
+    reg_no: reg_no,
+    email: email,
+    phone: phone,
+    state: state,
+    city: city,
+    pincode: pincode,
+    password: password
+  };
 
-  if ('BarcodeDetector' in window) {
-    const img = new Image();
-    img.onload = () => {
+  fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+    .then(async res => {
+      let data = null;
       try {
-        const detector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39'] });
-        detector.detect(img)
-          .then(barcodes => {
-            if (barcodes.length > 0 && barcodes[0].rawValue) {
-              handleQrCodeDetected(barcodes[0].rawValue);
-            } else {
-              showToast("No barcode/QR found in photo. Please enter R-ID manually.", "info");
-              if (notice) notice.innerText = "No code found in photo";
-            }
-          })
-          .catch(() => {
-            showToast("Could not scan photo. Please enter R-ID manually.", "error");
-          });
-      } catch (e) {
-        showToast("Photo processed. Please enter R-ID manually.", "info");
+        data = await res.json();
+      } catch (err) {
+        throw new Error("Server communication error (status " + res.status + ")");
       }
-    };
-    img.src = URL.createObjectURL(file);
-  } else {
-    const filenameMatch = (file.name || "").match(/R?\d{4,6}/i);
-    if (filenameMatch) {
-      handleQrCodeDetected(filenameMatch[0]);
-    } else {
-      showToast("Photo received. Please enter your R-ID to sign in.", "info");
-      closeUniversityQrScanner();
-      const input = document.getElementById("authRidInput");
-      if (input) input.focus();
-    }
+      return data;
+    })
+    .then(data => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Register &amp; Verify &rarr;</span>`;
+      }
+
+      if (data && data.success) {
+        pendingRegistrationData = {
+          name: name,
+          age: age,
+          gender: gender,
+          reg_no: reg_no,
+          email: email,
+          phone: phone,
+          state: state,
+          city: city,
+          pincode: pincode
+        };
+        showToast(data.message || "Verification code sent to your email!", "success");
+        showAuthStep(2);
+      } else {
+        showToast((data && data.message) || "Registration failed. Please check your details.", "error");
+      }
+    })
+    .catch(err => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Register &amp; Verify &rarr;</span>`;
+      }
+      showToast(err && err.message ? err.message : "Network error during registration", "error");
+    });
+}
+
+function verifyEmailOtpCode() {
+  if (isVerifyingOtp) return;
+
+  const btn = document.getElementById("btnVerifyOtp");
+  const digitBoxes = document.querySelectorAll(".otp-digit-box");
+  let otp = "";
+  if (digitBoxes && digitBoxes.length === 6) {
+    otp = Array.from(digitBoxes).map(b => b.value.trim()).join("");
   }
+  const hiddenInput = document.getElementById("otpCodeInput");
+  if (!otp && hiddenInput) otp = hiddenInput.value.trim();
+
+  if (!otp || otp.length < 6) {
+    showToast("Please enter 6-digit verification code", "error");
+    return;
+  }
+
+  const email = (pendingRegistrationData && pendingRegistrationData.email) || "";
+  if (!email) {
+    showToast("Registration session expired. Please register again.", "error");
+    showAuthStep(1);
+    switchAuthTab('register');
+    return;
+  }
+
+  isVerifyingOtp = true;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px;"><span class="inline-btn-spinner"></span> <span>Verifying OTP...</span></span>`;
+  }
+
+  fetch("/api/auth/verify-otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email, otp: otp })
+  })
+    .then(async res => {
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (err) {
+        throw new Error("Server communication error (status " + res.status + ")");
+      }
+      return data;
+    })
+    .then(data => {
+      isVerifyingOtp = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Verify &amp; Complete Registration &rarr;</span>`;
+      }
+
+      if (data && data.success) {
+        showToast("Registration verified! Please sign in with your email and password.", "success");
+        showAuthStep(1);
+        switchAuthTab('signin');
+        const loginEmailInput = document.getElementById("loginEmailInput");
+        const loginPwdInput = document.getElementById("loginPasswordInput");
+        if (loginEmailInput) loginEmailInput.value = email;
+        if (loginPwdInput) {
+          loginPwdInput.value = "";
+          setTimeout(() => loginPwdInput.focus(), 200);
+        }
+      } else {
+        showToast((data && data.message) || "Invalid or expired verification code", "error");
+        if (digitBoxes && digitBoxes.length === 6) {
+          digitBoxes.forEach(b => {
+            b.value = "";
+            b.classList.remove("has-val");
+          });
+          digitBoxes[0].focus();
+        }
+      }
+    })
+    .catch(err => {
+      isVerifyingOtp = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<span>Verify &amp; Complete Registration &rarr;</span>`;
+      }
+      showToast(err && err.message ? err.message : "Network error verifying OTP", "error");
+    });
+}
+
+function handleResendOtp() {
+  const btn = document.getElementById("btnResendOtp");
+  if (btn && btn.disabled) return;
+
+  const email = (pendingRegistrationData && pendingRegistrationData.email) || "";
+
+  if (!email) {
+    showToast("Registration session expired. Please register again.", "error");
+    showAuthStep(1);
+    switchAuthTab('register');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><span class="inline-btn-spinner" style="width:12px; height:12px;"></span> <span>Resending...</span></span>`;
+  }
+
+  fetch("/api/auth/resend-otp", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.success) {
+        showToast("New verification code sent to your email!", "success");
+        startResendTimer();
+      } else {
+        showToast((data && data.message) || "Failed to resend code", "error");
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = "Resend Code";
+        }
+      }
+    })
+    .catch(() => {
+      showToast("Network error resending code", "error");
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = "Resend Code";
+      }
+    });
 }
 
 function startResendTimer() {
@@ -6441,118 +6073,26 @@ function startResendTimer() {
   }, 1000);
 }
 
-function handleResendOtp() {
-  const btn = document.getElementById("btnResendOtp");
-  if (btn && btn.disabled) return;
-
-  if (pendingRegistrationData && pendingRegistrationData.name) {
-    submitSyncDetailsAndSendOtp();
-  } else {
-    const ridInput = document.getElementById("authRidInput");
-    const rid = (pendingRegistrationData && pendingRegistrationData.rid) || (ridInput ? ridInput.value.trim() : "");
-    if (!rid) {
-      showToast("Please enter your R-ID first", "error");
-      showAuthStep(1);
-      return;
-    }
-    if (btn) {
-      btn.disabled = true;
-      btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:6px;"><span class="inline-btn-spinner" style="border-color:rgba(22,163,74,0.25); border-top-color:#16A34A; width:12px; height:12px;"></span> <span>Resending...</span></span>`;
-    }
-    fetch("/api/auth/request-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rid: rid.toUpperCase() })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.exists) {
-          showToast("New verification code sent!", "success");
-          startResendTimer();
-        } else {
-          showToast(data.message || "Failed to resend code", "error");
-          btn.disabled = false;
-          btn.innerText = "Resend Code";
-        }
-      })
-      .catch(() => {
-        showToast("Network error resending code", "error");
-        btn.disabled = false;
-        btn.innerText = "Resend Code";
-      });
-  }
-}
-
-function submitInitialRid() {
-  const ridInput = document.getElementById("authRidInput");
-  const btn = document.getElementById("btnSendOtp");
-  if (!ridInput || !ridInput.value.trim()) {
-    showToast("Please enter your College R-ID", "error");
-    return;
-  }
-
-  const isCreateTeamIntent = postLoginRedirect === "/create-team";
-  const defaultBtnText = isCreateTeamIntent ? "Sign In & Continue ➔" : "Sign In ➔";
-
-  const rid = ridInput.value.trim().toUpperCase();
-  btn.disabled = true;
-  btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Connecting...</span></span>`;
-
-  fetch("/api/auth/request-otp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rid: rid })
-  })
-    .then(async res => {
-      let data;
-      try {
-        data = await res.json();
-      } catch (parseErr) {
-        throw new Error("Server communication error (status " + res.status + ")");
-      }
-      return data;
-    })
-    .then(data => {
-      btn.disabled = false;
-      btn.innerHTML = defaultBtnText;
-
-      if (data.is_admin || rid.toLowerCase() === "admin") {
-        showAdminPasswordStep();
-        return;
-      }
-
-      if (data.exists) {
-        pendingRegistrationData = { rid: rid };
-        pendingStudentProfile = data.student || { r_id: rid };
-        renderAuthProfileSpotlight(pendingStudentProfile, data.email);
-        showAuthStep(2);
-        showToast("Verification code sent!", "success");
-      } else if (data.not_found) {
-        pendingRegistrationData = { rid: rid };
-        const banner = document.getElementById("syncRidBanner");
-        if (banner) banner.innerText = rid;
-        showAuthStep('sync');
-      } else {
-        showToast(data.message || "Unable to proceed with this R-ID", "error");
-      }
-    })
-    .catch((err) => {
-      console.error("submitInitialRid error:", err);
-      btn.disabled = false;
-      btn.innerHTML = defaultBtnText;
-      showToast(err && err.message ? err.message : "Network error checking R-ID", "error");
-    });
-}
-
 function showAdminPasswordStep() {
-  const stage = document.getElementById("authStep1");
+  const stage = document.getElementById("authPanelSignIn");
   const portalTitle = document.getElementById("loginPortalTitle");
   const portalSub = document.getElementById("loginPortalSubtitle");
-  if (portalTitle) portalTitle.textContent = "Administrator Sign In";
-  if (portalSub) portalSub.textContent = "Enter your administrator password to proceed";
+  if (portalTitle) portalTitle.textContent = "Administrator Portal";
+  if (portalSub) portalSub.textContent = "Enter administrator ID and password to access the executive console";
 
   if (!stage) return;
   stage.innerHTML = `
+    <div class="login-field-group">
+      <label class="login-field-label">ADMINISTRATOR ID</label>
+      <div class="login-input-wrap">
+        <svg class="login-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        <input type="text" id="adminUserInput" value="Admin" placeholder="e.g. Admin" class="login-input-field">
+      </div>
+    </div>
+
     <div class="login-field-group">
       <label class="login-field-label">ADMINISTRATOR PASSWORD</label>
       <div class="login-input-wrap">
@@ -6577,12 +6117,15 @@ function showAdminPasswordStep() {
 }
 
 function submitAdminLoginFromNormalForm() {
+  const userInput = document.getElementById("adminUserInput");
   const pwdInput = document.getElementById("adminPasswordInput");
   const btn = document.getElementById("btnAdminLoginSubmit");
+  const username = userInput ? userInput.value.trim() : "Admin";
   const pwd = pwdInput ? pwdInput.value.trim() : "";
 
   if (!pwd) {
     showToast("Please enter the administrator password", "error");
+    if (pwdInput) pwdInput.focus();
     return;
   }
 
@@ -6594,7 +6137,7 @@ function submitAdminLoginFromNormalForm() {
   fetch("/api/admin/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username: "admin", password: pwd })
+    body: JSON.stringify({ username: username, password: pwd })
   })
     .then(res => res.json())
     .then(data => {
@@ -6629,258 +6172,6 @@ function submitAdminLoginFromNormalForm() {
         btn.innerHTML = `<span>Open Admin Console &rarr;</span>`;
       }
       showToast("Network error authenticating admin", "error");
-    });
-}
-
-function submitSyncDetailsAndSendOtp() {
-  const nameInput = document.getElementById("syncNameInput");
-  const emailInput = document.getElementById("syncEmailInput");
-  const courseSelect = document.getElementById("syncCourseSelect");
-  const genderSelect = document.getElementById("syncGenderSelect");
-  const btn = document.getElementById("btnSendSyncOtp");
-
-  const ridEl = document.getElementById("syncCardRidVal");
-  const fallbackRid = ridEl ? ridEl.innerText.trim() : "R42695";
-  const rid = (pendingRegistrationData && pendingRegistrationData.rid) ? pendingRegistrationData.rid : fallbackRid;
-  const name = nameInput ? nameInput.value.trim() : "";
-  const email = emailInput ? emailInput.value.trim() : "";
-  const program = courseSelect ? courseSelect.value.trim() : "";
-  const gender = genderSelect ? genderSelect.value.trim() : "Male";
-
-  if (!rid || !name || !email || !program) {
-    showToast("Please fill all required academic fields", "error");
-    return;
-  }
-
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Sending Code...</span></span>`;
-  }
-
-  fetch("/api/auth/send-registration-otp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      rid: rid,
-      name: name,
-      email: email,
-      program: program,
-      gender: gender
-    })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `<span>Send Verification Code &rarr;</span>`;
-      }
-
-      if (data.success) {
-        pendingRegistrationData = {
-          rid: rid,
-          name: name,
-          email: email,
-          program: program,
-          gender: gender
-        };
-        pendingStudentProfile = {
-          r_id: rid,
-          name: name,
-          email: email,
-          program: program,
-          gender: gender,
-          avatar_url: null
-        };
-        renderAuthProfileSpotlight(pendingStudentProfile, email);
-        showAuthStep(2);
-        showToast("Verification code sent!", "success");
-      } else {
-        showToast(data.message || "Failed to send code", "error");
-      }
-    })
-    .catch(() => {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `<span>Send Verification Code &rarr;</span>`;
-      }
-      showToast("Network error sending code", "error");
-    });
-}
-
-function verifyEmailOtpCode() {
-  if (isVerifyingOtp) return;
-
-  const ridInput = document.getElementById("authRidInput");
-  const otpInput = document.getElementById("otpCodeInput");
-  const btn = document.getElementById("btnVerifyOtp");
-
-  const digitBoxes = document.querySelectorAll(".otp-digit-box");
-  let otp = "";
-  if (digitBoxes && digitBoxes.length === 6) {
-    otp = Array.from(digitBoxes).map(b => b.value.trim()).join("");
-    if (otpInput) otpInput.value = otp;
-  } else if (otpInput) {
-    otp = otpInput.value.trim();
-  }
-
-  if (!otp || otp.length < 6) {
-    showToast("Please enter 6-digit verification code", "error");
-    return;
-  }
-
-  const rid = (pendingRegistrationData && pendingRegistrationData.rid) || (ridInput ? ridInput.value.trim().toUpperCase() : "") || (pendingStudentProfile && (pendingStudentProfile.r_id || pendingStudentProfile.rid)) || "R42695";
-
-  isVerifyingOtp = true;
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Verifying...</span></span>`;
-  }
-
-  const payload = {
-    rid: rid,
-    otp: otp
-  };
-
-  if (pendingRegistrationData) {
-    payload.name = pendingRegistrationData.name;
-    payload.email = pendingRegistrationData.email;
-    payload.program = pendingRegistrationData.program;
-    payload.gender = pendingRegistrationData.gender;
-  }
-
-  fetch("/api/auth/verify-otp", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  })
-    .then(async res => {
-      let data = null;
-      try {
-        data = await res.json();
-      } catch (parseErr) {
-        throw new Error("Server returned an invalid response (status " + res.status + ")");
-      }
-      return data;
-    })
-    .then(data => {
-      isVerifyingOtp = false;
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `<span>Verify &amp; Sign In &rarr;</span>`;
-      }
-
-      if (data && data.success) {
-        currentUser = data.user || { id: rid, name: "Student" };
-        currentUser.rid = currentUser.id || rid;
-        try { localStorage.setItem("jnumate_user", JSON.stringify(currentUser)); } catch (e) {}
-        try {
-          renderNavUserSlots();
-          renderDrawerUserSlot();
-          loadNotifications();
-        } catch (renderErr) {
-          console.warn("renderNavUserSlots notice:", renderErr);
-        }
-        // Case 1B: If education details (program) are missing, show course selection prompt
-        const needsCourse = Boolean(data.needs_program || !currentUser.program || currentUser.program === "Student");
-        if (needsCourse && (!pendingRegistrationData || !pendingRegistrationData.program)) {
-          showAuthStep('course_select');
-          return;
-        }
-
-        showToast("Signed in successfully!", "success");
-
-        try {
-          if (postLoginRedirect) {
-            const redirectDest = postLoginRedirect;
-            postLoginRedirect = null;
-            navigateTo(redirectDest);
-          } else {
-            navigateTo("/");
-          }
-        } catch (navErr) {
-          console.warn("Navigation notice:", navErr);
-          navigateTo("/");
-        }
-      } else {
-        const errorMsg = (data && data.message) || "Invalid verification code";
-        showToast(errorMsg, "error");
-        if (digitBoxes && digitBoxes.length === 6) {
-          digitBoxes.forEach(b => {
-            b.value = "";
-            b.classList.remove("has-val");
-          });
-          digitBoxes[0].focus();
-        }
-      }
-    })
-    .catch(err => {
-      isVerifyingOtp = false;
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `<span>Verify &amp; Sign In &rarr;</span>`;
-      }
-      console.error("verify-otp error:", err);
-      showToast("Cannot connect to server. Please check your connection and retry.", "error");
-    });
-}
-
-function submitUserCourseSelection() {
-  const select = document.getElementById("courseSelectDropdown") || document.getElementById("authCourseSelectInput");
-  const btn = document.getElementById("btnCourseSaveContinue") || document.getElementById("btnSubmitCourseSelect");
-  if (!select || !select.value) {
-    showToast("Please select your academic program", "error");
-    return;
-  }
-  const program = select.value.trim();
-  const ridVal = document.getElementById("courseCardRidVal");
-  const rid = (currentUser && (currentUser.rid || currentUser.id)) 
-    ? (currentUser.rid || currentUser.id) 
-    : (ridVal ? ridVal.innerText.trim() : "R44500");
-
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<span style="display:inline-flex; align-items:center; gap:8px; justify-content:center;"><span class="inline-btn-spinner"></span> <span>Saving...</span></span>`;
-  }
-
-  fetch("/api/user/update-program", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ r_id: rid, program: program })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `<span>Save &amp; Continue &rarr;</span>`;
-      }
-      if (data.success) {
-        if (currentUser) {
-          currentUser.program = program;
-          currentUser.needs_program = false;
-          try { localStorage.setItem("jnumate_user", JSON.stringify(currentUser)); } catch (e) {}
-        }
-        showToast("Academic program updated successfully!", "success");
-        try {
-          renderNavUserSlots();
-          renderDrawerUserSlot();
-        } catch (e) {}
-        if (postLoginRedirect) {
-          const redirectDest = postLoginRedirect;
-          postLoginRedirect = null;
-          navigateTo(redirectDest);
-        } else {
-          navigateTo("/");
-        }
-      } else {
-        showToast(data.message || "Failed to update program", "error");
-      }
-    })
-    .catch(() => {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `<span>Save &amp; Continue &rarr;</span>`;
-      }
-      showToast("Network error updating program", "error");
     });
 }
 
@@ -7708,11 +6999,11 @@ function renderAdminUsersTab(registeredStudents) {
           <table class="admin-log-table" id="adminUsersTable">
             <thead>
               <tr>
-                <th>Student</th>
-                <th>R-ID</th>
-                <th>Gender</th>
-                <th>Program / Course</th>
-                <th>Contact Information</th>
+                <th>Student Name</th>
+                <th>Reg. Number</th>
+                <th>Age / Gender</th>
+                <th>Contact Info</th>
+                <th>Location / Address</th>
                 <th>Joined</th>
                 <th style="text-align:right;">User Activity</th>
               </tr>
@@ -7720,27 +7011,30 @@ function renderAdminUsersTab(registeredStudents) {
             <tbody>
               ${registeredStudents.map(s => {
                 const joinedDate = s.created_at ? new Date(s.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : 'Verified';
+                const regDisplay = s.reg_no || s.r_id || 'N/A';
+                const locationDisplay = [s.city, s.state, s.pincode].filter(Boolean).join(', ') || 'N/A';
+                const ageGenderStr = `${s.age ? `${s.age} yrs` : ''}${s.age && s.gender ? ' • ' : ''}${s.gender || 'Not specified'}`;
                 return `
-                  <tr class="admin-user-row" data-search="${escapeAttr((s.name || '') + ' ' + (s.r_id || '') + ' ' + (s.program || '') + ' ' + (s.email || '') + ' ' + (s.phone || '')).toLowerCase()}" onclick="openAdminUserActivity('${escapeAttr(s.r_id)}')" style="cursor:pointer;">
+                  <tr class="admin-user-row" data-search="${escapeAttr((s.name || '') + ' ' + (s.reg_no || '') + ' ' + (s.r_id || '') + ' ' + (s.email || '') + ' ' + (s.phone || '') + ' ' + (s.city || '') + ' ' + (s.state || '')).toLowerCase()}" onclick="openAdminUserActivity('${escapeAttr(s.r_id)}')" style="cursor:pointer;">
                     <td>
                       <div style="display:flex; align-items:center; gap:10px;">
                         <div class="admin-user-avatar-mini">${escapeHtml((s.name || 'S').charAt(0).toUpperCase())}</div>
                         <div>
                           <div style="font-weight:700; color:#FFFFFF;">${escapeHtml(s.name || 'Anonymous Student')}</div>
-                          <div style="font-size:0.72rem; color:var(--text-sage);">${escapeHtml(s.semester_year || getAcademicYearByRid(s.r_id))}</div>
+                          <div style="font-size:0.72rem; color:var(--text-sage); font-family:monospace;">ID: @${escapeHtml(s.r_id || '')}</div>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <strong style="color:var(--badge-yellow); font-family:monospace;">@${escapeHtml(s.r_id || '')}</strong>
+                      <strong style="color:var(--badge-yellow); font-family:monospace; font-size:0.9rem;">${escapeHtml(regDisplay)}</strong>
                     </td>
-                    <td style="color:var(--text-sage);">${escapeHtml(s.gender || 'Not Specified')}</td>
-                    <td style="color:var(--text-sage-light); font-size:0.78rem; max-width:200px;">
-                      ${escapeHtml(s.program || 'General Academic')}
-                    </td>
+                    <td style="color:var(--text-sage); font-size:0.82rem;">${escapeHtml(ageGenderStr)}</td>
                     <td style="color:var(--text-sage); font-size:0.78rem;">
-                      <div>📧 ${escapeHtml(s.email || 'N/A')}</div>
-                      ${s.phone ? `<div style="font-size:0.72rem; color:#94A3B8;">📞 ${escapeHtml(s.phone)}</div>` : ''}
+                      <div style="font-weight:600; color:#F1F5F9;">📧 ${escapeHtml(s.email || 'N/A')}</div>
+                      ${s.phone ? `<div style="font-size:0.75rem; color:#94A3B8; margin-top:2px;">📞 +91 ${escapeHtml(s.phone)}</div>` : ''}
+                    </td>
+                    <td style="color:var(--text-sage-light); font-size:0.78rem; max-width:180px;">
+                      📍 ${escapeHtml(locationDisplay)}
                     </td>
                     <td style="color:var(--text-sage); font-size:0.75rem;">${escapeHtml(joinedDate)}</td>
                     <td style="text-align:right;" onclick="event.stopPropagation()">
