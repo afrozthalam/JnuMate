@@ -2,8 +2,8 @@
 
 > The intelligent team matchmaking & collaboration platform for universities, hackathons, and campus events.
 
-🔗 **Live Deployment:** [jnumate.vercel.app](https://jnumate.vercel.app)
-
+🔗 **Prototype:** [jnu-mate.vercel.app](https://jnumate.vercel.app)
+🔗 **Polished For JNU:** [jnumate.vercel.app](https://jnumate.vercel.app)
 ---
 
 ## ✦ Overview
@@ -77,4 +77,3 @@ Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
 - **Author**: Afroz Alam
 - **Email**: [inbox.afrozalam@gmail.com](mailto:inbox.afrozalam@gmail.com)
-- **GitHub**: [@afrozthalam](https://github.com/afrozthalam)
