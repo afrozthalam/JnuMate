@@ -2,7 +2,8 @@
 
 > The intelligent team matchmaking & collaboration platform for universities, hackathons, and campus events.
 
-🔗 **Prototype:** [jnu-mate.vercel.app](https://jnumate.vercel.app)
+🔗 **Prototype:** [jnu-mate.vercel.app](https://jnumate.vercel.app)  
+
 🔗 **Polished For JNU:** [jnumate.vercel.app](https://jnumate.vercel.app)
 ---
 
